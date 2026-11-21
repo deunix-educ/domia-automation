@@ -1,0 +1,118 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO ptz_preset (camera_id, name, token, pan, tilt, zoom, position) VALUES ($1, $2, $3, $4, $5, $6, $7)\n             ON CONFLICT (camera_id, name) DO UPDATE SET token = EXCLUDED.token, pan = EXCLUDED.pan, tilt = EXCLUDED.tilt,\n                 zoom = EXCLUDED.zoom\n             RETURNING id, camera_id, name, token, pan, tilt, zoom, position",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int8",
+        "origin": {
+          "Table": {
+            "table": "ptz_preset",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "camera_id",
+        "type_info": "Int8",
+        "origin": {
+          "Table": {
+            "table": "ptz_preset",
+            "name": "camera_id"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "name",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "ptz_preset",
+            "name": "name"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "token",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "ptz_preset",
+            "name": "token"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "pan",
+        "type_info": "Float8",
+        "origin": {
+          "Table": {
+            "table": "ptz_preset",
+            "name": "pan"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "tilt",
+        "type_info": "Float8",
+        "origin": {
+          "Table": {
+            "table": "ptz_preset",
+            "name": "tilt"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "zoom",
+        "type_info": "Float8",
+        "origin": {
+          "Table": {
+            "table": "ptz_preset",
+            "name": "zoom"
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "position",
+        "type_info": "Int2",
+        "origin": {
+          "Table": {
+            "table": "ptz_preset",
+            "name": "position"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Text",
+        "Text",
+        "Float8",
+        "Float8",
+        "Float8",
+        "Int2"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "1eea08bf180b9ceb05a0c1433527aaf3dcae4bf34dc75affb7d6cc0c9780fe85"
+}

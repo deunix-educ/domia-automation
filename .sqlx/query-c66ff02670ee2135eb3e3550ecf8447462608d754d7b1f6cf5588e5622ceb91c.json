@@ -1,0 +1,18 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE detector_config SET backend = $1, model_path = $2, device = $3, enabled = $4, save_frames = $5,\n                 updated_at = now() WHERE id = 1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Text",
+        "Text",
+        "Bool",
+        "Bool"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "c66ff02670ee2135eb3e3550ecf8447462608d754d7b1f6cf5588e5622ceb91c"
+}

@@ -1,0 +1,12 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE android_device SET is_online = FALSE WHERE is_online",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": []
+  },
+  "hash": "311e7670ea74929d5cb3eb25db487b085043f7352394844d8e0ec54d97b44177"
+}

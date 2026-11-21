@@ -1,0 +1,76 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT day, linky_hp_wh, linky_hc_wh, solar_wh, pac_wh FROM (\n                 SELECT * FROM energy_daily_log ORDER BY day DESC LIMIT $1\n             ) recent ORDER BY day",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "day",
+        "type_info": "Date",
+        "origin": {
+          "Table": {
+            "table": "energy_daily_log",
+            "name": "day"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "linky_hp_wh",
+        "type_info": "Int4",
+        "origin": {
+          "Table": {
+            "table": "energy_daily_log",
+            "name": "linky_hp_wh"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "linky_hc_wh",
+        "type_info": "Int4",
+        "origin": {
+          "Table": {
+            "table": "energy_daily_log",
+            "name": "linky_hc_wh"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "solar_wh",
+        "type_info": "Int4",
+        "origin": {
+          "Table": {
+            "table": "energy_daily_log",
+            "name": "solar_wh"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "pac_wh",
+        "type_info": "Int4",
+        "origin": {
+          "Table": {
+            "table": "energy_daily_log",
+            "name": "pac_wh"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "dcf3496c90a16e64f622664611f360b6faff0674c58deb1c40fb23d89c7bc0d4"
+}

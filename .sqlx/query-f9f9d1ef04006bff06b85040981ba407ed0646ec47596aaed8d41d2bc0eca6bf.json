@@ -1,0 +1,145 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE prometheus_rule SET name = $2, rule_group = $3, severity = $4, expr = $5, for_duration = $6, summary = $7,\n                    description = $8, eval_interval = $9, active = $10, updated_at = now()\n             WHERE id = $1\n             RETURNING id, name, rule_group, severity, expr, for_duration, summary, description, eval_interval, active",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int8",
+        "origin": {
+          "Table": {
+            "table": "prometheus_rule",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "name",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "prometheus_rule",
+            "name": "name"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "rule_group",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "prometheus_rule",
+            "name": "rule_group"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "severity",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "prometheus_rule",
+            "name": "severity"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "expr",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "prometheus_rule",
+            "name": "expr"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "for_duration",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "prometheus_rule",
+            "name": "for_duration"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "summary",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "prometheus_rule",
+            "name": "summary"
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "description",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "prometheus_rule",
+            "name": "description"
+          }
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "eval_interval",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "prometheus_rule",
+            "name": "eval_interval"
+          }
+        }
+      },
+      {
+        "ordinal": 9,
+        "name": "active",
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "prometheus_rule",
+            "name": "active"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Bool"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "f9f9d1ef04006bff06b85040981ba407ed0646ec47596aaed8d41d2bc0eca6bf"
+}

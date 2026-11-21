@@ -1,0 +1,136 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Surcouche de PRODUCTION (avec `docker-compose.yml`) : nginx en TLS devant l'application, ports du LAN, redemarrage automatique,
+# profils `zigbee` (dongle USB) et `vpn` (wg-easy), Adminer en loopback. Utiliser `make prod-deploy` (jamais sur la machine de dev
+# sans projet et ports decales : voir DEPLOY.md).
+services:
+  nginx:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    ports:
+      - "${NGINX_HTTP_PORT:-80}:80"
+      - "${NGINX_HTTPS_PORT:-443}:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ${CERTS_DIR:-../certs}:/certs:ro
+    depends_on:
+      dominet: {condition: service_healthy}
+      grafana: {condition: service_healthy}
+      mediamtx: {condition: service_started}
+    networks: [dominet-net]
+
+  dominet:
+    restart: unless-stopped
+    # Le client d'une requete est celui que nginx annonce ; seul le reseau Docker est cru (TRUSTED_PROXIES).
+    environment:
+      COOKIE_SECURE: "true"
+      CUSTOM_CSS: /custom/custom.css
+    # Personnalisation de l'apparence : `deploy/custom/custom.css` (a creer a partir de `custom.css.example`, ignore par git), relu a chaque chargement.
+    volumes:
+      - ./custom:/custom:ro
+    # Decodage video materiel (VAAPI) : `make prod-init` (ou `make prod-video` sur une installation existante) ecrit VIDEO_DEVICE=/dev/dri
+    # et RENDER_GID (groupe proprietaire de /dev/dri/renderD128 sur l'hote). Sans cela, /dev/null est monte a la place : /dev/dri/renderD128
+    # n'existe pas dans le conteneur et le decodage reste logiciel (un compose ne sait pas ignorer un peripherique absent).
+    devices:
+      - ${VIDEO_DEVICE:-/dev/null}:/dev/dri
+    group_add:
+      - "${RENDER_GID:-65534}"
+
+  dominet-discovery:
+    restart: unless-stopped
+
+  postgres:
+    restart: unless-stopped
+    environment:
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD requis (make prod-init)}
+
+  reductstore:
+    restart: unless-stopped
+    environment:
+      RS_API_TOKEN: ${REDUCTSTORE_TOKEN:?REDUCTSTORE_TOKEN requis (make prod-init)}
+
+  mosquitto:
+    restart: unless-stopped
+    environment:
+      MQTT_PASSWORD: ${MQTT_PASSWORD:?MQTT_PASSWORD requis (make prod-init)}
+    # 1883 de l'hote = le listener unique (mot de passe obligatoire, jamais anonyme) : les clients du LAN se connectent avec leur compte.
+    ports:
+      - "${MQTT_LAN_PORT:-1883}:1883"
+
+  mediamtx:
+    restart: unless-stopped
+    ports:
+      - "8554:8554"        # RTSP (VLC, applications)
+      - "8189:8189/udp"    # WebRTC ICE
+      - "8189:8189/tcp"
+    environment:
+      # Hotes annonces au navigateur pour le flux video (candidats ICE) : nom LAN + IP(s) joignables par les clients VPN.
+      MTX_WEBRTCADDITIONALHOSTS: ${WEBRTC_ADDITIONAL_HOSTS:-${LAN_DOMAIN:-localhost}}
+
+  prometheus:
+    restart: unless-stopped
+
+  grafana:
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:?GRAFANA_PASSWORD requis (make prod-init)}
+
+  # Administration de la base, joignable uniquement depuis la machine. A distance : ssh -L 8181:127.0.0.1:8181 <utilisateur>@<serveur>.
+  adminer:
+    image: adminer:4.8.1
+    profiles: [adminer]
+    restart: unless-stopped
+    ports: ["127.0.0.1:8181:8080"]
+    environment:
+      ADMINER_DEFAULT_SERVER: postgres
+      ADMINER_DESIGN: galkaev
+    depends_on:
+      postgres: {condition: service_healthy}
+    networks: [dominet-net]
+
+  # Profil `zigbee` : actif si le dongle (ZIGBEE_DEVICE) est present. Interface sur 8080, protegee par jeton.
+  zigbee2mqtt:
+    image: koenkk/zigbee2mqtt:2.1.1
+    profiles: [zigbee]
+    restart: unless-stopped
+    ports: ["8080:8080"]
+    environment:
+      TZ: ${TZ:-Europe/Paris}
+      ZIGBEE2MQTT_CONFIG_MQTT_USER: ${MQTT_USER:-dominet}
+      ZIGBEE2MQTT_CONFIG_MQTT_PASSWORD: ${MQTT_PASSWORD}
+      # Les variables des profils zigbee et vpn sont verifiees par `make prod-guard` (un compose ne refuse pas une variable d un profil inactif).
+      ZIGBEE2MQTT_CONFIG_FRONTEND_AUTH_TOKEN: ${ZIGBEE_AUTH_TOKEN:-}
+    volumes:
+      - ./zigbee2mqtt:/app/data
+      - /run/udev:/run/udev:ro
+    devices:
+      - ${ZIGBEE_DEVICE:-/dev/ttyUSB0}:/dev/ttyUSB0
+    depends_on:
+      mosquitto: {condition: service_healthy}
+    networks: [dominet-net]
+
+  # Profil `vpn` : acces distant par WireGuard (reseau hote, iptables-nft). Active si WG_ADMIN_HASH est renseigne.
+  wg-easy:
+    image: ghcr.io/wg-easy/wg-easy:14
+    profiles: [vpn]
+    restart: unless-stopped
+    network_mode: host
+    cap_add: [NET_ADMIN, SYS_MODULE]
+    volumes:
+      - wg-easy-data:/etc/wireguard
+      - /lib/modules:/lib/modules:ro
+    environment:
+      WG_HOST: ${DYNDNS_HOST:-}
+      PASSWORD_HASH: ${WG_ADMIN_HASH:-}
+      WG_DEFAULT_DNS: "1.1.1.1"
+      WG_DEFAULT_ADDRESS: ${WG_DEFAULT_ADDRESS:-10.20.0.x}
+      # Routes envoyees aux clients : tunnel + LAN pour joindre DomiNet. Distinct de WG_SUBNET.
+      WG_ALLOWED_IPS: ${WG_ALLOWED_IPS:-10.20.0.0/24}
+      WG_MTU: "1420"
+      WG_PERSISTENT_KEEPALIVE: "25"
+      UI_TRAFFIC_STATS: "true"
+      # iptables-nft (nf_tables) fonctionne sur tous les noyaux modernes, contrairement a iptables-legacy.
+      WG_POST_UP: "/usr/sbin/iptables-nft -t nat -A POSTROUTING -s ${WG_SUBNET:-10.20.0.0/24} -j MASQUERADE; /usr/sbin/iptables-nft -A FORWARD -i wg0 -j ACCEPT; /usr/sbin/iptables-nft -A FORWARD -o wg0 -j ACCEPT"
+      WG_POST_DOWN: "/usr/sbin/iptables-nft -t nat -D POSTROUTING -s ${WG_SUBNET:-10.20.0.0/24} -j MASQUERADE; /usr/sbin/iptables-nft -D FORWARD -i wg0 -j ACCEPT; /usr/sbin/iptables-nft -D FORWARD -o wg0 -j ACCEPT"
+
+volumes:
+  wg-easy-data:

@@ -1,0 +1,28 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE device SET available = TRUE, last_seen = now()\n             WHERE active AND (base_topic || '/' || friendly_name = $1 OR base_topic = $1)\n             RETURNING id",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int8",
+        "origin": {
+          "Table": {
+            "table": "device",
+            "name": "id"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "5b8c634aa60b080023458ad3962550df1d9ddfd867dc1e9d0cc0827d320b7c5f"
+}

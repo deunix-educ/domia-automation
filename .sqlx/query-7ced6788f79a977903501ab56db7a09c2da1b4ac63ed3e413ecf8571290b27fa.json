@@ -1,0 +1,86 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT backend, model_path, device, enabled, save_frames, updated_at FROM detector_config WHERE id = 1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "backend",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "detector_config",
+            "name": "backend"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "model_path",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "detector_config",
+            "name": "model_path"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "device",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "detector_config",
+            "name": "device"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "enabled",
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "detector_config",
+            "name": "enabled"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "save_frames",
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "detector_config",
+            "name": "save_frames"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "updated_at",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "detector_config",
+            "name": "updated_at"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "7ced6788f79a977903501ab56db7a09c2da1b4ac63ed3e413ecf8571290b27fa"
+}

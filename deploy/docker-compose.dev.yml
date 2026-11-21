@@ -1,0 +1,54 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Surcouche de DEV (avec `docker-compose.yml`) : stack jetable ou ne tournent que les services d'infrastructure ; DomiNet lui-meme
+# se lance depuis les sources (`make dev-run`, pas de code dans un conteneur). Tous les ports sont publies sur 127.0.0.1 avec un
+# decalage (1xxxx) pour ne jamais entrer en conflit avec une autre stack. Aucun volume partage avec la prod.
+# Utiliser `make dev-up` (qui fixe les secrets de dev et demarre postgres, reductstore, mosquitto, mediamtx).
+name: dominet-dev
+
+services:
+  postgres:
+    environment:
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-dominet-dev}
+    ports: !override ["127.0.0.1:15432:5432"]
+
+  reductstore:
+    environment:
+      RS_API_TOKEN: ${REDUCTSTORE_TOKEN:-dominet-dev-token}
+    ports: ["127.0.0.1:18383:8383"]
+    depends_on: !reset null
+
+  # Broker de dev : anonyme sur son seul listener, boucle locale cote hote.
+  mosquitto:
+    entrypoint: ["/docker-entrypoint.sh", "mosquitto", "-c", "/mosquitto/config/mosquitto.conf"]
+    ports: ["127.0.0.1:11883:1883"]
+    volumes:
+      - ./mosquitto/mosquitto.dev.conf:/mosquitto/config/mosquitto.conf:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mosquitto_sub -h localhost -t '$$SYS/broker/uptime' -C 1 -W 3 >/dev/null || exit 1"]
+
+  mediamtx:
+    ports:
+      - "127.0.0.1:18554:8554"   # RTSP
+      - "127.0.0.1:18889:8889"   # WebRTC / WHEP (HTTP)
+      - "127.0.0.1:19997:9997"   # API
+      # ICE : MediaMTX annonce son port interne au navigateur, il faut donc le publier a l'identique
+      # (pas de decalage 1xxxx) : 8189 UDP et TCP sur la boucle locale.
+      - "127.0.0.1:8189:8189/udp"
+      - "127.0.0.1:8189:8189/tcp"
+    # Segments enregistres : dossier de l'utilisateur (le role video les lit puis les supprime apres archivage dans ReductStore).
+    user: "${DEV_UID:-1000}:${DEV_GID:-1000}"
+    depends_on: !reset null
+    volumes:
+      - ./mediamtx/mediamtx.dev.yml:/mediamtx.yml:ro
+      - ./recordings-dev:/recordings
+
+  # Observabilite de dev (profil `observability`, make dev-observability) : Prometheus et Grafana sur 19090 et 13000.
+  prometheus:
+    profiles: [observability]
+    ports: ["127.0.0.1:19090:9090"]
+    depends_on: !reset null
+
+  grafana:
+    profiles: [observability]
+    ports: ["127.0.0.1:13000:3000"]
+    depends_on: !reset null

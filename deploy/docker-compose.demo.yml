@@ -1,0 +1,93 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Surcouche de DEMO (avec `docker-compose.yml`) : stack complete sur un VPS ou un poste, sans Zigbee ni camera reelle, en HTTP, avec une camera
+# factice (mire ffmpeg poussee dans MediaMTX). Projet Compose `dominet-demo` : volumes et reseau a part, rien n'est partage avec la dev ni la prod.
+#   make demo-up    # construit et demarre      make demo-down    # arrete (volumes conserves)
+# Acces : http://<hote>:${DEMO_PORT:-8080} (application), :3001 (Grafana), rtsp://<hote>:8555, WebRTC http://<hote>:8890.
+name: dominet-demo
+
+services:
+  dominet:
+    restart: unless-stopped
+    ports: ["${DEMO_PORT:-8080}:8000"]
+    environment:
+      COOKIE_SECURE: "false"
+      # Les reglages applicatifs (adresse WebRTC, Grafana) sont lus de l'environnement par `dominet seed` s'ils sont definis.
+      MEDIAMTX_WEBRTC_DOMAIN: ${LAN_DOMAIN:-localhost}:8890
+      MEDIAMTX_WEBRTC_SCHEME: http
+      GRAFANA_PUBLIC_URL: http://${LAN_DOMAIN:-localhost}:3001/grafana
+
+  dominet-discovery:
+    restart: unless-stopped
+
+  postgres:
+    restart: unless-stopped
+    environment:
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD requis}
+    ports: !override ["127.0.0.1:${POSTGRES_HOST_PORT:-5433}:5432"]
+
+  reductstore:
+    restart: unless-stopped
+    environment:
+      RS_API_TOKEN: ${REDUCTSTORE_TOKEN:?REDUCTSTORE_TOKEN requis}
+
+  mosquitto:
+    restart: unless-stopped
+    environment:
+      MQTT_PASSWORD: ${MQTT_PASSWORD:?MQTT_PASSWORD requis}
+
+  mediamtx:
+    restart: unless-stopped
+    ports:
+      - "8555:8554"        # RTSP
+      - "8890:8889"        # WebRTC (WHEP)
+      - "8189:8189/udp"    # ICE
+      - "8189:8189/tcp"
+    environment:
+      MTX_WEBRTCADDITIONALHOSTS: ${LAN_DOMAIN:-localhost}
+
+  prometheus:
+    restart: unless-stopped
+
+  grafana:
+    restart: unless-stopped
+    ports: ["3001:3000"]
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:?GRAFANA_PASSWORD requis}
+      GF_SERVER_ROOT_URL: http://${LAN_DOMAIN:-localhost}:3001/grafana/
+
+  # Camera factice : ffmpeg (deja dans l'image de l'application) pousse une mire H.264 dans MediaMTX, qui la sert en RTSP/WebRTC.
+  # Declarer ensuite une camera rtsp://mediamtx:8554/demo-cam-1 dans l'interface (voir DEPLOY.md, section demo).
+  fake-camera:
+    image: dominet:${DOMINET_TAG:-local}
+    pull_policy: never
+    restart: unless-stopped
+    entrypoint:
+      - ffmpeg
+      - -nostdin
+      - -loglevel
+      - error
+      - -re
+      - -f
+      - lavfi
+      - -i
+      - testsrc2=size=1280x720:rate=15
+      - -c:v
+      - libx264
+      - -preset
+      - ultrafast
+      - -tune
+      - zerolatency
+      - -profile:v
+      - baseline
+      - -pix_fmt
+      - yuv420p
+      - -g
+      - "30"
+      - -f
+      - rtsp
+      - -rtsp_transport
+      - tcp
+      - rtsp://mediamtx:8554/demo-cam-1
+    depends_on:
+      mediamtx: {condition: service_started}
+    networks: [dominet-net]

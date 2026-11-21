@@ -1,0 +1,17 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO session (id, data, expiry_date, user_id) VALUES ($1, $2, $3, $4) ON CONFLICT (id) DO NOTHING",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Jsonb",
+        "Timestamptz",
+        "Int8"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "02873264c53dc22da82abc54d04052be3962ee06392e8169125d5503fc25d00b"
+}

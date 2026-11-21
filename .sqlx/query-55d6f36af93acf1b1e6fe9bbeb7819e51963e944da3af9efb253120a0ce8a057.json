@@ -1,0 +1,149 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, rule_id, device_id, status, severity, value_triggered, fired_at, resolved_at, acknowledged_at, acknowledged_by,\n                    notified FROM alert WHERE rule_id = $1 AND device_id = $2 AND status = 'firing' ORDER BY fired_at DESC, id DESC LIMIT 1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int8",
+        "origin": {
+          "Table": {
+            "table": "alert",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "rule_id",
+        "type_info": "Int8",
+        "origin": {
+          "Table": {
+            "table": "alert",
+            "name": "rule_id"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "device_id",
+        "type_info": "Int8",
+        "origin": {
+          "Table": {
+            "table": "alert",
+            "name": "device_id"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "status",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "alert",
+            "name": "status"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "severity",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "alert",
+            "name": "severity"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "value_triggered",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "alert",
+            "name": "value_triggered"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "fired_at",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "alert",
+            "name": "fired_at"
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "resolved_at",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "alert",
+            "name": "resolved_at"
+          }
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "acknowledged_at",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "alert",
+            "name": "acknowledged_at"
+          }
+        }
+      },
+      {
+        "ordinal": 9,
+        "name": "acknowledged_by",
+        "type_info": "Int8",
+        "origin": {
+          "Table": {
+            "table": "alert",
+            "name": "acknowledged_by"
+          }
+        }
+      },
+      {
+        "ordinal": 10,
+        "name": "notified",
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "alert",
+            "name": "notified"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      false
+    ]
+  },
+  "hash": "55d6f36af93acf1b1e6fe9bbeb7819e51963e944da3af9efb253120a0ce8a057"
+}

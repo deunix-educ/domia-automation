@@ -1,0 +1,135 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+[workspace]
+resolver = "3"
+members = ["crates/*"]
+
+[workspace.package]
+version = "1.0.0"
+edition = "2024"
+rust-version = "1.99"
+license = "AGPL-3.0-or-later"
+publish = false
+
+[workspace.dependencies]
+dominet-domain = { path = "crates/dominet-domain" }
+dominet-proto = { path = "crates/dominet-proto" }
+dominet-store = { path = "crates/dominet-store" }
+dominet-mqtt = { path = "crates/dominet-mqtt" }
+dominet-automation = { path = "crates/dominet-automation" }
+dominet-surveillance = { path = "crates/dominet-surveillance" }
+dominet-notify = { path = "crates/dominet-notify" }
+dominet-integrations = { path = "crates/dominet-integrations" }
+dominet-web = { path = "crates/dominet-web" }
+dominet-server = { path = "crates/dominet-server" }
+dominet-mcp = { path = "crates/dominet-mcp" }
+dominet-agent = { path = "crates/dominet-agent" }
+
+# Dependances externes communes (versions verifiees le 2026-10-31). Cargo.lock fait foi.
+axum = { version = "0.8.9", features = ["macros", "ws", "multipart"] }
+image = { version = "0.25", default-features = false, features = ["jpeg", "png", "webp", "gif"] }
+tokio-tungstenite = { version = "0.29", default-features = false, features = ["connect"] }
+futures-util = { version = "0.3", default-features = false, features = ["sink", "std"] }
+tokio = { version = "1.54", features = ["rt-multi-thread", "macros", "signal", "net", "time", "sync"] }
+tower-http = { version = "0.7", features = ["trace", "request-id", "set-header", "fs", "compression-gzip", "timeout"] }
+tower = { version = "0.5", features = ["util"] }
+tower-sessions = "0.15"
+tower-sessions-core = "0.15"
+time = "0.3"
+async-trait = "0.1"
+leptos = "0.8.23"
+leptos_meta = "0.8"
+leptos_router = "0.8"
+leptos_axum = "0.8"
+leptos-fluent = "0.3.1"
+wasm-bindgen = "0.2"
+wasm-bindgen-futures = "0.4"
+console_error_panic_hook = "0.1"
+web-sys = { version = "0.3", features = ["Window", "Document", "Element", "Storage", "Location", "WebSocket", "MessageEvent", "CloseEvent", "Event", "PointerEvent", "MouseEvent", "HtmlElement", "CssStyleDeclaration", "DomRect", "DomTokenList", "EventTarget", "HtmlMediaElement", "HtmlVideoElement", "MediaStream", "Request", "RequestInit", "Response", "Headers", "Url", "RtcPeerConnection", "RtcSessionDescriptionInit", "RtcSessionDescription", "RtcSdpType", "RtcRtpTransceiverInit", "RtcRtpTransceiverDirection", "RtcTrackEvent", "RtcIceGatheringState", "RtcPeerConnectionState", "RtcRtpReceiver", "RtcRtpTransceiver", "RtcRtpCapabilities", "RtcRtpCodecCapability", "Performance"] }
+js-sys = "0.3"
+aes-gcm = "0.11"
+base64 = "0.23"
+ipnet = "2"
+rpassword = "7"
+http-body-util = "0.1"
+sqlx = { version = "0.9", default-features = false, features = ["runtime-tokio", "tls-rustls", "postgres", "migrate", "macros", "chrono", "uuid", "json"] }
+argon2 = "0.6"
+clap = { version = "4.6", features = ["derive", "env"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+thiserror = "2"
+anyhow = "1"
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1", features = ["float_roundtrip", "preserve_order"] }
+reduct-rs = "1.21"
+unicode-normalization = "0.1"
+ndarray = "0.17"
+# ONNX Runtime (YOLO, ADR 0009 et 0050) : version candidate epinglee exactement ; montee de version = tache explicite avec relance du test de parite.
+ort = { version = "=2.0.0-rc.15", default-features = false, features = ["std", "ndarray", "download-binaries", "tls-rustls", "copy-dylibs", "api-31"] }
+lettre = { version = "0.11", default-features = false, features = ["builder", "smtp-transport", "tokio1-rustls-tls"] }
+# Serveur MCP (R11, ADR 0058) : version epinglee ; montee de version = tache explicite (le protocole evolue vite).
+rmcp = { version = "=3.10.0", default-features = false, features = ["server", "macros", "schemars", "transport-streamable-http-server"] }
+schemars = "1"
+reqwest = { version = "0.13", default-features = false, features = ["json", "rustls", "query"] }
+chrono = { version = "0.4", default-features = false, features = ["clock", "serde"] }
+chrono-tz = "0.10"
+rhai = { version = "1.27", features = ["sync", "serde", "no_module"] }
+uuid = { version = "1", default-features = false, features = ["serde"] }
+ammonia = "4"
+rumqttc = { version = "0.25", default-features = false }
+roxmltree = "0.21"
+sha1 = "0.11"
+md-5 = "0.10"
+getrandom = "0.4"
+socket2 = "0.6"
+# Metriques Prometheus (ADR 0051) : facade + exporteur sans ecouteur integre (le serveur expose lui-meme /metrics).
+# Sauvegardes (ADR 0054) : archives tar.gz du volume ReductStore, somme de controle, adresse de la base.
+flate2 = "1"
+tar = "0.4"
+sha2 = "0.11"
+url = "2"
+metrics = "0.24"
+metrics-exporter-prometheus = { version = "0.18", default-features = false }
+sysinfo = { version = "0.40", default-features = false, features = ["system", "disk", "component"] }
+
+[workspace.lints.rust]
+unsafe_code = "forbid"
+missing_debug_implementations = "warn"
+
+[workspace.lints.clippy]
+pedantic = { level = "warn", priority = -1 }
+module_name_repetitions = "allow"
+missing_errors_doc = "allow"
+missing_panics_doc = "allow"
+
+# Les mots de passe sont haches avec argon2 : sans optimisation, un login en debug prend plusieurs secondes.
+[profile.dev.package.argon2]
+opt-level = 3
+[profile.dev.package.blake2]
+opt-level = 3
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+strip = "symbols"
+
+# Profil du WASM de l'interface (cargo-leptos) : petit et optimise.
+[profile.wasm-release]
+inherits = "release"
+opt-level = "z"
+lto = true
+codegen-units = 1
+
+# Build de l'interface par `cargo leptos build` (voir `make front`).
+[[workspace.metadata.leptos]]
+name = "dominet"
+bin-package = "dominet"
+lib-package = "dominet-web"
+output-name = "dominet"
+site-root = "target/site"
+site-pkg-dir = "pkg"
+style-file = "crates/dominet-web/style/main.css"
+assets-dir = "crates/dominet-web/assets"
+site-addr = "127.0.0.1:3000"
+lib-default-features = false
+lib-features = ["hydrate"]
+lib-profile-release = "wasm-release"

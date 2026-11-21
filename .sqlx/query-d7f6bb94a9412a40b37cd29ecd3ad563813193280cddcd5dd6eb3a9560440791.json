@@ -1,0 +1,19 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE scene SET name = $2, icon = $3, description = $4, location_id = $5, active = $6 WHERE id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Text",
+        "Text",
+        "Text",
+        "Int8",
+        "Bool"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "d7f6bb94a9412a40b37cd29ecd3ad563813193280cddcd5dd6eb3a9560440791"
+}

@@ -1,0 +1,31 @@
+# Configuration de Zigbee2MQTT (profil `zigbee`) : copiee en `deploy/zigbee2mqtt/configuration.yaml` par `make prod-init`
+# si elle n'existe pas. Le dossier est monte en ecriture (Zigbee2MQTT y garde ses appareils et ses cles reseau).
+# Le mot de passe MQTT et le jeton de l'interface viennent du .env (variables ZIGBEE2MQTT_CONFIG_* du compose), pas d'ici.
+homeassistant: false
+permit_join: false
+
+mqtt:
+  base_topic: zigbee2mqtt
+  server: mqtt://mosquitto:1883
+
+serial:
+  # Port tel qu'il apparait DANS le conteneur (le compose lie ZIGBEE_DEVICE a /dev/ttyUSB0)
+  port: /dev/ttyUSB0
+  # adapter: ezsp  # decommenter pour une cle Sonoff Zigbee 3.0 USB (firmware EZSPv8)
+  # adapter: zstack  # decommenter pour une cle CC2652/CC1352
+
+frontend:
+  enabled: true
+  port: 8080
+  host: 0.0.0.0
+
+advanced:
+  log_level: info
+  # Generer une fois puis fixer les valeurs pour eviter un nouvel appairage en cas de recreation
+  # pan_id: GENERATE
+  # ext_pan_id: GENERATE
+  # network_key: GENERATE
+  channel: 11
+  homeassistant_legacy_entity_attributes: false
+  legacy_api: false
+  legacy_availability_payload: false

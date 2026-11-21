@@ -1,0 +1,184 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, name, device_id, key, operator, threshold_num, threshold_str, severity, cooldown_minutes, notify_email,\n                    notify_sms, notify_android, enabled, description FROM alert_rule WHERE device_id = $1 AND enabled ORDER BY name, id",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int8",
+        "origin": {
+          "Table": {
+            "table": "alert_rule",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "name",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "alert_rule",
+            "name": "name"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "device_id",
+        "type_info": "Int8",
+        "origin": {
+          "Table": {
+            "table": "alert_rule",
+            "name": "device_id"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "key",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "alert_rule",
+            "name": "key"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "operator",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "alert_rule",
+            "name": "operator"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "threshold_num",
+        "type_info": "Float8",
+        "origin": {
+          "Table": {
+            "table": "alert_rule",
+            "name": "threshold_num"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "threshold_str",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "alert_rule",
+            "name": "threshold_str"
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "severity",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "alert_rule",
+            "name": "severity"
+          }
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "cooldown_minutes",
+        "type_info": "Int2",
+        "origin": {
+          "Table": {
+            "table": "alert_rule",
+            "name": "cooldown_minutes"
+          }
+        }
+      },
+      {
+        "ordinal": 9,
+        "name": "notify_email",
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "alert_rule",
+            "name": "notify_email"
+          }
+        }
+      },
+      {
+        "ordinal": 10,
+        "name": "notify_sms",
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "alert_rule",
+            "name": "notify_sms"
+          }
+        }
+      },
+      {
+        "ordinal": 11,
+        "name": "notify_android",
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "alert_rule",
+            "name": "notify_android"
+          }
+        }
+      },
+      {
+        "ordinal": 12,
+        "name": "enabled",
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "alert_rule",
+            "name": "enabled"
+          }
+        }
+      },
+      {
+        "ordinal": 13,
+        "name": "description",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "alert_rule",
+            "name": "description"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "631ce87239fd2debbabe73d7215ec5f7dcc5740d6d47978b11cbeca091799f34"
+}

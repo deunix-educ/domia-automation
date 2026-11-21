@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO login_attempt (username, ip, succeeded) VALUES (lower($1), $2, $3)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Text",
+        "Bool"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "88f4b683e34b2c469572a7948ea5cb4f850469c295be589f8e9a96511c251d3a"
+}

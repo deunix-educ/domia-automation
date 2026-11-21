@@ -1,0 +1,18 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO energy_daily_log (day, linky_hp_wh, linky_hc_wh, solar_wh, pac_wh) VALUES ($1, $2, $3, $4, $5)\n             ON CONFLICT (day) DO UPDATE SET linky_hp_wh = EXCLUDED.linky_hp_wh, linky_hc_wh = EXCLUDED.linky_hc_wh,\n                 solar_wh = EXCLUDED.solar_wh, pac_wh = EXCLUDED.pac_wh",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Date",
+        "Int4",
+        "Int4",
+        "Int4",
+        "Int4"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "e6b175485512330f2ee474fd728f60c577a0612c942b884ad2bf072298375363"
+}

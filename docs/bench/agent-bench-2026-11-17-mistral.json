@@ -1,0 +1,2891 @@
+[
+ {
+  "model": "Ministral-3-14B-Instruct-2512-Q4_K_M.gguf",
+  "mode": "gpu",
+  "cases": [
+   {
+    "id": 1,
+    "kind": "read",
+    "msg": "Quels appareils n'ont rien émis depuis 24 h ?",
+    "tool": "devices_list",
+    "args": {
+     "silent_for_hours": 24
+    },
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 3.567718505859375,
+    "gen_tokens": 17,
+    "gen_tps": 4.784068096425284,
+    "prefill_n": 1
+   },
+   {
+    "id": 2,
+    "kind": "read",
+    "msg": "Donne-moi l'état général de la maison.",
+    "tool": "system_status",
+    "args": {},
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 1.7295680046081543,
+    "gen_tokens": 6,
+    "gen_tps": 4.756247092743965,
+    "prefill_n": 11
+   },
+   {
+    "id": 3,
+    "kind": "read",
+    "msg": "Y a-t-il des alertes en cours ?",
+    "tool": "alerts_list",
+    "args": {
+     "status": "firing"
+    },
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 3.1490540504455566,
+    "gen_tokens": 13,
+    "gen_tps": 4.83223681826199,
+    "prefill_n": 11
+   },
+   {
+    "id": 4,
+    "kind": "read",
+    "msg": "Quelle est la température du bureau depuis ce matin ?",
+    "tool": "device_get",
+    "args": {
+     "device": "Bureau"
+    },
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 3.01090407371521,
+    "gen_tokens": 12,
+    "gen_tps": 4.7797574664156866,
+    "prefill_n": 12
+   },
+   {
+    "id": 5,
+    "kind": "read",
+    "msg": "Pourquoi l'automation « Ouvrir le volet » a-t-elle échoué ?",
+    "tool": "automation_runs",
+    "args": {
+     "automation": "Ouvrir le volet",
+     "status": "error",
+     "limit": 1
+    },
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 7.608808517456055,
+    "gen_tokens": 31,
+    "gen_tps": 4.7552971632750305,
+    "prefill_n": 20
+   },
+   {
+    "id": 6,
+    "kind": "read",
+    "msg": "Montre-moi les erreurs du journal de la dernière heure.",
+    "tool": "logs_query",
+    "args": {
+     "level": "error",
+     "minutes": 60
+    },
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 4.474087715148926,
+    "gen_tokens": 18,
+    "gen_tps": 4.770530468957176,
+    "prefill_n": 14
+   },
+   {
+    "id": 7,
+    "kind": "read",
+    "msg": "Quelles scènes existent ?",
+    "tool": "scenes_list",
+    "args": {},
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 1.7398350238800049,
+    "gen_tokens": 7,
+    "gen_tps": 4.702223838393971,
+    "prefill_n": 6
+   },
+   {
+    "id": 8,
+    "kind": "read",
+    "msg": "Combien ai-je consommé d'électricité ces 7 derniers jours ?",
+    "tool": "energy_summary",
+    "args": {
+     "days": 7
+    },
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 3.0148096084594727,
+    "gen_tokens": 11,
+    "gen_tps": 4.781847342392702,
+    "prefill_n": 15
+   },
+   {
+    "id": 9,
+    "kind": "read",
+    "msg": "Y a-t-il eu des détections de personne sur la caméra du portail ?",
+    "tool": "detections_list",
+    "args": {
+     "camera": "portail",
+     "limit": 1
+    },
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 5.3136327266693115,
+    "gen_tokens": 20,
+    "gen_tps": 4.753942206574802,
+    "prefill_n": 19
+   },
+   {
+    "id": 10,
+    "kind": "read",
+    "msg": "Quels appareils sont injoignables ?",
+    "tool": "devices_list",
+    "args": {
+     "available": false
+    },
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 2.855938673019409,
+    "gen_tokens": 11,
+    "gen_tps": 4.754300145624214,
+    "prefill_n": 10
+   },
+   {
+    "id": 11,
+    "kind": "read",
+    "msg": "Détaille l'appareil Volet-salon.",
+    "tool": "device_get",
+    "args": {
+     "device": "Volet-salon"
+    },
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 3.552316904067993,
+    "gen_tokens": 14,
+    "gen_tps": 4.754678695272276,
+    "prefill_n": 12
+   },
+   {
+    "id": 12,
+    "kind": "read",
+    "msg": "Liste mes automations.",
+    "tool": "automations_list",
+    "args": {},
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 1.924628496170044,
+    "gen_tokens": 8,
+    "gen_tps": 4.7453316105519905,
+    "prefill_n": 6
+   },
+   {
+    "id": 13,
+    "kind": "action",
+    "msg": "Ferme le volet du salon.",
+    "tool": "devices_list",
+    "args": {
+     "name_contains": "volet"
+    },
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 3.659986734390259,
+    "gen_tokens": 15,
+    "gen_tps": 4.750147339391581,
+    "prefill_n": 9
+   },
+   {
+    "id": 14,
+    "kind": "action",
+    "msg": "Allume la lampe du bureau.",
+    "tool": "devices_list",
+    "args": {
+     "name_contains": "lampe"
+    },
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 4.899124383926392,
+    "gen_tokens": 21,
+    "gen_tps": 4.757422590193001,
+    "prefill_n": 8
+   },
+   {
+    "id": 15,
+    "kind": "action",
+    "msg": "Ouvre le volet Volet-salon à 40 %.",
+    "tool": "device_get",
+    "args": {
+     "device": "Volet-salon"
+    },
+    "name_ok": false,
+    "full_ok": false,
+    "wall": 3.651982069015503,
+    "gen_tokens": 14,
+    "gen_tps": 4.757927622405008,
+    "prefill_n": 15
+   },
+   {
+    "id": 16,
+    "kind": "action",
+    "msg": "Lance la scène Cinéma.",
+    "tool": "scene_run",
+    "args": {
+     "scene": "Cinéma"
+    },
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 2.841181993484497,
+    "gen_tokens": 12,
+    "gen_tps": 4.757598208721024,
+    "prefill_n": 7
+   },
+   {
+    "id": 17,
+    "kind": "action",
+    "msg": "Acquitte toutes les alertes.",
+    "tool": "alert_ack",
+    "args": {
+     "all": true
+    },
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 2.839588165283203,
+    "gen_tokens": 11,
+    "gen_tps": 4.701470714068774,
+    "prefill_n": 9
+   },
+   {
+    "id": 18,
+    "kind": "action",
+    "msg": "Affiche un message à tout le monde : le dîner est prêt.",
+    "tool": null,
+    "args": {},
+    "name_ok": false,
+    "full_ok": false,
+    "wall": 5.557379484176636,
+    "gen_tokens": 23,
+    "gen_tps": 4.732845907572682,
+    "prefill_n": 15
+   },
+   {
+    "id": 19,
+    "kind": "action",
+    "msg": "Prends une photo avec la caméra du garage.",
+    "tool": "camera_snapshot",
+    "args": {
+     "camera": "garage"
+    },
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 3.3271753787994385,
+    "gen_tokens": 13,
+    "gen_tps": 4.777385766734586,
+    "prefill_n": 12
+   },
+   {
+    "id": 20,
+    "kind": "action",
+    "msg": "Tourne la caméra de la terrasse vers la gauche.",
+    "tool": "camera_ptz",
+    "args": {
+     "camera": "terrasse",
+     "direction": "left",
+     "duration_ms": 800,
+     "speed": 0.5
+    },
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 8.291655778884888,
+    "gen_tokens": 36,
+    "gen_tps": 4.747961259349244,
+    "prefill_n": 14
+   },
+   {
+    "id": 21,
+    "kind": "ambiguous",
+    "msg": "Ferme-le.",
+    "tool": "devices_list",
+    "args": {
+     "name_contains": "volet"
+    },
+    "name_ok": false,
+    "full_ok": false,
+    "wall": 3.3472349643707275,
+    "gen_tokens": 15,
+    "gen_tps": 4.743334767627418,
+    "prefill_n": 5
+   },
+   {
+    "id": 22,
+    "kind": "ambiguous",
+    "msg": "Fais quelque chose pour la lumière.",
+    "tool": "devices_list",
+    "args": {
+     "device_type": "light",
+     "limit": 5
+    },
+    "name_ok": false,
+    "full_ok": false,
+    "wall": 4.528624057769775,
+    "gen_tokens": 19,
+    "gen_tps": 4.7194484537907,
+    "prefill_n": 9
+   },
+   {
+    "id": 23,
+    "kind": "ambiguous",
+    "msg": "Éteins tout.",
+    "tool": "devices_list",
+    "args": {
+     "include_inactive": false
+    },
+    "name_ok": false,
+    "full_ok": false,
+    "wall": 2.9650228023529053,
+    "gen_tokens": 13,
+    "gen_tps": 4.771117562722304,
+    "prefill_n": 6
+   },
+   {
+    "id": 24,
+    "kind": "ambiguous",
+    "msg": "Merci, c'est parfait.",
+    "tool": null,
+    "args": {},
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 4.901489019393921,
+    "gen_tokens": 21,
+    "gen_tps": 4.740290167382017,
+    "prefill_n": 8
+   },
+   {
+    "id": 25,
+    "kind": "config",
+    "msg": "Quels types de configuration puis-je modifier ?",
+    "tool": "config_kinds",
+    "args": {},
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 6.9879677295684814,
+    "gen_tokens": 7,
+    "gen_tps": 5.353839729238478,
+    "prefill_n": 2723
+   },
+   {
+    "id": 26,
+    "kind": "config",
+    "msg": "Liste mes emplacements.",
+    "tool": "config_list",
+    "args": {
+     "kind": "emplacements"
+    },
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 2.321453332901001,
+    "gen_tokens": 12,
+    "gen_tps": 5.370058021035982,
+    "prefill_n": 6
+   },
+   {
+    "id": 27,
+    "kind": "config",
+    "msg": "Crée un emplacement nommé Cave.",
+    "tool": "config_upsert",
+    "args": {
+     "kind": "emplacement",
+     "data": {
+      "nom": "Cave"
+     }
+    },
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 4.826794147491455,
+    "gen_tokens": 24,
+    "gen_tps": 5.346719659632475,
+    "prefill_n": 9
+   },
+   {
+    "id": 28,
+    "kind": "config",
+    "msg": "Je veux fermer les volets au coucher du soleil, par une automation.",
+    "tool": "automations_list",
+    "args": {},
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 1.9177496433258057,
+    "gen_tokens": 8,
+    "gen_tps": 5.37680247701609,
+    "prefill_n": 16
+   },
+   {
+    "id": 29,
+    "kind": "config",
+    "msg": "Active l'appairage Zigbee.",
+    "tool": null,
+    "args": {},
+    "name_ok": false,
+    "full_ok": false,
+    "wall": 4.439890146255493,
+    "gen_tokens": 22,
+    "gen_tps": 5.361811189180784,
+    "prefill_n": 9
+   },
+   {
+    "id": 30,
+    "kind": "ambiguous",
+    "msg": "Supprime-le.",
+    "tool": null,
+    "args": {},
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 5.512169122695923,
+    "gen_tokens": 29,
+    "gen_tps": 5.351717758050751,
+    "prefill_n": 5
+   }
+  ],
+  "prompt_tokens": 4745,
+  "cold": {
+   "cache_n": 0,
+   "prompt_n": 4745,
+   "prompt_ms": 9536.103,
+   "prompt_per_token_ms": 2.00971612223393,
+   "prompt_per_second": 497.58271277061505,
+   "predicted_n": 17,
+   "predicted_ms": 3358.207,
+   "predicted_per_token_ms": 209.8879375,
+   "predicted_per_second": 4.764447218411492
+  },
+  "warm": {
+   "cache_n": 4744,
+   "prompt_n": 1,
+   "prompt_ms": 207.091,
+   "prompt_per_token_ms": 207.091,
+   "prompt_per_second": 4.828795070765992,
+   "predicted_n": 17,
+   "predicted_ms": 3345.642,
+   "predicted_per_token_ms": 209.102625,
+   "predicted_per_second": 4.782340728625478
+  },
+  "spike": {
+   "ok": true,
+   "answer": "Aucun appareil n'a rien émis depuis 24 heures. Les appareils les plus silencieux sont :\n- **Temperature-CH-sud_est-haut** (Chambre) : 87 heures sans émission.\n- **Relais-lora-1** (Serre) : 41 heures sans émission.\n\nSouhaites-tu vérifier leur état ou agir sur un autre appareil ?",
+   "steps": [
+    {
+     "tool": "devices_list",
+     "args": {
+      "silent_for_hours": 24
+     },
+     "wall": 4.6108338832855225
+    }
+   ],
+   "wall": 23.015832662582397
+  }
+ },
+ {
+  "model": "Ministral-3-14B-Instruct-2512-Q4_K_M.gguf",
+  "mode": "cpu",
+  "cases": [
+   {
+    "id": 1,
+    "kind": "read",
+    "msg": "Quels appareils n'ont rien émis depuis 24 h ?",
+    "tool": "devices_list",
+    "args": {
+     "silent_for_hours": 24
+    },
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 7.378472566604614,
+    "gen_tokens": 17,
+    "gen_tps": 2.310170409720273,
+    "prefill_n": 1
+   },
+   {
+    "id": 2,
+    "kind": "read",
+    "msg": "Donne-moi l'état général de la maison.",
+    "tool": "system_status",
+    "args": {},
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 3.7932443618774414,
+    "gen_tokens": 6,
+    "gen_tps": 2.3123707673787384,
+    "prefill_n": 11
+   },
+   {
+    "id": 3,
+    "kind": "read",
+    "msg": "Y a-t-il des alertes en cours ?",
+    "tool": "alerts_list",
+    "args": {
+     "status": "firing"
+    },
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 6.834324598312378,
+    "gen_tokens": 13,
+    "gen_tps": 2.31218283354538,
+    "prefill_n": 11
+   },
+   {
+    "id": 4,
+    "kind": "read",
+    "msg": "Quelle est la température du bureau depuis ce matin ?",
+    "tool": "device_get",
+    "args": {
+     "device": "Bureau"
+    },
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 6.433356523513794,
+    "gen_tokens": 12,
+    "gen_tps": 2.329907733535654,
+    "prefill_n": 12
+   },
+   {
+    "id": 5,
+    "kind": "read",
+    "msg": "Pourquoi l'automation « Ouvrir le volet » a-t-elle échoué ?",
+    "tool": "automation_runs",
+    "args": {
+     "automation": "Ouvrir le volet",
+     "status": "error",
+     "limit": 1
+    },
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 15.641864538192749,
+    "gen_tokens": 31,
+    "gen_tps": 2.3286197928956605,
+    "prefill_n": 20
+   },
+   {
+    "id": 6,
+    "kind": "read",
+    "msg": "Montre-moi les erreurs du journal de la dernière heure.",
+    "tool": "logs_query",
+    "args": {
+     "level": "error",
+     "minutes": 60
+    },
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 9.180664539337158,
+    "gen_tokens": 18,
+    "gen_tps": 2.3312625322502747,
+    "prefill_n": 14
+   },
+   {
+    "id": 7,
+    "kind": "read",
+    "msg": "Quelles scènes existent ?",
+    "tool": "scenes_list",
+    "args": {},
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 3.5091536045074463,
+    "gen_tokens": 7,
+    "gen_tps": 2.3336306119440655,
+    "prefill_n": 6
+   },
+   {
+    "id": 8,
+    "kind": "read",
+    "msg": "Combien ai-je consommé d'électricité ces 7 derniers jours ?",
+    "tool": "energy_summary",
+    "args": {
+     "days": 7
+    },
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 6.2148919105529785,
+    "gen_tokens": 11,
+    "gen_tps": 2.3339537760454654,
+    "prefill_n": 15
+   },
+   {
+    "id": 9,
+    "kind": "read",
+    "msg": "Y a-t-il eu des détections de personne sur la caméra du portail ?",
+    "tool": "detections_list",
+    "args": {
+     "camera": "portail",
+     "limit": 1
+    },
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 10.88853931427002,
+    "gen_tokens": 20,
+    "gen_tps": 2.327426814063832,
+    "prefill_n": 19
+   },
+   {
+    "id": 10,
+    "kind": "read",
+    "msg": "Quels appareils sont injoignables ?",
+    "tool": "devices_list",
+    "args": {
+     "available": false
+    },
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 5.83275842666626,
+    "gen_tokens": 11,
+    "gen_tps": 2.3311110075061774,
+    "prefill_n": 10
+   },
+   {
+    "id": 11,
+    "kind": "read",
+    "msg": "Détaille l'appareil Volet-salon.",
+    "tool": "device_get",
+    "args": {
+     "device": "Volet-salon"
+    },
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 7.28694486618042,
+    "gen_tokens": 14,
+    "gen_tps": 2.3307453095991746,
+    "prefill_n": 12
+   },
+   {
+    "id": 12,
+    "kind": "read",
+    "msg": "Liste mes automations.",
+    "tool": "automations_list",
+    "args": {},
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 3.938654899597168,
+    "gen_tokens": 8,
+    "gen_tps": 2.333483454102214,
+    "prefill_n": 6
+   },
+   {
+    "id": 13,
+    "kind": "action",
+    "msg": "Ferme le volet du salon.",
+    "tool": "devices_list",
+    "args": {
+     "name_contains": "volet"
+    },
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 10.067304134368896,
+    "gen_tokens": 21,
+    "gen_tps": 2.334084519534537,
+    "prefill_n": 9
+   },
+   {
+    "id": 14,
+    "kind": "action",
+    "msg": "Allume la lampe du bureau.",
+    "tool": "devices_list",
+    "args": {
+     "name_contains": "lampe"
+    },
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 10.015122652053833,
+    "gen_tokens": 21,
+    "gen_tps": 2.33150042427479,
+    "prefill_n": 8
+   },
+   {
+    "id": 15,
+    "kind": "action",
+    "msg": "Ouvre le volet Volet-salon à 40 %.",
+    "tool": "device_get",
+    "args": {
+     "device": "Volet-salon"
+    },
+    "name_ok": false,
+    "full_ok": false,
+    "wall": 7.498016119003296,
+    "gen_tokens": 14,
+    "gen_tps": 2.3334479116089932,
+    "prefill_n": 15
+   },
+   {
+    "id": 16,
+    "kind": "action",
+    "msg": "Lance la scène Cinéma.",
+    "tool": "scene_run",
+    "args": {
+     "scene": "Cinéma"
+    },
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 5.781376361846924,
+    "gen_tokens": 12,
+    "gen_tps": 2.3347268114933084,
+    "prefill_n": 7
+   },
+   {
+    "id": 17,
+    "kind": "action",
+    "msg": "Acquitte toutes les alertes.",
+    "tool": "alert_ack",
+    "args": {
+     "all": true
+    },
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 5.787093639373779,
+    "gen_tokens": 11,
+    "gen_tps": 2.329750022482088,
+    "prefill_n": 9
+   },
+   {
+    "id": 18,
+    "kind": "action",
+    "msg": "Affiche un message à tout le monde : le dîner est prêt.",
+    "tool": "notify_broadcast",
+    "args": {
+     "text": "Le dîner est prêt !"
+    },
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 8.381505012512207,
+    "gen_tokens": 16,
+    "gen_tps": 2.329952675554556,
+    "prefill_n": 15
+   },
+   {
+    "id": 19,
+    "kind": "action",
+    "msg": "Prends une photo avec la caméra du garage.",
+    "tool": "camera_snapshot",
+    "args": {
+     "camera": "Garage"
+    },
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 6.856940746307373,
+    "gen_tokens": 13,
+    "gen_tps": 2.33109425255114,
+    "prefill_n": 12
+   },
+   {
+    "id": 20,
+    "kind": "action",
+    "msg": "Tourne la caméra de la terrasse vers la gauche.",
+    "tool": "camera_ptz",
+    "args": {
+     "camera": "terrasse",
+     "direction": "left",
+     "duration_ms": 800,
+     "speed": 0.5
+    },
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 16.923782110214233,
+    "gen_tokens": 36,
+    "gen_tps": 2.3278037132060696,
+    "prefill_n": 14
+   },
+   {
+    "id": 21,
+    "kind": "ambiguous",
+    "msg": "Ferme-le.",
+    "tool": "devices_list",
+    "args": {
+     "name_contains": "volet"
+    },
+    "name_ok": false,
+    "full_ok": false,
+    "wall": 6.825386047363281,
+    "gen_tokens": 15,
+    "gen_tps": 2.3341288822607043,
+    "prefill_n": 5
+   },
+   {
+    "id": 22,
+    "kind": "ambiguous",
+    "msg": "Fais quelque chose pour la lumière.",
+    "tool": "scenes_list",
+    "args": {},
+    "name_ok": false,
+    "full_ok": false,
+    "wall": 4.104529619216919,
+    "gen_tokens": 7,
+    "gen_tps": 2.3082533908242313,
+    "prefill_n": 9
+   },
+   {
+    "id": 23,
+    "kind": "ambiguous",
+    "msg": "Éteins tout.",
+    "tool": "devices_list",
+    "args": {
+     "include_inactive": false
+    },
+    "name_ok": false,
+    "full_ok": false,
+    "wall": 6.086451292037964,
+    "gen_tokens": 13,
+    "gen_tps": 2.3307252517765953,
+    "prefill_n": 6
+   },
+   {
+    "id": 24,
+    "kind": "ambiguous",
+    "msg": "Merci, c'est parfait.",
+    "tool": null,
+    "args": {},
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 9.990150690078735,
+    "gen_tokens": 21,
+    "gen_tps": 2.331604254478283,
+    "prefill_n": 8
+   },
+   {
+    "id": 25,
+    "kind": "config",
+    "msg": "Quels types de configuration puis-je modifier ?",
+    "tool": "config_kinds",
+    "args": {},
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 11.964972257614136,
+    "gen_tokens": 7,
+    "gen_tps": 2.6358865408997336,
+    "prefill_n": 2723
+   },
+   {
+    "id": 26,
+    "kind": "config",
+    "msg": "Liste mes emplacements.",
+    "tool": "config_list",
+    "args": {
+     "kind": "emplacements"
+    },
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 4.8109447956085205,
+    "gen_tokens": 12,
+    "gen_tps": 2.6171869237727656,
+    "prefill_n": 6
+   },
+   {
+    "id": 27,
+    "kind": "config",
+    "msg": "Crée un emplacement nommé Cave.",
+    "tool": "config_upsert",
+    "args": {
+     "kind": "emplacement",
+     "data": {
+      "nom": "Cave"
+     }
+    },
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 9.849114894866943,
+    "gen_tokens": 24,
+    "gen_tps": 2.6174980656120272,
+    "prefill_n": 9
+   },
+   {
+    "id": 28,
+    "kind": "config",
+    "msg": "Je veux fermer les volets au coucher du soleil, par une automation.",
+    "tool": "automations_list",
+    "args": {},
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 3.961336374282837,
+    "gen_tokens": 8,
+    "gen_tps": 2.612907464255426,
+    "prefill_n": 16
+   },
+   {
+    "id": 29,
+    "kind": "config",
+    "msg": "Active l'appairage Zigbee.",
+    "tool": null,
+    "args": {},
+    "name_ok": false,
+    "full_ok": false,
+    "wall": 9.116153955459595,
+    "gen_tokens": 22,
+    "gen_tps": 2.6082757359808904,
+    "prefill_n": 9
+   },
+   {
+    "id": 30,
+    "kind": "ambiguous",
+    "msg": "Supprime-le.",
+    "tool": null,
+    "args": {},
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 12.06514596939087,
+    "gen_tokens": 31,
+    "gen_tps": 2.613626770438104,
+    "prefill_n": 5
+   }
+  ],
+  "prompt_tokens": 4745,
+  "cold": {
+   "cache_n": 0,
+   "prompt_n": 4745,
+   "prompt_ms": 16029.387,
+   "prompt_per_token_ms": 3.3781637513171763,
+   "prompt_per_second": 296.01880595932954,
+   "predicted_n": 17,
+   "predicted_ms": 6842.454,
+   "predicted_per_token_ms": 427.653375,
+   "predicted_per_second": 2.3383423549504316
+  },
+  "warm": {
+   "cache_n": 4744,
+   "prompt_n": 1,
+   "prompt_ms": 433.7,
+   "prompt_per_token_ms": 433.7,
+   "prompt_per_second": 2.3057412958266084,
+   "predicted_n": 17,
+   "predicted_ms": 6928.157,
+   "predicted_per_token_ms": 433.0098125,
+   "predicted_per_second": 2.309416486953168
+  },
+  "spike": {
+   "ok": true,
+   "answer": "Aucun appareil n'a rien émis depuis 24 heures. Les appareils les plus silencieux sont :\n- **Temperature-CH-sud_est-haut** (Chambre) : 87 heures sans communication.\n- **Relais-lora-1** (Serre) : 41 heures sans communication.\n\nSouhaites-tu agir sur l'un d'eux ?",
+   "steps": [
+    {
+     "tool": "devices_list",
+     "args": {
+      "silent_for_hours": 24
+     },
+     "wall": 9.132382869720459
+    }
+   ],
+   "wall": 45.464542865753174
+  }
+ },
+ {
+  "model": "Ministral-3-8B-Instruct-2512-Q4_K_M.gguf",
+  "mode": "gpu",
+  "cases": [
+   {
+    "id": 1,
+    "kind": "read",
+    "msg": "Quels appareils n'ont rien émis depuis 24 h ?",
+    "tool": "devices_list",
+    "args": {
+     "silent_for_hours": 24
+    },
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 1.2992849349975586,
+    "gen_tokens": 17,
+    "gen_tps": 13.22023422949996,
+    "prefill_n": 1
+   },
+   {
+    "id": 2,
+    "kind": "read",
+    "msg": "Donne-moi l'état général de la maison.",
+    "tool": "system_status",
+    "args": {},
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 0.6198744773864746,
+    "gen_tokens": 6,
+    "gen_tps": 13.134356587273858,
+    "prefill_n": 11
+   },
+   {
+    "id": 3,
+    "kind": "read",
+    "msg": "Y a-t-il des alertes en cours ?",
+    "tool": "alerts_list",
+    "args": {
+     "status": "firing"
+    },
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 1.1572656631469727,
+    "gen_tokens": 13,
+    "gen_tps": 13.059447694191267,
+    "prefill_n": 11
+   },
+   {
+    "id": 4,
+    "kind": "read",
+    "msg": "Quelle est la température du bureau depuis ce matin ?",
+    "tool": "device_history",
+    "args": {
+     "device": "Bureau",
+     "key": "temperature",
+     "hours": 24
+    },
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 2.085218906402588,
+    "gen_tokens": 25,
+    "gen_tps": 13.094404106405127,
+    "prefill_n": 12
+   },
+   {
+    "id": 5,
+    "kind": "read",
+    "msg": "Pourquoi l'automation « Ouvrir le volet » a-t-elle échoué ?",
+    "tool": "automation_runs",
+    "args": {
+     "automation": "Ouvrir le volet",
+     "status": "error"
+    },
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 2.205918073654175,
+    "gen_tokens": 25,
+    "gen_tps": 13.180563282355674,
+    "prefill_n": 20
+   },
+   {
+    "id": 6,
+    "kind": "read",
+    "msg": "Montre-moi les erreurs du journal de la dernière heure.",
+    "tool": "logs_query",
+    "args": {
+     "level": "error",
+     "minutes": 60
+    },
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 1.5724613666534424,
+    "gen_tokens": 18,
+    "gen_tps": 13.138867785119228,
+    "prefill_n": 14
+   },
+   {
+    "id": 7,
+    "kind": "read",
+    "msg": "Quelles scènes existent ?",
+    "tool": "scenes_list",
+    "args": {},
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 0.6233518123626709,
+    "gen_tokens": 7,
+    "gen_tps": 12.904724419610018,
+    "prefill_n": 6
+   },
+   {
+    "id": 8,
+    "kind": "read",
+    "msg": "Combien ai-je consommé d'électricité ces 7 derniers jours ?",
+    "tool": "energy_summary",
+    "args": {
+     "days": 7
+    },
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 1.046189308166504,
+    "gen_tokens": 11,
+    "gen_tps": 13.08367928761983,
+    "prefill_n": 15
+   },
+   {
+    "id": 9,
+    "kind": "read",
+    "msg": "Y a-t-il eu des détections de personne sur la caméra du portail ?",
+    "tool": "detections_list",
+    "args": {
+     "camera": "portail"
+    },
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 1.3975574970245361,
+    "gen_tokens": 14,
+    "gen_tps": 12.946079578555317,
+    "prefill_n": 19
+   },
+   {
+    "id": 10,
+    "kind": "read",
+    "msg": "Quels appareils sont injoignables ?",
+    "tool": "devices_list",
+    "args": {
+     "available": false
+    },
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 1.027343511581421,
+    "gen_tokens": 11,
+    "gen_tps": 12.963527116457847,
+    "prefill_n": 10
+   },
+   {
+    "id": 11,
+    "kind": "read",
+    "msg": "Détaille l'appareil Volet-salon.",
+    "tool": "device_get",
+    "args": {
+     "device": "Volet-salon"
+    },
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 1.2900915145874023,
+    "gen_tokens": 14,
+    "gen_tps": 12.929649775571116,
+    "prefill_n": 12
+   },
+   {
+    "id": 12,
+    "kind": "read",
+    "msg": "Liste mes automations.",
+    "tool": "automations_list",
+    "args": {},
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 0.7069911956787109,
+    "gen_tokens": 8,
+    "gen_tps": 12.963179015946562,
+    "prefill_n": 6
+   },
+   {
+    "id": 13,
+    "kind": "action",
+    "msg": "Ferme le volet du salon.",
+    "tool": "device_command",
+    "args": {
+     "device": "Volet-salon",
+     "command": {
+      "state": "CLOSE"
+     }
+    },
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 2.0225157737731934,
+    "gen_tokens": 24,
+    "gen_tps": 12.961718971898994,
+    "prefill_n": 9
+   },
+   {
+    "id": 14,
+    "kind": "action",
+    "msg": "Allume la lampe du bureau.",
+    "tool": "devices_list",
+    "args": {
+     "name_contains": "bureau"
+    },
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 1.3182623386383057,
+    "gen_tokens": 15,
+    "gen_tps": 12.980125573443406,
+    "prefill_n": 8
+   },
+   {
+    "id": 15,
+    "kind": "action",
+    "msg": "Ouvre le volet Volet-salon à 40 %.",
+    "tool": "device_command",
+    "args": {
+     "device": "Volet-salon",
+     "command": {
+      "position": 40
+     }
+    },
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 2.0927860736846924,
+    "gen_tokens": 24,
+    "gen_tps": 12.974807436933975,
+    "prefill_n": 15
+   },
+   {
+    "id": 16,
+    "kind": "action",
+    "msg": "Lance la scène Cinéma.",
+    "tool": "scenes_list",
+    "args": {},
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 0.6546945571899414,
+    "gen_tokens": 7,
+    "gen_tps": 12.954290784965249,
+    "prefill_n": 7
+   },
+   {
+    "id": 17,
+    "kind": "action",
+    "msg": "Acquitte toutes les alertes.",
+    "tool": "alerts_list",
+    "args": {
+     "status": "firing"
+    },
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 1.169832468032837,
+    "gen_tokens": 13,
+    "gen_tps": 13.018008244738557,
+    "prefill_n": 9
+   },
+   {
+    "id": 18,
+    "kind": "action",
+    "msg": "Affiche un message à tout le monde : le dîner est prêt.",
+    "tool": "notify_broadcast",
+    "args": {
+     "text": "Le dîner est prêt."
+    },
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 1.4782493114471436,
+    "gen_tokens": 16,
+    "gen_tps": 12.939701852016393,
+    "prefill_n": 15
+   },
+   {
+    "id": 19,
+    "kind": "action",
+    "msg": "Prends une photo avec la caméra du garage.",
+    "tool": "camera_snapshot",
+    "args": {
+     "camera": "garage"
+    },
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 1.2133042812347412,
+    "gen_tokens": 13,
+    "gen_tps": 12.91953498287085,
+    "prefill_n": 12
+   },
+   {
+    "id": 20,
+    "kind": "action",
+    "msg": "Tourne la caméra de la terrasse vers la gauche.",
+    "tool": "camera_ptz",
+    "args": {
+     "camera": "Terrasse",
+     "direction": "left"
+    },
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 1.7009551525115967,
+    "gen_tokens": 19,
+    "gen_tps": 12.97503962793353,
+    "prefill_n": 14
+   },
+   {
+    "id": 21,
+    "kind": "ambiguous",
+    "msg": "Ferme-le.",
+    "tool": null,
+    "args": {},
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 1.005880355834961,
+    "gen_tokens": 12,
+    "gen_tps": 12.813493773806888,
+    "prefill_n": 5
+   },
+   {
+    "id": 22,
+    "kind": "ambiguous",
+    "msg": "Fais quelque chose pour la lumière.",
+    "tool": null,
+    "args": {},
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 3.873718738555908,
+    "gen_tokens": 48,
+    "gen_tps": 12.974594088443668,
+    "prefill_n": 9
+   },
+   {
+    "id": 23,
+    "kind": "ambiguous",
+    "msg": "Éteins tout.",
+    "tool": "scene_run",
+    "args": {
+     "scene": "Tout éteindre"
+    },
+    "name_ok": false,
+    "full_ok": false,
+    "wall": 1.0902290344238281,
+    "gen_tokens": 13,
+    "gen_tps": 12.9667489334849,
+    "prefill_n": 6
+   },
+   {
+    "id": 24,
+    "kind": "ambiguous",
+    "msg": "Merci, c'est parfait.",
+    "tool": null,
+    "args": {},
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 2.256565809249878,
+    "gen_tokens": 27,
+    "gen_tps": 12.895539680815553,
+    "prefill_n": 8
+   },
+   {
+    "id": 25,
+    "kind": "config",
+    "msg": "Quels types de configuration puis-je modifier ?",
+    "tool": null,
+    "args": {},
+    "name_ok": false,
+    "full_ok": false,
+    "wall": 14.746164560317993,
+    "gen_tokens": 182,
+    "gen_tps": 14.785374764730788,
+    "prefill_n": 2723
+   },
+   {
+    "id": 26,
+    "kind": "config",
+    "msg": "Liste mes emplacements.",
+    "tool": "config_list",
+    "args": {
+     "kind": "location"
+    },
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 0.7872259616851807,
+    "gen_tokens": 11,
+    "gen_tps": 14.857935846404601,
+    "prefill_n": 6
+   },
+   {
+    "id": 27,
+    "kind": "config",
+    "msg": "Crée un emplacement nommé Cave.",
+    "tool": "config_schema",
+    "args": {
+     "kind": "location"
+    },
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 0.8490235805511475,
+    "gen_tokens": 11,
+    "gen_tps": 14.731033426187947,
+    "prefill_n": 9
+   },
+   {
+    "id": 28,
+    "kind": "config",
+    "msg": "Je veux fermer les volets au coucher du soleil, par une automation.",
+    "tool": "automations_list",
+    "args": {},
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 0.6774444580078125,
+    "gen_tokens": 8,
+    "gen_tps": 14.79912304625149,
+    "prefill_n": 16
+   },
+   {
+    "id": 29,
+    "kind": "config",
+    "msg": "Active l'appairage Zigbee.",
+    "tool": "zigbee_pairing",
+    "args": {
+     "enabled": true
+    },
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 0.9118971824645996,
+    "gen_tokens": 12,
+    "gen_tps": 14.820842955653344,
+    "prefill_n": 9
+   },
+   {
+    "id": 30,
+    "kind": "ambiguous",
+    "msg": "Supprime-le.",
+    "tool": null,
+    "args": {},
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 2.1884608268737793,
+    "gen_tokens": 32,
+    "gen_tps": 14.865567318002297,
+    "prefill_n": 5
+   }
+  ],
+  "prompt_tokens": 4745,
+  "cold": {
+   "cache_n": 0,
+   "prompt_n": 4745,
+   "prompt_ms": 3916.524,
+   "prompt_per_token_ms": 0.825400210748156,
+   "prompt_per_second": 1211.533492454023,
+   "predicted_n": 17,
+   "predicted_ms": 1213.032,
+   "predicted_per_token_ms": 75.8145,
+   "predicted_per_second": 13.190088967150084
+  },
+  "warm": {
+   "cache_n": 4744,
+   "prompt_n": 1,
+   "prompt_ms": 76.043,
+   "prompt_per_token_ms": 76.043,
+   "prompt_per_second": 13.150454348197728,
+   "predicted_n": 17,
+   "predicted_ms": 1213.538,
+   "predicted_per_token_ms": 75.846125,
+   "predicted_per_second": 13.184589192921853
+  },
+  "spike": {
+   "ok": false,
+   "answer": "Voici les appareils qui n'ont pas émis de données depuis 24 heures :\n- **Capteur de température de la Chambre** (silencieux depuis 87 heures)\n- **Relais LoRa dans la Serre** (silencieux depuis 41 heures).\n\nSouhaites-tu vérifier leur état ou agir sur l'un d'eux ?",
+   "steps": [
+    {
+     "tool": "devices_list",
+     "args": {
+      "silent_for_hours": 24
+     },
+     "wall": 1.8409109115600586
+    }
+   ],
+   "wall": 7.977994918823242
+  }
+ },
+ {
+  "model": "Ministral-3-8B-Instruct-2512-Q4_K_M.gguf",
+  "mode": "cpu",
+  "cases": [
+   {
+    "id": 1,
+    "kind": "read",
+    "msg": "Quels appareils n'ont rien émis depuis 24 h ?",
+    "tool": "devices_list",
+    "args": {
+     "silent_for_hours": 24
+    },
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 4.727736949920654,
+    "gen_tokens": 17,
+    "gen_tps": 3.6114658623932194,
+    "prefill_n": 1
+   },
+   {
+    "id": 2,
+    "kind": "read",
+    "msg": "Donne-moi l'état général de la maison.",
+    "tool": "system_status",
+    "args": {},
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 2.577630043029785,
+    "gen_tokens": 6,
+    "gen_tps": 3.632485462793178,
+    "prefill_n": 11
+   },
+   {
+    "id": 3,
+    "kind": "read",
+    "msg": "Y a-t-il des alertes en cours ?",
+    "tool": "alerts_list",
+    "args": {
+     "status": "firing"
+    },
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 4.499723434448242,
+    "gen_tokens": 13,
+    "gen_tps": 3.6269325127600016,
+    "prefill_n": 11
+   },
+   {
+    "id": 4,
+    "kind": "read",
+    "msg": "Quelle est la température du bureau depuis ce matin ?",
+    "tool": "device_history",
+    "args": {
+     "device": "Bureau",
+     "key": "temperature",
+     "hours": 24
+    },
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 7.894596576690674,
+    "gen_tokens": 25,
+    "gen_tps": 3.6287756465608805,
+    "prefill_n": 12
+   },
+   {
+    "id": 5,
+    "kind": "read",
+    "msg": "Pourquoi l'automation « Ouvrir le volet » a-t-elle échoué ?",
+    "tool": "automation_runs",
+    "args": {
+     "automation": "Ouvrir le volet",
+     "status": "error"
+    },
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 8.694873809814453,
+    "gen_tokens": 25,
+    "gen_tps": 3.6301615603402433,
+    "prefill_n": 20
+   },
+   {
+    "id": 6,
+    "kind": "read",
+    "msg": "Montre-moi les erreurs du journal de la dernière heure.",
+    "tool": "logs_query",
+    "args": {
+     "level": "error",
+     "minutes": 60
+    },
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 6.127988338470459,
+    "gen_tokens": 18,
+    "gen_tps": 3.6354444715795924,
+    "prefill_n": 14
+   },
+   {
+    "id": 7,
+    "kind": "read",
+    "msg": "Quelles scènes existent ?",
+    "tool": "scenes_list",
+    "args": {},
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 2.3645849227905273,
+    "gen_tokens": 7,
+    "gen_tps": 3.612964762754669,
+    "prefill_n": 6
+   },
+   {
+    "id": 8,
+    "kind": "read",
+    "msg": "Combien ai-je consommé d'électricité ces 7 derniers jours ?",
+    "tool": "energy_summary",
+    "args": {
+     "days": 7
+    },
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 4.245530366897583,
+    "gen_tokens": 11,
+    "gen_tps": 3.6299985988205408,
+    "prefill_n": 15
+   },
+   {
+    "id": 9,
+    "kind": "read",
+    "msg": "Y a-t-il eu des détections de personne sur la caméra du portail ?",
+    "tool": "detections_list",
+    "args": {
+     "camera": "portail"
+    },
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 5.639482021331787,
+    "gen_tokens": 14,
+    "gen_tps": 3.612895480045422,
+    "prefill_n": 19
+   },
+   {
+    "id": 10,
+    "kind": "read",
+    "msg": "Quels appareils sont injoignables ?",
+    "tool": "devices_list",
+    "args": {
+     "available": false
+    },
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 3.8830885887145996,
+    "gen_tokens": 11,
+    "gen_tps": 3.6336509507629393,
+    "prefill_n": 10
+   },
+   {
+    "id": 11,
+    "kind": "read",
+    "msg": "Détaille l'appareil Volet-salon.",
+    "tool": "device_get",
+    "args": {
+     "device": "Volet-salon"
+    },
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 4.8695149421691895,
+    "gen_tokens": 14,
+    "gen_tps": 3.623634795590761,
+    "prefill_n": 12
+   },
+   {
+    "id": 12,
+    "kind": "read",
+    "msg": "Liste mes automations.",
+    "tool": "automations_list",
+    "args": {},
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 2.62748122215271,
+    "gen_tokens": 8,
+    "gen_tps": 3.622369060414389,
+    "prefill_n": 6
+   },
+   {
+    "id": 13,
+    "kind": "action",
+    "msg": "Ferme le volet du salon.",
+    "tool": "device_command",
+    "args": {
+     "device": "Volet-salon",
+     "command": {
+      "state": "CLOSE"
+     }
+    },
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 7.430880308151245,
+    "gen_tokens": 24,
+    "gen_tps": 3.6307817041437005,
+    "prefill_n": 9
+   },
+   {
+    "id": 14,
+    "kind": "action",
+    "msg": "Allume la lampe du bureau.",
+    "tool": "devices_list",
+    "args": {
+     "name_contains": "bureau"
+    },
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 4.9135401248931885,
+    "gen_tokens": 15,
+    "gen_tps": 3.615507324113962,
+    "prefill_n": 8
+   },
+   {
+    "id": 15,
+    "kind": "action",
+    "msg": "Ouvre le volet Volet-salon à 40 %.",
+    "tool": "device_command",
+    "args": {
+     "device": "Volet-salon",
+     "command": {
+      "position": 40
+     }
+    },
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 7.799949407577515,
+    "gen_tokens": 24,
+    "gen_tps": 3.6260101591345504,
+    "prefill_n": 15
+   },
+   {
+    "id": 16,
+    "kind": "action",
+    "msg": "Lance la scène Cinéma.",
+    "tool": "scenes_list",
+    "args": {},
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 2.44785737991333,
+    "gen_tokens": 7,
+    "gen_tps": 3.6209712168997967,
+    "prefill_n": 7
+   },
+   {
+    "id": 17,
+    "kind": "action",
+    "msg": "Acquitte toutes les alertes.",
+    "tool": "alerts_list",
+    "args": {
+     "status": "firing"
+    },
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 4.401549816131592,
+    "gen_tokens": 13,
+    "gen_tps": 3.6340037363615085,
+    "prefill_n": 9
+   },
+   {
+    "id": 18,
+    "kind": "action",
+    "msg": "Affiche un message à tout le monde : le dîner est prêt.",
+    "tool": "notify_broadcast",
+    "args": {
+     "text": "Le dîner est prêt."
+    },
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 5.58807635307312,
+    "gen_tokens": 16,
+    "gen_tps": 3.6285347976487095,
+    "prefill_n": 15
+   },
+   {
+    "id": 19,
+    "kind": "action",
+    "msg": "Prends une photo avec la caméra du garage.",
+    "tool": "camera_snapshot",
+    "args": {
+     "camera": "garage"
+    },
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 4.582237482070923,
+    "gen_tokens": 13,
+    "gen_tps": 3.6314018209664436,
+    "prefill_n": 12
+   },
+   {
+    "id": 20,
+    "kind": "action",
+    "msg": "Tourne la caméra de la terrasse vers la gauche.",
+    "tool": "camera_ptz",
+    "args": {
+     "camera": "Terrasse",
+     "direction": "left"
+    },
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 6.417394399642944,
+    "gen_tokens": 19,
+    "gen_tps": 3.609509614029121,
+    "prefill_n": 14
+   },
+   {
+    "id": 21,
+    "kind": "ambiguous",
+    "msg": "Ferme-le.",
+    "tool": null,
+    "args": {},
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 3.643808126449585,
+    "gen_tokens": 12,
+    "gen_tps": 3.6351306961671845,
+    "prefill_n": 5
+   },
+   {
+    "id": 22,
+    "kind": "ambiguous",
+    "msg": "Fais quelque chose pour la lumière.",
+    "tool": null,
+    "args": {},
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 15.448911190032959,
+    "gen_tokens": 53,
+    "gen_tps": 3.625137624515635,
+    "prefill_n": 9
+   },
+   {
+    "id": 23,
+    "kind": "ambiguous",
+    "msg": "Éteins tout.",
+    "tool": "scene_run",
+    "args": {
+     "scene": "Toutes les lumières"
+    },
+    "name_ok": false,
+    "full_ok": false,
+    "wall": 4.555337905883789,
+    "gen_tokens": 15,
+    "gen_tps": 3.6316406169949884,
+    "prefill_n": 6
+   },
+   {
+    "id": 24,
+    "kind": "ambiguous",
+    "msg": "Merci, c'est parfait.",
+    "tool": null,
+    "args": {},
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 24.811885118484497,
+    "gen_tokens": 87,
+    "gen_tps": 3.617642299223692,
+    "prefill_n": 8
+   },
+   {
+    "id": 25,
+    "kind": "config",
+    "msg": "Quels types de configuration puis-je modifier ?",
+    "tool": null,
+    "args": {},
+    "name_ok": false,
+    "full_ok": false,
+    "wall": 48.51729440689087,
+    "gen_tokens": 181,
+    "gen_tps": 4.255662821375835,
+    "prefill_n": 2723
+   },
+   {
+    "id": 26,
+    "kind": "config",
+    "msg": "Liste mes emplacements.",
+    "tool": "config_list",
+    "args": {
+     "kind": "location"
+    },
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 2.789001703262329,
+    "gen_tokens": 11,
+    "gen_tps": 4.2863321298741495,
+    "prefill_n": 6
+   },
+   {
+    "id": 27,
+    "kind": "config",
+    "msg": "Crée un emplacement nommé Cave.",
+    "tool": "config_schema",
+    "args": {
+     "kind": "location"
+    },
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 3.067403554916382,
+    "gen_tokens": 11,
+    "gen_tps": 4.2843708294327705,
+    "prefill_n": 9
+   },
+   {
+    "id": 28,
+    "kind": "config",
+    "msg": "Je veux fermer les volets au coucher du soleil, par une automation.",
+    "tool": "automations_list",
+    "args": {},
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 2.538853168487549,
+    "gen_tokens": 8,
+    "gen_tps": 4.295862164193989,
+    "prefill_n": 16
+   },
+   {
+    "id": 29,
+    "kind": "config",
+    "msg": "Active l'appairage Zigbee.",
+    "tool": "zigbee_pairing",
+    "args": {
+     "enabled": true
+    },
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 3.306706428527832,
+    "gen_tokens": 12,
+    "gen_tps": 4.275964531262938,
+    "prefill_n": 9
+   },
+   {
+    "id": 30,
+    "kind": "ambiguous",
+    "msg": "Supprime-le.",
+    "tool": null,
+    "args": {},
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 8.571118116378784,
+    "gen_tokens": 36,
+    "gen_tps": 4.285947651190478,
+    "prefill_n": 5
+   }
+  ],
+  "prompt_tokens": 4745,
+  "cold": {
+   "cache_n": 0,
+   "prompt_n": 4745,
+   "prompt_ms": 10209.169,
+   "prompt_per_token_ms": 2.15156354056902,
+   "prompt_per_second": 464.7782792115597,
+   "predicted_n": 17,
+   "predicted_ms": 4369.264,
+   "predicted_per_token_ms": 273.079,
+   "predicted_per_second": 3.6619439795810003
+  },
+  "warm": {
+   "cache_n": 4744,
+   "prompt_n": 1,
+   "prompt_ms": 279.31,
+   "prompt_per_token_ms": 279.31,
+   "prompt_per_second": 3.5802513336436217,
+   "predicted_n": 17,
+   "predicted_ms": 4437.898,
+   "predicted_per_token_ms": 277.368625,
+   "predicted_per_second": 3.6053104420155666
+  },
+  "spike": {
+   "ok": false,
+   "answer": "Voici les appareils qui n'ont pas émis de données depuis 24 heures :\n- **Capteur de température** dans la chambre (dernière donnée il y a 87 heures).\n- **Relais LoRa** dans la serre (dernière donnée il y a 41 heures).\n\nSouhaites-tu vérifier leur état ou agir sur l'un d'eux ?",
+   "steps": [
+    {
+     "tool": "devices_list",
+     "args": {
+      "silent_for_hours": 24
+     },
+     "wall": 6.130882978439331
+    }
+   ],
+   "wall": 29.164151906967163
+  }
+ },
+ {
+  "model": "Mistral-Small-3.2-24B-Instruct-2506-Q4_K_M.gguf",
+  "mode": "gpu",
+  "cases": [
+   {
+    "id": 1,
+    "kind": "read",
+    "msg": "Quels appareils n'ont rien émis depuis 24 h ?",
+    "tool": "devices_list",
+    "args": {
+     "silent_for_hours": 24
+    },
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 8.861335277557373,
+    "gen_tokens": 18,
+    "gen_tps": 2.0346011451692707,
+    "prefill_n": 1
+   },
+   {
+    "id": 2,
+    "kind": "read",
+    "msg": "Donne-moi l'état général de la maison.",
+    "tool": "system_status",
+    "args": {},
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 9.555081367492676,
+    "gen_tokens": 17,
+    "gen_tps": 1.998045412075637,
+    "prefill_n": 11
+   },
+   {
+    "id": 3,
+    "kind": "read",
+    "msg": "Y a-t-il des alertes en cours ?",
+    "tool": "alerts_list",
+    "args": {},
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 8.025768995285034,
+    "gen_tokens": 14,
+    "gen_tps": 2.001080275490261,
+    "prefill_n": 11
+   },
+   {
+    "id": 4,
+    "kind": "read",
+    "msg": "Quelle est la température du bureau depuis ce matin ?",
+    "tool": "device_history",
+    "args": {
+     "device": "Bureau-Temperature",
+     "key": "temperature"
+    },
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 28.005146026611328,
+    "gen_tokens": 54,
+    "gen_tps": 2.0065727752143285,
+    "prefill_n": 12
+   },
+   {
+    "id": 5,
+    "kind": "read",
+    "msg": "Pourquoi l'automation « Ouvrir le volet » a-t-elle échoué ?",
+    "tool": "automation_runs",
+    "args": {
+     "automation": "Ouvrir le volet",
+     "status": "error"
+    },
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 14.958053827285767,
+    "gen_tokens": 26,
+    "gen_tps": 2.0193799082038355,
+    "prefill_n": 20
+   },
+   {
+    "id": 6,
+    "kind": "read",
+    "msg": "Montre-moi les erreurs du journal de la dernière heure.",
+    "tool": "logs_query",
+    "args": {
+     "minutes": 60,
+     "limit": 50
+    },
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 11.158722400665283,
+    "gen_tokens": 20,
+    "gen_tps": 2.0164748114702182,
+    "prefill_n": 14
+   },
+   {
+    "id": 7,
+    "kind": "read",
+    "msg": "Quelles scènes existent ?",
+    "tool": "scenes_list",
+    "args": {},
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 11.421929597854614,
+    "gen_tokens": 22,
+    "gen_tps": 1.9992804494458614,
+    "prefill_n": 6
+   },
+   {
+    "id": 8,
+    "kind": "read",
+    "msg": "Combien ai-je consommé d'électricité ces 7 derniers jours ?",
+    "tool": "energy_summary",
+    "args": {
+     "days": 7
+    },
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 8.719833850860596,
+    "gen_tokens": 15,
+    "gen_tps": 2.0072786792450397,
+    "prefill_n": 15
+   },
+   {
+    "id": 9,
+    "kind": "read",
+    "msg": "Y a-t-il eu des détections de personne sur la caméra du portail ?",
+    "tool": "detections_list",
+    "args": {
+     "camera": "portail",
+     "limit": 1
+    },
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 12.464973449707031,
+    "gen_tokens": 21,
+    "gen_tps": 2.0197994884453836,
+    "prefill_n": 19
+   },
+   {
+    "id": 10,
+    "kind": "read",
+    "msg": "Quels appareils sont injoignables ?",
+    "tool": "devices_list",
+    "args": {
+     "available": false
+    },
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 6.926967620849609,
+    "gen_tokens": 12,
+    "gen_tps": 2.0141440519488034,
+    "prefill_n": 10
+   },
+   {
+    "id": 11,
+    "kind": "read",
+    "msg": "Détaille l'appareil Volet-salon.",
+    "tool": "device_get",
+    "args": {
+     "device": "Volet-salon"
+    },
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 8.52150297164917,
+    "gen_tokens": 15,
+    "gen_tps": 2.0185827847474154,
+    "prefill_n": 12
+   },
+   {
+    "id": 12,
+    "kind": "read",
+    "msg": "Liste mes automations.",
+    "tool": "automations_list",
+    "args": {},
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 6.410346269607544,
+    "gen_tokens": 12,
+    "gen_tps": 2.0027010975894397,
+    "prefill_n": 6
+   },
+   {
+    "id": 13,
+    "kind": "action",
+    "msg": "Ferme le volet du salon.",
+    "tool": "devices_list",
+    "args": {
+     "name_contains": "volet",
+     "include_inactive": true
+    },
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 12.34243392944336,
+    "gen_tokens": 23,
+    "gen_tps": 2.0163914292365757,
+    "prefill_n": 9
+   },
+   {
+    "id": 14,
+    "kind": "action",
+    "msg": "Allume la lampe du bureau.",
+    "tool": "devices_list",
+    "args": {
+     "name_contains": "lampe bureau"
+    },
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 9.322925567626953,
+    "gen_tokens": 17,
+    "gen_tps": 2.0175226889340645,
+    "prefill_n": 8
+   },
+   {
+    "id": 15,
+    "kind": "action",
+    "msg": "Ouvre le volet Volet-salon à 40 %.",
+    "tool": "device_command",
+    "args": {
+     "device": "Volet-salon",
+     "command": "{\"position\": 40}"
+    },
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 14.616730690002441,
+    "gen_tokens": 27,
+    "gen_tps": 2.019623438102853,
+    "prefill_n": 15
+   },
+   {
+    "id": 16,
+    "kind": "action",
+    "msg": "Lance la scène Cinéma.",
+    "tool": "scenes_list",
+    "args": {},
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 10.045196294784546,
+    "gen_tokens": 19,
+    "gen_tps": 1.9965774226137682,
+    "prefill_n": 7
+   },
+   {
+    "id": 17,
+    "kind": "action",
+    "msg": "Acquitte toutes les alertes.",
+    "tool": "alert_ack",
+    "args": {
+     "all": true
+    },
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 6.879336833953857,
+    "gen_tokens": 12,
+    "gen_tps": 2.01848232515952,
+    "prefill_n": 9
+   },
+   {
+    "id": 18,
+    "kind": "action",
+    "msg": "Affiche un message à tout le monde : le dîner est prêt.",
+    "tool": "notify_broadcast",
+    "args": {
+     "text": "Le dîner est prêt."
+    },
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 9.699217319488525,
+    "gen_tokens": 17,
+    "gen_tps": 2.0137889161561504,
+    "prefill_n": 15
+   },
+   {
+    "id": 19,
+    "kind": "action",
+    "msg": "Prends une photo avec la caméra du garage.",
+    "tool": "cameras_list",
+    "args": {},
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 11.10965871810913,
+    "gen_tokens": 20,
+    "gen_tps": 1.9998202266869907,
+    "prefill_n": 12
+   },
+   {
+    "id": 20,
+    "kind": "action",
+    "msg": "Tourne la caméra de la terrasse vers la gauche.",
+    "tool": "cameras_list",
+    "args": {},
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 10.709175109863281,
+    "gen_tokens": 19,
+    "gen_tps": 2.0011942682683186,
+    "prefill_n": 14
+   },
+   {
+    "id": 21,
+    "kind": "ambiguous",
+    "msg": "Ferme-le.",
+    "tool": "devices_list",
+    "args": {
+     "name_contains": "volet"
+    },
+    "name_ok": false,
+    "full_ok": false,
+    "wall": 8.261571407318115,
+    "gen_tokens": 16,
+    "gen_tps": 2.0153405031982783,
+    "prefill_n": 5
+   },
+   {
+    "id": 22,
+    "kind": "ambiguous",
+    "msg": "Fais quelque chose pour la lumière.",
+    "tool": "devices_list",
+    "args": {
+     "name_contains": "lumière"
+    },
+    "name_ok": false,
+    "full_ok": false,
+    "wall": 8.881322383880615,
+    "gen_tokens": 16,
+    "gen_tps": 2.017407265840211,
+    "prefill_n": 9
+   },
+   {
+    "id": 23,
+    "kind": "ambiguous",
+    "msg": "Éteins tout.",
+    "tool": "devices_list",
+    "args": {
+     "include_inactive": true
+    },
+    "name_ok": false,
+    "full_ok": false,
+    "wall": 13.847638130187988,
+    "gen_tokens": 27,
+    "gen_tps": 2.0104677322248747,
+    "prefill_n": 6
+   },
+   {
+    "id": 24,
+    "kind": "ambiguous",
+    "msg": "Merci, c'est parfait.",
+    "tool": null,
+    "args": {},
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 2.864917516708374,
+    "gen_tokens": 4,
+    "gen_tps": 2.0220756741600296,
+    "prefill_n": 8
+   },
+   {
+    "id": 25,
+    "kind": "config",
+    "msg": "Quels types de configuration puis-je modifier ?",
+    "tool": "config_kinds",
+    "args": {},
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 20.211636304855347,
+    "gen_tokens": 17,
+    "gen_tps": 2.1523659883126527,
+    "prefill_n": 2723
+   },
+   {
+    "id": 26,
+    "kind": "config",
+    "msg": "Liste mes emplacements.",
+    "tool": null,
+    "args": {},
+    "name_ok": false,
+    "full_ok": false,
+    "wall": 17.714986324310303,
+    "gen_tokens": 38,
+    "gen_tps": 2.1765444627149995,
+    "prefill_n": 6
+   },
+   {
+    "id": 27,
+    "kind": "config",
+    "msg": "Crée un emplacement nommé Cave.",
+    "tool": null,
+    "args": {},
+    "name_ok": false,
+    "full_ok": false,
+    "wall": 19.53843927383423,
+    "gen_tokens": 41,
+    "gen_tps": 2.1749538298082314,
+    "prefill_n": 9
+   },
+   {
+    "id": 28,
+    "kind": "config",
+    "msg": "Je veux fermer les volets au coucher du soleil, par une automation.",
+    "tool": "config_list",
+    "args": {
+     "kind": "automation"
+    },
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 6.826595067977905,
+    "gen_tokens": 13,
+    "gen_tps": 2.1664333538302,
+    "prefill_n": 16
+   },
+   {
+    "id": 29,
+    "kind": "config",
+    "msg": "Active l'appairage Zigbee.",
+    "tool": "zigbee_pairing",
+    "args": {
+     "enabled": true
+    },
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 6.671870231628418,
+    "gen_tokens": 13,
+    "gen_tps": 2.170098858853515,
+    "prefill_n": 9
+   },
+   {
+    "id": 30,
+    "kind": "ambiguous",
+    "msg": "Supprime-le.",
+    "tool": null,
+    "args": {},
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 4.778452634811401,
+    "gen_tokens": 10,
+    "gen_tps": 2.17639118551897,
+    "prefill_n": 5
+   }
+  ],
+  "prompt_tokens": 4745,
+  "cold": {
+   "cache_n": 0,
+   "prompt_n": 4745,
+   "prompt_ms": 21214.397,
+   "prompt_per_token_ms": 4.4708950474183355,
+   "prompt_per_second": 223.66886034988408,
+   "predicted_n": 18,
+   "predicted_ms": 8300.479,
+   "predicted_per_token_ms": 488.26347058823524,
+   "predicted_per_second": 2.048074574973324
+  },
+  "warm": {
+   "cache_n": 4744,
+   "prompt_n": 1,
+   "prompt_ms": 485.376,
+   "prompt_per_token_ms": 485.376,
+   "prompt_per_second": 2.0602584388185656,
+   "predicted_n": 18,
+   "predicted_ms": 8291.645,
+   "predicted_per_token_ms": 487.74382352941177,
+   "predicted_per_second": 2.050256613735875
+  },
+  "spike": {
+   "ok": true,
+   "answer": "Deux appareils n'ont rien émis depuis 24 h : Temperature-CH-sud_est-haut et Relais-lora-1.",
+   "steps": [
+    {
+     "tool": "devices_list",
+     "args": {
+      "silent_for_hours": 24
+     },
+     "wall": 10.609547138214111
+    }
+   ],
+   "wall": 27.053578853607178
+  }
+ },
+ {
+  "model": "Mistral-Small-3.2-24B-Instruct-2506-Q4_K_M.gguf",
+  "mode": "cpu",
+  "cases": [
+   {
+    "id": 1,
+    "kind": "read",
+    "msg": "Quels appareils n'ont rien émis depuis 24 h ?",
+    "tool": "devices_list",
+    "args": {
+     "silent_for_hours": 24
+    },
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 11.920373916625977,
+    "gen_tokens": 18,
+    "gen_tps": 1.5127260301886725,
+    "prefill_n": 1
+   },
+   {
+    "id": 2,
+    "kind": "read",
+    "msg": "Donne-moi l'état général de la maison.",
+    "tool": "system_status",
+    "args": {},
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 12.930830955505371,
+    "gen_tokens": 17,
+    "gen_tps": 1.486172695682269,
+    "prefill_n": 11
+   },
+   {
+    "id": 3,
+    "kind": "read",
+    "msg": "Y a-t-il des alertes en cours ?",
+    "tool": "alerts_list",
+    "args": {},
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 10.886601209640503,
+    "gen_tokens": 14,
+    "gen_tps": 1.493156176095948,
+    "prefill_n": 11
+   },
+   {
+    "id": 4,
+    "kind": "read",
+    "msg": "Quelle est la température du bureau depuis ce matin ?",
+    "tool": "device_history",
+    "args": {
+     "device": "Bureau-Temperature",
+     "key": "temperature"
+    },
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 37.514729738235474,
+    "gen_tokens": 54,
+    "gen_tps": 1.5040077976845034,
+    "prefill_n": 12
+   },
+   {
+    "id": 5,
+    "kind": "read",
+    "msg": "Pourquoi l'automation « Ouvrir le volet » a-t-elle échoué ?",
+    "tool": "automation_runs",
+    "args": {
+     "automation": "Ouvrir le volet",
+     "status": "error"
+    },
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 20.237711429595947,
+    "gen_tokens": 26,
+    "gen_tps": 1.509454285784497,
+    "prefill_n": 20
+   },
+   {
+    "id": 6,
+    "kind": "read",
+    "msg": "Montre-moi les erreurs du journal de la dernière heure.",
+    "tool": "logs_query",
+    "args": {
+     "minutes": 60,
+     "limit": 50
+    },
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 15.012415647506714,
+    "gen_tokens": 20,
+    "gen_tps": 1.510109507577928,
+    "prefill_n": 14
+   },
+   {
+    "id": 7,
+    "kind": "read",
+    "msg": "Quelles scènes existent ?",
+    "tool": "scenes_list",
+    "args": {},
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 15.310441255569458,
+    "gen_tokens": 22,
+    "gen_tps": 1.4978747297406023,
+    "prefill_n": 6
+   },
+   {
+    "id": 8,
+    "kind": "read",
+    "msg": "Combien ai-je consommé d'électricité ces 7 derniers jours ?",
+    "tool": "energy_summary",
+    "args": {
+     "days": 7
+    },
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 11.777922630310059,
+    "gen_tokens": 15,
+    "gen_tps": 1.5043883006730632,
+    "prefill_n": 15
+   },
+   {
+    "id": 9,
+    "kind": "read",
+    "msg": "Y a-t-il eu des détections de personne sur la caméra du portail ?",
+    "tool": "detections_list",
+    "args": {
+     "camera": "portail",
+     "limit": 1
+    },
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 16.883156776428223,
+    "gen_tokens": 21,
+    "gen_tps": 1.5112305587744768,
+    "prefill_n": 19
+   },
+   {
+    "id": 10,
+    "kind": "read",
+    "msg": "Quels appareils sont injoignables ?",
+    "tool": "devices_list",
+    "args": {
+     "available": false
+    },
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 9.402709722518921,
+    "gen_tokens": 12,
+    "gen_tps": 1.5080642364074401,
+    "prefill_n": 10
+   },
+   {
+    "id": 11,
+    "kind": "read",
+    "msg": "Détaille l'appareil Volet-salon.",
+    "tool": "device_get",
+    "args": {
+     "device": "Volet-salon"
+    },
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 11.533791780471802,
+    "gen_tokens": 15,
+    "gen_tps": 1.5120923102113537,
+    "prefill_n": 12
+   },
+   {
+    "id": 12,
+    "kind": "read",
+    "msg": "Liste mes automations.",
+    "tool": "automations_list",
+    "args": {},
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 8.60484004020691,
+    "gen_tokens": 12,
+    "gen_tps": 1.5065828769186163,
+    "prefill_n": 6
+   },
+   {
+    "id": 13,
+    "kind": "action",
+    "msg": "Ferme le volet du salon.",
+    "tool": "devices_list",
+    "args": {
+     "name_contains": "volet",
+     "include_inactive": true
+    },
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 16.609522104263306,
+    "gen_tokens": 23,
+    "gen_tps": 1.5114618618668136,
+    "prefill_n": 9
+   },
+   {
+    "id": 14,
+    "kind": "action",
+    "msg": "Allume la lampe du bureau.",
+    "tool": "devices_list",
+    "args": {
+     "name_contains": "lampe bureau"
+    },
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 12.56826376914978,
+    "gen_tokens": 17,
+    "gen_tps": 1.5094237095748029,
+    "prefill_n": 8
+   },
+   {
+    "id": 15,
+    "kind": "action",
+    "msg": "Ouvre le volet Volet-salon à 40 %.",
+    "tool": "device_command",
+    "args": {
+     "device": "Volet-salon",
+     "command": "{\"position\": 40}"
+    },
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 19.6687650680542,
+    "gen_tokens": 27,
+    "gen_tps": 1.5123935122273815,
+    "prefill_n": 15
+   },
+   {
+    "id": 16,
+    "kind": "action",
+    "msg": "Lance la scène Cinéma.",
+    "tool": "scenes_list",
+    "args": {},
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 13.475468397140503,
+    "gen_tokens": 19,
+    "gen_tps": 1.497568448029882,
+    "prefill_n": 7
+   },
+   {
+    "id": 17,
+    "kind": "action",
+    "msg": "Acquitte toutes les alertes.",
+    "tool": "alert_ack",
+    "args": {
+     "all": true
+    },
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 9.31405782699585,
+    "gen_tokens": 12,
+    "gen_tps": 1.5119961083969256,
+    "prefill_n": 9
+   },
+   {
+    "id": 18,
+    "kind": "action",
+    "msg": "Affiche un message à tout le monde : le dîner est prêt.",
+    "tool": "notify_broadcast",
+    "args": {
+     "text": "Le dîner est prêt."
+    },
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 13.080515384674072,
+    "gen_tokens": 17,
+    "gen_tps": 1.5087578679365379,
+    "prefill_n": 15
+   },
+   {
+    "id": 19,
+    "kind": "action",
+    "msg": "Prends une photo avec la caméra du garage.",
+    "tool": "cameras_list",
+    "args": {},
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 14.91913914680481,
+    "gen_tokens": 20,
+    "gen_tps": 1.500733463733907,
+    "prefill_n": 12
+   },
+   {
+    "id": 20,
+    "kind": "action",
+    "msg": "Tourne la caméra de la terrasse vers la gauche.",
+    "tool": "cameras_list",
+    "args": {},
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 14.429383993148804,
+    "gen_tokens": 19,
+    "gen_tps": 1.5000385009881922,
+    "prefill_n": 14
+   },
+   {
+    "id": 21,
+    "kind": "ambiguous",
+    "msg": "Ferme-le.",
+    "tool": "devices_list",
+    "args": {
+     "name_contains": "volet"
+    },
+    "name_ok": false,
+    "full_ok": false,
+    "wall": 11.105554819107056,
+    "gen_tokens": 16,
+    "gen_tps": 1.5065268770420974,
+    "prefill_n": 5
+   },
+   {
+    "id": 22,
+    "kind": "ambiguous",
+    "msg": "Fais quelque chose pour la lumière.",
+    "tool": "devices_list",
+    "args": {
+     "name_contains": "lumière"
+    },
+    "name_ok": false,
+    "full_ok": false,
+    "wall": 11.980443000793457,
+    "gen_tokens": 16,
+    "gen_tps": 1.5105166702130242,
+    "prefill_n": 9
+   },
+   {
+    "id": 23,
+    "kind": "ambiguous",
+    "msg": "Éteins tout.",
+    "tool": "devices_list",
+    "args": {
+     "include_inactive": true
+    },
+    "name_ok": false,
+    "full_ok": false,
+    "wall": 18.546345710754395,
+    "gen_tokens": 27,
+    "gen_tps": 1.5070876302478748,
+    "prefill_n": 6
+   },
+   {
+    "id": 24,
+    "kind": "ambiguous",
+    "msg": "Merci, c'est parfait.",
+    "tool": null,
+    "args": {},
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 4.008032321929932,
+    "gen_tokens": 4,
+    "gen_tps": 1.5134767537538005,
+    "prefill_n": 8
+   },
+   {
+    "id": 25,
+    "kind": "config",
+    "msg": "Quels types de configuration puis-je modifier ?",
+    "tool": "config_kinds",
+    "args": {},
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 26.458600759506226,
+    "gen_tokens": 17,
+    "gen_tps": 1.6190782466111175,
+    "prefill_n": 2723
+   },
+   {
+    "id": 26,
+    "kind": "config",
+    "msg": "Liste mes emplacements.",
+    "tool": null,
+    "args": {},
+    "name_ok": false,
+    "full_ok": false,
+    "wall": 23.70184350013733,
+    "gen_tokens": 38,
+    "gen_tps": 1.6296875153471417,
+    "prefill_n": 6
+   },
+   {
+    "id": 27,
+    "kind": "config",
+    "msg": "Crée un emplacement nommé Cave.",
+    "tool": null,
+    "args": {},
+    "name_ok": false,
+    "full_ok": false,
+    "wall": 26.143874883651733,
+    "gen_tokens": 41,
+    "gen_tps": 1.6308439560392964,
+    "prefill_n": 9
+   },
+   {
+    "id": 28,
+    "kind": "config",
+    "msg": "Je veux fermer les volets au coucher du soleil, par une automation.",
+    "tool": "config_list",
+    "args": {
+     "kind": "automation"
+    },
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 9.247927188873291,
+    "gen_tokens": 13,
+    "gen_tps": 1.6206849095461988,
+    "prefill_n": 16
+   },
+   {
+    "id": 29,
+    "kind": "config",
+    "msg": "Active l'appairage Zigbee.",
+    "tool": "zigbee_pairing",
+    "args": {
+     "enabled": true
+    },
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 8.981821775436401,
+    "gen_tokens": 13,
+    "gen_tps": 1.6287341274769482,
+    "prefill_n": 9
+   },
+   {
+    "id": 30,
+    "kind": "ambiguous",
+    "msg": "Supprime-le.",
+    "tool": null,
+    "args": {},
+    "name_ok": true,
+    "full_ok": true,
+    "wall": 6.438429117202759,
+    "gen_tokens": 10,
+    "gen_tps": 1.6299676433312047,
+    "prefill_n": 5
+   }
+  ],
+  "prompt_tokens": 4745,
+  "cold": {
+   "cache_n": 0,
+   "prompt_n": 4745,
+   "prompt_ms": 27557.122,
+   "prompt_per_token_ms": 5.807612644889357,
+   "prompt_per_second": 172.18779232461213,
+   "predicted_n": 18,
+   "predicted_ms": 11153.409,
+   "predicted_per_token_ms": 656.0828823529412,
+   "predicted_per_second": 1.5241976690714023
+  },
+  "warm": {
+   "cache_n": 4744,
+   "prompt_n": 1,
+   "prompt_ms": 662.221,
+   "prompt_per_token_ms": 662.221,
+   "prompt_per_second": 1.5100699011357235,
+   "predicted_n": 18,
+   "predicted_ms": 11250.41,
+   "predicted_per_token_ms": 661.7888235294117,
+   "predicted_per_second": 1.5110560415131538
+  },
+  "spike": {
+   "ok": false,
+   "answer": "Deux appareils n'ont rien émis depuis longtemps : le capteur de température de la chambre et le relais de la serre.",
+   "steps": [
+    {
+     "tool": "devices_list",
+     "args": {
+      "silent_for_hours": 24
+     },
+     "wall": 14.007824897766113
+    }
+   ],
+   "wall": 33.193790435791016
+  }
+ }
+]

@@ -1,0 +1,36 @@
+{"t": 0, "op": "source", "name": "Linky", "topic_pattern": "linky/#", "base_topic": "linky", "auto_device": true, "auto_device_type": "sensor", "qos": 1}
+{"t": 0, "op": "source", "name": "SolarMax", "topic_pattern": "solarmax/+/prod", "base_topic": "solarmax", "auto_device": true, "auto_device_type": "sensor"}
+{"t": 0, "op": "source", "name": "Journal", "topic_pattern": "journal/#", "log_messages": true}
+{"t": 0, "op": "source", "name": "Ancienne", "topic_pattern": "off/#", "auto_device": true, "active": false}
+{"t": 0, "op": "source", "name": "Prises", "topic_pattern": "plug/#", "base_topic": "plug/", "auto_device": true, "auto_device_type": "switch"}
+{"t": 0, "op": "source", "name": "Maison", "topic_pattern": "maison/#", "base_topic": "maison"}
+{"t": 0, "op": "source", "name": "Sans prefixe", "topic_pattern": "brut/+", "auto_device": true, "auto_device_type": "binary_sensor"}
+{"t": 0, "op": "device", "device": "capteur", "base_topic": "maison", "device_type": "sensor"}
+{"t": 0, "op": "device", "device": "agrege", "base_topic": "agregat/topic", "device_type": "sensor"}
+{"t": 0, "op": "source", "name": "Agregat", "topic_pattern": "agregat/#"}
+{"t": 1, "topic": "linky/compteur", "payload": {"papp": 420, "iinst": 2, "adps": null}}
+{"t": 2, "topic": "linky/compteur", "payload": {"papp": 450, "iinst": 2}}
+{"t": 3, "op": "track", "device": "compteur", "keys": ["papp", "iinst"]}
+{"t": 4, "topic": "linky/compteur", "payload": {"papp": 460, "iinst": 3}}
+{"t": 4, "topic": "linky/compteur", "payload": {"papp": 470, "iinst": 3}}
+{"t": 5, "topic": "linky/compteur", "payload": "texte brut"}
+{"t": 5, "topic": "linky/compteur", "payload": [1, 2]}
+{"t": 5, "topic": "linky/", "payload": {"vide": 1}}
+{"t": 6, "topic": "linky/compteur", "payload": {"papp": 480, "iinst": 3, "nested": {"a": 1}}}
+{"t": 7, "op": "deactivate", "device": "compteur"}
+{"t": 8, "topic": "linky/compteur", "payload": {"papp": 1, "iinst": 1}}
+{"t": 3, "topic": "solarmax/0xAB/prod", "payload": {"pac": 800.5, "status": "ok"}}
+{"t": 4, "topic": "solarmax/0xAB/prod", "payload": {"pac": 900.0, "status": "ok", "qdy": 12.3}}
+{"t": 4, "topic": "solarmax/0xCD/prod", "payload": {"pac": 10.0, "status": "seul"}}
+{"t": 4, "topic": "solarmax/0xAB/consigne", "payload": {"pac": 1}}
+{"t": 5, "topic": "journal/x", "payload": {"a": 1}}
+{"t": 5, "topic": "journal/y", "payload": "texte"}
+{"t": 5, "topic": "off/y", "payload": {"v": 1}}
+{"t": 6, "topic": "plug/cuisine", "payload": {"state": "ON", "power": 3}}
+{"t": 7, "topic": "plug/cuisine", "payload": {"state": "OFF", "power": 0}}
+{"t": 6, "topic": "maison/capteur", "payload": {"x": 1}}
+{"t": 6, "topic": "maison/autre", "payload": {"x": 2}}
+{"t": 6, "topic": "agregat/topic", "payload": {"total": 5}}
+{"t": 6, "topic": "brut/porte", "payload": {"contact": true}}
+{"t": 7, "topic": "brut/porte", "payload": {"contact": false}}
+{"t": 7, "topic": "ailleurs/x", "payload": {"a": 1}}

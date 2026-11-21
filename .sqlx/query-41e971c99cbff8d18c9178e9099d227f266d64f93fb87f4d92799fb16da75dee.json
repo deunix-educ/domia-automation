@@ -1,0 +1,137 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, at, kind, actor, actor_kind, token_id, tool, params, outcome, detail\n             FROM mcp_audit\n             WHERE ($1::text IS NULL OR kind = $1)\n             ORDER BY at DESC, id DESC LIMIT $2",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int8",
+        "origin": {
+          "Table": {
+            "table": "mcp_audit",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "at",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "mcp_audit",
+            "name": "at"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "kind",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "mcp_audit",
+            "name": "kind"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "actor",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "mcp_audit",
+            "name": "actor"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "actor_kind",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "mcp_audit",
+            "name": "actor_kind"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "token_id",
+        "type_info": "Int8",
+        "origin": {
+          "Table": {
+            "table": "mcp_audit",
+            "name": "token_id"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "tool",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "mcp_audit",
+            "name": "tool"
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "params",
+        "type_info": "Jsonb",
+        "origin": {
+          "Table": {
+            "table": "mcp_audit",
+            "name": "params"
+          }
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "outcome",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "mcp_audit",
+            "name": "outcome"
+          }
+        }
+      },
+      {
+        "ordinal": 9,
+        "name": "detail",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "mcp_audit",
+            "name": "detail"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "41e971c99cbff8d18c9178e9099d227f266d64f93fb87f4d92799fb16da75dee"
+}

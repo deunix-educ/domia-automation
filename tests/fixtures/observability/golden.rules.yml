@@ -1,0 +1,29 @@
+groups:
+  - name: "g_app"
+    rules:
+      - alert: "CpuHigh"
+        expr: "rate(x_total[5m]) > 1"
+        for: "5m"
+        labels:
+          severity: "warning"
+        annotations:
+          summary: "CPU"
+      - alert: "DiskFull"
+        expr: "disk_free < 0.1"
+        for: "1m"
+        labels:
+          severity: "critical"
+        annotations:
+          summary: "Disque plein"
+          description: "{{ $value | printf \"%.2f\" }} libre — sur {{ $labels.instance }}"
+    interval: "30s"
+  - name: "g_media"
+    rules:
+      - alert: "NoStreams"
+        expr: "mediamtx_paths == 0"
+        for: "10m"
+        labels:
+          severity: "info"
+        annotations:
+          summary: "Aucun flux"
+          description: "Plus de camera depuis 10 min"

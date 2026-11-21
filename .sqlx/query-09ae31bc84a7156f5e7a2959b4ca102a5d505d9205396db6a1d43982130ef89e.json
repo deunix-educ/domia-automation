@@ -1,0 +1,19 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO app_setting (key, value, value_type, category, description, is_secret)\n             VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT (key) DO NOTHING",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Bool"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "09ae31bc84a7156f5e7a2959b4ca102a5d505d9205396db6a1d43982130ef89e"
+}

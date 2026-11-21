@@ -1,0 +1,136 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, device_id, to_number, body, sms_message_id, message_recipient_id, status, error, created_at, acked_at\n             FROM sms_outbox WHERE sms_message_id = ANY($1) ORDER BY id",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int8",
+        "origin": {
+          "Table": {
+            "table": "sms_outbox",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "device_id",
+        "type_info": "Int8",
+        "origin": {
+          "Table": {
+            "table": "sms_outbox",
+            "name": "device_id"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "to_number",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "sms_outbox",
+            "name": "to_number"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "body",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "sms_outbox",
+            "name": "body"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "sms_message_id",
+        "type_info": "Int8",
+        "origin": {
+          "Table": {
+            "table": "sms_outbox",
+            "name": "sms_message_id"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "message_recipient_id",
+        "type_info": "Int8",
+        "origin": {
+          "Table": {
+            "table": "sms_outbox",
+            "name": "message_recipient_id"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "status",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "sms_outbox",
+            "name": "status"
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "error",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "sms_outbox",
+            "name": "error"
+          }
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "created_at",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "sms_outbox",
+            "name": "created_at"
+          }
+        }
+      },
+      {
+        "ordinal": 9,
+        "name": "acked_at",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "sms_outbox",
+            "name": "acked_at"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8Array"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      false,
+      false,
+      false,
+      true
+    ]
+  },
+  "hash": "20cb4376a1f94b772f909e192f1fc8e8a9817677c84f19af622692ff1a0418eb"
+}

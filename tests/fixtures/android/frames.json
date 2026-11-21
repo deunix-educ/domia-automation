@@ -1,0 +1,17 @@
+{
+  "_source": "android_comm/app/src/main/kotlin/com/videoconf/comm/websocket/CommWebSocket.kt (Gson + ISO_OFFSET_DATE_TIME), service/CommService.kt",
+  "from_app": [
+    {"name": "sms recu", "json": "{\"type\":\"sms_received\",\"from\":\"+33612345678\",\"body\":\"Salut\",\"contact_name\":\"Alice\",\"timestamp\":\"2026-01-02T10:00:00+01:00\"}", "expect": {"kind": "sms_received", "from": "+33612345678", "body": "Salut", "contact_name": "Alice", "timestamp": "2026-01-02T09:00:00Z"}},
+    {"name": "sms recu, contact inconnu", "json": "{\"type\":\"sms_received\",\"from\":\"+33612345678\",\"body\":\"é ☃ \\\"cite\\\"\",\"contact_name\":\"\",\"timestamp\":\"2026-01-02T10:00:00.123+01:00\"}", "expect": {"kind": "sms_received", "from": "+33612345678", "body": "é ☃ \"cite\"", "contact_name": "", "timestamp": "2026-01-02T09:00:00.123Z"}},
+    {"name": "appel entrant", "json": "{\"type\":\"call_event\",\"state\":\"ringing\",\"number\":\"+33612345678\",\"contact_name\":\"Alice\",\"timestamp\":\"2026-01-02T10:00:00+01:00\",\"duration\":0}", "expect": {"kind": "call_event", "state": "ringing", "number": "+33612345678", "duration": 0}},
+    {"name": "appel termine", "json": "{\"type\":\"call_event\",\"state\":\"ended\",\"number\":\"+33612345678\",\"contact_name\":\"Alice\",\"timestamp\":\"2026-01-02T10:05:00+01:00\",\"duration\":300}", "expect": {"kind": "call_event", "state": "ended", "number": "+33612345678", "duration": 300}},
+    {"name": "appel manque", "json": "{\"type\":\"call_event\",\"state\":\"missed\",\"number\":\"+33612345678\",\"contact_name\":\"\",\"timestamp\":\"2026-01-02T10:00:30+01:00\",\"duration\":0}", "expect": {"kind": "call_event", "state": "missed", "number": "+33612345678", "duration": 0}},
+    {"name": "acquittement reussi", "json": "{\"type\":\"sms_sent_ack\",\"message_id\":42,\"success\":true,\"error\":\"\"}", "expect": {"kind": "sms_sent_ack", "message_id": 42, "success": true, "error": ""}},
+    {"name": "acquittement en echec", "json": "{\"type\":\"sms_sent_ack\",\"message_id\":42,\"success\":false,\"error\":\"Erreur inconnue\"}", "expect": {"kind": "sms_sent_ack", "message_id": 42, "success": false, "error": "Erreur inconnue"}}
+  ],
+  "to_app": [
+    {"name": "auth_ok", "frame": {"kind": "auth_ok", "device_name": "Pixel 7"}, "json": {"type": "auth_ok", "device_name": "Pixel 7"}},
+    {"name": "send_sms", "frame": {"kind": "send_sms", "to": "+33612345678", "body": "Coucou", "message_id": 7}, "json": {"type": "send_sms", "to": "+33612345678", "body": "Coucou", "message_id": 7}},
+    {"name": "pong", "frame": {"kind": "pong"}, "json": {"type": "pong"}}
+  ]
+}

@@ -1,0 +1,44 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# MediaMTX de production et de demo (1.21.3). L'API (9997), les metriques (9998) et la publication ne sont acceptees que du reseau Docker
+# et de la machine (cameras : c'est MediaMTX qui tire leur flux, elles ne publient pas) ; la lecture (RTSP 8554, WebRTC) est ouverte,
+# Adresses ICE annoncees : MTX_WEBRTCADDITIONALHOSTS (voir le compose).
+logLevel: info
+logDestinations: [stdout]
+api: true
+apiAddress: :9997
+metrics: yes
+metricsAddress: :9998
+authInternalUsers:
+  - user: any
+    pass:
+    ips: []
+    permissions:
+      - {action: read, path: ""}
+      - {action: playback, path: ""}
+  - user: any
+    pass:
+    ips: ["127.0.0.1", "::1", "172.16.0.0/12", "10.0.0.0/8"]
+    permissions:
+      - {action: publish, path: ""}
+      - {action: api, path: ""}
+      - {action: metrics, path: ""}
+rtsp: true
+rtspAddress: :8554
+rtmp: false
+hls: false
+srt: false
+moq: false
+webrtc: true
+webrtcAddress: :8889
+webrtcLocalTCPAddress: :8189
+webrtcLocalUDPAddress: :8189
+record: no
+# Enregistrement : un segment fMP4 par minute (RECORDINGS_SEGMENT_DURATION=60 cote DomiNet), un dossier par camera. Un path de camera
+# n'enregistre que si DomiNet lui met `record: true` (mode continu ou sur mouvement, ou demarrage manuel).
+recordFormat: fmp4
+recordPath: /recordings/%path/%Y-%m-%d_%H-%M-%S-%f
+recordPartDuration: 1s
+recordSegmentDuration: 60s
+recordDeleteAfter: 0s
+paths:
+  "~.*": {}

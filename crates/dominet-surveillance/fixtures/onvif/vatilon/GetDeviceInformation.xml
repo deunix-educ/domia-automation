@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
+<SOAP-ENV:Envelope xmlns:SOAP-ENV="http://www.w3.org/2003/05/soap-envelope" xmlns:tt="http://www.onvif.org/ver10/schema" xmlns:tds="http://www.onvif.org/ver10/device/wsdl" xmlns:trt="http://www.onvif.org/ver10/media/wsdl">
+<SOAP-ENV:Body>
+<tds:GetDeviceInformationResponse><tds:Manufacturer>Vatilon</tds:Manufacturer><tds:Model>PB1</tds:Model><tds:FirmwareVersion>V5.3.1</tds:FirmwareVersion><tds:SerialNumber>VA00000002</tds:SerialNumber><tds:HardwareId>PB1</tds:HardwareId></tds:GetDeviceInformationResponse>
+</SOAP-ENV:Body>
+</SOAP-ENV:Envelope>

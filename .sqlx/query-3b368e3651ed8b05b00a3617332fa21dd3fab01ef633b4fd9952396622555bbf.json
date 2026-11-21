@@ -1,0 +1,79 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO snapshot (camera_id, taken_at, file, size_bytes) VALUES ($1, $2, $3, $4)\n             RETURNING id, camera_id, taken_at, file, size_bytes",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int8",
+        "origin": {
+          "Table": {
+            "table": "snapshot",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "camera_id",
+        "type_info": "Int8",
+        "origin": {
+          "Table": {
+            "table": "snapshot",
+            "name": "camera_id"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "taken_at",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "snapshot",
+            "name": "taken_at"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "file",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "snapshot",
+            "name": "file"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "size_bytes",
+        "type_info": "Int4",
+        "origin": {
+          "Table": {
+            "table": "snapshot",
+            "name": "size_bytes"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Timestamptz",
+        "Text",
+        "Int4"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "3b368e3651ed8b05b00a3617332fa21dd3fab01ef633b4fd9952396622555bbf"
+}

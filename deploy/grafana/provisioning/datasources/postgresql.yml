@@ -1,0 +1,20 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+apiVersion: 1
+
+datasources:
+  - name: PostgreSQL
+    uid: postgresql
+    type: postgres
+    url: "${GF_DB_HOST}:${GF_DB_PORT}"
+    database: "${GF_DB_NAME}"
+    user: "${GF_DB_USER}"
+    secureJsonData:
+      password: "${GF_DB_PASSWORD}"
+    jsonData:
+      sslmode: disable
+      maxOpenConns: 5
+      maxIdleConns: 2
+      connMaxLifetime: 14400
+      postgresVersion: 1600
+      timescaledb: false
+    editable: false

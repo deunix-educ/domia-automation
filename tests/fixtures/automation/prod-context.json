@@ -1,0 +1,342 @@
+{
+ "devices": {
+  "Relais-SB-est": {
+   "type": "cover",
+   "command_topic": "zigbee2mqtt/Relais-SB-est/set"
+  },
+  "Relais-lora-1": {
+   "type": "cover",
+   "command_topic": "zigbee2mqtt/Relais-lora-1/set"
+  },
+  "Relais-lora-2": {
+   "type": "cover",
+   "command_topic": "zigbee2mqtt/Relais-lora-2/set"
+  },
+  "Volet-salon": {
+   "type": "cover",
+   "command_topic": "zigbee2mqtt/Volet-salon/set"
+  },
+  "PAC-CE": {
+   "type": "generic",
+   "command_topic": "zigbee2mqtt/PAC-CE/set"
+  },
+  "Volet-SB-est": {
+   "type": "generic",
+   "command_topic": "zigbee2mqtt/Volet-SB-est/set"
+  },
+  "Tele-commande": {
+   "type": "remote",
+   "command_topic": "zigbee2mqtt/Tele-commande/set"
+  },
+  "Bureau": {
+   "type": "sensor",
+   "command_topic": "zigbee2mqtt/Bureau/set"
+  },
+  "Cellier": {
+   "type": "sensor",
+   "command_topic": "zigbee2mqtt/Cellier/set"
+  },
+  "Chambre-est-bas": {
+   "type": "sensor",
+   "command_topic": "zigbee2mqtt/Chambre-est-bas/set"
+  },
+  "Chambre-est-haut": {
+   "type": "sensor",
+   "command_topic": "zigbee2mqtt/Chambre-est-haut/set"
+  },
+  "Chambre-ouest-bas": {
+   "type": "sensor",
+   "command_topic": "zigbee2mqtt/Chambre-ouest-bas/set"
+  },
+  "Chambre-ouest-haut": {
+   "type": "sensor",
+   "command_topic": "zigbee2mqtt/Chambre-ouest-haut/set"
+  },
+  "Chambre-sud": {
+   "type": "sensor",
+   "command_topic": "zigbee2mqtt/Chambre-sud/set"
+  },
+  "Cuisine": {
+   "type": "sensor",
+   "command_topic": "zigbee2mqtt/Cuisine/set"
+  },
+  "Repas": {
+   "type": "sensor",
+   "command_topic": "zigbee2mqtt/Repas/set"
+  },
+  "SB-est": {
+   "type": "sensor",
+   "command_topic": "zigbee2mqtt/SB-est/set"
+  },
+  "SB-ouest": {
+   "type": "sensor",
+   "command_topic": "zigbee2mqtt/SB-ouest/set"
+  },
+  "Salon": {
+   "type": "sensor",
+   "command_topic": "zigbee2mqtt/Salon/set"
+  },
+  "Serre": {
+   "type": "sensor",
+   "command_topic": "zigbee2mqtt/Serre/set"
+  },
+  "consommation": {
+   "type": "sensor",
+   "command_topic": "linky/0xe3c6d803/consommation/set"
+  },
+  "meteo_locale": {
+   "type": "sensor",
+   "command_topic": "meteo/meteo_locale/set"
+  },
+  "prod": {
+   "type": "sensor",
+   "command_topic": "solarmax/0x6f0930a64c8b8803/prod/set"
+  },
+  "report": {
+   "type": "sensor",
+   "command_topic": "linky/0xe3c6d803/report/set"
+  },
+  "Inter-1": {
+   "type": "switch",
+   "command_topic": "zigbee2mqtt/Inter-1/set"
+  },
+  "Inter-2": {
+   "type": "switch",
+   "command_topic": "zigbee2mqtt/Inter-2/set"
+  },
+  "Intertouch": {
+   "type": "switch",
+   "command_topic": "zigbee2mqtt/Intertouch/set"
+  },
+  "PC-bureau": {
+   "type": "switch",
+   "command_topic": "zigbee2mqtt/PC-bureau/set"
+  },
+  "Veilleuse": {
+   "type": "switch",
+   "command_topic": "zigbee2mqtt/Veilleuse/set"
+  }
+ },
+ "scenes": [
+  {
+   "pk": 1,
+   "name": "Fermeture du soir",
+   "icon": "🌙",
+   "actions": [
+    {
+     "device": "Relais-lora-1",
+     "payload": {
+      "state": "CLOSE"
+     }
+    },
+    {
+     "device": "Relais-lora-2",
+     "payload": {
+      "state": "CLOSE"
+     }
+    },
+    {
+     "device": "Volet-salon",
+     "payload": {
+      "state": "CLOSE"
+     }
+    },
+    {
+     "device": "Relais-SB-est",
+     "payload": {
+      "state": "CLOSE"
+     }
+    },
+    {
+     "device": "Inter-1",
+     "payload": {
+      "state": "OFF"
+     }
+    },
+    {
+     "device": "Inter-2",
+     "payload": {
+      "state": "OFF"
+     }
+    }
+   ]
+  },
+  {
+   "pk": 2,
+   "name": "Ouverture du matin",
+   "icon": "☀️",
+   "actions": [
+    {
+     "device": "Relais-lora-1",
+     "payload": {
+      "state": "OPEN"
+     }
+    },
+    {
+     "device": "Relais-lora-2",
+     "payload": {
+      "state": "OPEN"
+     }
+    },
+    {
+     "device": "Volet-salon",
+     "payload": {
+      "state": "OPEN"
+     }
+    },
+    {
+     "device": "Relais-SB-est",
+     "payload": {
+      "state": "OPEN"
+     }
+    }
+   ]
+  },
+  {
+   "pk": 3,
+   "name": "Mode économie",
+   "icon": "⚡",
+   "actions": [
+    {
+     "device": "PC-bureau",
+     "payload": {
+      "state": "OFF"
+     }
+    },
+    {
+     "device": "Veilleuse",
+     "payload": {
+      "state": "OFF"
+     }
+    },
+    {
+     "device": "Inter-1",
+     "payload": {
+      "state": "OFF"
+     }
+    },
+    {
+     "device": "Inter-2",
+     "payload": {
+      "state": "OFF"
+     }
+    }
+   ]
+  }
+ ],
+ "automations": [
+  {
+   "name": "TC Salon → Volet Fermer",
+   "trigger_type": "device_state",
+   "trigger_config": {
+    "key": "action",
+    "value": "3_single",
+    "friendly_name": "Tele-commande"
+   },
+   "action_type": "mqtt_publish",
+   "action_config": {
+    "topic": "zigbee2mqtt/Volet-salon/set",
+    "payload": {
+     "state": "CLOSE"
+    }
+   }
+  },
+  {
+   "name": "TC Salon → Volet Ouvrir",
+   "trigger_type": "device_state",
+   "trigger_config": {
+    "key": "action",
+    "value": "1_single",
+    "friendly_name": "Tele-commande"
+   },
+   "action_type": "mqtt_publish",
+   "action_config": {
+    "topic": "zigbee2mqtt/Volet-salon/set",
+    "payload": {
+     "state": "OPEN"
+    }
+   }
+  },
+  {
+   "name": "TC Salon → Volet Stopper",
+   "trigger_type": "device_state",
+   "trigger_config": {
+    "key": "action",
+    "value": "2_single",
+    "friendly_name": "Tele-commande"
+   },
+   "action_type": "mqtt_publish",
+   "action_config": {
+    "topic": "zigbee2mqtt/Volet-salon/set",
+    "payload": {
+     "state": "STOP"
+    }
+   }
+  },
+  {
+   "name": "Volet-SB-est ← gauche (open/stop)",
+   "trigger_type": "device_state",
+   "trigger_config": {
+    "key": "action",
+    "value": "single_left",
+    "friendly_name": "Volet-SB-est"
+   },
+   "action_type": "script",
+   "action_config": {}
+  },
+  {
+   "name": "Volet-SB-est → droite (close/stop)",
+   "trigger_type": "device_state",
+   "trigger_config": {
+    "key": "action",
+    "value": "single_right",
+    "friendly_name": "Volet-SB-est"
+   },
+   "action_type": "script",
+   "action_config": {}
+  },
+  {
+   "name": "Volets — coucher du soleil",
+   "trigger_type": "solar",
+   "trigger_config": {
+    "event": "sunset",
+    "latitude": 43.3,
+    "longitude": 5.4
+   },
+   "action_type": "scene",
+   "action_config": {
+    "scene_id": 1
+   }
+  },
+  {
+   "name": "Volets — lever du soleil",
+   "trigger_type": "solar",
+   "trigger_config": {
+    "event": "sunrise",
+    "latitude": 43.3,
+    "longitude": 5.4
+   },
+   "action_type": "scene",
+   "action_config": {
+    "scene_id": 2
+   }
+  }
+ ],
+ "alert_rules": [
+  {
+   "name": "Heat wave — temperature > 35°C",
+   "device": "meteo_locale",
+   "key": "temperature",
+   "operator": "gt",
+   "threshold_num": 35.0,
+   "threshold_str": null,
+   "severity": "warning",
+   "cooldown_minutes": 60,
+   "notify": {
+    "email": true,
+    "sms": false,
+    "android": true
+   }
+  }
+ ]
+}

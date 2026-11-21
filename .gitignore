@@ -1,0 +1,32 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+/target
+/target-rel
+/dist
+/site
+.env
+.env.*
+!.env.example*
+*.log
+.DS_Store
+
+# Python (scripts E2E et outils)
+__pycache__/
+*.pyc
+
+# Segments enregistres par le MediaMTX de dev
+/deploy/recordings-dev/
+
+# Modele YOLO (make fetch-model)
+/models/*.onnx
+/models/*.pt
+
+# Fichiers de deploiement propres a une installation
+/certs/
+/deploy/zigbee2mqtt/*
+!/deploy/zigbee2mqtt/configuration.example.yaml
+
+# Personnalisation locale de l'apparence (copie de deploy/custom/custom.css.example)
+/deploy/custom/custom.css
+
+# Donnees locales (images de detection, etc.) : jamais versionnees
+/data/

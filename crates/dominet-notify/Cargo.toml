@@ -1,0 +1,27 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+[package]
+name = "dominet-notify"
+description = "Canaux d'envoi : e-mail (SMTP), SMS Free Mobile ; faux serveurs pour les tests."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[features]
+# Faux serveurs SMTP et Free Mobile (tests, demonstration) : aucun envoi reel.
+testing = []
+
+[dependencies]
+lettre.workspace = true
+reqwest.workspace = true
+thiserror.workspace = true
+tokio = { workspace = true, features = ["io-util"] }
+tracing.workspace = true
+
+[dev-dependencies]
+dominet-notify = { path = ".", features = ["testing"] }
+tokio = { workspace = true, features = ["test-util", "io-util"] }
+
+[lints]
+workspace = true

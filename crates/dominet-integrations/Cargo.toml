@@ -1,0 +1,26 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+[package]
+name = "dominet-integrations"
+description = "Integrations : Open-Meteo, SolarMax, energie, Grafana."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+dominet-domain.workspace = true
+reqwest.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+tokio = { workspace = true, features = ["io-util"] }
+tracing.workspace = true
+
+[dev-dependencies]
+axum.workspace = true
+dominet-store.workspace = true
+sqlx.workspace = true
+tokio = { workspace = true, features = ["test-util", "io-util"] }
+
+[lints]
+workspace = true

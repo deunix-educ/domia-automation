@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE sms_message SET is_read = TRUE WHERE device_id = $1 AND direction = 'incoming' AND NOT is_read",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int8"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "fc8e133dcd05a4eb316bb99a406474376388d3889b2c4636c5ba71ae5270f253"
+}

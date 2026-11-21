@@ -1,0 +1,15 @@
+{
+  "height": 180,
+  "opencv": "5.0.0",
+  "ratios": {
+    "brightness_big": 1.0,
+    "brightness_small": 0.0,
+    "edge": 0.1307986111111111,
+    "large": 0.40286458333333336,
+    "medium": 0.047586805555555556,
+    "nothing": 0.0,
+    "small": 0.004791666666666666,
+    "speck": 0.0
+  },
+  "width": 320
+}

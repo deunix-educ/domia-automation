@@ -1,0 +1,218 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, name, task, args, kind, interval_every, interval_period, cron_expr, timezone, solar_event,\n                    latitude, longitude, enabled, last_run_at, next_run_at, last_status, automation_id\n             FROM schedule_job ORDER BY name",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int8",
+        "origin": {
+          "Table": {
+            "table": "schedule_job",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "name",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "schedule_job",
+            "name": "name"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "task",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "schedule_job",
+            "name": "task"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "args",
+        "type_info": "Jsonb",
+        "origin": {
+          "Table": {
+            "table": "schedule_job",
+            "name": "args"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "kind",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "schedule_job",
+            "name": "kind"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "interval_every",
+        "type_info": "Int4",
+        "origin": {
+          "Table": {
+            "table": "schedule_job",
+            "name": "interval_every"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "interval_period",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "schedule_job",
+            "name": "interval_period"
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "cron_expr",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "schedule_job",
+            "name": "cron_expr"
+          }
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "timezone",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "schedule_job",
+            "name": "timezone"
+          }
+        }
+      },
+      {
+        "ordinal": 9,
+        "name": "solar_event",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "schedule_job",
+            "name": "solar_event"
+          }
+        }
+      },
+      {
+        "ordinal": 10,
+        "name": "latitude",
+        "type_info": "Float8",
+        "origin": {
+          "Table": {
+            "table": "schedule_job",
+            "name": "latitude"
+          }
+        }
+      },
+      {
+        "ordinal": 11,
+        "name": "longitude",
+        "type_info": "Float8",
+        "origin": {
+          "Table": {
+            "table": "schedule_job",
+            "name": "longitude"
+          }
+        }
+      },
+      {
+        "ordinal": 12,
+        "name": "enabled",
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "schedule_job",
+            "name": "enabled"
+          }
+        }
+      },
+      {
+        "ordinal": 13,
+        "name": "last_run_at",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "schedule_job",
+            "name": "last_run_at"
+          }
+        }
+      },
+      {
+        "ordinal": 14,
+        "name": "next_run_at",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "schedule_job",
+            "name": "next_run_at"
+          }
+        }
+      },
+      {
+        "ordinal": 15,
+        "name": "last_status",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "schedule_job",
+            "name": "last_status"
+          }
+        }
+      },
+      {
+        "ordinal": 16,
+        "name": "automation_id",
+        "type_info": "Int8",
+        "origin": {
+          "Table": {
+            "table": "schedule_job",
+            "name": "automation_id"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      false,
+      true,
+      true,
+      true,
+      false,
+      true,
+      true,
+      false,
+      true
+    ]
+  },
+  "hash": "63664eb25cfdbb4d556b3bc96265e0dc2cf8b783185fc557af1199a40c65eba4"
+}

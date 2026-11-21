@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Client PostgreSQL de test : `psql` du conteneur qui publie le port de la base (la stack de dev, ou la base jetable du hook pre-push) ;
+# la machine n'a pas de client installe. Le service de sauvegarde transmet la connexion par l'environnement (PGHOST, PGPORT, PGUSER,
+# PGPASSWORD, PGDATABASE, du point de vue de l'hote) ; on retrouve le conteneur par son port publie et on parle a son PostgreSQL local.
+set -euo pipefail
+cid="$(docker ps -q --filter "publish=${PGPORT:?}" | head -1)"
+[ -n "$cid" ] || { echo "psql : aucun conteneur ne publie le port $PGPORT" >&2; exit 2; }
+exec docker exec -i -e PGUSER -e PGPASSWORD -e PGDATABASE -e PGHOST=127.0.0.1 -e PGPORT=5432 "$cid" psql "$@"

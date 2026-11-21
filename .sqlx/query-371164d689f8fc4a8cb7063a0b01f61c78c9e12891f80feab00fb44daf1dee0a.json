@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE mcp_token SET revoked_at = $2\n             WHERE id = $1 AND revoked_at IS NULL AND expires_at > $2",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "371164d689f8fc4a8cb7063a0b01f61c78c9e12891f80feab00fb44daf1dee0a"
+}

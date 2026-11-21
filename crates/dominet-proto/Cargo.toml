@@ -1,0 +1,21 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+[package]
+name = "dominet-proto"
+description = "DTO et messages WebSocket partages serveur/WASM, contrat Android."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true
+# Sans `v4` : pas de generateur aleatoire, donc rien a configurer pour wasm32 (on n'analyse et n'affiche que des UUID).
+uuid = { version = "1", default-features = false }
+
+[dev-dependencies]
+serde_json.workspace = true
+
+[lints]
+workspace = true

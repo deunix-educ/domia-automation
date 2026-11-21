@@ -1,0 +1,223 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE grafana_alert_rule SET uid = $2, title = $3, folder = $4, rule_group = $5, group_interval = $6,\n                    datasource_uid = $7, expr = $8, query_window = $9, for_duration = $10, severity = $11, summary = $12,\n                    description = $13, no_data_state = $14, exec_err_state = $15, active = $16, updated_at = now()\n             WHERE id = $1\n             RETURNING id, uid, title, folder, rule_group, group_interval, datasource_uid, expr, query_window, for_duration,\n                       severity, summary, description, no_data_state, exec_err_state, active",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int8",
+        "origin": {
+          "Table": {
+            "table": "grafana_alert_rule",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "uid",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "grafana_alert_rule",
+            "name": "uid"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "title",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "grafana_alert_rule",
+            "name": "title"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "folder",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "grafana_alert_rule",
+            "name": "folder"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "rule_group",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "grafana_alert_rule",
+            "name": "rule_group"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "group_interval",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "grafana_alert_rule",
+            "name": "group_interval"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "datasource_uid",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "grafana_alert_rule",
+            "name": "datasource_uid"
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "expr",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "grafana_alert_rule",
+            "name": "expr"
+          }
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "query_window",
+        "type_info": "Int4",
+        "origin": {
+          "Table": {
+            "table": "grafana_alert_rule",
+            "name": "query_window"
+          }
+        }
+      },
+      {
+        "ordinal": 9,
+        "name": "for_duration",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "grafana_alert_rule",
+            "name": "for_duration"
+          }
+        }
+      },
+      {
+        "ordinal": 10,
+        "name": "severity",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "grafana_alert_rule",
+            "name": "severity"
+          }
+        }
+      },
+      {
+        "ordinal": 11,
+        "name": "summary",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "grafana_alert_rule",
+            "name": "summary"
+          }
+        }
+      },
+      {
+        "ordinal": 12,
+        "name": "description",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "grafana_alert_rule",
+            "name": "description"
+          }
+        }
+      },
+      {
+        "ordinal": 13,
+        "name": "no_data_state",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "grafana_alert_rule",
+            "name": "no_data_state"
+          }
+        }
+      },
+      {
+        "ordinal": 14,
+        "name": "exec_err_state",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "grafana_alert_rule",
+            "name": "exec_err_state"
+          }
+        }
+      },
+      {
+        "ordinal": 15,
+        "name": "active",
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "grafana_alert_rule",
+            "name": "active"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Int4",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Bool"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "1d7a273a9b744cb93c98729378410b06e7d0221ae894aad88738d195a484b9ff"
+}

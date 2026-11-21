@@ -1,0 +1,857 @@
+{
+ "scenarios": [
+  {
+   "name": "sms avec date, numero et contact",
+   "frames": [
+    "{\"type\": \"sms_received\", \"from\": \"+33612345678\", \"body\": \"Salut\", \"contact_name\": \"Alice\", \"timestamp\": \"2026-01-02T10:00:00+01:00\"}"
+   ],
+   "app_frames": [],
+   "online": [
+    true,
+    false
+   ],
+   "state": {
+    "sms": [
+     {
+      "direction": "incoming",
+      "phone_number": "+33612345678",
+      "contact_name": "Alice",
+      "body": "Salut",
+      "is_read": false,
+      "sent_at": 1767344400000000
+     }
+    ],
+    "calls": []
+   },
+   "events": [
+    {
+     "kind": "sms_received",
+     "direction": "incoming",
+     "phone_number": "+33612345678",
+     "contact_name": "Alice",
+     "body": "Salut",
+     "is_read": false,
+     "sent_at": 1767344400000000
+    }
+   ]
+  },
+  {
+   "name": "sms avec accents et guillemets",
+   "frames": [
+    "{\"type\": \"sms_received\", \"from\": \"+33612345678\", \"body\": \"\\u00e9 \\u2603 \\\"cite\\\"\", \"contact_name\": \"Zo\\u00e9\", \"timestamp\": \"2026-01-02T10:01:00+01:00\"}"
+   ],
+   "app_frames": [],
+   "online": [
+    true,
+    false
+   ],
+   "state": {
+    "sms": [
+     {
+      "direction": "incoming",
+      "phone_number": "+33612345678",
+      "contact_name": "Zoé",
+      "body": "é ☃ \"cite\"",
+      "is_read": false,
+      "sent_at": 1767344460000000
+     }
+    ],
+    "calls": []
+   },
+   "events": [
+    {
+     "kind": "sms_received",
+     "direction": "incoming",
+     "phone_number": "+33612345678",
+     "contact_name": "Zoé",
+     "body": "é ☃ \"cite\"",
+     "is_read": false,
+     "sent_at": 1767344460000000
+    }
+   ]
+  },
+  {
+   "name": "sms avec fraction de seconde",
+   "frames": [
+    "{\"type\": \"sms_received\", \"from\": \"0612\", \"body\": \"x\", \"timestamp\": \"2026-01-02T10:00:00.123+01:00\"}"
+   ],
+   "app_frames": [],
+   "online": [
+    true,
+    false
+   ],
+   "state": {
+    "sms": [
+     {
+      "direction": "incoming",
+      "phone_number": "0612",
+      "contact_name": "",
+      "body": "x",
+      "is_read": false,
+      "sent_at": 1767344400123000
+     }
+    ],
+    "calls": []
+   },
+   "events": [
+    {
+     "kind": "sms_received",
+     "direction": "incoming",
+     "phone_number": "0612",
+     "contact_name": "",
+     "body": "x",
+     "is_read": false,
+     "sent_at": 1767344400123000
+    }
+   ]
+  },
+  {
+   "name": "sms avec date a espace",
+   "frames": [
+    "{\"type\": \"sms_received\", \"from\": \"0612\", \"body\": \"x\", \"timestamp\": \"2026-01-02 10:00:00+01:00\"}"
+   ],
+   "app_frames": [],
+   "online": [
+    true,
+    false
+   ],
+   "state": {
+    "sms": [
+     {
+      "direction": "incoming",
+      "phone_number": "0612",
+      "contact_name": "",
+      "body": "x",
+      "is_read": false,
+      "sent_at": 1767344400000000
+     }
+    ],
+    "calls": []
+   },
+   "events": [
+    {
+     "kind": "sms_received",
+     "direction": "incoming",
+     "phone_number": "0612",
+     "contact_name": "",
+     "body": "x",
+     "is_read": false,
+     "sent_at": 1767344400000000
+    }
+   ]
+  },
+  {
+   "name": "sms sans date ni contact",
+   "frames": [
+    "{\"type\": \"sms_received\", \"from\": \"0612\", \"body\": \"x\"}"
+   ],
+   "app_frames": [],
+   "online": [
+    true,
+    false
+   ],
+   "state": {
+    "sms": [
+     {
+      "direction": "incoming",
+      "phone_number": "0612",
+      "contact_name": "",
+      "body": "x",
+      "is_read": false,
+      "sent_at": "NOW"
+     }
+    ],
+    "calls": []
+   },
+   "events": [
+    {
+     "kind": "sms_received",
+     "direction": "incoming",
+     "phone_number": "0612",
+     "contact_name": "",
+     "body": "x",
+     "is_read": false,
+     "sent_at": "NOW"
+    }
+   ]
+  },
+  {
+   "name": "sms avec date illisible",
+   "frames": [
+    "{\"type\": \"sms_received\", \"from\": \"0612\", \"body\": \"x\", \"timestamp\": \"hier\"}"
+   ],
+   "app_frames": [],
+   "online": [
+    true,
+    false
+   ],
+   "state": {
+    "sms": [
+     {
+      "direction": "incoming",
+      "phone_number": "0612",
+      "contact_name": "",
+      "body": "x",
+      "is_read": false,
+      "sent_at": "NOW"
+     }
+    ],
+    "calls": []
+   },
+   "events": [
+    {
+     "kind": "sms_received",
+     "direction": "incoming",
+     "phone_number": "0612",
+     "contact_name": "",
+     "body": "x",
+     "is_read": false,
+     "sent_at": "NOW"
+    }
+   ]
+  },
+  {
+   "name": "sms sans corps",
+   "frames": [
+    "{\"type\": \"sms_received\", \"from\": \"0612\", \"timestamp\": \"2026-01-02T10:02:00+01:00\"}"
+   ],
+   "app_frames": [],
+   "online": [
+    true,
+    false
+   ],
+   "state": {
+    "sms": [
+     {
+      "direction": "incoming",
+      "phone_number": "0612",
+      "contact_name": "",
+      "body": "",
+      "is_read": false,
+      "sent_at": 1767344520000000
+     }
+    ],
+    "calls": []
+   },
+   "events": [
+    {
+     "kind": "sms_received",
+     "direction": "incoming",
+     "phone_number": "0612",
+     "contact_name": "",
+     "body": "",
+     "is_read": false,
+     "sent_at": 1767344520000000
+    }
+   ]
+  },
+  {
+   "name": "deux sms",
+   "frames": [
+    "{\"type\": \"sms_received\", \"from\": \"0611\", \"body\": \"un\", \"timestamp\": \"2026-01-02T10:03:00+01:00\"}",
+    "{\"type\": \"sms_received\", \"from\": \"0622\", \"body\": \"deux\", \"timestamp\": \"2026-01-02T10:04:00+01:00\"}"
+   ],
+   "app_frames": [],
+   "online": [
+    true,
+    false
+   ],
+   "state": {
+    "sms": [
+     {
+      "direction": "incoming",
+      "phone_number": "0611",
+      "contact_name": "",
+      "body": "un",
+      "is_read": false,
+      "sent_at": 1767344580000000
+     },
+     {
+      "direction": "incoming",
+      "phone_number": "0622",
+      "contact_name": "",
+      "body": "deux",
+      "is_read": false,
+      "sent_at": 1767344640000000
+     }
+    ],
+    "calls": []
+   },
+   "events": [
+    {
+     "kind": "sms_received",
+     "direction": "incoming",
+     "phone_number": "0611",
+     "contact_name": "",
+     "body": "un",
+     "is_read": false,
+     "sent_at": 1767344580000000
+    },
+    {
+     "kind": "sms_received",
+     "direction": "incoming",
+     "phone_number": "0622",
+     "contact_name": "",
+     "body": "deux",
+     "is_read": false,
+     "sent_at": 1767344640000000
+    }
+   ]
+  },
+  {
+   "name": "appel entrant decroche puis termine",
+   "frames": [
+    "{\"type\": \"call_event\", \"number\": \"0612\", \"contact_name\": \"\", \"duration\": 0, \"state\": \"ringing\", \"timestamp\": \"2026-01-02T10:00:00+01:00\"}",
+    "{\"type\": \"call_event\", \"number\": \"0612\", \"contact_name\": \"\", \"duration\": 0, \"state\": \"answered\", \"timestamp\": \"2026-01-02T10:01:00+01:00\"}",
+    "{\"type\": \"call_event\", \"number\": \"0612\", \"contact_name\": \"\", \"duration\": 240, \"state\": \"ended\", \"timestamp\": \"2026-01-02T10:05:00+01:00\"}"
+   ],
+   "app_frames": [],
+   "online": [
+    true,
+    false
+   ],
+   "state": {
+    "sms": [],
+    "calls": [
+     {
+      "direction": "incoming",
+      "phone_number": "0612",
+      "contact_name": "",
+      "started_at": 1767344400000000,
+      "ended_at": 1767344700000000,
+      "duration": 240
+     }
+    ]
+   },
+   "events": [
+    {
+     "kind": "call_event",
+     "state": "ringing",
+     "direction": "incoming",
+     "phone_number": "0612",
+     "contact_name": "",
+     "started_at": 1767344400000000,
+     "ended_at": null,
+     "duration": 0
+    },
+    {
+     "kind": "call_event",
+     "state": "answered",
+     "direction": "incoming",
+     "phone_number": "0612",
+     "contact_name": "",
+     "started_at": 1767344400000000,
+     "ended_at": null,
+     "duration": 0
+    },
+    {
+     "kind": "call_event",
+     "state": "ended",
+     "direction": "incoming",
+     "phone_number": "0612",
+     "contact_name": "",
+     "started_at": 1767344400000000,
+     "ended_at": 1767344700000000,
+     "duration": 240
+    }
+   ]
+  },
+  {
+   "name": "appel entrant manque",
+   "frames": [
+    "{\"type\": \"call_event\", \"number\": \"0612\", \"contact_name\": \"\", \"duration\": 0, \"state\": \"ringing\", \"timestamp\": \"2026-01-02T10:00:00+01:00\"}",
+    "{\"type\": \"call_event\", \"number\": \"0612\", \"contact_name\": \"\", \"duration\": 0, \"state\": \"missed\", \"timestamp\": \"2026-01-02T10:01:00+01:00\"}"
+   ],
+   "app_frames": [],
+   "online": [
+    true,
+    false
+   ],
+   "state": {
+    "sms": [],
+    "calls": [
+     {
+      "direction": "missed",
+      "phone_number": "0612",
+      "contact_name": "",
+      "started_at": 1767344400000000,
+      "ended_at": 1767344460000000,
+      "duration": 0
+     }
+    ]
+   },
+   "events": [
+    {
+     "kind": "call_event",
+     "state": "ringing",
+     "direction": "incoming",
+     "phone_number": "0612",
+     "contact_name": "",
+     "started_at": 1767344400000000,
+     "ended_at": null,
+     "duration": 0
+    },
+    {
+     "kind": "call_event",
+     "state": "missed",
+     "direction": "missed",
+     "phone_number": "0612",
+     "contact_name": "",
+     "started_at": 1767344400000000,
+     "ended_at": 1767344460000000,
+     "duration": 0
+    }
+   ]
+  },
+  {
+   "name": "appel sortant termine",
+   "frames": [
+    "{\"type\": \"call_event\", \"number\": \"0612\", \"contact_name\": \"\", \"duration\": 0, \"state\": \"outgoing\", \"timestamp\": \"2026-01-02T10:00:00+01:00\"}",
+    "{\"type\": \"call_event\", \"number\": \"0612\", \"contact_name\": \"\", \"duration\": 75, \"state\": \"ended\", \"timestamp\": \"2026-01-02T10:02:00+01:00\"}"
+   ],
+   "app_frames": [],
+   "online": [
+    true,
+    false
+   ],
+   "state": {
+    "sms": [],
+    "calls": [
+     {
+      "direction": "outgoing",
+      "phone_number": "0612",
+      "contact_name": "",
+      "started_at": 1767344400000000,
+      "ended_at": 1767344520000000,
+      "duration": 75
+     }
+    ]
+   },
+   "events": [
+    {
+     "kind": "call_event",
+     "state": "outgoing",
+     "direction": "outgoing",
+     "phone_number": "0612",
+     "contact_name": "",
+     "started_at": 1767344400000000,
+     "ended_at": null,
+     "duration": 0
+    },
+    {
+     "kind": "call_event",
+     "state": "ended",
+     "direction": "outgoing",
+     "phone_number": "0612",
+     "contact_name": "",
+     "started_at": 1767344400000000,
+     "ended_at": 1767344520000000,
+     "duration": 75
+    }
+   ]
+  },
+  {
+   "name": "duree decimale",
+   "frames": [
+    "{\"type\": \"call_event\", \"number\": \"0612\", \"contact_name\": \"\", \"duration\": 0, \"state\": \"ringing\", \"timestamp\": \"2026-01-02T10:00:00+01:00\"}",
+    "{\"type\": \"call_event\", \"number\": \"0612\", \"contact_name\": \"\", \"duration\": 75.0, \"state\": \"ended\", \"timestamp\": \"2026-01-02T10:01:00+01:00\"}"
+   ],
+   "app_frames": [],
+   "online": [
+    true,
+    false
+   ],
+   "state": {
+    "sms": [],
+    "calls": [
+     {
+      "direction": "incoming",
+      "phone_number": "0612",
+      "contact_name": "",
+      "started_at": 1767344400000000,
+      "ended_at": 1767344460000000,
+      "duration": 75
+     }
+    ]
+   },
+   "events": [
+    {
+     "kind": "call_event",
+     "state": "ringing",
+     "direction": "incoming",
+     "phone_number": "0612",
+     "contact_name": "",
+     "started_at": 1767344400000000,
+     "ended_at": null,
+     "duration": 0
+    },
+    {
+     "kind": "call_event",
+     "state": "ended",
+     "direction": "incoming",
+     "phone_number": "0612",
+     "contact_name": "",
+     "started_at": 1767344400000000,
+     "ended_at": 1767344460000000,
+     "duration": 75.0
+    }
+   ]
+  },
+  {
+   "name": "termine sans appel ouvert",
+   "frames": [
+    "{\"type\": \"call_event\", \"number\": \"0612\", \"contact_name\": \"\", \"duration\": 42, \"state\": \"ended\", \"timestamp\": \"2026-01-02T10:05:00+01:00\"}"
+   ],
+   "app_frames": [],
+   "online": [
+    true,
+    false
+   ],
+   "state": {
+    "sms": [],
+    "calls": [
+     {
+      "direction": "incoming",
+      "phone_number": "0612",
+      "contact_name": "",
+      "started_at": 1767344700000000,
+      "ended_at": 1767344700000000,
+      "duration": 42
+     }
+    ]
+   },
+   "events": [
+    {
+     "kind": "call_event",
+     "state": "ended",
+     "direction": "incoming",
+     "phone_number": "0612",
+     "contact_name": "",
+     "started_at": 1767344700000000,
+     "ended_at": 1767344700000000,
+     "duration": 42
+    }
+   ]
+  },
+  {
+   "name": "manque sans appel ouvert",
+   "frames": [
+    "{\"type\": \"call_event\", \"number\": \"0612\", \"contact_name\": \"\", \"duration\": 0, \"state\": \"missed\", \"timestamp\": \"2026-01-02T10:05:00+01:00\"}"
+   ],
+   "app_frames": [],
+   "online": [
+    true,
+    false
+   ],
+   "state": {
+    "sms": [],
+    "calls": [
+     {
+      "direction": "missed",
+      "phone_number": "0612",
+      "contact_name": "",
+      "started_at": 1767344700000000,
+      "ended_at": 1767344700000000,
+      "duration": 0
+     }
+    ]
+   },
+   "events": [
+    {
+     "kind": "call_event",
+     "state": "missed",
+     "direction": "missed",
+     "phone_number": "0612",
+     "contact_name": "",
+     "started_at": 1767344700000000,
+     "ended_at": 1767344700000000,
+     "duration": 0
+    }
+   ]
+  },
+  {
+   "name": "decroche sans appel ouvert",
+   "frames": [
+    "{\"type\": \"call_event\", \"number\": \"0612\", \"contact_name\": \"\", \"duration\": 0, \"state\": \"answered\", \"timestamp\": \"2026-01-02T10:01:00+01:00\"}"
+   ],
+   "app_frames": [],
+   "online": [
+    true,
+    false
+   ],
+   "state": {
+    "sms": [],
+    "calls": []
+   },
+   "events": []
+  },
+  {
+   "name": "etat inconnu sur appel ouvert",
+   "frames": [
+    "{\"type\": \"call_event\", \"number\": \"0612\", \"contact_name\": \"\", \"duration\": 0, \"state\": \"ringing\", \"timestamp\": \"2026-01-02T10:00:00+01:00\"}",
+    "{\"type\": \"call_event\", \"number\": \"0612\", \"contact_name\": \"\", \"duration\": 0, \"state\": \"blocked\", \"timestamp\": \"2026-01-02T10:01:00+01:00\"}"
+   ],
+   "app_frames": [],
+   "online": [
+    true,
+    false
+   ],
+   "state": {
+    "sms": [],
+    "calls": [
+     {
+      "direction": "incoming",
+      "phone_number": "0612",
+      "contact_name": "",
+      "started_at": 1767344400000000,
+      "ended_at": null,
+      "duration": 0
+     }
+    ]
+   },
+   "events": [
+    {
+     "kind": "call_event",
+     "state": "ringing",
+     "direction": "incoming",
+     "phone_number": "0612",
+     "contact_name": "",
+     "started_at": 1767344400000000,
+     "ended_at": null,
+     "duration": 0
+    },
+    {
+     "kind": "call_event",
+     "state": "blocked",
+     "direction": "incoming",
+     "phone_number": "0612",
+     "contact_name": "",
+     "started_at": 1767344400000000,
+     "ended_at": null,
+     "duration": 0
+    }
+   ]
+  },
+  {
+   "name": "deux numeros en parallele",
+   "frames": [
+    "{\"type\": \"call_event\", \"number\": \"0611\", \"contact_name\": \"\", \"duration\": 0, \"state\": \"ringing\", \"timestamp\": \"2026-01-02T10:00:00+01:00\"}",
+    "{\"type\": \"call_event\", \"number\": \"0622\", \"contact_name\": \"\", \"duration\": 0, \"state\": \"ringing\", \"timestamp\": \"2026-01-02T10:00:00+01:00\"}",
+    "{\"type\": \"call_event\", \"number\": \"0611\", \"contact_name\": \"\", \"duration\": 100, \"state\": \"ended\", \"timestamp\": \"2026-01-02T10:03:00+01:00\"}"
+   ],
+   "app_frames": [],
+   "online": [
+    true,
+    false
+   ],
+   "state": {
+    "sms": [],
+    "calls": [
+     {
+      "direction": "incoming",
+      "phone_number": "0611",
+      "contact_name": "",
+      "started_at": 1767344400000000,
+      "ended_at": 1767344580000000,
+      "duration": 100
+     },
+     {
+      "direction": "incoming",
+      "phone_number": "0622",
+      "contact_name": "",
+      "started_at": 1767344400000000,
+      "ended_at": null,
+      "duration": 0
+     }
+    ]
+   },
+   "events": [
+    {
+     "kind": "call_event",
+     "state": "ringing",
+     "direction": "incoming",
+     "phone_number": "0611",
+     "contact_name": "",
+     "started_at": 1767344400000000,
+     "ended_at": null,
+     "duration": 0
+    },
+    {
+     "kind": "call_event",
+     "state": "ringing",
+     "direction": "incoming",
+     "phone_number": "0622",
+     "contact_name": "",
+     "started_at": 1767344400000000,
+     "ended_at": null,
+     "duration": 0
+    },
+    {
+     "kind": "call_event",
+     "state": "ended",
+     "direction": "incoming",
+     "phone_number": "0611",
+     "contact_name": "",
+     "started_at": 1767344400000000,
+     "ended_at": 1767344580000000,
+     "duration": 100
+    }
+   ]
+  },
+  {
+   "name": "appel sans date",
+   "frames": [
+    "{\"type\": \"call_event\", \"number\": \"0612\", \"contact_name\": \"\", \"duration\": 0, \"state\": \"ringing\"}"
+   ],
+   "app_frames": [],
+   "online": [
+    true,
+    false
+   ],
+   "state": {
+    "sms": [],
+    "calls": [
+     {
+      "direction": "incoming",
+      "phone_number": "0612",
+      "contact_name": "",
+      "started_at": "NOW",
+      "ended_at": null,
+      "duration": 0
+     }
+    ]
+   },
+   "events": [
+    {
+     "kind": "call_event",
+     "state": "ringing",
+     "direction": "incoming",
+     "phone_number": "0612",
+     "contact_name": "",
+     "started_at": "NOW",
+     "ended_at": null,
+     "duration": 0
+    }
+   ]
+  },
+  {
+   "name": "deux appels successifs du meme numero",
+   "frames": [
+    "{\"type\": \"call_event\", \"number\": \"0612\", \"contact_name\": \"\", \"duration\": 0, \"state\": \"ringing\", \"timestamp\": \"2026-01-02T10:00:00+01:00\"}",
+    "{\"type\": \"call_event\", \"number\": \"0612\", \"contact_name\": \"\", \"duration\": 10, \"state\": \"ended\", \"timestamp\": \"2026-01-02T10:01:00+01:00\"}",
+    "{\"type\": \"call_event\", \"number\": \"0612\", \"contact_name\": \"\", \"duration\": 0, \"state\": \"ringing\", \"timestamp\": \"2026-01-02T10:02:00+01:00\"}",
+    "{\"type\": \"call_event\", \"number\": \"0612\", \"contact_name\": \"\", \"duration\": 0, \"state\": \"missed\", \"timestamp\": \"2026-01-02T10:03:00+01:00\"}"
+   ],
+   "app_frames": [],
+   "online": [
+    true,
+    false
+   ],
+   "state": {
+    "sms": [],
+    "calls": [
+     {
+      "direction": "incoming",
+      "phone_number": "0612",
+      "contact_name": "",
+      "started_at": 1767344400000000,
+      "ended_at": 1767344460000000,
+      "duration": 10
+     },
+     {
+      "direction": "missed",
+      "phone_number": "0612",
+      "contact_name": "",
+      "started_at": 1767344520000000,
+      "ended_at": 1767344580000000,
+      "duration": 0
+     }
+    ]
+   },
+   "events": [
+    {
+     "kind": "call_event",
+     "state": "ringing",
+     "direction": "incoming",
+     "phone_number": "0612",
+     "contact_name": "",
+     "started_at": 1767344400000000,
+     "ended_at": null,
+     "duration": 0
+    },
+    {
+     "kind": "call_event",
+     "state": "ended",
+     "direction": "incoming",
+     "phone_number": "0612",
+     "contact_name": "",
+     "started_at": 1767344400000000,
+     "ended_at": 1767344460000000,
+     "duration": 10
+    },
+    {
+     "kind": "call_event",
+     "state": "ringing",
+     "direction": "incoming",
+     "phone_number": "0612",
+     "contact_name": "",
+     "started_at": 1767344520000000,
+     "ended_at": null,
+     "duration": 0
+    },
+    {
+     "kind": "call_event",
+     "state": "missed",
+     "direction": "missed",
+     "phone_number": "0612",
+     "contact_name": "",
+     "started_at": 1767344520000000,
+     "ended_at": 1767344580000000,
+     "duration": 0
+    }
+   ]
+  },
+  {
+   "name": "ping json",
+   "frames": [
+    "{\"type\": \"ping\"}"
+   ],
+   "app_frames": [
+    {
+     "type": "pong"
+    }
+   ],
+   "online": [
+    true,
+    false
+   ],
+   "state": {
+    "sms": [],
+    "calls": []
+   },
+   "events": []
+  },
+  {
+   "name": "trames illisibles ou inconnues",
+   "frames": [
+    "pas du json",
+    "{\"type\": \"inconnu\"}",
+    "{\"sans\": \"type\"}"
+   ],
+   "app_frames": [],
+   "online": [
+    true,
+    false
+   ],
+   "state": {
+    "sms": [],
+    "calls": []
+   },
+   "events": []
+  }
+ ],
+ "unknown_token": {
+  "connected": false,
+  "close_code": 4001
+ }
+}

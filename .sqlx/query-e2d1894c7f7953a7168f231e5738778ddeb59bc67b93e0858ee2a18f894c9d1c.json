@@ -1,0 +1,33 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT MIN(value_num) AS lo, MAX(value_num) AS hi FROM device_state_log\n             WHERE device_id = $1 AND key = $2 AND ts >= $3 AND ts < $4",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "lo",
+        "type_info": "Float8",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 1,
+        "name": "hi",
+        "type_info": "Float8",
+        "origin": "Expression"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Text",
+        "Timestamptz",
+        "Timestamptz"
+      ]
+    },
+    "nullable": [
+      null,
+      null
+    ]
+  },
+  "hash": "e2d1894c7f7953a7168f231e5738778ddeb59bc67b93e0858ee2a18f894c9d1c"
+}

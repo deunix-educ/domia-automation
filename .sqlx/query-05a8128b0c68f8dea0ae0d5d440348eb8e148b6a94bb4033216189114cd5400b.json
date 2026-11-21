@@ -1,0 +1,46 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "WITH last_ok AS (\n                   SELECT coalesce(max(attempted_at), '-infinity'::timestamptz) AS t\n                   FROM login_attempt WHERE username = lower($1) AND succeeded\n               )\n               SELECT\n                   count(*) FILTER (WHERE NOT succeeded AND username = lower($1) AND ip = $2\n                                    AND attempted_at > (SELECT t FROM last_ok)) AS pair,\n                   count(*) FILTER (WHERE NOT succeeded AND username = lower($1)\n                                    AND attempted_at > (SELECT t FROM last_ok)) AS by_user,\n                   count(*) FILTER (WHERE NOT succeeded AND ip = $2) AS by_ip,\n                   max(attempted_at) FILTER (WHERE NOT succeeded) AS last_failure\n               FROM login_attempt\n               WHERE (username = lower($1) OR ip = $2) AND attempted_at >= $3",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "pair",
+        "type_info": "Int8",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 1,
+        "name": "by_user",
+        "type_info": "Int8",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 2,
+        "name": "by_ip",
+        "type_info": "Int8",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 3,
+        "name": "last_failure",
+        "type_info": "Timestamptz",
+        "origin": "Expression"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Text",
+        "Timestamptz"
+      ]
+    },
+    "nullable": [
+      null,
+      null,
+      null,
+      null
+    ]
+  },
+  "hash": "05a8128b0c68f8dea0ae0d5d440348eb8e148b6a94bb4033216189114cd5400b"
+}

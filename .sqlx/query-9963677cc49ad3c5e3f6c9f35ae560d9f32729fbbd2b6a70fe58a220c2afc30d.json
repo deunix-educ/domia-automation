@@ -1,0 +1,17 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE schedule_job SET last_run_at = COALESCE($2, last_run_at), last_status = $3, next_run_at = $4 WHERE id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Timestamptz",
+        "Text",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "9963677cc49ad3c5e3f6c9f35ae560d9f32729fbbd2b6a70fe58a220c2afc30d"
+}

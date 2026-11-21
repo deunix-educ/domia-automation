@@ -1,0 +1,3218 @@
+{
+ "topics": [
+  {
+   "pattern": "zigbee2mqtt/#",
+   "topic": "zigbee2mqtt/Bureau",
+   "matches": true
+  },
+  {
+   "pattern": "zigbee2mqtt/#",
+   "topic": "zigbee2mqtt/Bureau/set",
+   "matches": true
+  },
+  {
+   "pattern": "zigbee2mqtt/#",
+   "topic": "zigbee2mqtt",
+   "matches": true
+  },
+  {
+   "pattern": "zigbee2mqtt/#",
+   "topic": "zigbee2mqtt/a/b",
+   "matches": true
+  },
+  {
+   "pattern": "zigbee2mqtt/#",
+   "topic": "a/b",
+   "matches": false
+  },
+  {
+   "pattern": "zigbee2mqtt/#",
+   "topic": "a",
+   "matches": false
+  },
+  {
+   "pattern": "zigbee2mqtt/#",
+   "topic": "a/b/c",
+   "matches": false
+  },
+  {
+   "pattern": "zigbee2mqtt/#",
+   "topic": "a/x/c",
+   "matches": false
+  },
+  {
+   "pattern": "zigbee2mqtt/#",
+   "topic": "a/b/c/d",
+   "matches": false
+  },
+  {
+   "pattern": "zigbee2mqtt/#",
+   "topic": "b",
+   "matches": false
+  },
+  {
+   "pattern": "zigbee2mqtt/#",
+   "topic": "x/b",
+   "matches": false
+  },
+  {
+   "pattern": "zigbee2mqtt/#",
+   "topic": "linky/h/papp",
+   "matches": false
+  },
+  {
+   "pattern": "zigbee2mqtt/#",
+   "topic": "linky/papp",
+   "matches": false
+  },
+  {
+   "pattern": "zigbee2mqtt/#",
+   "topic": "$SYS/x",
+   "matches": false
+  },
+  {
+   "pattern": "zigbee2mqtt/+",
+   "topic": "zigbee2mqtt/Bureau",
+   "matches": true
+  },
+  {
+   "pattern": "zigbee2mqtt/+",
+   "topic": "zigbee2mqtt/Bureau/set",
+   "matches": false
+  },
+  {
+   "pattern": "zigbee2mqtt/+",
+   "topic": "zigbee2mqtt",
+   "matches": false
+  },
+  {
+   "pattern": "zigbee2mqtt/+",
+   "topic": "zigbee2mqtt/a/b",
+   "matches": false
+  },
+  {
+   "pattern": "zigbee2mqtt/+",
+   "topic": "a/b",
+   "matches": false
+  },
+  {
+   "pattern": "zigbee2mqtt/+",
+   "topic": "a",
+   "matches": false
+  },
+  {
+   "pattern": "zigbee2mqtt/+",
+   "topic": "a/b/c",
+   "matches": false
+  },
+  {
+   "pattern": "zigbee2mqtt/+",
+   "topic": "a/x/c",
+   "matches": false
+  },
+  {
+   "pattern": "zigbee2mqtt/+",
+   "topic": "a/b/c/d",
+   "matches": false
+  },
+  {
+   "pattern": "zigbee2mqtt/+",
+   "topic": "b",
+   "matches": false
+  },
+  {
+   "pattern": "zigbee2mqtt/+",
+   "topic": "x/b",
+   "matches": false
+  },
+  {
+   "pattern": "zigbee2mqtt/+",
+   "topic": "linky/h/papp",
+   "matches": false
+  },
+  {
+   "pattern": "zigbee2mqtt/+",
+   "topic": "linky/papp",
+   "matches": false
+  },
+  {
+   "pattern": "zigbee2mqtt/+",
+   "topic": "$SYS/x",
+   "matches": false
+  },
+  {
+   "pattern": "zigbee2mqtt/+/set",
+   "topic": "zigbee2mqtt/Bureau",
+   "matches": false
+  },
+  {
+   "pattern": "zigbee2mqtt/+/set",
+   "topic": "zigbee2mqtt/Bureau/set",
+   "matches": true
+  },
+  {
+   "pattern": "zigbee2mqtt/+/set",
+   "topic": "zigbee2mqtt",
+   "matches": false
+  },
+  {
+   "pattern": "zigbee2mqtt/+/set",
+   "topic": "zigbee2mqtt/a/b",
+   "matches": false
+  },
+  {
+   "pattern": "zigbee2mqtt/+/set",
+   "topic": "a/b",
+   "matches": false
+  },
+  {
+   "pattern": "zigbee2mqtt/+/set",
+   "topic": "a",
+   "matches": false
+  },
+  {
+   "pattern": "zigbee2mqtt/+/set",
+   "topic": "a/b/c",
+   "matches": false
+  },
+  {
+   "pattern": "zigbee2mqtt/+/set",
+   "topic": "a/x/c",
+   "matches": false
+  },
+  {
+   "pattern": "zigbee2mqtt/+/set",
+   "topic": "a/b/c/d",
+   "matches": false
+  },
+  {
+   "pattern": "zigbee2mqtt/+/set",
+   "topic": "b",
+   "matches": false
+  },
+  {
+   "pattern": "zigbee2mqtt/+/set",
+   "topic": "x/b",
+   "matches": false
+  },
+  {
+   "pattern": "zigbee2mqtt/+/set",
+   "topic": "linky/h/papp",
+   "matches": false
+  },
+  {
+   "pattern": "zigbee2mqtt/+/set",
+   "topic": "linky/papp",
+   "matches": false
+  },
+  {
+   "pattern": "zigbee2mqtt/+/set",
+   "topic": "$SYS/x",
+   "matches": false
+  },
+  {
+   "pattern": "a/b",
+   "topic": "zigbee2mqtt/Bureau",
+   "matches": false
+  },
+  {
+   "pattern": "a/b",
+   "topic": "zigbee2mqtt/Bureau/set",
+   "matches": false
+  },
+  {
+   "pattern": "a/b",
+   "topic": "zigbee2mqtt",
+   "matches": false
+  },
+  {
+   "pattern": "a/b",
+   "topic": "zigbee2mqtt/a/b",
+   "matches": false
+  },
+  {
+   "pattern": "a/b",
+   "topic": "a/b",
+   "matches": true
+  },
+  {
+   "pattern": "a/b",
+   "topic": "a",
+   "matches": false
+  },
+  {
+   "pattern": "a/b",
+   "topic": "a/b/c",
+   "matches": false
+  },
+  {
+   "pattern": "a/b",
+   "topic": "a/x/c",
+   "matches": false
+  },
+  {
+   "pattern": "a/b",
+   "topic": "a/b/c/d",
+   "matches": false
+  },
+  {
+   "pattern": "a/b",
+   "topic": "b",
+   "matches": false
+  },
+  {
+   "pattern": "a/b",
+   "topic": "x/b",
+   "matches": false
+  },
+  {
+   "pattern": "a/b",
+   "topic": "linky/h/papp",
+   "matches": false
+  },
+  {
+   "pattern": "a/b",
+   "topic": "linky/papp",
+   "matches": false
+  },
+  {
+   "pattern": "a/b",
+   "topic": "$SYS/x",
+   "matches": false
+  },
+  {
+   "pattern": "a/#",
+   "topic": "zigbee2mqtt/Bureau",
+   "matches": false
+  },
+  {
+   "pattern": "a/#",
+   "topic": "zigbee2mqtt/Bureau/set",
+   "matches": false
+  },
+  {
+   "pattern": "a/#",
+   "topic": "zigbee2mqtt",
+   "matches": false
+  },
+  {
+   "pattern": "a/#",
+   "topic": "zigbee2mqtt/a/b",
+   "matches": false
+  },
+  {
+   "pattern": "a/#",
+   "topic": "a/b",
+   "matches": true
+  },
+  {
+   "pattern": "a/#",
+   "topic": "a",
+   "matches": true
+  },
+  {
+   "pattern": "a/#",
+   "topic": "a/b/c",
+   "matches": true
+  },
+  {
+   "pattern": "a/#",
+   "topic": "a/x/c",
+   "matches": true
+  },
+  {
+   "pattern": "a/#",
+   "topic": "a/b/c/d",
+   "matches": true
+  },
+  {
+   "pattern": "a/#",
+   "topic": "b",
+   "matches": false
+  },
+  {
+   "pattern": "a/#",
+   "topic": "x/b",
+   "matches": false
+  },
+  {
+   "pattern": "a/#",
+   "topic": "linky/h/papp",
+   "matches": false
+  },
+  {
+   "pattern": "a/#",
+   "topic": "linky/papp",
+   "matches": false
+  },
+  {
+   "pattern": "a/#",
+   "topic": "$SYS/x",
+   "matches": false
+  },
+  {
+   "pattern": "#",
+   "topic": "zigbee2mqtt/Bureau",
+   "matches": true
+  },
+  {
+   "pattern": "#",
+   "topic": "zigbee2mqtt/Bureau/set",
+   "matches": true
+  },
+  {
+   "pattern": "#",
+   "topic": "zigbee2mqtt",
+   "matches": true
+  },
+  {
+   "pattern": "#",
+   "topic": "zigbee2mqtt/a/b",
+   "matches": true
+  },
+  {
+   "pattern": "#",
+   "topic": "a/b",
+   "matches": true
+  },
+  {
+   "pattern": "#",
+   "topic": "a",
+   "matches": true
+  },
+  {
+   "pattern": "#",
+   "topic": "a/b/c",
+   "matches": true
+  },
+  {
+   "pattern": "#",
+   "topic": "a/x/c",
+   "matches": true
+  },
+  {
+   "pattern": "#",
+   "topic": "a/b/c/d",
+   "matches": true
+  },
+  {
+   "pattern": "#",
+   "topic": "b",
+   "matches": true
+  },
+  {
+   "pattern": "#",
+   "topic": "x/b",
+   "matches": true
+  },
+  {
+   "pattern": "#",
+   "topic": "linky/h/papp",
+   "matches": true
+  },
+  {
+   "pattern": "#",
+   "topic": "linky/papp",
+   "matches": true
+  },
+  {
+   "pattern": "#",
+   "topic": "$SYS/x",
+   "matches": true
+  },
+  {
+   "pattern": "+",
+   "topic": "zigbee2mqtt/Bureau",
+   "matches": false
+  },
+  {
+   "pattern": "+",
+   "topic": "zigbee2mqtt/Bureau/set",
+   "matches": false
+  },
+  {
+   "pattern": "+",
+   "topic": "zigbee2mqtt",
+   "matches": true
+  },
+  {
+   "pattern": "+",
+   "topic": "zigbee2mqtt/a/b",
+   "matches": false
+  },
+  {
+   "pattern": "+",
+   "topic": "a/b",
+   "matches": false
+  },
+  {
+   "pattern": "+",
+   "topic": "a",
+   "matches": true
+  },
+  {
+   "pattern": "+",
+   "topic": "a/b/c",
+   "matches": false
+  },
+  {
+   "pattern": "+",
+   "topic": "a/x/c",
+   "matches": false
+  },
+  {
+   "pattern": "+",
+   "topic": "a/b/c/d",
+   "matches": false
+  },
+  {
+   "pattern": "+",
+   "topic": "b",
+   "matches": true
+  },
+  {
+   "pattern": "+",
+   "topic": "x/b",
+   "matches": false
+  },
+  {
+   "pattern": "+",
+   "topic": "linky/h/papp",
+   "matches": false
+  },
+  {
+   "pattern": "+",
+   "topic": "linky/papp",
+   "matches": false
+  },
+  {
+   "pattern": "+",
+   "topic": "$SYS/x",
+   "matches": false
+  },
+  {
+   "pattern": "+/b",
+   "topic": "zigbee2mqtt/Bureau",
+   "matches": false
+  },
+  {
+   "pattern": "+/b",
+   "topic": "zigbee2mqtt/Bureau/set",
+   "matches": false
+  },
+  {
+   "pattern": "+/b",
+   "topic": "zigbee2mqtt",
+   "matches": false
+  },
+  {
+   "pattern": "+/b",
+   "topic": "zigbee2mqtt/a/b",
+   "matches": false
+  },
+  {
+   "pattern": "+/b",
+   "topic": "a/b",
+   "matches": true
+  },
+  {
+   "pattern": "+/b",
+   "topic": "a",
+   "matches": false
+  },
+  {
+   "pattern": "+/b",
+   "topic": "a/b/c",
+   "matches": false
+  },
+  {
+   "pattern": "+/b",
+   "topic": "a/x/c",
+   "matches": false
+  },
+  {
+   "pattern": "+/b",
+   "topic": "a/b/c/d",
+   "matches": false
+  },
+  {
+   "pattern": "+/b",
+   "topic": "b",
+   "matches": false
+  },
+  {
+   "pattern": "+/b",
+   "topic": "x/b",
+   "matches": true
+  },
+  {
+   "pattern": "+/b",
+   "topic": "linky/h/papp",
+   "matches": false
+  },
+  {
+   "pattern": "+/b",
+   "topic": "linky/papp",
+   "matches": false
+  },
+  {
+   "pattern": "+/b",
+   "topic": "$SYS/x",
+   "matches": false
+  },
+  {
+   "pattern": "a/+/c",
+   "topic": "zigbee2mqtt/Bureau",
+   "matches": false
+  },
+  {
+   "pattern": "a/+/c",
+   "topic": "zigbee2mqtt/Bureau/set",
+   "matches": false
+  },
+  {
+   "pattern": "a/+/c",
+   "topic": "zigbee2mqtt",
+   "matches": false
+  },
+  {
+   "pattern": "a/+/c",
+   "topic": "zigbee2mqtt/a/b",
+   "matches": false
+  },
+  {
+   "pattern": "a/+/c",
+   "topic": "a/b",
+   "matches": false
+  },
+  {
+   "pattern": "a/+/c",
+   "topic": "a",
+   "matches": false
+  },
+  {
+   "pattern": "a/+/c",
+   "topic": "a/b/c",
+   "matches": true
+  },
+  {
+   "pattern": "a/+/c",
+   "topic": "a/x/c",
+   "matches": true
+  },
+  {
+   "pattern": "a/+/c",
+   "topic": "a/b/c/d",
+   "matches": false
+  },
+  {
+   "pattern": "a/+/c",
+   "topic": "b",
+   "matches": false
+  },
+  {
+   "pattern": "a/+/c",
+   "topic": "x/b",
+   "matches": false
+  },
+  {
+   "pattern": "a/+/c",
+   "topic": "linky/h/papp",
+   "matches": false
+  },
+  {
+   "pattern": "a/+/c",
+   "topic": "linky/papp",
+   "matches": false
+  },
+  {
+   "pattern": "a/+/c",
+   "topic": "$SYS/x",
+   "matches": false
+  },
+  {
+   "pattern": "a/b/#",
+   "topic": "zigbee2mqtt/Bureau",
+   "matches": false
+  },
+  {
+   "pattern": "a/b/#",
+   "topic": "zigbee2mqtt/Bureau/set",
+   "matches": false
+  },
+  {
+   "pattern": "a/b/#",
+   "topic": "zigbee2mqtt",
+   "matches": false
+  },
+  {
+   "pattern": "a/b/#",
+   "topic": "zigbee2mqtt/a/b",
+   "matches": false
+  },
+  {
+   "pattern": "a/b/#",
+   "topic": "a/b",
+   "matches": true
+  },
+  {
+   "pattern": "a/b/#",
+   "topic": "a",
+   "matches": false
+  },
+  {
+   "pattern": "a/b/#",
+   "topic": "a/b/c",
+   "matches": true
+  },
+  {
+   "pattern": "a/b/#",
+   "topic": "a/x/c",
+   "matches": false
+  },
+  {
+   "pattern": "a/b/#",
+   "topic": "a/b/c/d",
+   "matches": true
+  },
+  {
+   "pattern": "a/b/#",
+   "topic": "b",
+   "matches": false
+  },
+  {
+   "pattern": "a/b/#",
+   "topic": "x/b",
+   "matches": false
+  },
+  {
+   "pattern": "a/b/#",
+   "topic": "linky/h/papp",
+   "matches": false
+  },
+  {
+   "pattern": "a/b/#",
+   "topic": "linky/papp",
+   "matches": false
+  },
+  {
+   "pattern": "a/b/#",
+   "topic": "$SYS/x",
+   "matches": false
+  },
+  {
+   "pattern": "linky/+/papp",
+   "topic": "zigbee2mqtt/Bureau",
+   "matches": false
+  },
+  {
+   "pattern": "linky/+/papp",
+   "topic": "zigbee2mqtt/Bureau/set",
+   "matches": false
+  },
+  {
+   "pattern": "linky/+/papp",
+   "topic": "zigbee2mqtt",
+   "matches": false
+  },
+  {
+   "pattern": "linky/+/papp",
+   "topic": "zigbee2mqtt/a/b",
+   "matches": false
+  },
+  {
+   "pattern": "linky/+/papp",
+   "topic": "a/b",
+   "matches": false
+  },
+  {
+   "pattern": "linky/+/papp",
+   "topic": "a",
+   "matches": false
+  },
+  {
+   "pattern": "linky/+/papp",
+   "topic": "a/b/c",
+   "matches": false
+  },
+  {
+   "pattern": "linky/+/papp",
+   "topic": "a/x/c",
+   "matches": false
+  },
+  {
+   "pattern": "linky/+/papp",
+   "topic": "a/b/c/d",
+   "matches": false
+  },
+  {
+   "pattern": "linky/+/papp",
+   "topic": "b",
+   "matches": false
+  },
+  {
+   "pattern": "linky/+/papp",
+   "topic": "x/b",
+   "matches": false
+  },
+  {
+   "pattern": "linky/+/papp",
+   "topic": "linky/h/papp",
+   "matches": true
+  },
+  {
+   "pattern": "linky/+/papp",
+   "topic": "linky/papp",
+   "matches": false
+  },
+  {
+   "pattern": "linky/+/papp",
+   "topic": "$SYS/x",
+   "matches": false
+  },
+  {
+   "pattern": "",
+   "topic": "zigbee2mqtt/Bureau",
+   "matches": false
+  },
+  {
+   "pattern": "",
+   "topic": "zigbee2mqtt/Bureau/set",
+   "matches": false
+  },
+  {
+   "pattern": "",
+   "topic": "zigbee2mqtt",
+   "matches": false
+  },
+  {
+   "pattern": "",
+   "topic": "zigbee2mqtt/a/b",
+   "matches": false
+  },
+  {
+   "pattern": "",
+   "topic": "a/b",
+   "matches": false
+  },
+  {
+   "pattern": "",
+   "topic": "a",
+   "matches": false
+  },
+  {
+   "pattern": "",
+   "topic": "a/b/c",
+   "matches": false
+  },
+  {
+   "pattern": "",
+   "topic": "a/x/c",
+   "matches": false
+  },
+  {
+   "pattern": "",
+   "topic": "a/b/c/d",
+   "matches": false
+  },
+  {
+   "pattern": "",
+   "topic": "b",
+   "matches": false
+  },
+  {
+   "pattern": "",
+   "topic": "x/b",
+   "matches": false
+  },
+  {
+   "pattern": "",
+   "topic": "linky/h/papp",
+   "matches": false
+  },
+  {
+   "pattern": "",
+   "topic": "linky/papp",
+   "matches": false
+  },
+  {
+   "pattern": "",
+   "topic": "$SYS/x",
+   "matches": false
+  }
+ ],
+ "conditions": [
+  {
+   "condition": {
+    "key": "state",
+    "value": "ON"
+   },
+   "payload": {},
+   "holds": true
+  },
+  {
+   "condition": {
+    "key": "state",
+    "value": "ON"
+   },
+   "payload": {
+    "state": "ON"
+   },
+   "holds": true
+  },
+  {
+   "condition": {
+    "key": "state",
+    "value": "ON"
+   },
+   "payload": {
+    "state": "OFF"
+   },
+   "holds": false
+  },
+  {
+   "condition": {
+    "key": "state",
+    "value": "ON"
+   },
+   "payload": {
+    "n": 1
+   },
+   "holds": true
+  },
+  {
+   "condition": {
+    "key": "state",
+    "value": "ON"
+   },
+   "payload": {
+    "n": 1.0
+   },
+   "holds": true
+  },
+  {
+   "condition": {
+    "key": "state",
+    "value": "ON"
+   },
+   "payload": {
+    "n": true
+   },
+   "holds": true
+  },
+  {
+   "condition": {
+    "key": "state",
+    "value": "ON"
+   },
+   "payload": {
+    "n": "1"
+   },
+   "holds": true
+  },
+  {
+   "condition": {
+    "key": "state",
+    "value": "ON"
+   },
+   "payload": {
+    "n": null
+   },
+   "holds": true
+  },
+  {
+   "condition": {
+    "key": "state",
+    "value": "ON"
+   },
+   "payload": {
+    "action": "single",
+    "n": 2
+   },
+   "holds": true
+  },
+  {
+   "condition": {
+    "key": "state",
+    "value": "ON"
+   },
+   "payload": {
+    "l": [
+     1,
+     2
+    ]
+   },
+   "holds": true
+  },
+  {
+   "condition": {
+    "key": "state",
+    "value": "ON"
+   },
+   "payload": {
+    "o": {
+     "a": 1
+    }
+   },
+   "holds": true
+  },
+  {
+   "condition": {
+    "key": "state",
+    "value": "ON"
+   },
+   "payload": {
+    "o": {
+     "a": 1.0
+    }
+   },
+   "holds": true
+  },
+  {
+   "condition": {
+    "key": "n",
+    "value": 1
+   },
+   "payload": {},
+   "holds": true
+  },
+  {
+   "condition": {
+    "key": "n",
+    "value": 1
+   },
+   "payload": {
+    "state": "ON"
+   },
+   "holds": true
+  },
+  {
+   "condition": {
+    "key": "n",
+    "value": 1
+   },
+   "payload": {
+    "state": "OFF"
+   },
+   "holds": true
+  },
+  {
+   "condition": {
+    "key": "n",
+    "value": 1
+   },
+   "payload": {
+    "n": 1
+   },
+   "holds": true
+  },
+  {
+   "condition": {
+    "key": "n",
+    "value": 1
+   },
+   "payload": {
+    "n": 1.0
+   },
+   "holds": true
+  },
+  {
+   "condition": {
+    "key": "n",
+    "value": 1
+   },
+   "payload": {
+    "n": true
+   },
+   "holds": true
+  },
+  {
+   "condition": {
+    "key": "n",
+    "value": 1
+   },
+   "payload": {
+    "n": "1"
+   },
+   "holds": false
+  },
+  {
+   "condition": {
+    "key": "n",
+    "value": 1
+   },
+   "payload": {
+    "n": null
+   },
+   "holds": false
+  },
+  {
+   "condition": {
+    "key": "n",
+    "value": 1
+   },
+   "payload": {
+    "action": "single",
+    "n": 2
+   },
+   "holds": false
+  },
+  {
+   "condition": {
+    "key": "n",
+    "value": 1
+   },
+   "payload": {
+    "l": [
+     1,
+     2
+    ]
+   },
+   "holds": true
+  },
+  {
+   "condition": {
+    "key": "n",
+    "value": 1
+   },
+   "payload": {
+    "o": {
+     "a": 1
+    }
+   },
+   "holds": true
+  },
+  {
+   "condition": {
+    "key": "n",
+    "value": 1
+   },
+   "payload": {
+    "o": {
+     "a": 1.0
+    }
+   },
+   "holds": true
+  },
+  {
+   "condition": {
+    "key": "n",
+    "value": true
+   },
+   "payload": {},
+   "holds": true
+  },
+  {
+   "condition": {
+    "key": "n",
+    "value": true
+   },
+   "payload": {
+    "state": "ON"
+   },
+   "holds": true
+  },
+  {
+   "condition": {
+    "key": "n",
+    "value": true
+   },
+   "payload": {
+    "state": "OFF"
+   },
+   "holds": true
+  },
+  {
+   "condition": {
+    "key": "n",
+    "value": true
+   },
+   "payload": {
+    "n": 1
+   },
+   "holds": true
+  },
+  {
+   "condition": {
+    "key": "n",
+    "value": true
+   },
+   "payload": {
+    "n": 1.0
+   },
+   "holds": true
+  },
+  {
+   "condition": {
+    "key": "n",
+    "value": true
+   },
+   "payload": {
+    "n": true
+   },
+   "holds": true
+  },
+  {
+   "condition": {
+    "key": "n",
+    "value": true
+   },
+   "payload": {
+    "n": "1"
+   },
+   "holds": false
+  },
+  {
+   "condition": {
+    "key": "n",
+    "value": true
+   },
+   "payload": {
+    "n": null
+   },
+   "holds": false
+  },
+  {
+   "condition": {
+    "key": "n",
+    "value": true
+   },
+   "payload": {
+    "action": "single",
+    "n": 2
+   },
+   "holds": false
+  },
+  {
+   "condition": {
+    "key": "n",
+    "value": true
+   },
+   "payload": {
+    "l": [
+     1,
+     2
+    ]
+   },
+   "holds": true
+  },
+  {
+   "condition": {
+    "key": "n",
+    "value": true
+   },
+   "payload": {
+    "o": {
+     "a": 1
+    }
+   },
+   "holds": true
+  },
+  {
+   "condition": {
+    "key": "n",
+    "value": true
+   },
+   "payload": {
+    "o": {
+     "a": 1.0
+    }
+   },
+   "holds": true
+  },
+  {
+   "condition": {
+    "key": "n",
+    "value": "1"
+   },
+   "payload": {},
+   "holds": true
+  },
+  {
+   "condition": {
+    "key": "n",
+    "value": "1"
+   },
+   "payload": {
+    "state": "ON"
+   },
+   "holds": true
+  },
+  {
+   "condition": {
+    "key": "n",
+    "value": "1"
+   },
+   "payload": {
+    "state": "OFF"
+   },
+   "holds": true
+  },
+  {
+   "condition": {
+    "key": "n",
+    "value": "1"
+   },
+   "payload": {
+    "n": 1
+   },
+   "holds": false
+  },
+  {
+   "condition": {
+    "key": "n",
+    "value": "1"
+   },
+   "payload": {
+    "n": 1.0
+   },
+   "holds": false
+  },
+  {
+   "condition": {
+    "key": "n",
+    "value": "1"
+   },
+   "payload": {
+    "n": true
+   },
+   "holds": false
+  },
+  {
+   "condition": {
+    "key": "n",
+    "value": "1"
+   },
+   "payload": {
+    "n": "1"
+   },
+   "holds": true
+  },
+  {
+   "condition": {
+    "key": "n",
+    "value": "1"
+   },
+   "payload": {
+    "n": null
+   },
+   "holds": false
+  },
+  {
+   "condition": {
+    "key": "n",
+    "value": "1"
+   },
+   "payload": {
+    "action": "single",
+    "n": 2
+   },
+   "holds": false
+  },
+  {
+   "condition": {
+    "key": "n",
+    "value": "1"
+   },
+   "payload": {
+    "l": [
+     1,
+     2
+    ]
+   },
+   "holds": true
+  },
+  {
+   "condition": {
+    "key": "n",
+    "value": "1"
+   },
+   "payload": {
+    "o": {
+     "a": 1
+    }
+   },
+   "holds": true
+  },
+  {
+   "condition": {
+    "key": "n",
+    "value": "1"
+   },
+   "payload": {
+    "o": {
+     "a": 1.0
+    }
+   },
+   "holds": true
+  },
+  {
+   "condition": {
+    "key": "n",
+    "value": null
+   },
+   "payload": {},
+   "holds": true
+  },
+  {
+   "condition": {
+    "key": "n",
+    "value": null
+   },
+   "payload": {
+    "state": "ON"
+   },
+   "holds": true
+  },
+  {
+   "condition": {
+    "key": "n",
+    "value": null
+   },
+   "payload": {
+    "state": "OFF"
+   },
+   "holds": true
+  },
+  {
+   "condition": {
+    "key": "n",
+    "value": null
+   },
+   "payload": {
+    "n": 1
+   },
+   "holds": false
+  },
+  {
+   "condition": {
+    "key": "n",
+    "value": null
+   },
+   "payload": {
+    "n": 1.0
+   },
+   "holds": false
+  },
+  {
+   "condition": {
+    "key": "n",
+    "value": null
+   },
+   "payload": {
+    "n": true
+   },
+   "holds": false
+  },
+  {
+   "condition": {
+    "key": "n",
+    "value": null
+   },
+   "payload": {
+    "n": "1"
+   },
+   "holds": false
+  },
+  {
+   "condition": {
+    "key": "n",
+    "value": null
+   },
+   "payload": {
+    "n": null
+   },
+   "holds": true
+  },
+  {
+   "condition": {
+    "key": "n",
+    "value": null
+   },
+   "payload": {
+    "action": "single",
+    "n": 2
+   },
+   "holds": false
+  },
+  {
+   "condition": {
+    "key": "n",
+    "value": null
+   },
+   "payload": {
+    "l": [
+     1,
+     2
+    ]
+   },
+   "holds": true
+  },
+  {
+   "condition": {
+    "key": "n",
+    "value": null
+   },
+   "payload": {
+    "o": {
+     "a": 1
+    }
+   },
+   "holds": true
+  },
+  {
+   "condition": {
+    "key": "n",
+    "value": null
+   },
+   "payload": {
+    "o": {
+     "a": 1.0
+    }
+   },
+   "holds": true
+  },
+  {
+   "condition": {
+    "key": "l",
+    "value": [
+     1,
+     2
+    ]
+   },
+   "payload": {},
+   "holds": true
+  },
+  {
+   "condition": {
+    "key": "l",
+    "value": [
+     1,
+     2
+    ]
+   },
+   "payload": {
+    "state": "ON"
+   },
+   "holds": true
+  },
+  {
+   "condition": {
+    "key": "l",
+    "value": [
+     1,
+     2
+    ]
+   },
+   "payload": {
+    "state": "OFF"
+   },
+   "holds": true
+  },
+  {
+   "condition": {
+    "key": "l",
+    "value": [
+     1,
+     2
+    ]
+   },
+   "payload": {
+    "n": 1
+   },
+   "holds": true
+  },
+  {
+   "condition": {
+    "key": "l",
+    "value": [
+     1,
+     2
+    ]
+   },
+   "payload": {
+    "n": 1.0
+   },
+   "holds": true
+  },
+  {
+   "condition": {
+    "key": "l",
+    "value": [
+     1,
+     2
+    ]
+   },
+   "payload": {
+    "n": true
+   },
+   "holds": true
+  },
+  {
+   "condition": {
+    "key": "l",
+    "value": [
+     1,
+     2
+    ]
+   },
+   "payload": {
+    "n": "1"
+   },
+   "holds": true
+  },
+  {
+   "condition": {
+    "key": "l",
+    "value": [
+     1,
+     2
+    ]
+   },
+   "payload": {
+    "n": null
+   },
+   "holds": true
+  },
+  {
+   "condition": {
+    "key": "l",
+    "value": [
+     1,
+     2
+    ]
+   },
+   "payload": {
+    "action": "single",
+    "n": 2
+   },
+   "holds": true
+  },
+  {
+   "condition": {
+    "key": "l",
+    "value": [
+     1,
+     2
+    ]
+   },
+   "payload": {
+    "l": [
+     1,
+     2
+    ]
+   },
+   "holds": true
+  },
+  {
+   "condition": {
+    "key": "l",
+    "value": [
+     1,
+     2
+    ]
+   },
+   "payload": {
+    "o": {
+     "a": 1
+    }
+   },
+   "holds": true
+  },
+  {
+   "condition": {
+    "key": "l",
+    "value": [
+     1,
+     2
+    ]
+   },
+   "payload": {
+    "o": {
+     "a": 1.0
+    }
+   },
+   "holds": true
+  },
+  {
+   "condition": {
+    "key": "o",
+    "value": {
+     "a": 1
+    }
+   },
+   "payload": {},
+   "holds": true
+  },
+  {
+   "condition": {
+    "key": "o",
+    "value": {
+     "a": 1
+    }
+   },
+   "payload": {
+    "state": "ON"
+   },
+   "holds": true
+  },
+  {
+   "condition": {
+    "key": "o",
+    "value": {
+     "a": 1
+    }
+   },
+   "payload": {
+    "state": "OFF"
+   },
+   "holds": true
+  },
+  {
+   "condition": {
+    "key": "o",
+    "value": {
+     "a": 1
+    }
+   },
+   "payload": {
+    "n": 1
+   },
+   "holds": true
+  },
+  {
+   "condition": {
+    "key": "o",
+    "value": {
+     "a": 1
+    }
+   },
+   "payload": {
+    "n": 1.0
+   },
+   "holds": true
+  },
+  {
+   "condition": {
+    "key": "o",
+    "value": {
+     "a": 1
+    }
+   },
+   "payload": {
+    "n": true
+   },
+   "holds": true
+  },
+  {
+   "condition": {
+    "key": "o",
+    "value": {
+     "a": 1
+    }
+   },
+   "payload": {
+    "n": "1"
+   },
+   "holds": true
+  },
+  {
+   "condition": {
+    "key": "o",
+    "value": {
+     "a": 1
+    }
+   },
+   "payload": {
+    "n": null
+   },
+   "holds": true
+  },
+  {
+   "condition": {
+    "key": "o",
+    "value": {
+     "a": 1
+    }
+   },
+   "payload": {
+    "action": "single",
+    "n": 2
+   },
+   "holds": true
+  },
+  {
+   "condition": {
+    "key": "o",
+    "value": {
+     "a": 1
+    }
+   },
+   "payload": {
+    "l": [
+     1,
+     2
+    ]
+   },
+   "holds": true
+  },
+  {
+   "condition": {
+    "key": "o",
+    "value": {
+     "a": 1
+    }
+   },
+   "payload": {
+    "o": {
+     "a": 1
+    }
+   },
+   "holds": true
+  },
+  {
+   "condition": {
+    "key": "o",
+    "value": {
+     "a": 1
+    }
+   },
+   "payload": {
+    "o": {
+     "a": 1.0
+    }
+   },
+   "holds": true
+  },
+  {
+   "condition": {
+    "key": "absent",
+    "value": 5
+   },
+   "payload": {},
+   "holds": true
+  },
+  {
+   "condition": {
+    "key": "absent",
+    "value": 5
+   },
+   "payload": {
+    "state": "ON"
+   },
+   "holds": true
+  },
+  {
+   "condition": {
+    "key": "absent",
+    "value": 5
+   },
+   "payload": {
+    "state": "OFF"
+   },
+   "holds": true
+  },
+  {
+   "condition": {
+    "key": "absent",
+    "value": 5
+   },
+   "payload": {
+    "n": 1
+   },
+   "holds": true
+  },
+  {
+   "condition": {
+    "key": "absent",
+    "value": 5
+   },
+   "payload": {
+    "n": 1.0
+   },
+   "holds": true
+  },
+  {
+   "condition": {
+    "key": "absent",
+    "value": 5
+   },
+   "payload": {
+    "n": true
+   },
+   "holds": true
+  },
+  {
+   "condition": {
+    "key": "absent",
+    "value": 5
+   },
+   "payload": {
+    "n": "1"
+   },
+   "holds": true
+  },
+  {
+   "condition": {
+    "key": "absent",
+    "value": 5
+   },
+   "payload": {
+    "n": null
+   },
+   "holds": true
+  },
+  {
+   "condition": {
+    "key": "absent",
+    "value": 5
+   },
+   "payload": {
+    "action": "single",
+    "n": 2
+   },
+   "holds": true
+  },
+  {
+   "condition": {
+    "key": "absent",
+    "value": 5
+   },
+   "payload": {
+    "l": [
+     1,
+     2
+    ]
+   },
+   "holds": true
+  },
+  {
+   "condition": {
+    "key": "absent",
+    "value": 5
+   },
+   "payload": {
+    "o": {
+     "a": 1
+    }
+   },
+   "holds": true
+  },
+  {
+   "condition": {
+    "key": "absent",
+    "value": 5
+   },
+   "payload": {
+    "o": {
+     "a": 1.0
+    }
+   },
+   "holds": true
+  }
+ ],
+ "filters": [
+  {
+   "filter": {},
+   "payload": {},
+   "passes": true
+  },
+  {
+   "filter": {},
+   "payload": {
+    "state": "ON"
+   },
+   "passes": true
+  },
+  {
+   "filter": {},
+   "payload": {
+    "state": "OFF"
+   },
+   "passes": true
+  },
+  {
+   "filter": {},
+   "payload": {
+    "n": 1
+   },
+   "passes": true
+  },
+  {
+   "filter": {},
+   "payload": {
+    "n": 1.0
+   },
+   "passes": true
+  },
+  {
+   "filter": {},
+   "payload": {
+    "n": true
+   },
+   "passes": true
+  },
+  {
+   "filter": {},
+   "payload": {
+    "n": "1"
+   },
+   "passes": true
+  },
+  {
+   "filter": {},
+   "payload": {
+    "n": null
+   },
+   "passes": true
+  },
+  {
+   "filter": {},
+   "payload": {
+    "action": "single",
+    "n": 2
+   },
+   "passes": true
+  },
+  {
+   "filter": {},
+   "payload": {
+    "l": [
+     1,
+     2
+    ]
+   },
+   "passes": true
+  },
+  {
+   "filter": {},
+   "payload": {
+    "o": {
+     "a": 1
+    }
+   },
+   "passes": true
+  },
+  {
+   "filter": {},
+   "payload": {
+    "o": {
+     "a": 1.0
+    }
+   },
+   "passes": true
+  },
+  {
+   "filter": {
+    "state": "ON"
+   },
+   "payload": {},
+   "passes": false
+  },
+  {
+   "filter": {
+    "state": "ON"
+   },
+   "payload": {
+    "state": "ON"
+   },
+   "passes": true
+  },
+  {
+   "filter": {
+    "state": "ON"
+   },
+   "payload": {
+    "state": "OFF"
+   },
+   "passes": false
+  },
+  {
+   "filter": {
+    "state": "ON"
+   },
+   "payload": {
+    "n": 1
+   },
+   "passes": false
+  },
+  {
+   "filter": {
+    "state": "ON"
+   },
+   "payload": {
+    "n": 1.0
+   },
+   "passes": false
+  },
+  {
+   "filter": {
+    "state": "ON"
+   },
+   "payload": {
+    "n": true
+   },
+   "passes": false
+  },
+  {
+   "filter": {
+    "state": "ON"
+   },
+   "payload": {
+    "n": "1"
+   },
+   "passes": false
+  },
+  {
+   "filter": {
+    "state": "ON"
+   },
+   "payload": {
+    "n": null
+   },
+   "passes": false
+  },
+  {
+   "filter": {
+    "state": "ON"
+   },
+   "payload": {
+    "action": "single",
+    "n": 2
+   },
+   "passes": false
+  },
+  {
+   "filter": {
+    "state": "ON"
+   },
+   "payload": {
+    "l": [
+     1,
+     2
+    ]
+   },
+   "passes": false
+  },
+  {
+   "filter": {
+    "state": "ON"
+   },
+   "payload": {
+    "o": {
+     "a": 1
+    }
+   },
+   "passes": false
+  },
+  {
+   "filter": {
+    "state": "ON"
+   },
+   "payload": {
+    "o": {
+     "a": 1.0
+    }
+   },
+   "passes": false
+  },
+  {
+   "filter": {
+    "action": "single"
+   },
+   "payload": {},
+   "passes": false
+  },
+  {
+   "filter": {
+    "action": "single"
+   },
+   "payload": {
+    "state": "ON"
+   },
+   "passes": false
+  },
+  {
+   "filter": {
+    "action": "single"
+   },
+   "payload": {
+    "state": "OFF"
+   },
+   "passes": false
+  },
+  {
+   "filter": {
+    "action": "single"
+   },
+   "payload": {
+    "n": 1
+   },
+   "passes": false
+  },
+  {
+   "filter": {
+    "action": "single"
+   },
+   "payload": {
+    "n": 1.0
+   },
+   "passes": false
+  },
+  {
+   "filter": {
+    "action": "single"
+   },
+   "payload": {
+    "n": true
+   },
+   "passes": false
+  },
+  {
+   "filter": {
+    "action": "single"
+   },
+   "payload": {
+    "n": "1"
+   },
+   "passes": false
+  },
+  {
+   "filter": {
+    "action": "single"
+   },
+   "payload": {
+    "n": null
+   },
+   "passes": false
+  },
+  {
+   "filter": {
+    "action": "single"
+   },
+   "payload": {
+    "action": "single",
+    "n": 2
+   },
+   "passes": true
+  },
+  {
+   "filter": {
+    "action": "single"
+   },
+   "payload": {
+    "l": [
+     1,
+     2
+    ]
+   },
+   "passes": false
+  },
+  {
+   "filter": {
+    "action": "single"
+   },
+   "payload": {
+    "o": {
+     "a": 1
+    }
+   },
+   "passes": false
+  },
+  {
+   "filter": {
+    "action": "single"
+   },
+   "payload": {
+    "o": {
+     "a": 1.0
+    }
+   },
+   "passes": false
+  },
+  {
+   "filter": {
+    "action": "single",
+    "n": 2
+   },
+   "payload": {},
+   "passes": false
+  },
+  {
+   "filter": {
+    "action": "single",
+    "n": 2
+   },
+   "payload": {
+    "state": "ON"
+   },
+   "passes": false
+  },
+  {
+   "filter": {
+    "action": "single",
+    "n": 2
+   },
+   "payload": {
+    "state": "OFF"
+   },
+   "passes": false
+  },
+  {
+   "filter": {
+    "action": "single",
+    "n": 2
+   },
+   "payload": {
+    "n": 1
+   },
+   "passes": false
+  },
+  {
+   "filter": {
+    "action": "single",
+    "n": 2
+   },
+   "payload": {
+    "n": 1.0
+   },
+   "passes": false
+  },
+  {
+   "filter": {
+    "action": "single",
+    "n": 2
+   },
+   "payload": {
+    "n": true
+   },
+   "passes": false
+  },
+  {
+   "filter": {
+    "action": "single",
+    "n": 2
+   },
+   "payload": {
+    "n": "1"
+   },
+   "passes": false
+  },
+  {
+   "filter": {
+    "action": "single",
+    "n": 2
+   },
+   "payload": {
+    "n": null
+   },
+   "passes": false
+  },
+  {
+   "filter": {
+    "action": "single",
+    "n": 2
+   },
+   "payload": {
+    "action": "single",
+    "n": 2
+   },
+   "passes": true
+  },
+  {
+   "filter": {
+    "action": "single",
+    "n": 2
+   },
+   "payload": {
+    "l": [
+     1,
+     2
+    ]
+   },
+   "passes": false
+  },
+  {
+   "filter": {
+    "action": "single",
+    "n": 2
+   },
+   "payload": {
+    "o": {
+     "a": 1
+    }
+   },
+   "passes": false
+  },
+  {
+   "filter": {
+    "action": "single",
+    "n": 2
+   },
+   "payload": {
+    "o": {
+     "a": 1.0
+    }
+   },
+   "passes": false
+  },
+  {
+   "filter": {
+    "n": 2.0
+   },
+   "payload": {},
+   "passes": false
+  },
+  {
+   "filter": {
+    "n": 2.0
+   },
+   "payload": {
+    "state": "ON"
+   },
+   "passes": false
+  },
+  {
+   "filter": {
+    "n": 2.0
+   },
+   "payload": {
+    "state": "OFF"
+   },
+   "passes": false
+  },
+  {
+   "filter": {
+    "n": 2.0
+   },
+   "payload": {
+    "n": 1
+   },
+   "passes": false
+  },
+  {
+   "filter": {
+    "n": 2.0
+   },
+   "payload": {
+    "n": 1.0
+   },
+   "passes": false
+  },
+  {
+   "filter": {
+    "n": 2.0
+   },
+   "payload": {
+    "n": true
+   },
+   "passes": false
+  },
+  {
+   "filter": {
+    "n": 2.0
+   },
+   "payload": {
+    "n": "1"
+   },
+   "passes": false
+  },
+  {
+   "filter": {
+    "n": 2.0
+   },
+   "payload": {
+    "n": null
+   },
+   "passes": false
+  },
+  {
+   "filter": {
+    "n": 2.0
+   },
+   "payload": {
+    "action": "single",
+    "n": 2
+   },
+   "passes": true
+  },
+  {
+   "filter": {
+    "n": 2.0
+   },
+   "payload": {
+    "l": [
+     1,
+     2
+    ]
+   },
+   "passes": false
+  },
+  {
+   "filter": {
+    "n": 2.0
+   },
+   "payload": {
+    "o": {
+     "a": 1
+    }
+   },
+   "passes": false
+  },
+  {
+   "filter": {
+    "n": 2.0
+   },
+   "payload": {
+    "o": {
+     "a": 1.0
+    }
+   },
+   "passes": false
+  },
+  {
+   "filter": {
+    "n": true
+   },
+   "payload": {},
+   "passes": false
+  },
+  {
+   "filter": {
+    "n": true
+   },
+   "payload": {
+    "state": "ON"
+   },
+   "passes": false
+  },
+  {
+   "filter": {
+    "n": true
+   },
+   "payload": {
+    "state": "OFF"
+   },
+   "passes": false
+  },
+  {
+   "filter": {
+    "n": true
+   },
+   "payload": {
+    "n": 1
+   },
+   "passes": true
+  },
+  {
+   "filter": {
+    "n": true
+   },
+   "payload": {
+    "n": 1.0
+   },
+   "passes": true
+  },
+  {
+   "filter": {
+    "n": true
+   },
+   "payload": {
+    "n": true
+   },
+   "passes": true
+  },
+  {
+   "filter": {
+    "n": true
+   },
+   "payload": {
+    "n": "1"
+   },
+   "passes": false
+  },
+  {
+   "filter": {
+    "n": true
+   },
+   "payload": {
+    "n": null
+   },
+   "passes": false
+  },
+  {
+   "filter": {
+    "n": true
+   },
+   "payload": {
+    "action": "single",
+    "n": 2
+   },
+   "passes": false
+  },
+  {
+   "filter": {
+    "n": true
+   },
+   "payload": {
+    "l": [
+     1,
+     2
+    ]
+   },
+   "passes": false
+  },
+  {
+   "filter": {
+    "n": true
+   },
+   "payload": {
+    "o": {
+     "a": 1
+    }
+   },
+   "passes": false
+  },
+  {
+   "filter": {
+    "n": true
+   },
+   "payload": {
+    "o": {
+     "a": 1.0
+    }
+   },
+   "passes": false
+  },
+  {
+   "filter": {
+    "n": 1
+   },
+   "payload": {},
+   "passes": false
+  },
+  {
+   "filter": {
+    "n": 1
+   },
+   "payload": {
+    "state": "ON"
+   },
+   "passes": false
+  },
+  {
+   "filter": {
+    "n": 1
+   },
+   "payload": {
+    "state": "OFF"
+   },
+   "passes": false
+  },
+  {
+   "filter": {
+    "n": 1
+   },
+   "payload": {
+    "n": 1
+   },
+   "passes": true
+  },
+  {
+   "filter": {
+    "n": 1
+   },
+   "payload": {
+    "n": 1.0
+   },
+   "passes": true
+  },
+  {
+   "filter": {
+    "n": 1
+   },
+   "payload": {
+    "n": true
+   },
+   "passes": true
+  },
+  {
+   "filter": {
+    "n": 1
+   },
+   "payload": {
+    "n": "1"
+   },
+   "passes": false
+  },
+  {
+   "filter": {
+    "n": 1
+   },
+   "payload": {
+    "n": null
+   },
+   "passes": false
+  },
+  {
+   "filter": {
+    "n": 1
+   },
+   "payload": {
+    "action": "single",
+    "n": 2
+   },
+   "passes": false
+  },
+  {
+   "filter": {
+    "n": 1
+   },
+   "payload": {
+    "l": [
+     1,
+     2
+    ]
+   },
+   "passes": false
+  },
+  {
+   "filter": {
+    "n": 1
+   },
+   "payload": {
+    "o": {
+     "a": 1
+    }
+   },
+   "passes": false
+  },
+  {
+   "filter": {
+    "n": 1
+   },
+   "payload": {
+    "o": {
+     "a": 1.0
+    }
+   },
+   "passes": false
+  },
+  {
+   "filter": {
+    "absent": null
+   },
+   "payload": {},
+   "passes": true
+  },
+  {
+   "filter": {
+    "absent": null
+   },
+   "payload": {
+    "state": "ON"
+   },
+   "passes": true
+  },
+  {
+   "filter": {
+    "absent": null
+   },
+   "payload": {
+    "state": "OFF"
+   },
+   "passes": true
+  },
+  {
+   "filter": {
+    "absent": null
+   },
+   "payload": {
+    "n": 1
+   },
+   "passes": true
+  },
+  {
+   "filter": {
+    "absent": null
+   },
+   "payload": {
+    "n": 1.0
+   },
+   "passes": true
+  },
+  {
+   "filter": {
+    "absent": null
+   },
+   "payload": {
+    "n": true
+   },
+   "passes": true
+  },
+  {
+   "filter": {
+    "absent": null
+   },
+   "payload": {
+    "n": "1"
+   },
+   "passes": true
+  },
+  {
+   "filter": {
+    "absent": null
+   },
+   "payload": {
+    "n": null
+   },
+   "passes": true
+  },
+  {
+   "filter": {
+    "absent": null
+   },
+   "payload": {
+    "action": "single",
+    "n": 2
+   },
+   "passes": true
+  },
+  {
+   "filter": {
+    "absent": null
+   },
+   "payload": {
+    "l": [
+     1,
+     2
+    ]
+   },
+   "passes": true
+  },
+  {
+   "filter": {
+    "absent": null
+   },
+   "payload": {
+    "o": {
+     "a": 1
+    }
+   },
+   "passes": true
+  },
+  {
+   "filter": {
+    "absent": null
+   },
+   "payload": {
+    "o": {
+     "a": 1.0
+    }
+   },
+   "passes": true
+  },
+  {
+   "filter": {
+    "absent": 1
+   },
+   "payload": {},
+   "passes": false
+  },
+  {
+   "filter": {
+    "absent": 1
+   },
+   "payload": {
+    "state": "ON"
+   },
+   "passes": false
+  },
+  {
+   "filter": {
+    "absent": 1
+   },
+   "payload": {
+    "state": "OFF"
+   },
+   "passes": false
+  },
+  {
+   "filter": {
+    "absent": 1
+   },
+   "payload": {
+    "n": 1
+   },
+   "passes": false
+  },
+  {
+   "filter": {
+    "absent": 1
+   },
+   "payload": {
+    "n": 1.0
+   },
+   "passes": false
+  },
+  {
+   "filter": {
+    "absent": 1
+   },
+   "payload": {
+    "n": true
+   },
+   "passes": false
+  },
+  {
+   "filter": {
+    "absent": 1
+   },
+   "payload": {
+    "n": "1"
+   },
+   "passes": false
+  },
+  {
+   "filter": {
+    "absent": 1
+   },
+   "payload": {
+    "n": null
+   },
+   "passes": false
+  },
+  {
+   "filter": {
+    "absent": 1
+   },
+   "payload": {
+    "action": "single",
+    "n": 2
+   },
+   "passes": false
+  },
+  {
+   "filter": {
+    "absent": 1
+   },
+   "payload": {
+    "l": [
+     1,
+     2
+    ]
+   },
+   "passes": false
+  },
+  {
+   "filter": {
+    "absent": 1
+   },
+   "payload": {
+    "o": {
+     "a": 1
+    }
+   },
+   "passes": false
+  },
+  {
+   "filter": {
+    "absent": 1
+   },
+   "payload": {
+    "o": {
+     "a": 1.0
+    }
+   },
+   "passes": false
+  },
+  {
+   "filter": {
+    "o": {
+     "a": 1
+    }
+   },
+   "payload": {},
+   "passes": false
+  },
+  {
+   "filter": {
+    "o": {
+     "a": 1
+    }
+   },
+   "payload": {
+    "state": "ON"
+   },
+   "passes": false
+  },
+  {
+   "filter": {
+    "o": {
+     "a": 1
+    }
+   },
+   "payload": {
+    "state": "OFF"
+   },
+   "passes": false
+  },
+  {
+   "filter": {
+    "o": {
+     "a": 1
+    }
+   },
+   "payload": {
+    "n": 1
+   },
+   "passes": false
+  },
+  {
+   "filter": {
+    "o": {
+     "a": 1
+    }
+   },
+   "payload": {
+    "n": 1.0
+   },
+   "passes": false
+  },
+  {
+   "filter": {
+    "o": {
+     "a": 1
+    }
+   },
+   "payload": {
+    "n": true
+   },
+   "passes": false
+  },
+  {
+   "filter": {
+    "o": {
+     "a": 1
+    }
+   },
+   "payload": {
+    "n": "1"
+   },
+   "passes": false
+  },
+  {
+   "filter": {
+    "o": {
+     "a": 1
+    }
+   },
+   "payload": {
+    "n": null
+   },
+   "passes": false
+  },
+  {
+   "filter": {
+    "o": {
+     "a": 1
+    }
+   },
+   "payload": {
+    "action": "single",
+    "n": 2
+   },
+   "passes": false
+  },
+  {
+   "filter": {
+    "o": {
+     "a": 1
+    }
+   },
+   "payload": {
+    "l": [
+     1,
+     2
+    ]
+   },
+   "passes": false
+  },
+  {
+   "filter": {
+    "o": {
+     "a": 1
+    }
+   },
+   "payload": {
+    "o": {
+     "a": 1
+    }
+   },
+   "passes": true
+  },
+  {
+   "filter": {
+    "o": {
+     "a": 1
+    }
+   },
+   "payload": {
+    "o": {
+     "a": 1.0
+    }
+   },
+   "passes": true
+  },
+  {
+   "filter": {
+    "l": [
+     1.0,
+     2
+    ]
+   },
+   "payload": {},
+   "passes": false
+  },
+  {
+   "filter": {
+    "l": [
+     1.0,
+     2
+    ]
+   },
+   "payload": {
+    "state": "ON"
+   },
+   "passes": false
+  },
+  {
+   "filter": {
+    "l": [
+     1.0,
+     2
+    ]
+   },
+   "payload": {
+    "state": "OFF"
+   },
+   "passes": false
+  },
+  {
+   "filter": {
+    "l": [
+     1.0,
+     2
+    ]
+   },
+   "payload": {
+    "n": 1
+   },
+   "passes": false
+  },
+  {
+   "filter": {
+    "l": [
+     1.0,
+     2
+    ]
+   },
+   "payload": {
+    "n": 1.0
+   },
+   "passes": false
+  },
+  {
+   "filter": {
+    "l": [
+     1.0,
+     2
+    ]
+   },
+   "payload": {
+    "n": true
+   },
+   "passes": false
+  },
+  {
+   "filter": {
+    "l": [
+     1.0,
+     2
+    ]
+   },
+   "payload": {
+    "n": "1"
+   },
+   "passes": false
+  },
+  {
+   "filter": {
+    "l": [
+     1.0,
+     2
+    ]
+   },
+   "payload": {
+    "n": null
+   },
+   "passes": false
+  },
+  {
+   "filter": {
+    "l": [
+     1.0,
+     2
+    ]
+   },
+   "payload": {
+    "action": "single",
+    "n": 2
+   },
+   "passes": false
+  },
+  {
+   "filter": {
+    "l": [
+     1.0,
+     2
+    ]
+   },
+   "payload": {
+    "l": [
+     1,
+     2
+    ]
+   },
+   "passes": true
+  },
+  {
+   "filter": {
+    "l": [
+     1.0,
+     2
+    ]
+   },
+   "payload": {
+    "o": {
+     "a": 1
+    }
+   },
+   "passes": false
+  },
+  {
+   "filter": {
+    "l": [
+     1.0,
+     2
+    ]
+   },
+   "payload": {
+    "o": {
+     "a": 1.0
+    }
+   },
+   "passes": false
+  }
+ ]
+}

@@ -1,0 +1,23 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT count(*) AS \"n!\" FROM sms_message m JOIN android_device d ON d.id = m.device_id\n               WHERE ($1::bigint IS NULL OR d.owner_id = $1) AND m.direction = 'incoming' AND NOT m.is_read",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "n!",
+        "type_info": "Int8",
+        "origin": "Expression"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8"
+      ]
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "72a8233d914f50590691597256835bf3198987842df21e8202d35893509cd524"
+}

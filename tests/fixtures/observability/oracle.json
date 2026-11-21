@@ -1,0 +1,293 @@
+{
+  "inputs": {
+    "prometheus": [
+      {
+        "name": "CpuHigh",
+        "group": "g_app",
+        "severity": "warning",
+        "expr": "rate(x_total[5m]) > 1",
+        "for_duration": "5m",
+        "summary": "CPU",
+        "description": "",
+        "eval_interval": "30s",
+        "active": true
+      },
+      {
+        "name": "DiskFull",
+        "group": "g_app",
+        "severity": "critical",
+        "expr": "disk_free < 0.1",
+        "for_duration": "1m",
+        "summary": "Disque plein",
+        "description": "{{ $value | printf \"%.2f\" }} libre — sur {{ $labels.instance }}",
+        "eval_interval": "60s",
+        "active": true
+      },
+      {
+        "name": "Muted",
+        "group": "g_app",
+        "severity": "info",
+        "expr": "vector(1)",
+        "for_duration": "0",
+        "summary": "coupee",
+        "description": "",
+        "eval_interval": "",
+        "active": false
+      },
+      {
+        "name": "NoStreams",
+        "group": "g_media",
+        "severity": "info",
+        "expr": "mediamtx_paths == 0",
+        "for_duration": "10m",
+        "summary": "Aucun flux",
+        "description": "Plus de camera depuis 10 min",
+        "eval_interval": "",
+        "active": true
+      },
+      {
+        "name": "OnlyInactive",
+        "group": "g_off",
+        "severity": "warning",
+        "expr": "up == 0",
+        "for_duration": "1m",
+        "summary": "x",
+        "description": "",
+        "eval_interval": "15s",
+        "active": false
+      }
+    ],
+    "grafana": [
+      {
+        "uid": "c-other",
+        "title": "Autre",
+        "folder": "Ailleurs",
+        "group": "G2",
+        "group_interval": "30s",
+        "datasource_uid": "prometheus",
+        "expr": "vector(0)",
+        "query_window": 60,
+        "for_duration": "2m",
+        "severity": "info",
+        "summary": "Autre",
+        "description": "",
+        "no_data_state": "Alerting",
+        "exec_err_state": "OK",
+        "active": true
+      },
+      {
+        "uid": "d-off",
+        "title": "Coupee",
+        "folder": "Ailleurs",
+        "group": "G2",
+        "group_interval": "30s",
+        "datasource_uid": "postgresql",
+        "expr": "SELECT 2",
+        "query_window": 90,
+        "for_duration": "2m",
+        "severity": "warning",
+        "summary": "Off",
+        "description": "",
+        "no_data_state": "NoData",
+        "exec_err_state": "Error",
+        "active": false
+      },
+      {
+        "uid": "a-sql",
+        "title": "Canicule — température",
+        "folder": "DomiNet Alerts",
+        "group": "DomiNet",
+        "group_interval": "1m",
+        "datasource_uid": "postgresql",
+        "expr": "SELECT 1\nFROM device\nWHERE x > 35",
+        "query_window": 5,
+        "for_duration": "5m",
+        "severity": "warning",
+        "summary": "Chaud",
+        "description": "",
+        "no_data_state": "OK",
+        "exec_err_state": "Error",
+        "active": true
+      },
+      {
+        "uid": "b-prom",
+        "title": "Down",
+        "folder": "DomiNet Alerts",
+        "group": "DomiNet",
+        "group_interval": "1m",
+        "datasource_uid": "prometheus",
+        "expr": "up{job=\"dominet\"} == 0",
+        "query_window": 300,
+        "for_duration": "1m",
+        "severity": "critical",
+        "summary": "Down",
+        "description": "Scrape en echec",
+        "no_data_state": "NoData",
+        "exec_err_state": "Error",
+        "active": true
+      }
+    ]
+  },
+  "prometheus": {
+    "groups": [
+      {
+        "name": "g_app",
+        "rules": [
+          {
+            "alert": "CpuHigh",
+            "expr": "rate(x_total[5m]) > 1",
+            "for": "5m",
+            "labels": {
+              "severity": "warning"
+            },
+            "annotations": {
+              "summary": "CPU"
+            }
+          },
+          {
+            "alert": "DiskFull",
+            "expr": "disk_free < 0.1",
+            "for": "1m",
+            "labels": {
+              "severity": "critical"
+            },
+            "annotations": {
+              "summary": "Disque plein",
+              "description": "{{ $value | printf \"%.2f\" }} libre — sur {{ $labels.instance }}"
+            }
+          }
+        ],
+        "interval": "30s"
+      },
+      {
+        "name": "g_media",
+        "rules": [
+          {
+            "alert": "NoStreams",
+            "expr": "mediamtx_paths == 0",
+            "for": "10m",
+            "labels": {
+              "severity": "info"
+            },
+            "annotations": {
+              "summary": "Aucun flux",
+              "description": "Plus de camera depuis 10 min"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "grafana": {
+    "apiVersion": 1,
+    "groups": [
+      {
+        "orgId": 1,
+        "name": "G2",
+        "folder": "Ailleurs",
+        "interval": "30s",
+        "rules": [
+          {
+            "uid": "c-other",
+            "title": "Autre",
+            "condition": "A",
+            "data": [
+              {
+                "refId": "A",
+                "datasourceUid": "prometheus",
+                "relativeTimeRange": {
+                  "from": 60,
+                  "to": 0
+                },
+                "model": {
+                  "expr": "vector(0)",
+                  "instant": true,
+                  "refId": "A"
+                }
+              }
+            ],
+            "for": "2m",
+            "labels": {
+              "severity": "info"
+            },
+            "annotations": {
+              "summary": "Autre"
+            },
+            "noDataState": "Alerting",
+            "execErrState": "OK",
+            "isPaused": false
+          }
+        ]
+      },
+      {
+        "orgId": 1,
+        "name": "DomiNet",
+        "folder": "DomiNet Alerts",
+        "interval": "1m",
+        "rules": [
+          {
+            "uid": "a-sql",
+            "title": "Canicule — température",
+            "condition": "A",
+            "data": [
+              {
+                "refId": "A",
+                "datasourceUid": "postgresql",
+                "relativeTimeRange": {
+                  "from": 60,
+                  "to": 0
+                },
+                "model": {
+                  "rawSql": "SELECT 1\nFROM device\nWHERE x > 35",
+                  "format": "table",
+                  "refId": "A"
+                }
+              }
+            ],
+            "for": "5m",
+            "labels": {
+              "severity": "warning"
+            },
+            "annotations": {
+              "summary": "Chaud"
+            },
+            "noDataState": "OK",
+            "execErrState": "Error",
+            "isPaused": false
+          },
+          {
+            "uid": "b-prom",
+            "title": "Down",
+            "condition": "A",
+            "data": [
+              {
+                "refId": "A",
+                "datasourceUid": "prometheus",
+                "relativeTimeRange": {
+                  "from": 300,
+                  "to": 0
+                },
+                "model": {
+                  "expr": "up{job=\"dominet\"} == 0",
+                  "instant": true,
+                  "refId": "A"
+                }
+              }
+            ],
+            "for": "1m",
+            "labels": {
+              "severity": "critical"
+            },
+            "annotations": {
+              "summary": "Down",
+              "description": "Scrape en echec"
+            },
+            "noDataState": "NoData",
+            "execErrState": "Error",
+            "isPaused": false
+          }
+        ]
+      }
+    ]
+  }
+}

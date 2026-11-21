@@ -1,0 +1,121 @@
+[
+ {
+  "state": {},
+  "schema": {},
+  "numeric_keys": []
+ },
+ {
+  "state": {
+   "temperature": 21.5,
+   "humidity": 40,
+   "linkquality": 87,
+   "update": {
+    "state": "idle"
+   }
+  },
+  "schema": {
+   "temperature": "float",
+   "humidity": "int"
+  },
+  "numeric_keys": [
+   "temperature",
+   "humidity"
+  ]
+ },
+ {
+  "state": {
+   "state": "ON",
+   "brightness": 254,
+   "color": {
+    "x": 0.3,
+    "y": 0.4
+   },
+   "color_temp": null
+  },
+  "schema": {
+   "state": "str",
+   "brightness": "int",
+   "color_temp": "float|null"
+  },
+  "numeric_keys": [
+   "brightness",
+   "color_temp"
+  ]
+ },
+ {
+  "state": {
+   "contact": true,
+   "battery": 100,
+   "voltage": 3000,
+   "occupancy": false
+  },
+  "schema": {
+   "contact": "bool",
+   "battery": "int",
+   "voltage": "int",
+   "occupancy": "bool"
+  },
+  "numeric_keys": [
+   "battery",
+   "voltage"
+  ]
+ },
+ {
+  "state": {
+   "power": 0,
+   "energy": 12.0,
+   "x": 1.0,
+   "n": 7,
+   "s": "texte",
+   "arr": [
+    1,
+    2
+   ],
+   "none": null
+  },
+  "schema": {
+   "power": "int",
+   "energy": "float",
+   "x": "float",
+   "n": "int",
+   "s": "str",
+   "none": "float|null"
+  },
+  "numeric_keys": [
+   "power",
+   "energy",
+   "x",
+   "n",
+   "none"
+  ]
+ },
+ {
+  "state": {
+   "zero": 0,
+   "yes": true,
+   "temperature": -3
+  },
+  "schema": {
+   "zero": "int",
+   "yes": "bool",
+   "temperature": "int"
+  },
+  "numeric_keys": [
+   "zero",
+   "temperature"
+  ]
+ },
+ {
+  "state": {
+   "valeur": "é",
+   "grand": 12345678901234
+  },
+  "schema": {
+   "valeur": "str",
+   "grand": "int"
+  },
+  "numeric_keys": [
+   "grand"
+  ]
+ }
+]

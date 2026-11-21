@@ -1,0 +1,553 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "description": "DomiNet — Énergie : production solaire, consommation Linky, pompe à chaleur, bilan et autoconsommation (energy_daily_log et device_state_log)",
+  "editable": true,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "id": 1,
+      "title": "Production du jour",
+      "type": "stat",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "postgresql"
+      },
+      "description": "Cumul du jour de la production solaire (clé qdy, remise à zéro chaque nuit).",
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 4,
+        "h": 4
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "kwatth",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "postgresql"
+          },
+          "rawSql": "SELECT value_num AS \"value\" FROM device_state_log\nWHERE key = 'qdy' AND value_num IS NOT NULL\n  AND device_id IN (SELECT id FROM device WHERE state ? 'qdy')\nORDER BY ts DESC LIMIT 1",
+          "format": "table",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "Production (W)",
+      "type": "stat",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "postgresql"
+      },
+      "description": "",
+      "gridPos": {
+        "x": 4,
+        "y": 0,
+        "w": 4,
+        "h": 4
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "watt",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "postgresql"
+          },
+          "rawSql": "SELECT value_num AS \"value\" FROM device_state_log\nWHERE key = 'pac' AND value_num IS NOT NULL\n  AND device_id IN (SELECT id FROM device WHERE state ? 'pac')\nORDER BY ts DESC LIMIT 1",
+          "format": "table",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Consommation Linky (VA)",
+      "type": "stat",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "postgresql"
+      },
+      "description": "",
+      "gridPos": {
+        "x": 8,
+        "y": 0,
+        "w": 4,
+        "h": 4
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "voltamp",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "postgresql"
+          },
+          "rawSql": "SELECT value_num AS \"value\" FROM device_state_log\nWHERE key = 'PAPP' AND value_num IS NOT NULL\n  AND device_id IN (SELECT id FROM device WHERE state ? 'PAPP')\nORDER BY ts DESC LIMIT 1",
+          "format": "table",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Pompe à chaleur (W)",
+      "type": "stat",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "postgresql"
+      },
+      "description": "",
+      "gridPos": {
+        "x": 12,
+        "y": 0,
+        "w": 4,
+        "h": 4
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "watt",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "postgresql"
+          },
+          "rawSql": "SELECT value_num AS \"value\" FROM device_state_log\nWHERE key = 'power_ab' AND value_num IS NOT NULL\n  AND device_id IN (SELECT id FROM device WHERE state ? 'power_ab')\nORDER BY ts DESC LIMIT 1",
+          "format": "table",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "Bilan net en direct (W)",
+      "type": "stat",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "postgresql"
+      },
+      "description": "Production − consommation Linky − pompe à chaleur : positif = surplus.",
+      "gridPos": {
+        "x": 16,
+        "y": 0,
+        "w": 4,
+        "h": 4
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "watt",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 0
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "postgresql"
+          },
+          "rawSql": "SELECT COALESCE((SELECT value_num FROM device_state_log WHERE key = 'pac' AND value_num IS NOT NULL AND device_id IN (SELECT id FROM device WHERE state ? 'pac') ORDER BY ts DESC LIMIT 1), 0) - COALESCE((SELECT value_num FROM device_state_log WHERE key = 'PAPP' AND value_num IS NOT NULL AND device_id IN (SELECT id FROM device WHERE state ? 'PAPP') ORDER BY ts DESC LIMIT 1), 0) - COALESCE((SELECT value_num FROM device_state_log WHERE key = 'power_ab' AND value_num IS NOT NULL AND device_id IN (SELECT id FROM device WHERE state ? 'power_ab') ORDER BY ts DESC LIMIT 1), 0) AS \"value\"",
+          "format": "table",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "title": "Autoconsommation sur la période",
+      "type": "stat",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "postgresql"
+      },
+      "description": "Part de la production solaire consommée par la maison elle-même : production − surplus, divisé par la production.",
+      "gridPos": {
+        "x": 20,
+        "y": 0,
+        "w": 4,
+        "h": 4
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 30
+              },
+              {
+                "color": "green",
+                "value": 60
+              }
+            ]
+          },
+          "decimals": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "postgresql"
+          },
+          "rawSql": "SELECT CASE WHEN SUM(solar_wh) > 0 THEN 100.0 * SUM(LEAST(solar_wh, linky_hp_wh + linky_hc_wh + pac_wh)) / SUM(solar_wh) END AS \"value\" FROM energy_daily_log WHERE $__timeFilter(day)",
+          "format": "table",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "title": "Énergie par jour (kWh)",
+      "type": "timeseries",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "postgresql"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 4,
+        "w": 16,
+        "h": 9
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "kwatth",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 70,
+            "lineWidth": 1,
+            "barAlignment": 0
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Bilan net"
+            },
+            "properties": [
+              {
+                "id": "custom.drawStyle",
+                "value": "line"
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 2
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 0
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "always"
+              }
+            ]
+          }
+        ]
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "postgresql"
+          },
+          "format": "time_series",
+          "refId": "A",
+          "rawSql": "SELECT day::timestamp AS \"time\", solar_wh / 1000.0 AS \"Solaire\", (linky_hp_wh + linky_hc_wh) / 1000.0 AS \"Linky\", pac_wh / 1000.0 AS \"Pompe à chaleur\",\n  (solar_wh - linky_hp_wh - linky_hc_wh - pac_wh) / 1000.0 AS \"Bilan net\"\nFROM energy_daily_log\nWHERE $__timeFilter(day)\nORDER BY day"
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "title": "Autoconsommation par jour (%)",
+      "type": "timeseries",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "postgresql"
+      },
+      "gridPos": {
+        "x": 16,
+        "y": 4,
+        "w": 8,
+        "h": 9
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "showPoints": "always",
+            "spanNulls": false
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "postgresql"
+          },
+          "format": "time_series",
+          "refId": "A",
+          "rawSql": "SELECT day::timestamp AS \"time\",\n  CASE WHEN solar_wh > 0 THEN 100.0 * LEAST(solar_wh, linky_hp_wh + linky_hc_wh + pac_wh) / solar_wh END AS \"Autoconsommation\"\nFROM energy_daily_log\nWHERE $__timeFilter(day)\nORDER BY day"
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "title": "Puissances en direct (W / VA)",
+      "type": "timeseries",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "postgresql"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 13,
+        "w": 24,
+        "h": 9
+      },
+      "description": "Demande que les clés pac, PAPP et power_ab soient suivies dans l'historique de leurs appareils (page Appareils).",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "watt",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 8
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "postgresql"
+          },
+          "format": "time_series",
+          "refId": "A",
+          "rawSql": "SELECT ts AS \"time\", value_num AS \"Production\"\nFROM device_state_log\nWHERE key = 'pac' AND device_id IN (SELECT id FROM device WHERE state ? 'pac')\n  AND $__timeFilter(ts)\nORDER BY ts"
+        },
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "postgresql"
+          },
+          "format": "time_series",
+          "refId": "B",
+          "rawSql": "SELECT ts AS \"time\", value_num AS \"Linky\"\nFROM device_state_log\nWHERE key = 'PAPP' AND device_id IN (SELECT id FROM device WHERE state ? 'PAPP')\n  AND $__timeFilter(ts)\nORDER BY ts"
+        },
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "postgresql"
+          },
+          "format": "time_series",
+          "refId": "C",
+          "rawSql": "SELECT ts AS \"time\", value_num AS \"Pompe à chaleur\"\nFROM device_state_log\nWHERE key = 'power_ab' AND device_id IN (SELECT id FROM device WHERE state ? 'power_ab')\n  AND $__timeFilter(ts)\nORDER BY ts"
+        }
+      ]
+    }
+  ],
+  "refresh": "5m",
+  "schemaVersion": 38,
+  "tags": [
+    "dominet",
+    "energy"
+  ],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-30d",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "DomiNet — Énergie",
+  "uid": "dominet-energy",
+  "version": 1
+}

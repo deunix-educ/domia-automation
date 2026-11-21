@@ -1,0 +1,268 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# DomiNet : fichier Compose de BASE (ROADMAP §2.5). Il decrit les services et leurs liens, sans port publie (sauf PostgreSQL en
+# loopback) ni politique de redemarrage : ceux-ci viennent des surcouches `docker-compose.dev.yml`, `docker-compose.prod.yml` et
+# `docker-compose.demo.yml`. Les secrets ne sont JAMAIS ici : ils viennent du `.env` (voir `.env.example.prod`).
+# Tout passe par le Makefile (`make prod-deploy`...).
+name: dominet
+
+x-app-env: &app-env
+  # Tout le reste (EMAIL_*, SOLARMAX_*, ...) vient de `.env` ; ce bloc relie l'application aux services du reseau Docker.
+  DATABASE_URL: postgres://${DB_USER:-dominet}:${DB_PASSWORD}@postgres:5432/${DB_NAME:-dominet}
+  REDUCTSTORE_URL: http://reductstore:8383
+  REDUCTSTORE_TOKEN: ${REDUCTSTORE_TOKEN}
+  MQTT_HOST: mosquitto
+  MQTT_PORT: "1883"
+  MQTT_USER: ${MQTT_USER:-dominet}
+  MQTT_PASSWORD: ${MQTT_PASSWORD}
+  MEDIAMTX_API_URL: http://mediamtx:9997
+  MEDIAMTX_RTSP_URL: rtsp://mediamtx:8554
+  PROMETHEUS_URL: http://prometheus:9090
+  PROMETHEUS_RULES_PATH: /prometheus-rules/rules.yml
+  GRAFANA_URL: http://grafana:3000
+  GRAFANA_USER: ${GRAFANA_USER:-admin}
+  GRAFANA_PASSWORD: ${GRAFANA_PASSWORD}
+  GRAFANA_ALERTING_PATH: /grafana-alerting/rules.yaml
+  GRAFANA_DASHBOARDS_DIR: /grafana-dashboards
+  BACKUP_DIR: /backups
+  REDUCTSTORE_BACKUP_SRC: /reductstore-data
+  RECORDINGS_DIR: /recordings
+  TZ: ${TZ:-Europe/Paris}
+
+# Une seule image pour tous les roles ; seul `dominet` la construit (`docker compose build dominet`), les autres la reutilisent.
+x-app-image: &app-image
+  image: dominet:${DOMINET_TAG:-local}
+  pull_policy: never
+
+services:
+  # Un seul passage, root : donne les volumes partages a l'utilisateur de l'application (uid 10001) avant tout demarrage.
+  init:
+    <<: *app-image
+    user: "0"
+    entrypoint: ["sh", "-c", "chown 10001:10001 /prometheus-rules /grafana-alerting /grafana-dashboards /backups /recordings /data /reductstore-data"]
+    volumes:
+      - prometheus-rules:/prometheus-rules
+      - grafana-alerting:/grafana-alerting
+      - grafana-dashboards:/grafana-dashboards
+      - backups-data:/backups
+      - recordings-data:/recordings
+      - app-data:/data
+      - reductstore-data:/reductstore-data
+    restart: "no"
+    networks: [dominet-net]
+
+  # Un seul passage : applique les migrations AVANT les services applicatifs (D11).
+  migrate:
+    <<: *app-image
+    command: ["migrate"]
+    environment: *app-env
+    restart: "no"
+    depends_on:
+      postgres: {condition: service_healthy}
+    networks: [dominet-net]
+
+  dominet:
+    <<: *app-image
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    pull_policy: build
+    command: ["serve"]
+    environment:
+      <<: *app-env
+      HTTP_ADDR: 0.0.0.0:8000
+      SECRET_KEY: ${SECRET_KEY:-}
+      DOMINET_MASTER_KEY: ${DOMINET_MASTER_KEY:-}
+      ALLOWED_HOSTS: ${ALLOWED_HOSTS:-}
+      CSRF_TRUSTED_ORIGINS: ${CSRF_TRUSTED_ORIGINS:-}
+      COOKIE_SECURE: ${COOKIE_SECURE:-true}
+      TRUSTED_PROXIES: ${TRUSTED_PROXIES:-172.16.0.0/12}
+    env_file:
+      - path: ../.env
+        required: false
+    volumes:
+      - app-data:/data
+      - recordings-data:/recordings
+      - backups-data:/backups
+      - prometheus-rules:/prometheus-rules
+      - grafana-alerting:/grafana-alerting
+      - grafana-dashboards:/grafana-dashboards
+      - reductstore-data:/reductstore-data:ro
+    healthcheck:
+      test: ["CMD", "dominet", "healthcheck"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 20s
+    depends_on:
+      init: {condition: service_completed_successfully}
+      migrate: {condition: service_completed_successfully}
+      postgres: {condition: service_healthy}
+      reductstore: {condition: service_healthy}
+      mosquitto: {condition: service_healthy}
+      mediamtx: {condition: service_started}
+    networks: [dominet-net]
+
+  # Reseau hote : le multicast WS-Discovery ne traverse pas un reseau ponte. Il parle a `dominet` par PostgreSQL (LISTEN/NOTIFY),
+  # publie en loopback sur l'hote ; pas de DNS Docker en reseau hote. Pas d'ecouteur /metrics (le port 9100 serait celui de l'hote).
+  dominet-discovery:
+    <<: *app-image
+    command: ["serve", "--only", "discovery"]
+    network_mode: host
+    environment:
+      DATABASE_URL: postgres://${DB_USER:-dominet}:${DB_PASSWORD}@127.0.0.1:${POSTGRES_HOST_PORT:-5432}/${DB_NAME:-dominet}
+      METRICS_ADDR: "off"
+      TZ: ${TZ:-Europe/Paris}
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+      postgres: {condition: service_healthy}
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${DB_NAME:-dominet}
+      POSTGRES_USER: ${DB_USER:-dominet}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    command: ["postgres", "-c", "max_connections=200"]
+    # Loopback seulement : sert a `dominet-discovery` (reseau hote) et aux outils locaux (Adminer passe par le reseau Docker).
+    ports: ["127.0.0.1:${POSTGRES_HOST_PORT:-5432}:5432"]
+    volumes: [postgres-data:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks: [dominet-net]
+
+  # Version figee (pas `latest`). Utilisateur non-root (uid 10001), jeton obligatoire.
+  reductstore:
+    image: reduct/store:v1.21.5
+    environment:
+      RS_API_TOKEN: ${REDUCTSTORE_TOKEN}
+    volumes: [reductstore-data:/data]
+    depends_on:
+      init: {condition: service_completed_successfully}
+    healthcheck:
+      # L'image n'a ni wget ni curl : sonde HTTP via /dev/tcp (bash).
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/8383 && printf 'GET /api/v1/alive HTTP/1.0\\r\\n\\r\\n' >&3 && head -n1 <&3 | grep -q ' 200 '"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks: [dominet-net]
+
+  # Un seul listener, 1883 : mot de passe obligatoire, droits par compte (ADR 0057). Comptes externes : `make prod-mqtt-user`.
+  mosquitto:
+    image: eclipse-mosquitto:2.0
+    environment:
+      MQTT_USER: ${MQTT_USER:-dominet}
+      MQTT_PASSWORD: ${MQTT_PASSWORD}
+    entrypoint: ["sh", "/deploy/entrypoint.sh"]
+    volumes:
+      - ./mosquitto/entrypoint.sh:/deploy/entrypoint.sh:ro
+      - ./mosquitto/accounts.sh:/deploy/accounts.sh:ro
+      - mosquitto-accounts:/mosquitto/accounts
+      - mosquitto-data:/mosquitto/data
+      - mosquitto-logs:/mosquitto/log
+    healthcheck:
+      test: ["CMD-SHELL", "mosquitto_sub -h localhost -p 1883 -u \"$$MQTT_USER\" -P \"$$MQTT_PASSWORD\" -t '$$SYS/broker/uptime' -C 1 -W 3 >/dev/null || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks: [dominet-net]
+
+  # Utilisateur non-root (uid 10001) : c'est lui qui possede les segments que `dominet` relit puis supprime apres archivage.
+  mediamtx:
+    image: bluenviron/mediamtx:1.21.3
+    user: "10001:10001"
+    volumes:
+      - ./mediamtx/mediamtx.yml:/mediamtx.yml:ro
+      - recordings-data:/recordings
+    depends_on:
+      init: {condition: service_completed_successfully}
+    networks: [dominet-net]
+
+  # Les regles (`rules.yml`) sont ecrites par DomiNet dans le volume partage puis rechargees par `POST /-/reload`.
+  prometheus:
+    image: prom/prometheus:v2.52.0
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --web.enable-lifecycle
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-rules:/etc/prometheus/rules:ro
+      - prometheus-data:/prometheus
+    depends_on:
+      init: {condition: service_completed_successfully}
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:9090/-/ready"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+    networks: [dominet-net]
+
+  # Provisionnement : sources, tableaux, points de contact et politiques en fichiers du depot ; regles d'alerte et tableaux d'appareils
+  # ecrits par DomiNet dans des volumes. Sous-chemin /grafana/ derriere nginx, lecteur anonyme, integrable (D4).
+  grafana:
+    image: grafana/grafana:11.0.0
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_DB_HOST: postgres
+      GF_DB_PORT: "5432"
+      GF_DB_NAME: ${DB_NAME:-dominet}
+      GF_DB_USER: ${DB_USER:-dominet}
+      GF_DB_PASSWORD: ${DB_PASSWORD}
+      GF_SECURITY_ALLOW_EMBEDDING: "true"
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+      GF_SERVER_SERVE_FROM_SUB_PATH: "true"
+      GF_SERVER_ROOT_URL: ${GRAFANA_PUBLIC_URL:-http://localhost:3000}/grafana/
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
+      GF_SMTP_ENABLED: "true"
+      GF_SMTP_HOST: ${EMAIL_HOST:-localhost}:${EMAIL_PORT:-587}
+      GF_SMTP_USER: ${EMAIL_HOST_USER:-}
+      GF_SMTP_PASSWORD: ${EMAIL_HOST_PASSWORD:-}
+      GF_SMTP_FROM_ADDRESS: ${DEFAULT_FROM_EMAIL:-dominet@dominet.local}
+      GF_SMTP_FROM_NAME: DomiNet Grafana
+      # Sans destinataire, Grafana refuse le point de contact et ne demarre pas : adresse de repli (make prod-guard previent).
+      EMAIL_RECIPIENT: ${EMAIL_RECIPIENT:-alertes@dominet.local}
+    volumes:
+      - ./grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
+      - grafana-alerting:/etc/grafana/provisioning/alerting
+      - ./grafana/provisioning/alerting/contactpoints.yaml:/etc/grafana/provisioning/alerting/contactpoints.yaml:ro
+      - ./grafana/provisioning/alerting/policies.yaml:/etc/grafana/provisioning/alerting/policies.yaml:ro
+      - grafana-dashboards:/var/lib/dominet-dashboards:ro
+      - grafana-data:/var/lib/grafana
+    depends_on:
+      init: {condition: service_completed_successfully}
+      postgres: {condition: service_healthy}
+      prometheus: {condition: service_healthy}
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 20s
+    networks: [dominet-net]
+
+volumes:
+  postgres-data:
+  mosquitto-data:
+  mosquitto-logs:
+  mosquitto-accounts:
+  reductstore-data:
+  prometheus-data:
+  prometheus-rules:
+  grafana-data:
+  grafana-alerting:
+  grafana-dashboards:
+  backups-data:
+  recordings-data:
+  app-data:
+
+networks:
+  dominet-net:
+    driver: bridge

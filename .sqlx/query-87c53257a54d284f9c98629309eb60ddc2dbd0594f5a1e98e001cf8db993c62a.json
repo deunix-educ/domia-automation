@@ -1,0 +1,28 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT dashboard_id FROM widget WHERE id = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "dashboard_id",
+        "type_info": "Int8",
+        "origin": {
+          "Table": {
+            "table": "widget",
+            "name": "dashboard_id"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "87c53257a54d284f9c98629309eb60ddc2dbd0594f5a1e98e001cf8db993c62a"
+}

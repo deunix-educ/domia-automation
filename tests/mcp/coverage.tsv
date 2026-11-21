@@ -1,0 +1,123 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Couverture des fonctions serveur (`#[server]` de dominet-web) par les outils MCP (R11, ROADMAP-mcp.md section 7).
+# statut : couvert (outil prevu au catalogue), exclu (jamais expose, raison en note), a_decider (hors catalogue de la feuille de route).
+fichier	fonction	garde	outil	portee	statut	note
+alert_rules_admin.rs	list_alert_rules	admin	config_list(alert_rule)	lecture	couvert	
+alert_rules_admin.rs	save_alert_rule	admin	config_upsert(alert_rule)	configuration	couvert	
+alert_rules_admin.rs	delete_alert_rule	admin	config_delete(alert_rule)	configuration	couvert	confirm et dry_run
+alerts.rs	alerts_page	user	alerts_list	lecture	couvert	
+alerts.rs	acknowledge_alert	user	alert_ack	pilotage	couvert	
+alerts.rs	acknowledge_all_alerts	user	alert_ack(all)	pilotage	couvert	acquitter tout : une carte, un clic cote assistant
+android.rs	android_overview	user			exclu	Android : canal de messagerie et jetons
+android.rs	android_devices	user			exclu	liste des telephones et de leurs jetons
+android.rs	add_android_device	user			exclu	cree un jeton Android (secret)
+android.rs	delete_android_device	user			exclu	jetons Android
+android.rs	regenerate_android_token	user			exclu	jetons Android (secret)
+android.rs	android_sms_page	user			exclu	messagerie SMS exclue (decision du 2026-11-13)
+android.rs	android_calls_page	user			exclu	journal d appels : donnees personnelles, messagerie exclue
+android.rs	send_android_sms	user			exclu	messagerie SMS exclue (decision du 2026-11-13)
+automations_admin.rs	list_automations	admin	automations_list	lecture	couvert	
+automations_admin.rs	save_automation	admin	config_upsert(automation)	configuration	couvert	avec script Rhai : portee administration (voir R11-audit)
+automations_admin.rs	delete_automation	admin	config_delete(automation)	configuration	couvert	confirm et dry_run
+automations_admin.rs	automation_runs	admin	automation_runs	lecture	couvert	
+camera_fns.rs	list_cameras	admin	cameras_list	lecture	couvert	sans identifiants
+camera_fns.rs	list_camera_cards	user	cameras_list	lecture	couvert	
+camera_fns.rs	save_camera	admin	config_upsert(camera)	administration	couvert	identifiants en ecriture seule (M5)
+camera_fns.rs	delete_camera	admin	config_delete(camera)	administration	couvert	confirm et dry_run
+camera_fns.rs	sync_cameras	admin	cameras_sync	administration	couvert	synchronisation MediaMTX, decidee le 2026-11-16
+camera_fns.rs	sync_camera_onvif	admin	cameras_sync	administration	couvert	profils ONVIF, decide le 2026-11-16
+camera_fns.rs	add_camera_by_ip	admin			exclu	saisit des identifiants a partir d une adresse : interface seule (decide le 2026-11-16)
+camera_fns.rs	start_discovery	admin			exclu	balayage du reseau : declenchement humain seulement
+camera_fns.rs	camera_live	user			exclu	flux video : sans objet pour un assistant
+camera_fns.rs	camera_night	admin	camera_night	pilotage	couvert	mode nuit, decide le 2026-11-16
+camera_fns.rs	capture_snapshot	admin	camera_snapshot	pilotage	couvert	renvoie une image
+camera_fns.rs	list_snapshots	user	snapshots_list	lecture	couvert	liste des captures, decidee le 2026-11-16
+camera_fns.rs	delete_snapshot	admin			exclu	suppression : interface seule (decide le 2026-11-16)
+camera_fns.rs	list_recordings	user	recordings_list	lecture	couvert	
+camera_fns.rs	delete_recording	admin			exclu	suppression : interface seule (decide le 2026-11-16)
+camera_fns.rs	set_manual_record	admin	camera_record	pilotage	couvert	enregistrement manuel, decide le 2026-11-16
+camera_fns.rs	list_camera_events	user	detections_list	lecture	couvert	
+camera_fns.rs	get_detector	admin	config_get(detector)	lecture	couvert	
+camera_fns.rs	set_detector	admin	config_upsert(detector)	configuration	couvert	
+dashboard_fns.rs	list_dashboards_admin	admin	config_list(dashboard)	lecture	couvert	
+dashboard_fns.rs	save_dashboard	admin	config_upsert(dashboard)	configuration	couvert	
+dashboard_fns.rs	delete_dashboard	admin	config_delete(dashboard)	configuration	couvert	confirm et dry_run
+dashboard_fns.rs	list_widgets	admin	config_list(widget)	lecture	couvert	
+dashboard_fns.rs	widgets_page	admin	config_list(widget)	lecture	couvert	
+dashboard_fns.rs	save_widget	admin	config_upsert(widget)	configuration	couvert	
+dashboard_fns.rs	delete_widget	admin	config_delete(widget)	configuration	couvert	confirm et dry_run
+dashboard_fns.rs	move_widget	admin	config_upsert(widget)	configuration	couvert	deplacement par col et row, refus de chevauchement annonce au dry_run
+device_fns.rs	send_device_command	user	device_command	pilotage	couvert	appareil actif seulement
+device_fns.rs	set_permit_join	admin	zigbee_pairing	configuration	couvert	ouvre le reseau Zigbee a de nouveaux appareils, decide le 2026-11-16
+device_fns.rs	permit_join_state	user	system_status	lecture	couvert	champ zigbee_pairing_open
+device_fns.rs	generate_device_dashboard	admin	config_upsert(dashboard)	configuration	couvert	generation du tableau Grafana d un appareil, decidee le 2026-11-16
+devices_admin.rs	list_devices_admin	admin	devices_list	lecture	couvert	
+devices_admin.rs	save_device_admin	admin	config_upsert(device)	configuration	couvert	
+devices_admin.rs	delete_device_admin	admin	config_delete(device)	configuration	couvert	confirm et dry_run : historique supprime, widgets conserves sans appareil
+devices_admin.rs	device_choices	admin	config_schema	lecture	couvert	choix des formulaires = schema
+devices_admin.rs	list_device_groups	admin	config_list(device_group)	lecture	couvert	
+devices_admin.rs	save_device_group	admin	config_upsert(device_group)	configuration	couvert	
+devices_admin.rs	delete_device_group	admin	config_delete(device_group)	configuration	couvert	confirm et dry_run
+devices_admin.rs	list_device_labels	admin	config_list(device_label)	lecture	couvert	
+devices_admin.rs	save_device_label	admin	config_upsert(device_label)	configuration	couvert	
+devices_admin.rs	delete_device_label	admin	config_delete(device_label)	configuration	couvert	confirm et dry_run
+devices_pages.rs	devices_page	user	devices_list	lecture	couvert	
+devices_pages.rs	device_detail	user	device_get	lecture	couvert	et device_history
+energy.rs	energy_page	user	energy_summary	lecture	couvert	
+logs_admin.rs	list_logs	admin	logs_query	lecture	couvert	
+messaging.rs	compose_form	admin			exclu	messagerie exclue (decision du 2026-11-13)
+messaging.rs	send_message	admin			exclu	messagerie exclue (decision du 2026-11-13) ; notify_test couvre l essai des canaux
+messaging.rs	sent_messages	admin			exclu	messagerie exclue (decision du 2026-11-13)
+messaging.rs	inbox_messages	user			exclu	messagerie exclue (decision du 2026-11-13)
+messaging.rs	message_detail	user			exclu	messagerie exclue (decision du 2026-11-13)
+mqtt_sources.rs	list_mqtt_sources	admin	config_list(mqtt_source)	lecture	couvert	
+mqtt_sources.rs	save_mqtt_source	admin	config_upsert(mqtt_source)	configuration	couvert	avec code de traitement Rhai : portee administration (voir R11-audit)
+mqtt_sources.rs	delete_mqtt_source	admin	config_delete(mqtt_source)	configuration	couvert	confirm et dry_run
+rules_admin.rs	list_prometheus_rules	admin	config_list(prometheus_rule)	lecture	couvert	
+rules_admin.rs	save_prometheus_rule	admin	config_upsert(prometheus_rule)	configuration	couvert	
+rules_admin.rs	delete_prometheus_rule	admin	config_delete(prometheus_rule)	configuration	couvert	confirm et dry_run
+rules_admin.rs	list_grafana_rules	admin	config_list(grafana_rule)	lecture	couvert	
+rules_admin.rs	save_grafana_rule	admin	config_upsert(grafana_rule)	configuration	couvert	
+rules_admin.rs	delete_grafana_rule	admin	config_delete(grafana_rule)	configuration	couvert	confirm et dry_run
+rules_admin.rs	sync_rules	admin	config_upsert(prometheus_rule / grafana_rule)	configuration	couvert	ecriture des fichiers de regles automatique apres l enregistrement (decide le 2026-11-16)
+scenes.rs	list_scenes	user	scenes_list	lecture	couvert	
+scenes.rs	activate_scene	user	scene_run	pilotage	couvert	
+scenes_admin.rs	list_scenes_admin	admin	config_list(scene)	lecture	couvert	
+scenes_admin.rs	save_scene	admin	config_upsert(scene)	configuration	couvert	
+scenes_admin.rs	delete_scene	admin	config_delete(scene)	configuration	couvert	confirm et dry_run
+scripts.rs	dry_run_script	admin	script_check	administration	couvert	essai a blanc : aucun effet
+server_fns.rs	whoami	session			exclu	session web ; l assistant n a pas de compte
+server_fns.rs	layout_data	session			exclu	session web (barre de navigation du compte)
+server_fns.rs	logout	session			exclu	session web
+server_fns.rs	login	session			exclu	session web : les jetons remplacent la connexion
+server_fns.rs	change_password	session			exclu	comptes et mots de passe hors perimetre
+server_fns.rs	list_locations	admin	config_list(location)	lecture	couvert	
+server_fns.rs	save_location	admin	config_upsert(location)	configuration	couvert	
+server_fns.rs	delete_location	admin	config_delete(location)	configuration	couvert	confirm et dry_run
+server_fns.rs	list_navbar	admin	config_list(navbar)	lecture	couvert	
+server_fns.rs	save_navbar	admin	config_upsert(navbar)	configuration	couvert	
+server_fns.rs	delete_navbar	admin	config_delete(navbar)	configuration	couvert	confirm et dry_run
+server_fns.rs	list_settings	admin	settings_list	administration	couvert	secrets : defini / non defini seulement
+server_fns.rs	save_setting	admin	setting_set	administration	couvert	secrets en ecriture seule
+server_fns.rs	list_users	admin			exclu	comptes hors perimetre
+server_fns.rs	save_user	admin			exclu	comptes hors perimetre
+server_fns.rs	delete_user	admin			exclu	comptes hors perimetre
+server_fns.rs	broadcast_notification	admin	notify_broadcast	pilotage	couvert	bandeau a tous les comptes connectes, decide le 2026-11-16
+server_fns.rs	inject_device_state	admin			exclu	fabrique l etat d un appareil (outil de test) : ne doit pas etre offert a un assistant
+server_fns.rs	dashboard_page	session	dashboard_get	lecture	couvert	tableau de bord du compte connecte : a definir pour un jeton
+server_fns.rs	create_dashboard	session	config_upsert(dashboard)	configuration	couvert	tableau de bord personnel : a definir pour un jeton
+weather_admin.rs	list_weather_stations	admin	weather_current / config_list(weather_station)	lecture	couvert	
+weather_admin.rs	save_weather_station	admin	config_upsert(weather_station)	configuration	couvert	
+weather_admin.rs	delete_weather_station	admin	config_delete(weather_station)	configuration	couvert	confirm et dry_run
+assistant.rs	assistant_changes	admin			exclu	modifications faites par l assistant integre
+assistant.rs	assistant_undo	admin			exclu	annulation d une modification de l assistant integre, par clic
+assistant.rs	assistant_poll	admin			exclu	lecture de la conversation de l assistant integre
+assistant.rs	assistant_send	admin			exclu	l assistant integre : c est lui qui appelle les outils
+assistant.rs	assistant_confirm	admin			exclu	clic de confirmation d une carte : jamais expose a un assistant
+assistant.rs	assistant_cancel	admin			exclu	clic d annulation d une carte
+assistant.rs	assistant_reset	admin			exclu	nouvelle conversation de l assistant integre
+assistant.rs	assistant_test	admin			exclu	test de connexion au modele de l assistant integre
+mcp_admin.rs	mcp_admin_page	admin			exclu	jetons d acces MCP : creation et liste hors perimetre (ADR 0059)
+mcp_admin.rs	create_mcp_token	admin			exclu	un assistant ne cree pas de jeton (ADR 0059)
+mcp_admin.rs	revoke_mcp_token	admin			exclu	un assistant ne revoque pas de jeton (ADR 0059)
+mcp_admin.rs	list_mcp_audit	admin			exclu	journal d audit : consultable par un administrateur seulement

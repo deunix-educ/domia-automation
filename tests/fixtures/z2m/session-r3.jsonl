@@ -1,0 +1,64 @@
+{"t":0,"topic":"zigbee2mqtt/bridge/info","payload":{"version":"2.0.0","coordinator":{"type":"EZSP"},"permit_join":false},"retain":true}
+{"t":0,"topic":"zigbee2mqtt/bridge/state","payload":"online","retain":true}
+{"t":0,"topic":"zigbee2mqtt/bridge/devices","payload":[{"ieee_address":"0x00124b0000000000","friendly_name":"Coordinator","type":"Coordinator","supported":true,"definition":null},{"ieee_address":"0x00124b0000000001","friendly_name":"Bureau","type":"EndDevice","supported":true,"definition":{"vendor":"Test","model":"TH-01","description":"Capteur temperature","exposes":[{"type":"numeric","name":"battery","property":"battery","unit":"%","access":1},{"type":"numeric","name":"temperature","property":"temperature","unit":"°C","access":1},{"type":"numeric","name":"humidity","property":"humidity","unit":"%","access":1},{"type":"numeric","name":"linkquality","property":"linkquality","access":1}]}},{"ieee_address":"0x00124b0000000002","friendly_name":"Salon","type":"Router","supported":true,"definition":{"vendor":"Test","model":"LAMP-1","description":"Lampe","exposes":[{"type":"light","features":[{"type":"binary","name":"state","property":"state","value_on":"ON","value_off":"OFF"},{"type":"numeric","name":"brightness","property":"brightness","value_min":0,"value_max":254}]},{"type":"numeric","name":"linkquality","property":"linkquality","access":1}]}},{"ieee_address":"0x00124b0000000003","friendly_name":"salon/lampe","type":"Router","supported":true,"definition":{"vendor":"Test","model":"LAMP-2","description":"Lampe 2","exposes":[{"type":"numeric","name":"brightness","property":"brightness"},{"type":"enum","name":"state","property":"state"}]}},{"ieee_address":"0x00124b0000000004","friendly_name":"Volet","type":"Router","supported":true,"definition":{"vendor":"Test","model":"COV-1","description":"Volet","exposes":[{"type":"composite","name":"cover","features":[{"type":"numeric","property":"cover_position","unit":"%"},{"type":"numeric","property":"temperature"}]}]}},{"ieee_address":"0x00124b0000000005","friendly_name":"Prise","type":"Router","supported":true,"definition":{"vendor":"Test","model":"SW-1","description":"Prise","exposes":[{"type":"switch","features":[{"type":"binary","name":"state","property":"state"}]},{"type":"numeric","name":"power","property":"power","unit":"W","access":1}]}},{"ieee_address":"0x00124b0000000006","friendly_name":"Prise2","type":"Router","supported":true,"definition":{"vendor":"Test","model":"SW-2","description":"Prise 2","exposes":[{"type":"enum","name":"state","property":"state"}]}},{"ieee_address":"0x00124b0000000007","friendly_name":"Porte","type":"EndDevice","supported":true,"definition":{"vendor":"Test","model":"CT-1","description":"Contact","exposes":[{"type":"binary","name":"contact","property":"contact","value_on":false,"value_off":true},{"type":"numeric","name":"battery","property":"battery","unit":"%","access":1}]}},{"ieee_address":"0x00124b0000000008","friendly_name":"Presence","type":"EndDevice","supported":true,"definition":{"vendor":"Test","model":"OC-1","description":"Presence","exposes":[{"type":"binary","name":"occupancy","property":"occupancy"}]}},{"ieee_address":"0x00124b0000000009","friendly_name":"Inconnu","type":"EndDevice","supported":false,"definition":null},{"ieee_address":"0x00124b000000000a","friendly_name":"  Cuisine  ","type":"EndDevice","supported":true,"definition":{"vendor":"Test","model":"TH-02","description":"Thermometre","exposes":[{"type":"composite","name":"t","features":[{"type":"numeric","name":"temperature","property":"temperature","unit":"°C","access":1}]}]}}],"retain":true}
+{"t":1,"op":"track","device":"Bureau","keys":["temperature","humidity","contact","absent"]}
+{"t":1,"op":"track","device":"Salon","keys":["state","brightness"]}
+{"t":1,"op":"track","device":"salon/lampe","keys":["state","brightness"]}
+{"t":1,"op":"track","device":"Porte","keys":["contact","battery"]}
+{"t":1,"op":"track","device":"Prise2","keys":["state","mode"]}
+{"t":2,"topic":"zigbee2mqtt/Bureau/availability","payload":{"state":"online"},"retain":true}
+{"t":2,"topic":"zigbee2mqtt/Salon/availability","payload":{"state":"online"},"retain":true}
+{"t":2,"topic":"zigbee2mqtt/salon/lampe/availability","payload":{"state":"online"},"retain":true}
+{"t":2,"topic":"zigbee2mqtt/Volet/availability","payload":{"state":"online"},"retain":true}
+{"t":2,"topic":"zigbee2mqtt/Prise/availability","payload":{"state":"online"},"retain":true}
+{"t":2,"topic":"zigbee2mqtt/Prise2/availability","payload":{"state":"online"},"retain":true}
+{"t":2,"topic":"zigbee2mqtt/Porte/availability","payload":{"state":"online"},"retain":true}
+{"t":2,"topic":"zigbee2mqtt/Presence/availability","payload":{"state":"online"},"retain":true}
+{"t":2,"topic":"zigbee2mqtt/Cuisine/availability","payload":"online","retain":true}
+{"t":2,"topic":"zigbee2mqtt/Inconnu/availability","payload":"offline","retain":true}
+{"t":2,"topic":"zigbee2mqtt/Fantome/availability","payload":{"state":"online"},"retain":false}
+{"t":3,"topic":"zigbee2mqtt/Bureau","payload":{"temperature":21.4,"humidity":47.2,"battery":88,"linkquality":120,"last_seen":"2026-01-01T10:00:03+01:00","update":{"state":"idle"}},"retain":false}
+{"t":3,"topic":"zigbee2mqtt/Bureau","payload":{"temperature":21.6,"humidity":47.0,"battery":88,"linkquality":118},"retain":false}
+{"t":4,"topic":"zigbee2mqtt/Bureau","payload":{"temperature":21.7,"humidity":46.9,"battery":87,"linkquality":119},"retain":false}
+{"t":4.5,"topic":"zigbee2mqtt/Salon","payload":{"state":"OFF","brightness":0,"linkquality":200},"retain":false}
+{"t":5,"topic":"zigbee2mqtt/Salon","payload":{"state":"ON","brightness":180,"linkquality":205},"retain":false}
+{"t":5.2,"topic":"zigbee2mqtt/Salon","payload":{"state":"ON","brightness":181,"linkquality":205},"retain":false}
+{"t":5.4,"topic":"zigbee2mqtt/salon/lampe","payload":{"state":"ON","brightness":120},"retain":false}
+{"t":6,"topic":"zigbee2mqtt/salon/lampe","payload":{"state":"OFF","brightness":0},"retain":false}
+{"t":6,"topic":"zigbee2mqtt/Porte","payload":{"contact":true,"battery":100},"retain":false}
+{"t":7,"topic":"zigbee2mqtt/Porte","payload":{"contact":false,"battery":99},"retain":false}
+{"t":7,"topic":"zigbee2mqtt/Prise","payload":{"state":"ON","power":12.5},"retain":false}
+{"t":7,"topic":"zigbee2mqtt/Prise2","payload":{"state":"ON","mode":"eco","extra":{"a":1,"b":[1,2]}},"retain":false}
+{"t":8,"topic":"zigbee2mqtt/Prise2","payload":{"state":"OFF","mode":"boost","nothing":null},"retain":false}
+{"t":8,"topic":"zigbee2mqtt/Volet","payload":{"position":40,"state":"OPEN"},"retain":false}
+{"t":8,"topic":"zigbee2mqtt/Presence","payload":{"occupancy":true},"retain":false}
+{"t":8,"topic":"zigbee2mqtt/Cuisine","payload":{"temperature":19.25},"retain":false}
+{"t":9,"topic":"zigbee2mqtt/Cuisine","payload":{"temperature":19.5,"humidity":55},"retain":false}
+{"t":9,"topic":"zigbee2mqtt/Bureau/set","payload":{"state":"ON"},"retain":false}
+{"t":9,"topic":"zigbee2mqtt/Bureau/get","payload":{"state":""},"retain":false}
+{"t":9,"topic":"zigbee2mqtt/bridge/logs","payload":{"level":"info","message":"x"},"retain":false}
+{"t":9,"topic":"zigbee2mqtt/bridge/event","payload":{"type":"device_joined"},"retain":false}
+{"t":9,"topic":"zigbee2mqtt/Bureau","payload":"pas du json","retain":false}
+{"t":9,"topic":"zigbee2mqtt/Bureau","payload":5,"retain":false}
+{"t":9,"topic":"zigbee2mqtt/Bureau","payload":[1,2],"retain":false}
+{"t":9,"topic":"zigbee2mqtt/Fantome","payload":{"temperature":1},"retain":false}
+{"t":10,"topic":"zigbee2mqtt/Cuisine","payload":{"état":"allumé","température":19.75},"retain":false}
+{"t":11,"topic":"zigbee2mqtt/bridge/devices","payload":[{"ieee_address":"0x00124b0000000000","friendly_name":"Coordinator","type":"Coordinator","supported":true,"definition":null},{"ieee_address":"0x00124b0000000001","friendly_name":"Bureau","type":"EndDevice","supported":true,"definition":{"vendor":"Test2","model":"TH-01","description":"Capteur temperature","exposes":[{"type":"numeric","name":"temperature","property":"temperature","unit":"°C","access":1},{"type":"numeric","name":"humidity","property":"humidity","unit":"%","access":1}]}},{"ieee_address":"0x00124b0000000002","friendly_name":"Salon","type":"Router","supported":true,"definition":{"vendor":"Test","model":"LAMP-1","description":"Lampe salon v2","exposes":[{"type":"light","features":[{"type":"binary","name":"state","property":"state","value_on":"ON","value_off":"OFF"},{"type":"numeric","name":"brightness","property":"brightness","value_min":0,"value_max":254}]},{"type":"numeric","name":"linkquality","property":"linkquality","access":1}]}},{"ieee_address":"0x00124b0000000003","friendly_name":"salon/lampe","type":"Router","supported":true,"definition":{"vendor":"Test","model":"LAMP-2","description":"Lampe 2","exposes":[{"type":"numeric","name":"brightness","property":"brightness"},{"type":"enum","name":"state","property":"state"}]}},{"ieee_address":"0x00124b0000000004","friendly_name":"Volet","type":"Router","supported":true,"definition":{"vendor":"Test","model":"COV-1","description":"Volet","exposes":[{"type":"composite","name":"cover","features":[{"type":"numeric","property":"cover_position","unit":"%"},{"type":"numeric","property":"temperature"}]}]}},{"ieee_address":"0x00124b0000000005","friendly_name":"Prise","type":"Router","supported":true,"definition":{"vendor":"Test","model":"SW-1","description":"Prise","exposes":[{"type":"switch","features":[{"type":"binary","name":"state","property":"state"}]},{"type":"numeric","name":"power","property":"power","unit":"W","access":1}]}},{"ieee_address":"0x00124b0000000006","friendly_name":"Prise2","type":"Router","supported":true,"definition":{"vendor":"Test","model":"SW-2","description":"Prise 2","exposes":[{"type":"enum","name":"state","property":"state"}]}},{"ieee_address":"0x00124b0000000007","friendly_name":"Porte","type":"EndDevice","supported":true,"definition":{"vendor":"Test","model":"CT-1","description":"Contact","exposes":[{"type":"binary","name":"contact","property":"contact","value_on":false,"value_off":true},{"type":"numeric","name":"battery","property":"battery","unit":"%","access":1}]}},{"ieee_address":"0x00124b0000000008","friendly_name":"Presence","type":"EndDevice","supported":true,"definition":{"vendor":"Test","model":"OC-1","description":"Presence","exposes":[{"type":"binary","name":"occupancy","property":"occupancy"}]}},{"ieee_address":"0x00124b0000000009","friendly_name":"Inconnu","type":"EndDevice","supported":false,"definition":null},{"ieee_address":"0x00124b000000000a","friendly_name":"  Cuisine  ","type":"EndDevice","supported":true,"definition":{"vendor":"Test","model":"TH-02","description":"Thermometre","exposes":[{"type":"composite","name":"t","features":[{"type":"numeric","name":"temperature","property":"temperature","unit":"°C","access":1}]}]}},{"ieee_address":"0x00124b000000000b","friendly_name":"Nouveau","type":"EndDevice","supported":true,"definition":{"vendor":"Test","model":"N-1","description":"Nouveau","exposes":[{"type":"numeric","name":"temperature","property":"temperature","unit":"°C","access":1}]}}],"retain":true}
+{"t":11,"topic":"zigbee2mqtt/bridge/info","payload":{"version":"2.0.0","permit_join":true},"retain":false}
+{"t":12,"topic":"zigbee2mqtt/Nouveau","payload":{"temperature":18},"retain":false}
+{"t":12,"topic":"zigbee2mqtt/Bureau","payload":{"temperature":22.0,"humidity":46.5},"retain":false}
+{"t":13,"op":"deactivate","device":"Bureau"}
+{"t":13,"topic":"zigbee2mqtt/Bureau","payload":{"temperature":99},"retain":false}
+{"t":13,"topic":"zigbee2mqtt/Bureau/availability","payload":{"state":"offline"},"retain":false}
+{"t":14,"op":"activate","device":"Bureau"}
+{"t":14,"topic":"zigbee2mqtt/Bureau","payload":{"temperature":22.5,"humidity":46.0},"retain":false}
+{"t":15,"topic":"zigbee2mqtt/Porte/availability","payload":"offline","retain":false}
+{"t":15,"topic":"zigbee2mqtt/Volet/availability","payload":"\"online\"","retain":false}
+{"t":15,"topic":"zigbee2mqtt/Prise/availability","payload":"  online  ","retain":false}
+{"t":15,"topic":"zigbee2mqtt/Presence/availability","payload":{"state":"offline"},"retain":false}
+{"t":15,"topic":"zigbee2mqtt/Prise2/availability","payload":42,"retain":false}
+{"t":16,"topic":"zigbee2mqtt/bridge/info","payload":"texte","retain":false}
+{"t":16,"topic":"zigbee2mqtt/bridge/devices","payload":"pas une liste","retain":false}
+{"t":16,"topic":"zigbee2mqtt/bridge/devices","payload":{"a":1},"retain":false}
+{"t":17,"topic":"zigbee2mqtt/Salon","payload":{"state":"ON","brightness":10},"retain":false}
+{"t":17,"topic":"zigbee2mqtt/Salon","payload":{"state":"OFF","brightness":20},"retain":false}

@@ -1,0 +1,162 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Documentation DomiNet : MkDocs Material, anglais par defaut, francais en suffixe `.fr.md`.
+# Construite par `make docs` et, dans l'image, par l'etape `docs` du Dockerfile ; servie par l'application sur /docs/, derriere la connexion.
+site_name: DomiNet
+site_description: Domotique et videosurveillance auto-hebergees (Rust)
+docs_dir: docs
+site_dir: target/docs-site
+use_directory_urls: true
+exclude_docs: |
+  hooks/
+  bench/video/
+  adr/0000-template.md
+  R*-plan.md
+
+validation:
+  nav:
+    omitted_files: info
+  links:
+    absolute_links: info
+    unrecognized_links: warn
+
+hooks:
+  - docs/hooks/links.py
+
+theme:
+  name: material
+  palette:
+    - scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Mode clair / Light mode
+    - scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Mode sombre / Dark mode
+  features:
+    - navigation.sections
+    - navigation.top
+    - content.code.copy
+    - search.highlight
+
+markdown_extensions:
+  - tables
+  - admonition
+  - toc:
+      permalink: true
+
+plugins:
+  - search
+  - i18n:
+      docs_structure: suffix
+      fallback_to_default: true
+      languages:
+        - locale: en
+          default: true
+          name: English
+          build: true
+          site_name: DomiNet — Documentation
+          theme:
+            language: en
+        - locale: fr
+          name: Français
+          build: true
+          site_name: DomiNet — Documentation
+          theme:
+            language: fr
+          nav_translations:
+            Home: Accueil
+            Quick install: Installation rapide
+            Troubleshooting: Dépannage
+            Supported machines: Machines prises en charge
+            Moving to another machine: Déménager vers une autre machine
+            Licences: Licences
+            Security: Sécurité
+            Releasing: Publier une version
+            Production deployment: Déploiement en production
+            Fresh install: Installation neuve
+            Development machine: Poste de développement
+            Appearance and customisation: Apparence et personnalisation
+            Features: Fonctions
+            Authentication: Authentification
+            Devices: Appareils
+            Energy: Énergie
+            User interface: Interface
+            Scenes: Scènes
+            MCP server: Serveur MCP
+            Local assistant: Assistant local
+            Alerts: Alertes
+            Messaging: Messagerie
+            Settings: Réglages
+            Operations: Exploitation
+            Observability: Observabilité
+            Prometheus and Grafana rules: Règles Prometheus et Grafana
+            Backups and restore: Sauvegardes et restauration
+            Database: Base de données
+            Development: Développement
+            Pitfalls and lessons: Pièges et leçons
+            Measurements: Mesures
+            Decisions by theme: Décisions par thème
+            Rebuilding from scratch: Reconstruire de zéro
+            Server function audit (MCP): Audit des fonctions serveur (MCP)
+            Local assistant bench: Bench de l'assistant local
+            Mistral bench: Bench Mistral
+            Assistant evaluation: Évaluation de l'assistant
+            To improve: À améliorer
+            Architecture decisions: Décisions d'architecture
+            ADR index: Index des ADR
+
+nav:
+  - Home: index.md
+  - Installation:
+      - Quick install: quick-install.md
+      - Troubleshooting: troubleshooting.md
+      - Supported machines: machines.md
+      - Moving to another machine: migration.md
+      - Licences: licenses.md
+      - Security: security.md
+      - Releasing: releasing.md
+      - Production deployment: deployment.md
+      - Fresh install: installation.md
+      - Configuration: configuration.md
+      - Development machine: dev-machine.md
+      - Appearance and customisation: appearance.md
+  - Features:
+      - Authentication: authentication.md
+      - Devices: devices.md
+      - Energy: energy.md
+      - User interface: interface.md
+      - Automations: automations.md
+      - Scenes: scenes.md
+      - Scripts: scripts.md
+      - MCP server: mcp.md
+      - Local assistant: assistant.md
+      - Alerts: alerts.md
+      - Notifications: notifications.md
+      - Messaging: messaging.md
+      - Settings: settings.md
+      - Publishers: publishers.md
+      - Android: android.md
+      - MQTT: mqtt.md
+  - Operations:
+      - Observability: observability.md
+      - Prometheus and Grafana rules: prometheus-grafana-rules.md
+      - Backups and restore: backups.md
+      - Database: database.md
+  - Development:
+      - Tests: tests.md
+      - Pitfalls and lessons: pitfalls.md
+      - Measurements: measures.md
+      - Decisions by theme: decisions.md
+      - Rebuilding from scratch: rebuild.md
+      - Server function audit (MCP): mcp-audit.md
+      - Local assistant bench: bench/agent-bench-2026-11-17.md
+      - Mistral bench: bench/agent-bench-2026-11-17-mistral.md
+      - Assistant evaluation: bench/agent-eval-2026-11-17.md
+      - To improve: to-improve.md
+  - Architecture decisions:
+      - ADR index: adr/README.md

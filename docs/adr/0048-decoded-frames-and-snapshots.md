@@ -1,0 +1,26 @@
+# 0048 — Decoded frames (`FrameSource`) and snapshots
+
+- Status: accepted
+- Date: 2026-11-08
+
+## Context
+Snapshots, motion detection and YOLO need decoded images; ADR 0003 chose a long-lived `ffmpeg` per camera. The reference started a cold `ffmpeg` per camera and per round (60 s) for the latest image, and another for each capture (2 to 4 s of waiting). Decisions: browsers without H.264, a single `FrameSource` at 2 frames/s.
+
+## Decision
+- **`FrameSource`** (`dominet_surveillance::frames`): a trait (`latest`, `subscribe`) and one implementation, a **supervised `ffmpeg` per camera** reading MediaMTX's re-stream (`<MEDIAMTX_RTSP_URL>/<uuid>`) and writing **JPEGs** to its output (`fps=2`, width 1280 at most and never enlarged, `-q:v 5`). A JPEG carries its dimensions (ADR 0003: ONVIF sometimes gets the resolution wrong) and serves as a snapshot as is; motion detection and YOLO decode it. Splitting the JPEG stream is tested byte by byte (packets of 1 byte up to the whole stream, a stream cut in the middle of an image).
+- **Supervision**: restart with a doubling delay from 1 to 30 s (reset to 1 s after 10 s of running), restart of a stream that gives no image for 20 s, a single decoding thread (the bottleneck is the processor). **Opportunistic hardware decoding**: VAAPI (`hwdownload` then software scale, ADR 0003) if `/dev/dri/renderD128` exists; if `ffmpeg` stops without having produced anything **and its error output blames the hardware** (VAAPI, `/dev/dri`, `hwdownload`, unimplemented function…), **immediate fallback to software**, for good. *Later fix*: the first version switched as soon as `ffmpeg` stopped without an image, so also when the camera was offline, its stream not yet published or joined mid-GOP (the hardware decoder then lacks its reference frames); now only a device error condemns VAAPI at once, and a hardware decoding error only after three failures in a row; measurement on the target machine revealed it (VAAPI works there and divides the decoding cost by three, see [Measurements](../measures.md)). `FFMPEG_HWACCEL=off` turns it off. *VAAPI decoding is not exercised by the tests* (CI has no GPU): its command chain is checked, its operation remains to be measured on real hardware.
+- **`video` role**: follows the list of **active** cameras (reread at every signalled change and every 30 s), one `ffmpeg` per camera; `dominet serve` starts it when `MEDIAMTX_RTSP_URL` is set (otherwise `--only video`).
+- **Latest image on disk**: the `video` role writes `<SNAPSHOTS_DIR>/latest/<uuid>.jpg` **at most once a second**, **atomically** (temporary file then rename; a reader never sees a truncated image). It is the interface with the `web` role, which may be **another process** (separate containers, shared volume): no image transfer through the database or the network. An image older than a minute is not served (the camera sends nothing any more); neither is a file that is not a complete JPEG.
+- **On-demand snapshot**: no cold `ffmpeg`. `?force=1` and the capture wait for **an image newer than the request** (4 s at most, one per second in practice); failing that, the latest still-recent image. Route kept: `GET /surveillance/camera/<uuid>/snapshot/` (any signed-in account; `204` if there is no recent image; `no-store`); `?save=1` and the "Take a picture" button of the live page: **administrators**.
+- **Gallery** (`/surveillance/snapshots`, any signed-in account; deletion: administrators): database rows (`snapshot`) and files `<uuid>/<timestamp>.jpg`; filter by camera and by day (read in the `TZ` zone, a 23-hour day at the clock change); 200 at most. **Additions**: a cap `SNAPSHOTS_MAX_PER_CAMERA` (500) — beyond it the oldest are deleted with their file —; the files of a deleted camera go with it.
+- **Fallback without H.264**: a browser that does not decode H.264 in WebRTC shows, instead of the video, **the camera image refreshed every second** and a banner explaining why. The file read is the `video` role's image: without it, the image stays empty and the banner says so.
+- **Security**: the path of a file read comes from the database; it is refused if it contains anything but simple components (`..`, root). File names are produced by the application (public identifier and timestamp).
+
+## Verification
+- Real `ffmpeg` on `lavfi` sources: cadence (5 frames/s requested → 5 frames/s measured), width reduced then never enlarged, complete JPEGs, restart of a source that stops (numbering continues), cause of a failure and missing binary, process stopped on destruction. `video` role: an active camera has its source and latest image, an inactive one not, a disabled camera loses both; writing at most once a second, never a truncated file read.
+- Snapshots: cap and file deletion, filter by day, deleted camera, rights, `?force=1`, `?save=1`.
+- End-to-end (`tests/e2e/live.py`, real H.264 stream through `ffmpeg` → MediaMTX → `video` role): latest image at 640×360, fresh image, capture, file, gallery, deletion, and **the fallback in Firefox** (no H.264) with an image that renews itself.
+
+## Limits
+- Tests without `ffmpeg` (another machine) skip the check with a message; the Docker image embeds it and `make ci-full` exercises it.
+- One `ffmpeg` per active camera runs permanently (≈ 3 % of a core per 720p stream in software at 2 frames/s, measurements of ADR 0003).

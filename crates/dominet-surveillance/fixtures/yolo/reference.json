@@ -1,0 +1,183 @@
+{
+ "images": {
+  "bus.jpg": [
+   {
+    "bbox": [
+     669.98,
+     388.57,
+     809.83,
+     876.59
+    ],
+    "class": "person",
+    "confidence": 0.89524
+   },
+   {
+    "bbox": [
+     51.19,
+     398.6,
+     240.35,
+     905.9
+    ],
+    "class": "person",
+    "confidence": 0.88764
+   },
+   {
+    "bbox": [
+     6.12,
+     228.48,
+     807.17,
+     746.87
+    ],
+    "class": "bus",
+    "confidence": 0.87872
+   },
+   {
+    "bbox": [
+     222.95,
+     403.9,
+     343.68,
+     858.04
+    ],
+    "class": "person",
+    "confidence": 0.86904
+   },
+   {
+    "bbox": [
+     -0.03,
+     549.99,
+     76.41,
+     871.42
+    ],
+    "class": "person",
+    "confidence": 0.56663
+   },
+   {
+    "bbox": [
+     0.04,
+     252.43,
+     33.12,
+     327.31
+    ],
+    "class": "umbrella",
+    "confidence": 0.21799
+   }
+  ],
+  "bus_crop.jpg": [
+   {
+    "bbox": [
+     224.67,
+     305.68,
+     343.68,
+     758.73
+    ],
+    "class": "person",
+    "confidence": 0.88611
+   },
+   {
+    "bbox": [
+     51.3,
+     292.95,
+     241.45,
+     804.94
+    ],
+    "class": "person",
+    "confidence": 0.87145
+   },
+   {
+    "bbox": [
+     -0.08,
+     450.43,
+     65.71,
+     771.54
+    ],
+    "class": "person",
+    "confidence": 0.31949
+   },
+   {
+    "bbox": [
+     37.25,
+     317.32,
+     66.55,
+     383.41
+    ],
+    "class": "person",
+    "confidence": 0.25542
+   },
+   {
+    "bbox": [
+     1.77,
+     125.44,
+     520.65,
+     799.55
+    ],
+    "class": "truck",
+    "confidence": 0.2522
+   }
+  ],
+  "bus_wide.jpg": [
+   {
+    "bbox": [
+     1058.29,
+     258.08,
+     1279.45,
+     585.76
+    ],
+    "class": "person",
+    "confidence": 0.89269
+   },
+   {
+    "bbox": [
+     80.59,
+     265.49,
+     381.67,
+     604.51
+    ],
+    "class": "person",
+    "confidence": 0.88858
+   },
+   {
+    "bbox": [
+     11.87,
+     152.45,
+     1272.98,
+     497.89
+    ],
+    "class": "bus",
+    "confidence": 0.87411
+   },
+   {
+    "bbox": [
+     351.75,
+     269.31,
+     542.95,
+     572.06
+    ],
+    "class": "person",
+    "confidence": 0.85992
+   },
+   {
+    "bbox": [
+     -0.18,
+     365.67,
+     120.36,
+     580.65
+    ],
+    "class": "person",
+    "confidence": 0.572
+   },
+   {
+    "bbox": [
+     0.04,
+     168.7,
+     52.01,
+     218.37
+    ],
+    "class": "stop sign",
+    "confidence": 0.1551
+   }
+  ],
+  "empty.jpg": []
+ },
+ "reference_backend": "OnnxBackend",
+ "score_threshold": 0.1
+}

@@ -1,0 +1,249 @@
+{
+  "cooldown": 3600,
+  "steps": [
+    {
+      "t": 0,
+      "alerts": [
+        {
+          "state": "firing",
+          "labels": {
+            "alertname": "DominetDown",
+            "job": "j-fpA",
+            "severity": "critical"
+          },
+          "annotations": {
+            "summary": "Application DomiNet inaccessible",
+            "description": "Le scrape a échoué depuis 1 min."
+          },
+          "fingerprint": "fpA",
+          "value": "1e+00"
+        },
+        {
+          "state": "firing",
+          "labels": {
+            "alertname": "DominetHighLatency",
+            "job": "j-fpB",
+            "severity": "warning"
+          },
+          "annotations": {
+            "summary": "Latence p95 > 2 s"
+          },
+          "fingerprint": "fpB",
+          "value": "1e+00"
+        },
+        {
+          "state": "pending",
+          "labels": {
+            "alertname": "MqttDown",
+            "job": "j-fpC",
+            "severity": "warning"
+          },
+          "annotations": {
+            "summary": "MQTT"
+          },
+          "fingerprint": "fpC",
+          "value": "1e+00"
+        }
+      ],
+      "sent": [
+        {
+          "message": "[DomiNet — FIRING] DominetDown (CRITICAL)\nApplication DomiNet inaccessible\nLe scrape a échoué depuis 1 min.",
+          "sms": true
+        },
+        {
+          "message": "[DomiNet — FIRING] DominetHighLatency (WARNING)\nLatence p95 > 2 s",
+          "sms": false
+        }
+      ]
+    },
+    {
+      "t": 60,
+      "alerts": [
+        {
+          "state": "firing",
+          "labels": {
+            "alertname": "DominetDown",
+            "job": "j-fpA",
+            "severity": "critical"
+          },
+          "annotations": {
+            "summary": "Application DomiNet inaccessible",
+            "description": "Le scrape a échoué depuis 1 min."
+          },
+          "fingerprint": "fpA",
+          "value": "1e+00"
+        },
+        {
+          "state": "firing",
+          "labels": {
+            "alertname": "DominetHighLatency",
+            "job": "j-fpB",
+            "severity": "warning"
+          },
+          "annotations": {
+            "summary": "Latence p95 > 2 s"
+          },
+          "fingerprint": "fpB",
+          "value": "1e+00"
+        },
+        {
+          "state": "pending",
+          "labels": {
+            "alertname": "MqttDown",
+            "job": "j-fpC",
+            "severity": "warning"
+          },
+          "annotations": {
+            "summary": "MQTT"
+          },
+          "fingerprint": "fpC",
+          "value": "1e+00"
+        }
+      ],
+      "sent": []
+    },
+    {
+      "t": 120,
+      "alerts": [
+        {
+          "state": "firing",
+          "labels": {
+            "alertname": "DominetDown",
+            "job": "j-fpA",
+            "severity": "critical"
+          },
+          "annotations": {
+            "summary": "Application DomiNet inaccessible",
+            "description": "Le scrape a échoué depuis 1 min."
+          },
+          "fingerprint": "fpA",
+          "value": "1e+00"
+        },
+        {
+          "state": "firing",
+          "labels": {
+            "alertname": "DominetHighLatency",
+            "job": "j-fpB",
+            "severity": "warning"
+          },
+          "annotations": {
+            "summary": "Latence p95 > 2 s"
+          },
+          "fingerprint": "fpB",
+          "value": "1e+00"
+        },
+        {
+          "state": "pending",
+          "labels": {
+            "alertname": "MqttDown",
+            "job": "j-fpC",
+            "severity": "warning"
+          },
+          "annotations": {
+            "summary": "MQTT"
+          },
+          "fingerprint": "fpC",
+          "value": "1e+00"
+        },
+        {
+          "state": "firing",
+          "labels": {
+            "alertname": "SansSeverite",
+            "job": "j-fpD"
+          },
+          "annotations": {},
+          "fingerprint": "fpD",
+          "value": "1e+00"
+        }
+      ],
+      "sent": [
+        {
+          "message": "[DomiNet — FIRING] SansSeverite (WARNING)\nSansSeverite",
+          "sms": false
+        }
+      ]
+    },
+    {
+      "t": 130,
+      "alerts": [
+        {
+          "state": "resolved",
+          "labels": {
+            "alertname": "DominetDown",
+            "job": "j-fpA",
+            "severity": "critical"
+          },
+          "annotations": {
+            "summary": "Application DomiNet inaccessible",
+            "description": "Le scrape a échoué depuis 1 min."
+          },
+          "fingerprint": "fpA",
+          "value": "1e+00"
+        },
+        {
+          "state": "firing",
+          "labels": {
+            "alertname": "DominetHighLatency",
+            "job": "j-fpB",
+            "severity": "warning"
+          },
+          "annotations": {
+            "summary": "Latence p95 > 2 s"
+          },
+          "fingerprint": "fpB",
+          "value": "1e+00"
+        },
+        {
+          "state": "firing",
+          "labels": {
+            "alertname": "SansSeverite",
+            "job": "j-fpD"
+          },
+          "annotations": {},
+          "fingerprint": "fpD",
+          "value": "1e+00"
+        }
+      ],
+      "sent": [
+        {
+          "message": "[DomiNet — RESOLVED] DominetDown (CRITICAL)\nApplication DomiNet inaccessible\nLe scrape a échoué depuis 1 min.",
+          "sms": false
+        }
+      ]
+    },
+    {
+      "t": 3700,
+      "alerts": [
+        {
+          "state": "firing",
+          "labels": {
+            "alertname": "DominetHighLatency",
+            "job": "j-fpB",
+            "severity": "warning"
+          },
+          "annotations": {
+            "summary": "Latence p95 > 2 s"
+          },
+          "fingerprint": "fpB",
+          "value": "1e+00"
+        },
+        {
+          "state": "firing",
+          "labels": {
+            "alertname": "SansSeverite",
+            "job": "j-fpD"
+          },
+          "annotations": {},
+          "fingerprint": "fpD",
+          "value": "1e+00"
+        }
+      ],
+      "sent": [
+        {
+          "message": "[DomiNet — FIRING] DominetHighLatency (WARNING)\nLatence p95 > 2 s",
+          "sms": false
+        }
+      ]
+    }
+  ]
+}

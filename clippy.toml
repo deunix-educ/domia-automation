@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+doc-valid-idents = [
+    "..",
+    "Zigbee2MQTT", "ReductStore", "MediaMTX", "SolarMax", "PostgreSQL",
+    "WebRTC", "ONVIF", "WS-Discovery", "OpenVINO", "YOLOv8n", "DomiNet", "DomiNet",
+    "Open-Meteo", "QoS", "JSONB", "EliteDesk", "OWASP", "Mosquitto", "MkDocs", "TLS", "SQLx",
+]

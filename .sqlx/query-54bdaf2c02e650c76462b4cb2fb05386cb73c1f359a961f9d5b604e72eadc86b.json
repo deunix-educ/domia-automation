@@ -1,0 +1,21 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT DISTINCT jsonb_object_keys(state) AS \"key!\" FROM device WHERE state <> '{}'::jsonb ORDER BY 1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "key!",
+        "type_info": "Text",
+        "origin": "Expression"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "54bdaf2c02e650c76462b4cb2fb05386cb73c1f359a961f9d5b604e72eadc86b"
+}

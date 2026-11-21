@@ -1,0 +1,275 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE device SET friendly_name = $2, description = $3, device_type = $4, group_id = $5, location_id = $6,\n                               base_topic = $7, active = $8, icon = $9, image_url = $10, tracked_keys = $11,\n                               hidden_keys = $12, grafana_dashboard = $13\n             WHERE id = $1\n             RETURNING id, friendly_name, ieee, vendor, model_id, description, device_type, group_id, location_id, base_topic, state, last_seen, available, exposes, active, icon, image_url, tracked_keys, hidden_keys, grafana_dashboard, false AS \"created!\"",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int8",
+        "origin": {
+          "Table": {
+            "table": "device",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "friendly_name",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "device",
+            "name": "friendly_name"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "ieee",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "device",
+            "name": "ieee"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "vendor",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "device",
+            "name": "vendor"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "model_id",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "device",
+            "name": "model_id"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "description",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "device",
+            "name": "description"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "device_type",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "device",
+            "name": "device_type"
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "group_id",
+        "type_info": "Int8",
+        "origin": {
+          "Table": {
+            "table": "device",
+            "name": "group_id"
+          }
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "location_id",
+        "type_info": "Int8",
+        "origin": {
+          "Table": {
+            "table": "device",
+            "name": "location_id"
+          }
+        }
+      },
+      {
+        "ordinal": 9,
+        "name": "base_topic",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "device",
+            "name": "base_topic"
+          }
+        }
+      },
+      {
+        "ordinal": 10,
+        "name": "state",
+        "type_info": "Jsonb",
+        "origin": {
+          "Table": {
+            "table": "device",
+            "name": "state"
+          }
+        }
+      },
+      {
+        "ordinal": 11,
+        "name": "last_seen",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "device",
+            "name": "last_seen"
+          }
+        }
+      },
+      {
+        "ordinal": 12,
+        "name": "available",
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "device",
+            "name": "available"
+          }
+        }
+      },
+      {
+        "ordinal": 13,
+        "name": "exposes",
+        "type_info": "Jsonb",
+        "origin": {
+          "Table": {
+            "table": "device",
+            "name": "exposes"
+          }
+        }
+      },
+      {
+        "ordinal": 14,
+        "name": "active",
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "device",
+            "name": "active"
+          }
+        }
+      },
+      {
+        "ordinal": 15,
+        "name": "icon",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "device",
+            "name": "icon"
+          }
+        }
+      },
+      {
+        "ordinal": 16,
+        "name": "image_url",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "device",
+            "name": "image_url"
+          }
+        }
+      },
+      {
+        "ordinal": 17,
+        "name": "tracked_keys",
+        "type_info": "TextArray",
+        "origin": {
+          "Table": {
+            "table": "device",
+            "name": "tracked_keys"
+          }
+        }
+      },
+      {
+        "ordinal": 18,
+        "name": "hidden_keys",
+        "type_info": "TextArray",
+        "origin": {
+          "Table": {
+            "table": "device",
+            "name": "hidden_keys"
+          }
+        }
+      },
+      {
+        "ordinal": 19,
+        "name": "grafana_dashboard",
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "device",
+            "name": "grafana_dashboard"
+          }
+        }
+      },
+      {
+        "ordinal": 20,
+        "name": "created!",
+        "type_info": "Bool",
+        "origin": "Expression"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Text",
+        "Text",
+        "Text",
+        "Int8",
+        "Int8",
+        "Text",
+        "Bool",
+        "Text",
+        "Text",
+        "TextArray",
+        "TextArray",
+        "Bool"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      null
+    ]
+  },
+  "hash": "18c7e2abbfbf236055d5a68c17b6a40781421a5b074d8533d74cb685218f2ab7"
+}

@@ -1,0 +1,29 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+[package]
+name = "dominet-automation"
+description = "Ingestion des messages MQTT des appareils ; plus tard moteur d'automations, planificateur, hote Rhai, alertes."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+dominet-domain.workspace = true
+dominet-mqtt.workspace = true
+chrono.workspace = true
+chrono-tz.workspace = true
+rhai.workspace = true
+serde_json.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+
+[dev-dependencies]
+dominet-store.workspace = true
+# Jeux d'essai de la production (automations) pour les tests du moteur.
+dominet-domain = { workspace = true, features = ["scenarios"] }
+sqlx.workspace = true
+tokio = { workspace = true, features = ["test-util"] }
+
+[lints]
+workspace = true

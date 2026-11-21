@@ -1,0 +1,23 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "WITH t AS (SELECT gen_random_uuid()::text AS token)\n               UPDATE android_device\n               SET token_hash = encode(sha256(convert_to((SELECT token FROM t), 'UTF8')), 'hex')\n               WHERE id = $1\n               RETURNING (SELECT token FROM t) AS \"token!\"",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "token!",
+        "type_info": "Text",
+        "origin": "Expression"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8"
+      ]
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "fe8afd2219d9d87e11f3f9befd9f2f12c7f67a3cdbf3c5bd112bae9e76c31fd2"
+}

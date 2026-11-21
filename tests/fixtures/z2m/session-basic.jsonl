@@ -1,0 +1,8 @@
+{"topic":"zigbee2mqtt/bridge/info","payload":{"version":"2.0.0","coordinator":{"type":"EZSP"},"permit_join":false},"retain":true}
+{"topic":"zigbee2mqtt/bridge/devices","payload":[{"ieee_address":"0x00124b0000000001","friendly_name":"Bureau","type":"EndDevice","supported":true,"definition":{"vendor":"Test","model":"TH-01","description":"Temperature and humidity sensor","exposes":[{"type":"numeric","name":"temperature","property":"temperature","unit":"°C","access":1},{"type":"numeric","name":"humidity","property":"humidity","unit":"%","access":1},{"type":"numeric","name":"battery","property":"battery","unit":"%","access":1},{"type":"numeric","name":"linkquality","property":"linkquality","access":1}]}},{"ieee_address":"0x00124b0000000002","friendly_name":"Salon","type":"Router","supported":true,"definition":{"vendor":"Test","model":"LT-01","description":"Dimmable light","exposes":[{"type":"light","features":[{"type":"binary","name":"state","property":"state","value_on":"ON","value_off":"OFF","access":7},{"type":"numeric","name":"brightness","property":"brightness","value_min":0,"value_max":254,"access":7}]}]}}],"retain":true}
+{"topic":"zigbee2mqtt/Bureau/availability","payload":{"state":"online"},"retain":true}
+{"topic":"zigbee2mqtt/Salon/availability","payload":{"state":"online"},"retain":true}
+{"topic":"zigbee2mqtt/Bureau","payload":{"temperature":21.4,"humidity":47.2,"battery":88,"linkquality":120,"last_seen":"2026-10-31T10:00:00+01:00"}}
+{"topic":"zigbee2mqtt/Salon","payload":{"state":"OFF","brightness":0,"linkquality":200}}
+{"topic":"zigbee2mqtt/Bureau","payload":{"temperature":21.6,"humidity":47.0,"battery":88,"linkquality":118}}
+{"topic":"zigbee2mqtt/Salon","payload":{"state":"ON","brightness":180,"linkquality":205}}

@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE automation SET trigger_count = trigger_count + 1, last_triggered = $2 WHERE id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "d0fdff996bb1056cbe86ed3d63a7216c6e09d7c0403752727e1058d7baf7569c"
+}

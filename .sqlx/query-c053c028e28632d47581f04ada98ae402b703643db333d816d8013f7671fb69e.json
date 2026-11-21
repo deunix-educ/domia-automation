@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "DELETE FROM schedule_job WHERE automation_id IS NOT NULL AND NOT (automation_id = ANY($1))",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int8Array"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "c053c028e28632d47581f04ada98ae402b703643db333d816d8013f7671fb69e"
+}

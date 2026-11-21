@@ -1,0 +1,27 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+[package]
+name = "dominet-agent"
+description = "Assistant local de DomiNet : boucle d'agent, client MCP en memoire et LLM auto-heberge (R12)."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+dominet-mcp.workspace = true
+dominet-server.workspace = true
+dominet-domain.workspace = true
+chrono.workspace = true
+rmcp = { workspace = true, features = ["client"] }
+reqwest.workspace = true
+tokio.workspace = true
+async-trait.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+
+[dev-dependencies]
+dominet-store.workspace = true
+sqlx.workspace = true

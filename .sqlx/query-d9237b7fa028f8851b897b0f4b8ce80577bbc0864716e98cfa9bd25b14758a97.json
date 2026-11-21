@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE alert SET status = 'acknowledged', acknowledged_at = $2, acknowledged_by = $1 WHERE status = 'firing'",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "d9237b7fa028f8851b897b0f4b8ce80577bbc0864716e98cfa9bd25b14758a97"
+}

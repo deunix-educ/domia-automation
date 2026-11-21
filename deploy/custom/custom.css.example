@@ -1,0 +1,17 @@
+/* SPDX-License-Identifier: AGPL-3.0-or-later */
+/*
+ * Personnalisation de l'apparence de DomiNet : copier ce fichier en `custom.css` (dans ce dossier), decommenter et modifier.
+ * Il est charge apres la feuille principale et relu a chaque chargement de page : aucun redemarrage, aucune reconstruction.
+ * Pour revenir a l'apparence d'origine : supprimer `custom.css`. Les variables disponibles sont decrites dans docs/appearance.md.
+ */
+
+/* :root {
+    --accent        : #ff9f1a;      couleur principale (boutons, liens actifs)
+    --accent-dim    : #d98200;      variante plus sombre
+    --bg-base       : #0b0f14;      fond de page
+    --bg-surface    : #161b22;      fond du menu et des cartes
+    --text-primary  : #f5f7fa;      texte principal
+    --radius-md     : 4px;          arrondis des cartes
+    --sidebar-w     : 260px;        largeur du menu de gauche
+    --font          : "DejaVu Sans", system-ui, sans-serif;
+} */

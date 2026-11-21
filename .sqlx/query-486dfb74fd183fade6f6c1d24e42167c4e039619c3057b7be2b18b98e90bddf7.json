@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE recording SET status = 'done', error = '', reduct_ts = $2 WHERE id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Int8"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "486dfb74fd183fade6f6c1d24e42167c4e039619c3057b7be2b18b98e90bddf7"
+}

@@ -1,0 +1,76 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT day, linky_hp_wh, linky_hc_wh, solar_wh, pac_wh FROM energy_daily_log WHERE day = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "day",
+        "type_info": "Date",
+        "origin": {
+          "Table": {
+            "table": "energy_daily_log",
+            "name": "day"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "linky_hp_wh",
+        "type_info": "Int4",
+        "origin": {
+          "Table": {
+            "table": "energy_daily_log",
+            "name": "linky_hp_wh"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "linky_hc_wh",
+        "type_info": "Int4",
+        "origin": {
+          "Table": {
+            "table": "energy_daily_log",
+            "name": "linky_hc_wh"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "solar_wh",
+        "type_info": "Int4",
+        "origin": {
+          "Table": {
+            "table": "energy_daily_log",
+            "name": "solar_wh"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "pac_wh",
+        "type_info": "Int4",
+        "origin": {
+          "Table": {
+            "table": "energy_daily_log",
+            "name": "pac_wh"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Date"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "15f2c269e89e9dcea086d331a858036c6e0833cc1bcc606037be6bce9e8f8bca"
+}

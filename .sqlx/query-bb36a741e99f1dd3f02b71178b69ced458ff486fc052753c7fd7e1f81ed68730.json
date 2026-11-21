@@ -1,0 +1,136 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, name, latitude, longitude, altitude, timezone, mqtt_topic_suffix, refresh_minutes, enabled,\n                    description FROM weather_station WHERE id = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int8",
+        "origin": {
+          "Table": {
+            "table": "weather_station",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "name",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "weather_station",
+            "name": "name"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "latitude",
+        "type_info": "Float8",
+        "origin": {
+          "Table": {
+            "table": "weather_station",
+            "name": "latitude"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "longitude",
+        "type_info": "Float8",
+        "origin": {
+          "Table": {
+            "table": "weather_station",
+            "name": "longitude"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "altitude",
+        "type_info": "Int4",
+        "origin": {
+          "Table": {
+            "table": "weather_station",
+            "name": "altitude"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "timezone",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "weather_station",
+            "name": "timezone"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "mqtt_topic_suffix",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "weather_station",
+            "name": "mqtt_topic_suffix"
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "refresh_minutes",
+        "type_info": "Int2",
+        "origin": {
+          "Table": {
+            "table": "weather_station",
+            "name": "refresh_minutes"
+          }
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "enabled",
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "weather_station",
+            "name": "enabled"
+          }
+        }
+      },
+      {
+        "ordinal": 9,
+        "name": "description",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "weather_station",
+            "name": "description"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "bb36a741e99f1dd3f02b71178b69ced458ff486fc052753c7fd7e1f81ed68730"
+}

@@ -1,0 +1,232 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO schedule_job (name, task, args, kind, interval_every, interval_period, cron_expr, timezone, solar_event,\n                                       latitude, longitude, enabled, automation_id)\n             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)\n             ON CONFLICT (name) DO UPDATE SET\n                 next_run_at = CASE WHEN (schedule_job.task, schedule_job.args, schedule_job.kind, schedule_job.interval_every,\n                                          schedule_job.interval_period, schedule_job.cron_expr, schedule_job.timezone,\n                                          schedule_job.solar_event, schedule_job.latitude, schedule_job.longitude,\n                                          schedule_job.enabled)\n                                IS NOT DISTINCT FROM (EXCLUDED.task, EXCLUDED.args, EXCLUDED.kind, EXCLUDED.interval_every,\n                                          EXCLUDED.interval_period, EXCLUDED.cron_expr, EXCLUDED.timezone,\n                                          EXCLUDED.solar_event, EXCLUDED.latitude, EXCLUDED.longitude, EXCLUDED.enabled)\n                               THEN schedule_job.next_run_at ELSE NULL END,\n                 task = EXCLUDED.task, args = EXCLUDED.args, kind = EXCLUDED.kind, interval_every = EXCLUDED.interval_every,\n                 interval_period = EXCLUDED.interval_period, cron_expr = EXCLUDED.cron_expr, timezone = EXCLUDED.timezone,\n                 solar_event = EXCLUDED.solar_event, latitude = EXCLUDED.latitude, longitude = EXCLUDED.longitude,\n                 enabled = EXCLUDED.enabled, automation_id = EXCLUDED.automation_id\n             RETURNING id, name, task, args, kind, interval_every, interval_period, cron_expr, timezone, solar_event,\n                       latitude, longitude, enabled, last_run_at, next_run_at, last_status, automation_id",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int8",
+        "origin": {
+          "Table": {
+            "table": "schedule_job",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "name",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "schedule_job",
+            "name": "name"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "task",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "schedule_job",
+            "name": "task"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "args",
+        "type_info": "Jsonb",
+        "origin": {
+          "Table": {
+            "table": "schedule_job",
+            "name": "args"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "kind",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "schedule_job",
+            "name": "kind"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "interval_every",
+        "type_info": "Int4",
+        "origin": {
+          "Table": {
+            "table": "schedule_job",
+            "name": "interval_every"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "interval_period",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "schedule_job",
+            "name": "interval_period"
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "cron_expr",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "schedule_job",
+            "name": "cron_expr"
+          }
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "timezone",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "schedule_job",
+            "name": "timezone"
+          }
+        }
+      },
+      {
+        "ordinal": 9,
+        "name": "solar_event",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "schedule_job",
+            "name": "solar_event"
+          }
+        }
+      },
+      {
+        "ordinal": 10,
+        "name": "latitude",
+        "type_info": "Float8",
+        "origin": {
+          "Table": {
+            "table": "schedule_job",
+            "name": "latitude"
+          }
+        }
+      },
+      {
+        "ordinal": 11,
+        "name": "longitude",
+        "type_info": "Float8",
+        "origin": {
+          "Table": {
+            "table": "schedule_job",
+            "name": "longitude"
+          }
+        }
+      },
+      {
+        "ordinal": 12,
+        "name": "enabled",
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "schedule_job",
+            "name": "enabled"
+          }
+        }
+      },
+      {
+        "ordinal": 13,
+        "name": "last_run_at",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "schedule_job",
+            "name": "last_run_at"
+          }
+        }
+      },
+      {
+        "ordinal": 14,
+        "name": "next_run_at",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "schedule_job",
+            "name": "next_run_at"
+          }
+        }
+      },
+      {
+        "ordinal": 15,
+        "name": "last_status",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "schedule_job",
+            "name": "last_status"
+          }
+        }
+      },
+      {
+        "ordinal": 16,
+        "name": "automation_id",
+        "type_info": "Int8",
+        "origin": {
+          "Table": {
+            "table": "schedule_job",
+            "name": "automation_id"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Text",
+        "Jsonb",
+        "Text",
+        "Int4",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Float8",
+        "Float8",
+        "Bool",
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      false,
+      true,
+      true,
+      true,
+      false,
+      true,
+      true,
+      false,
+      true
+    ]
+  },
+  "hash": "ac3db34cdaa76f0bf6f222097ddc7174ec7d049e56eda4b4d6973d1626287480"
+}

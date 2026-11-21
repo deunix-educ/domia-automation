@@ -1,0 +1,19 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO device_state_log (device_id, key, ts, value_num, value_str)\n             SELECT $1, t.k, $2, CASE WHEN t.h THEN t.n END, t.s\n             FROM UNNEST($3::text[], $4::float8[], $5::bool[], $6::text[]) AS t(k, n, h, s)\n             ON CONFLICT (device_id, key, ts) DO UPDATE\n                SET value_num = EXCLUDED.value_num, value_str = EXCLUDED.value_str",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Timestamptz",
+        "TextArray",
+        "Float8Array",
+        "BoolArray",
+        "TextArray"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "4ac5e7bdb1b4568031c3befe977804e0f481fba801e02c874b255ea2857749c3"
+}

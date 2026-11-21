@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE alert SET status = 'resolved', resolved_at = $3 WHERE rule_id = $1 AND device_id = $2 AND status = 'firing'",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Int8",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "b60410553fa49010be57167da6703a4914c38e9fb4bba2ae21983a20678b29be"
+}

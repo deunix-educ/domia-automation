@@ -1,0 +1,20 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+apiVersion: 1
+
+providers:
+  - name: DomiNet
+    orgId: 1
+    type: file
+    disableDeletion: false
+    editable: true
+    options:
+      path: /etc/grafana/provisioning/dashboards
+
+  # Tableaux des appareils generes par DomiNet (page d'un appareil) dans un volume partage (GRAFANA_DASHBOARDS_DIR).
+  - name: DomiNet appareils
+    orgId: 1
+    type: file
+    disableDeletion: false
+    editable: true
+    options:
+      path: /var/lib/dominet-dashboards

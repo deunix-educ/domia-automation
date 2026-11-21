@@ -1,0 +1,44 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+[package]
+name = "dominet"
+description = "Binaire dominet : assemble le serveur (dominet-server) et l'interface (dominet-web)."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[[bin]]
+name = "dominet"
+path = "src/main.rs"
+
+[dependencies]
+dominet-server.workspace = true
+dominet-mcp.workspace = true
+dominet-web = { workspace = true, features = ["ssr"] }
+anyhow.workspace = true
+clap.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+
+[dev-dependencies]
+axum.workspace = true
+chrono.workspace = true
+http-body-util.workspace = true
+serde_json.workspace = true
+sqlx.workspace = true
+tower.workspace = true
+tokio.workspace = true
+dominet-store.workspace = true
+dominet-domain.workspace = true
+dominet-proto.workspace = true
+dominet-automation.workspace = true
+dominet-notify = { workspace = true, features = ["testing"] }
+dominet-surveillance = { workspace = true, features = ["testing"] }
+tracing-subscriber.workspace = true
+tokio-tungstenite.workspace = true
+futures-util.workspace = true
+uuid.workspace = true
+
+[lints]
+workspace = true

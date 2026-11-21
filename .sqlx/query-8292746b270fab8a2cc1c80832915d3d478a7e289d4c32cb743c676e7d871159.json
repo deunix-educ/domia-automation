@@ -1,0 +1,160 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, name, enabled, description, trigger_type, trigger_config, condition, action_type, action_config, script,\n                    last_triggered, trigger_count FROM automation WHERE id = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int8",
+        "origin": {
+          "Table": {
+            "table": "automation",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "name",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "automation",
+            "name": "name"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "enabled",
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "automation",
+            "name": "enabled"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "description",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "automation",
+            "name": "description"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "trigger_type",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "automation",
+            "name": "trigger_type"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "trigger_config",
+        "type_info": "Jsonb",
+        "origin": {
+          "Table": {
+            "table": "automation",
+            "name": "trigger_config"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "condition",
+        "type_info": "Jsonb",
+        "origin": {
+          "Table": {
+            "table": "automation",
+            "name": "condition"
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "action_type",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "automation",
+            "name": "action_type"
+          }
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "action_config",
+        "type_info": "Jsonb",
+        "origin": {
+          "Table": {
+            "table": "automation",
+            "name": "action_config"
+          }
+        }
+      },
+      {
+        "ordinal": 9,
+        "name": "script",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "automation",
+            "name": "script"
+          }
+        }
+      },
+      {
+        "ordinal": 10,
+        "name": "last_triggered",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "automation",
+            "name": "last_triggered"
+          }
+        }
+      },
+      {
+        "ordinal": 11,
+        "name": "trigger_count",
+        "type_info": "Int4",
+        "origin": {
+          "Table": {
+            "table": "automation",
+            "name": "trigger_count"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false
+    ]
+  },
+  "hash": "8292746b270fab8a2cc1c80832915d3d478a7e289d4c32cb743c676e7d871159"
+}

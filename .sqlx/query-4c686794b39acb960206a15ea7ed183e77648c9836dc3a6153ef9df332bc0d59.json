@@ -1,0 +1,17 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO device_label (key, name, icon_name, unit)\n             SELECT * FROM UNNEST($1::text[], $2::text[], $3::text[], $4::text[])\n             ON CONFLICT (key) DO NOTHING",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "TextArray",
+        "TextArray",
+        "TextArray",
+        "TextArray"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "4c686794b39acb960206a15ea7ed183e77648c9836dc3a6153ef9df332bc0d59"
+}

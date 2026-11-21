@@ -1,0 +1,22 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Prometheus de DomiNet (R7 lot 3). Les regles (`rules.yml`) sont ecrites par DomiNet dans le volume partage `prometheus-rules`
+# (PROMETHEUS_RULES_PATH) puis rechargees par `POST /-/reload` (Prometheus lance avec --web.enable-lifecycle).
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+rule_files:
+  - /etc/prometheus/rules/rules.yml
+
+scrape_configs:
+  # DomiNet : ecouteur /metrics a part (METRICS_ADDR, 9100), jamais publie sur l'hote (ADR 0051).
+  - job_name: dominet
+    static_configs:
+      - targets: ['dominet:9100']
+    metrics_path: /metrics
+
+  # MediaMTX 1.21 (`metrics: yes`, port 9998 sur le reseau Docker).
+  - job_name: mediamtx
+    static_configs:
+      - targets: ['mediamtx:9998']
+    metrics_path: /metrics

@@ -1,0 +1,70 @@
+#!/usr/bin/env bash
+# SPDX-License-Identifier: AGPL-3.0-or-later
+#
+# Garde-fou avant `git push` : lance `make ci` sur une copie PROPRE de chaque commit pousse (git archive), avec un
+# PostgreSQL jetable. Une copie propre, c'est ce qui attrape ce que la compilation locale cache : un fichier oublie
+# dans `git add`. Voir ADR 0015.
+#
+#   DOMINET_SKIP_PREPUSH=1 git push   ou   git push --no-verify     pour passer outre
+#   DOMINET_PREPUSH_CMD='make ci-full' git push                     pour ajouter build de l'interface et de l'image
+#
+# Active par `make hooks` (git config core.hooksPath .githooks).
+set -euo pipefail
+
+if [ "${DOMINET_SKIP_PREPUSH:-0}" = 1 ]; then
+  echo "pre-push : ignore (DOMINET_SKIP_PREPUSH=1)"
+  exit 0
+fi
+
+zero=0000000000000000000000000000000000000000
+tips=()
+while read -r local_ref local_sha _remote_ref _remote_sha; do
+  [ "$local_sha" = "$zero" ] && continue          # suppression de branche
+  case "$local_ref" in refs/heads/*) tips+=("$local_sha") ;; esac
+done
+[ "${#tips[@]}" -gt 0 ] || exit 0
+
+repo="$(git rev-parse --show-toplevel)"
+cmd="${DOMINET_PREPUSH_CMD:-make ci}"
+# Cible Cargo dediee : ne perturbe pas la compilation en cours dans l'arbre de travail. Premiere execution a froid : plus longue.
+export CARGO_TARGET_DIR="${CARGO_TARGET_DIR:-$repo/target/prepush}"
+
+work="$(mktemp -d)"
+log="$(mktemp --suffix=.log)"
+pg="dominet-prepush-pg-$$"
+cleanup() {
+  docker rm -f "$pg" >/dev/null 2>&1 || true
+  rm -rf "$work"
+}
+trap cleanup EXIT
+
+echo "pre-push : base PostgreSQL jetable..."
+docker run -d --rm --name "$pg" -e POSTGRES_USER=dominet -e POSTGRES_PASSWORD=dominet -e POSTGRES_DB=dominet \
+  -p 127.0.0.1::5432 postgres:16-alpine >/dev/null
+for _ in $(seq 1 40); do
+  docker exec "$pg" pg_isready -U dominet -d dominet >/dev/null 2>&1 && break
+  sleep 1
+done
+port="$(docker port "$pg" 5432/tcp | head -1 | sed 's/.*://')"
+export DATABASE_URL="postgres://dominet:dominet@127.0.0.1:${port}/dominet"
+export SQLX_OFFLINE=true
+
+for sha in $(printf '%s\n' "${tips[@]}" | sort -u); do
+  short="$(git rev-parse --short "$sha")"
+  rm -rf "$work"/* "$work"/.[!.]* 2>/dev/null || true
+  git -C "$repo" archive "$sha" | tar -x -C "$work"
+  echo "pre-push : '$cmd' sur une copie propre de $short (priorite basse)..."
+  start=$SECONDS
+  if ! (cd "$work" && nice -n 10 bash -c "$cmd") >"$log" 2>&1; then
+    echo "----- 60 dernieres lignes -----"
+    tail -n 60 "$log"
+    echo "-------------------------------"
+    echo "pre-push : ECHEC sur $short apres $((SECONDS - start)) s (journal complet : $log)."
+    echo "           Rien n'est pousse. Corriger, commiter, repousser (ou --no-verify pour passer outre)."
+    trap - EXIT
+    cleanup
+    exit 1
+  fi
+  echo "pre-push : OK sur $short en $((SECONDS - start)) s."
+done
+rm -f "$log"

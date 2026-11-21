@@ -1,0 +1,19 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE camera SET manufacturer = $2, model = $3, firmware = $4, main_token = $5, ptz = $6 WHERE id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Bool"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "0176381cc334dbc858a72d72b067c9cab82fdac811add62765efd4e59e764df4"
+}

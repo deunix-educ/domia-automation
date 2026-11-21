@@ -1,0 +1,17 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+apiVersion: 1
+
+contactPoints:
+  - orgId: 1
+    name: dominet-email
+    receivers:
+      - uid: dominet-email-recv
+        type: email
+        settings:
+          addresses: ${EMAIL_RECIPIENT}
+          singleEmail: false
+        disableResolveMessage: false
+
+deleteContactPoints:
+  - orgId: 1
+    uid: dominet-webhook-recv

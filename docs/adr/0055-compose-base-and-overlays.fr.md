@@ -1,0 +1,26 @@
+# ADR 0055 — Compose : base et surcouches, sondes, volumes, Mosquitto
+
+
+Statut : accepté (R7 lot 5, décisions D1, D7, D8, D9 et D11 du plan). **Le listener LAN anonyme (1884, `MQTT_LAN_ANONYMOUS`) est remplacé par l'ADR 0057** (un seul listener avec mot de passe).
+
+## Contexte
+Le dépôt n'avait d'abord qu'une pile de développement autonome (4 services). Une pile déployable demande une base de 8 services avec des surcouches (développement, production, démonstration), des images figées (pas de `latest`), un Mosquitto authentifié et une étape `migrate` à part.
+
+## Décisions
+- **Quatre fichiers** dans `deploy/` : `docker-compose.yml` (base : services et liens, secrets uniquement par l'environnement, aucun port publié sauf PostgreSQL en loopback), `.dev`, `.prod`, `.demo` (projets `dominet-dev`, `dominet`, `dominet-demo` : volumes et réseaux séparés). Réseau unique `dominet-net` ; seuls `dominet-discovery` et `wg-easy` sont en réseau hôte.
+- **Services de base** : `dominet`, `dominet-discovery`, `postgres`, `reductstore`, `mosquitto`, `mediamtx`, `prometheus`, `grafana`, plus **deux services d'un seul passage** : `migrate` (D11 : `dominet migrate` avant toute application, base vierge comprise) et `init` (donne les volumes partagés à l'utilisateur 10001 : un volume nommé est créé par root et le premier conteneur à le monter ne le possède pas toujours).
+- **Images figées** (D8) : `postgres:16-alpine`, `reduct/store:v1.21.5`, `eclipse-mosquitto:2.0`, `bluenviron/mediamtx:1.21.3`, `prom/prometheus:v2.52.0`, `grafana/grafana:11.0.0`, `nginx:1.27-alpine`, `koenkk/zigbee2mqtt:2.1.1`, `wg-easy:14`, `adminer:4.8.1`. Une seule image pour tous les rôles de DomiNet (`dominet:${DOMINET_TAG}`), construite par le seul service `dominet` ; `pull_policy: never` pour les autres : jamais de pull d'une image qui n'existerait pas.
+- **Sondes** : l'image n'a pas `curl` ; une commande `dominet healthcheck` (GET `/healthz` sur le port de `HTTP_ADDR`, 3 s, code de sortie 0/1, **sans lire la base ni la configuration complète**) sert de healthcheck. Les `depends_on` utilisent `service_healthy` pour `postgres`, `reductstore`, `mosquitto`, `dominet` (nginx).
+- **Mosquitto** (D7) : `per_listener_settings true` ; listener 1883 (réseau Docker : DomiNet, Zigbee2MQTT) **avec mot de passe** ; listener 1884 (LAN, publié sur le port hôte `MQTT_LAN_PORT`, 1883 par défaut pour que les appareils existants gardent leur adresse) **anonyme tant que `MQTT_LAN_ANONYMOUS=true`**, absent sinon. La configuration et le fichier de mots de passe sont produits au démarrage par `deploy/mosquitto/entrypoint.sh` à partir de l'environnement : aucun secret dans le dépôt. Constaté : sans `per_listener_settings`, le `allow_anonymous true` du LAN s'appliquait aussi au listener sécurisé.
+- **MediaMTX** : utilisateur 10001 (propriétaire des segments que DomiNet relit puis **supprime** après archivage — le volume est donc en écriture pour `dominet`, contrairement à ce que laissait entendre ROADMAP §2.5) ; la lecture est ouverte, mais la publication, l'API et les métriques ne sont acceptées que de la machine et des réseaux privés Docker (les caméras sont tirées par MediaMTX, elles ne publient pas) ; SRT et MoQ coupés.
+- **Volumes partagés** : `prometheus-rules` (DomiNet écrit, Prometheus lit), `grafana-alerting` (idem pour les règles Grafana ; les deux fichiers de points de contact et de politiques du dépôt sont montés par-dessus), `grafana-dashboards` (tableaux d'appareils générés, second fournisseur de tableaux dans `dashboards.yml`), `backups-data`, `recordings-data`, `app-data` (snapshots, images annotées), `reductstore-data` (en lecture seule pour `dominet` : sauvegarde). Décision : `media-data` de la référence disparaît (les images d'appareils ne sont plus des fichiers).
+- **Découverte ONVIF** : `dominet serve --only discovery` en réseau hôte, `METRICS_ADDR=off` (le 9100 serait celui de l'hôte), PostgreSQL joint par `127.0.0.1:${POSTGRES_HOST_PORT}` (port publié en loopback).
+- **Surcouche dev** : ne démarre que l'infrastructure (le code se lance par `cargo`), mêmes ports décalés qu'avant (15432, 18383, 11883, 18554, 18889, 19997, 8189) ; Prometheus et Grafana en profil `observability` (19090, 13000).
+- **Surcouche prod** : nginx (TLS mkcert, 80/443, `/grafana/`, `/webrtc/`, `/dominet-ca.crt` — aussi servi en HTTP, un appareil neuf n'ayant pas encore la CA —, WebSocket), Mosquitto LAN, RTSP 8554, ICE 8189, `restart: unless-stopped`, profils `zigbee`, `vpn`, `adminer` (loopback 8181). Les variables des profils inactifs ne sont pas exigées par Compose (il interpole même les profils inactifs) : `make prod-guard` (lot 6) les vérifie.
+- **Surcouche demo** : HTTP, ports décalés, MQTT LAN coupé, caméra factice (ffmpeg de l'image → MediaMTX). Le simulateur MQTT de la référence n'est pas porté dans ce lot.
+- **Secrets** : `${VAR:?}` dans les surcouches prod et demo (le démarrage échoue avec le nom de la variable), jamais de valeur dans un fichier Compose ou une image.
+
+## Conséquences
+- Les scripts qui nommaient le réseau de dev (`dominet-dev_default`) utilisent `dominet-dev_dominet-net`.
+- `make dev-up` ne construit jamais l'image (aucun service de dev ne la demande) : les tests d'intégration restent rapides.
+- Essai complet (installation vierge, trois commandes) : lot 6 ; essai sur l'hôte réel : R8.

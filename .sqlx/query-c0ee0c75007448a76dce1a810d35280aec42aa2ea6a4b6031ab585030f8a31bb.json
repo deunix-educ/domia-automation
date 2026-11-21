@@ -1,0 +1,146 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, name, topic_pattern, qos, active, log_messages, auto_device, auto_device_type, base_topic,\n                    handler_code, description FROM mqtt_source WHERE active ORDER BY name, id",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int8",
+        "origin": {
+          "Table": {
+            "table": "mqtt_source",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "name",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "mqtt_source",
+            "name": "name"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "topic_pattern",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "mqtt_source",
+            "name": "topic_pattern"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "qos",
+        "type_info": "Int2",
+        "origin": {
+          "Table": {
+            "table": "mqtt_source",
+            "name": "qos"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "active",
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "mqtt_source",
+            "name": "active"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "log_messages",
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "mqtt_source",
+            "name": "log_messages"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "auto_device",
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "mqtt_source",
+            "name": "auto_device"
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "auto_device_type",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "mqtt_source",
+            "name": "auto_device_type"
+          }
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "base_topic",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "mqtt_source",
+            "name": "base_topic"
+          }
+        }
+      },
+      {
+        "ordinal": 9,
+        "name": "handler_code",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "mqtt_source",
+            "name": "handler_code"
+          }
+        }
+      },
+      {
+        "ordinal": 10,
+        "name": "description",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "mqtt_source",
+            "name": "description"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "c0ee0c75007448a76dce1a810d35280aec42aa2ea6a4b6031ab585030f8a31bb"
+}
