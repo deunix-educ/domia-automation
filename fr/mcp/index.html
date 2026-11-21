@@ -1,0 +1,2564 @@
+
+<!doctype html>
+<html lang="fr" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Domotique et videosurveillance auto-hebergees (Rust)">
+      
+      
+      
+      
+        <link rel="prev" href="../scripts/">
+      
+      
+        <link rel="next" href="../assistant/">
+      
+      
+        
+          <link rel="alternate" href="../../mcp/" hreflang="en">
+        
+          <link rel="alternate" href="./" hreflang="fr">
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.1">
+    
+    
+      
+        <title>Serveur MCP - DomiNet — Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.57a0d79d.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.fb2fffe2.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#serveur-mcp-r11-en-cours" class="md-skip">
+          Aller au contenu
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="En-tête">
+    <a href="../" title="DomiNet — Documentation" class="md-header__button md-logo" aria-label="DomiNet — Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            DomiNet — Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Serveur MCP
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Mode clair / Light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Mode clair / Light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Mode sombre / Dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Mode sombre / Dark mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+      <div class="md-header__option">
+  <div class="md-select">
+    
+    <button class="md-header__button md-icon" aria-label="Sélectionner la langue">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m12.87 15.07-2.54-2.51.03-.03A17.5 17.5 0 0 0 14.07 6H17V4h-7V2H8v2H1v2h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2zm-2.62 7 1.62-4.33L19.12 17z"/></svg>
+    </button>
+    <div class="md-select__inner">
+      <ul class="md-select__list">
+        
+          <li class="md-select__item">
+            <a href="../../mcp/" hreflang="en" class="md-select__link">
+              English
+            </a>
+          </li>
+        
+          <li class="md-select__item">
+            <a href="./" hreflang="fr" class="md-select__link">
+              Français
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</div>
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Rechercher" placeholder="Rechercher" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Recherche">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Effacer" aria-label="Effacer" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initialisation de la recherche
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../" title="DomiNet — Documentation" class="md-nav__button md-logo" aria-label="DomiNet — Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    DomiNet — Documentation
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Accueil
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Installation
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../quick-install/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation rapide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../troubleshooting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dépannage
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../machines/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Machines prises en charge
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../migration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Déménager vers une autre machine
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../licenses/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Licences
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../security/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sécurité
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../releasing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Publier une version
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../deployment/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Déploiement en production
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../installation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation neuve
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../dev-machine/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Poste de développement
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../appearance/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apparence et personnalisation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fonctions
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Fonctions
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../authentication/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Authentification
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../devices/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Appareils
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../energy/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Énergie
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../interface/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Interface
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../automations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../scenes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Scènes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../scripts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Scripts
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Serveur MCP
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Serveur MCP
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table des matières">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table des matières
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#activer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Activer
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#creer-un-jeton" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Créer un jeton
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#brancher-claude-code" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Brancher Claude Code
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#essai-pas-a-pas-pile-de-developpement" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Essai pas à pas (pile de développement)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#claude-desktop-a-verifier" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Claude Desktop (à vérifier)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#prompts-prets-a-lemploi" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Prompts prêts à l'emploi
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#verifier-un-serveur-en-lecture-seule" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Vérifier un serveur en lecture seule
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#recette-sur-lelitedesk-a-jouer-par-vous" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Recette sur l'EliteDesk (à jouer par vous)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#outils-disponibles-lecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Outils disponibles (lecture)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#outils-de-pilotage-portee-pilotage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Outils de pilotage (portée pilotage)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#configuration-portees-lecture-et-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Configuration (portées lecture et configuration)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#administration-portee-administration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Administration (portée administration)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#securite" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sécurité
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tests
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../assistant/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Assistant local
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../alerts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Alertes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../notifications/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Notifications
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../messaging/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Messagerie
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../settings/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Réglages
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../publishers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Publishers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../android/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Android
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../mqtt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MQTT
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Exploitation
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Exploitation
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../observability/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Observabilité
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../prometheus-grafana-rules/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Règles Prometheus et Grafana
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../backups/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sauvegardes et restauration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../database/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Base de données
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Développement
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Développement
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tests/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tests
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../pitfalls/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Pièges et leçons
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../measures/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mesures
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../decisions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Décisions par thème
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../rebuild/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reconstruire de zéro
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../mcp-audit/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Audit des fonctions serveur (MCP)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../bench/agent-bench-2026-11-17/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Bench de l'assistant local
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../bench/agent-bench-2026-11-17-mistral/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Bench Mistral
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../bench/agent-eval-2026-11-17/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Évaluation de l'assistant
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../to-improve/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    À améliorer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Décisions d'architecture
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Décisions d'architecture
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Index des ADR
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table des matières">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table des matières
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#activer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Activer
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#creer-un-jeton" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Créer un jeton
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#brancher-claude-code" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Brancher Claude Code
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#essai-pas-a-pas-pile-de-developpement" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Essai pas à pas (pile de développement)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#claude-desktop-a-verifier" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Claude Desktop (à vérifier)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#prompts-prets-a-lemploi" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Prompts prêts à l'emploi
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#verifier-un-serveur-en-lecture-seule" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Vérifier un serveur en lecture seule
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#recette-sur-lelitedesk-a-jouer-par-vous" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Recette sur l'EliteDesk (à jouer par vous)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#outils-disponibles-lecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Outils disponibles (lecture)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#outils-de-pilotage-portee-pilotage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Outils de pilotage (portée pilotage)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#configuration-portees-lecture-et-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Configuration (portées lecture et configuration)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#administration-portee-administration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Administration (portée administration)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#securite" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sécurité
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tests
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="serveur-mcp-r11-en-cours">Serveur MCP (R11, en cours)<a class="headerlink" href="#serveur-mcp-r11-en-cours" title="Permanent link">&para;</a></h1>
+<p>Le <strong>serveur MCP</strong> de DomiNet permet à un assistant (Claude Code, Claude Desktop, ou tout client MCP) de consulter, piloter et configurer l'application avec les mêmes règles que l'interface, <strong>sans jamais voir un secret</strong>. Feuille de route : <code>ROADMAP-mcp.md</code> ; décisions : <a href="../adr/0058-mcp-server/">ADR 0058</a> et <a href="../adr/0059-mcp-access-tokens/">ADR 0059</a> ; audit : <a href="../mcp-audit/">R11-audit</a>.</p>
+<div class="admonition warning">
+<p class="admonition-title">État : lot M4d (configuration)</p>
+<p>Jetons et audit (M1), lecture (M2), pilotage et caméras (M3) et <strong>configuration</strong> (M4 à M4e, seize types) et <strong>administration</strong> (M5) sont en place. Reste la recette (M6).</p>
+</div>
+<h2 id="activer">Activer<a class="headerlink" href="#activer" title="Permanent link">&para;</a></h2>
+<p>Dans <code>.env</code> (le serveur est <strong>désactivé par défaut</strong>) :</p>
+<pre><code class="language-bash">MCP_ENABLED=true
+</code></pre>
+<p>Puis recréer le service <code>dominet</code> (<code>make prod-up</code>). Le point d'entrée est <code>https://dominet.local/mcp</code> ; il n'est joignable que par le LAN et le VPN. L'en-tête <code>Host</code> doit être <code>localhost</code> ou figurer dans <code>ALLOWED_HOSTS</code> (protection contre le DNS rebinding). <strong>Sans jeton, personne n'entre.</strong></p>
+<h2 id="creer-un-jeton">Créer un jeton<a class="headerlink" href="#creer-un-jeton" title="Permanent link">&para;</a></h2>
+<p>Page <strong>Administration › Assistants (MCP)</strong> (<code>/admin/mcp</code>) : un nom, les <strong>portées</strong> et une durée de validité (30 à 365 jours : un jeton sans date de fin n'existe pas). La valeur du jeton, <code>dnm_…</code>, est <strong>affichée une seule fois</strong>, avec la commande prête à coller dans Claude Code ; seule son empreinte est conservée, elle ne peut pas être relue. Un jeton perdu se révoque et se recrée.</p>
+<table>
+<thead>
+<tr>
+<th>Portée</th>
+<th>Permet</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>lecture</code></td>
+<td>consulter appareils, historique, journaux, alertes et configuration (secrets masqués)</td>
+</tr>
+<tr>
+<td><code>pilotage</code></td>
+<td>commander les appareils, lancer des scènes, acquitter des alertes</td>
+</tr>
+<tr>
+<td><code>configuration</code></td>
+<td>modifier automations, règles, tableaux de bord et sources</td>
+</tr>
+<tr>
+<td><code>administration</code></td>
+<td>réglages, caméras et scripts Rhai</td>
+</tr>
+</tbody>
+</table>
+<p>Les portées sont <strong>indépendantes</strong> : <code>configuration</code> ne donne pas <code>lecture</code>. Prendre un jeton <code>lecture</code> pour le diagnostic courant, un jeton plus large seulement le temps d'une modification.</p>
+<h2 id="brancher-claude-code">Brancher Claude Code<a class="headerlink" href="#brancher-claude-code" title="Permanent link">&para;</a></h2>
+<pre><code class="language-bash">claude mcp add --transport http dominet https://dominet.local/mcp --header &quot;Authorization: Bearer &lt;jeton&gt;&quot;
+</code></pre>
+<p>Le poste doit faire confiance à l'autorité de certification de DomiNet (<code>/dominet-ca.crt</code>). La commande a été vérifiée avec Claude Code sur la pile de développement (adresse <code>http://127.0.0.1:8080/mcp</code>) ; l'essai en <code>https://dominet.local</code> sur l'EliteDesk reste à faire (M6). Pour ne brancher l'assistant que dans un dossier, ajouter <code>--scope local</code> ; <code>claude mcp list</code> doit afficher <code>dominet … ✔ Connected</code>, <code>claude mcp remove dominet</code> le retire.</p>
+<h2 id="essai-pas-a-pas-pile-de-developpement">Essai pas à pas (pile de développement)<a class="headerlink" href="#essai-pas-a-pas-pile-de-developpement" title="Permanent link">&para;</a></h2>
+<p>Un essai complet, sans toucher à la production : la pile de développement est jetable.</p>
+<ol>
+<li><strong>Démarrer la pile et le serveur, MCP activé</strong> :
+   <code>bash
+   make dev-up
+   cargo leptos build                      # la première fois, ou après une modification
+   MCP_ENABLED=true tools/dev-run.sh       # serveur sur http://127.0.0.1:8080, journal « serveur MCP monté sur /mcp »</code></li>
+<li><strong>Créer un jeton</strong> : se connecter à <code>http://127.0.0.1:8080</code> (compte et mot de passe de développement dans <code>deploy/.env.dev-run</code>), page <strong>Administration › Assistants (MCP)</strong>, nom <code>essai</code>, les quatre portées, 30 jours. Copier la valeur <code>dnm_…</code> (affichée une seule fois).
+   Sans l'interface, pour un essai seulement : insérer dans la base de développement l'empreinte SHA-256 d'un jeton de son choix (<code>mcp_token</code>, colonnes <code>name</code>, <code>token_hash</code>, <code>prefix</code>, <code>scopes</code>, <code>expires_at</code>).</li>
+<li><strong>Brancher Claude Code</strong>, dans un dossier d'essai :
+   <code>bash
+   mkdir -p ~/essai-mcp &amp;&amp; cd ~/essai-mcp
+   claude mcp add --transport http --scope local dominet http://127.0.0.1:8080/mcp \
+     --header "Authorization: Bearer dnm_…"
+   claude mcp list                         # dominet … ✔ Connected</code></li>
+<li><strong>Poser des questions</strong> (<code>claude</code> interactif, ou <code>claude -p "…" --allowedTools "mcp__dominet"</code>) :</li>
+<li><em>Lecture</em> : « Donne l'état général du système et dis-moi quels appareils n'ont rien émis depuis 24 h. » (<code>system_status</code>, <code>devices_list</code>).</li>
+<li><em>Simulation</em> : « Propose, sans rien écrire, la création d'un emplacement “Essai MCP”. » (<code>config_schema</code>, <code>config_upsert</code> avec <code>dry_run</code>).</li>
+<li><em>Écriture</em> : « Crée l'emplacement, un appareil “Lampe-essai” de type light rattaché à cet emplacement, puis une automation qui envoie une notification quand un message arrive sur <code>essai/bouton</code>. » Relire ensuite avec « Relis l'automation avec config_get ».</li>
+<li><em>Secrets</em> : « Crée une caméra “Cam essai” avec le mot de passe <code>…</code>, puis relis-la. » Le mot de passe ne se relit pas : <code>has_rtsp_pass: true</code> seulement.</li>
+<li><em>Garde-fous</em> : « Supprime l'emplacement sans confirmer. » L'appel est refusé (<code>confirm = true</code> obligatoire) ; <code>dry_run</code> dit d'abord ce qui dépend de l'élément.</li>
+<li><strong>Contrôler</strong> : la page <strong>Administration › Assistants (MCP)</strong> montre le journal d'audit (une ligne par écriture ou refus, jamais de valeur de jeton ni de secret). Les éléments créés se voient dans l'interface.</li>
+<li><strong>Nettoyer</strong> : <code>claude mcp remove dominet</code>, révoquer le jeton dans la page MCP, arrêter le serveur (Ctrl+C), <code>make dev-reset</code> pour repartir d'une base vide.</li>
+</ol>
+<p><strong>Résultat de l'essai du 2026-11-16</strong> (Claude Code, pile de développement) : l'assistant a lu l'état du système, simulé puis réellement créé un emplacement, un appareil, une automation et une caméra, relu l'automation, constaté qu'il ne voyait pas le mot de passe de la caméra, et s'est vu refuser la suppression sans <code>confirm</code>. Le journal d'audit contient les quatre écritures et aucun secret. Claude Code affiche des avertissements <code>unknown format "uint32" ignored in schema</code> : sans conséquence, ils viennent du schéma des sorties.</p>
+<h2 id="claude-desktop-a-verifier">Claude Desktop (à vérifier)<a class="headerlink" href="#claude-desktop-a-verifier" title="Permanent link">&para;</a></h2>
+<p>Claude Desktop ne sait pas envoyer un en-tête <code>Authorization</code> à un serveur distant déclaré dans l'interface : on passe par le pont <code>mcp-remote</code> (Node.js requis), dans <code>claude_desktop_config.json</code> :</p>
+<pre><code class="language-json">{ &quot;mcpServers&quot;: { &quot;dominet&quot;: {
+    &quot;command&quot;: &quot;npx&quot;,
+    &quot;args&quot;: [&quot;-y&quot;, &quot;mcp-remote&quot;, &quot;https://dominet.local/mcp&quot;, &quot;--header&quot;, &quot;Authorization:${DOMINET_AUTH}&quot;],
+    &quot;env&quot;: { &quot;DOMINET_AUTH&quot;: &quot;Bearer dnm_…&quot;, &quot;NODE_EXTRA_CA_CERTS&quot;: &quot;/chemin/dominet-ca.crt&quot; }
+} } }
+</code></pre>
+<p>Cette configuration n'a <strong>pas</strong> été essayée ici (pas de Claude Desktop sur le poste de développement) ; elle suit la méthode courante de <code>mcp-remote</code>. Un jeton plus étroit (<code>lecture</code> seule) est le bon choix pour un client grand public.</p>
+<h2 id="prompts-prets-a-lemploi">Prompts prêts à l'emploi<a class="headerlink" href="#prompts-prets-a-lemploi" title="Permanent link">&para;</a></h2>
+<p>Trois modèles, offerts avec la portée <code>lecture</code> (ce sont de simples textes : ils ne donnent aucun droit que le jeton n'a pas). Dans Claude Code, ils s'appellent par <code>/mcp__dominet__diagnostic</code>, <code>/mcp__dominet__nouvelle_automation</code> et <code>/mcp__dominet__bilan_surveillance</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Prompt</th>
+<th>Argument</th>
+<th>Ce qu'il fait faire à l'assistant</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>diagnostic</code></td>
+<td><code>hours</code> (12)</td>
+<td>état du système, appareils muets, alertes, erreurs récentes, automations en échec, puis une synthèse de 5 lignes</td>
+</tr>
+<tr>
+<td><code>nouvelle_automation</code></td>
+<td><code>need</code> (obligatoire)</td>
+<td>lire les vrais appareils et scènes, lire le schéma, proposer en mots simples, simuler (<code>dry_run</code>), créer <strong>seulement après accord</strong></td>
+</tr>
+<tr>
+<td><code>bilan_surveillance</code></td>
+<td><code>hours</code> (24)</td>
+<td>caméras, détections, enregistrements, énergie, alertes ; ni capture ni mouvement de caméra sans demande</td>
+</tr>
+</tbody>
+</table>
+<h2 id="verifier-un-serveur-en-lecture-seule">Vérifier un serveur en lecture seule<a class="headerlink" href="#verifier-un-serveur-en-lecture-seule" title="Permanent link">&para;</a></h2>
+<pre><code class="language-bash">MCP_TOKEN=dnm_… tools/check-mcp.sh http://127.0.0.1:8080/mcp                   # pile de développement
+CACERT=dominet-ca.crt MCP_TOKEN=dnm_… tools/check-mcp.sh https://dominet.local/mcp   # EliteDesk
+</code></pre>
+<p>Le script contrôle le refus sans jeton (401), compte les outils et les prompts offerts au jeton et appelle <code>system_status</code>. Il n'écrit rien et n'affiche jamais le jeton.</p>
+<h2 id="recette-sur-lelitedesk-a-jouer-par-vous">Recette sur l'EliteDesk (à jouer par vous)<a class="headerlink" href="#recette-sur-lelitedesk-a-jouer-par-vous" title="Permanent link">&para;</a></h2>
+<p>Rien n'est lancé sur la production sans vous. Dans l'ordre :</p>
+<ol>
+<li><strong>Activer</strong> : ajouter <code>MCP_ENABLED=true</code> au <code>.env</code> de l'EliteDesk, puis <code>make prod-up</code> (le serveur MCP est désactivé par défaut).</li>
+<li><strong>Contrôler le refus</strong> : <code>curl -s -o /dev/null -w '%{http_code}\n' -X POST --cacert dominet-ca.crt https://dominet.local/mcp</code> doit répondre <strong>401</strong>.</li>
+<li><strong>Créer un jeton <code>lecture</code></strong>, 30 jours, page <strong>Administration › Assistants (MCP)</strong>.</li>
+<li><strong>Contrôler</strong> : <code>CACERT=dominet-ca.crt MCP_TOKEN=dnm_… tools/check-mcp.sh https://dominet.local/mcp</code>.</li>
+<li><strong>Brancher Claude Code</strong> (poste de confiance : <code>NODE_EXTRA_CA_CERTS=/chemin/dominet-ca.crt</code> si la CA n'est pas installée) puis <code>claude mcp add --transport http dominet https://dominet.local/mcp --header "Authorization: Bearer dnm_…"</code>.</li>
+<li><strong>Diagnostic</strong> : lancer <code>/mcp__dominet__diagnostic</code>. Comparer avec la page d'accueil et la page Journaux.</li>
+<li><strong>Une action réversible</strong> (jeton <code>pilotage</code>, créé pour l'occasion) : demander d'allumer puis d'éteindre une lampe ; vérifier les deux lignes du journal d'audit.</li>
+<li><strong>Révoquer</strong> les jetons d'essai ; garder <code>MCP_ENABLED=true</code> ou le retirer, à votre choix.</li>
+</ol>
+<p>Notez ce qui diffère de l'essai en développement : certificat, nom d'hôte (<code>ALLOWED_HOSTS</code>), appareils réels.</p>
+<h2 id="outils-disponibles-lecture">Outils disponibles (lecture)<a class="headerlink" href="#outils-disponibles-lecture" title="Permanent link">&para;</a></h2>
+<p>Vingt outils, tous en portée <code>lecture</code> ; un assistant ne voit que ceux que son jeton autorise.</p>
+<table>
+<thead>
+<tr>
+<th>Outil</th>
+<th>Rôle</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>system_status</code></td>
+<td>version, base de données, appareils actifs et injoignables, alertes en cours, appairage Zigbee, charge de la machine</td>
+</tr>
+<tr>
+<td><code>devices_list</code></td>
+<td>appareils : joignable, dernière réception, <strong>silence en heures</strong>, lieu, groupe ; filtres (<code>silent_for_hours</code>, joignable, type, nom, inactifs)</td>
+</tr>
+<tr>
+<td><code>device_get</code></td>
+<td>un appareil (nom ou numéro) : état courant, topics MQTT, clés historisées</td>
+</tr>
+<tr>
+<td><code>device_history</code></td>
+<td>historique d'une clé (température, puissance…) : points, minimum, maximum, moyenne</td>
+</tr>
+<tr>
+<td><code>automations_list</code></td>
+<td>automations : déclencheur, action, dernier déclenchement, nombre de déclenchements</td>
+</tr>
+<tr>
+<td><code>automation_get</code></td>
+<td>une automation en détail, <strong>sans le code d'un script</strong></td>
+</tr>
+<tr>
+<td><code>automation_runs</code></td>
+<td>journal d'exécution : quand, issue (<code>ok</code>, <code>error</code>, <code>skipped</code>, <code>limited</code>) et message ; filtre par automation et par issue</td>
+</tr>
+<tr>
+<td><code>scenes_list</code></td>
+<td>scènes et ce que chacune envoie à chaque appareil</td>
+</tr>
+<tr>
+<td><code>alerts_list</code></td>
+<td>alertes (en cours, acquittées, résolues), gravité, valeur déclenchante</td>
+</tr>
+<tr>
+<td><code>cameras_list</code></td>
+<td>caméras : active, priorité, adresse, PTZ, ONVIF, dernière vue ; <strong>aucun identifiant</strong></td>
+</tr>
+<tr>
+<td><code>logs_query</code></td>
+<td>journal de l'application depuis son démarrage : niveau, module, texte, fenêtre</td>
+</tr>
+<tr>
+<td><code>snapshots_list</code></td>
+<td>captures d'images : numéro, caméra, date, taille ; filtre par caméra et par jour</td>
+</tr>
+<tr>
+<td><code>snapshot_get</code></td>
+<td><strong>l'image</strong> d'une capture (JPEG, 2 Mo au plus)</td>
+</tr>
+<tr>
+<td><code>recordings_list</code></td>
+<td>enregistrements vidéo : caméra, début, durée, déclencheur, état</td>
+</tr>
+<tr>
+<td><code>detections_list</code></td>
+<td>mouvements et détections d'objets (personne, voiture…)</td>
+</tr>
+<tr>
+<td><code>energy_summary</code></td>
+<td>bilan d'énergie par jour : Linky (heures pleines et creuses), solaire, pompe à chaleur, avec totaux</td>
+</tr>
+</tbody>
+</table>
+<p>Ressource <code>dominet://context</code> : l'instantané de la configuration (ce que produit <code>dominet dump-context</code>) en YAML, <strong>sans secret et sans code de script</strong> (remplacé par un repère). C'est le meilleur point de départ pour comprendre une installation.</p>
+<p>Questions qui marchent : « Quels appareils n'ont rien émis depuis 24 h ? » (<code>devices_list</code> avec <code>silent_for_hours</code> : les appareils qui n'ont jamais parlé sont inclus, en premier), « Pourquoi l'automation <em>Ouvrir le volet</em> a-t-elle échoué ? » (<code>automation_runs</code> en <code>error</code> : le message donne la cause), « Quelle est la température du bureau depuis ce matin ? » (<code>device_history</code>).</p>
+<p><strong>Règles de sortie</strong> : heures <strong>locales</strong>, jamais UTC ; aucun secret ; le code d'un script Rhai ne se lit qu'en portée <code>administration</code> ; les textes qui viennent de l'extérieur (noms, messages, lignes de journal) sont marqués comme des données (<code>notice</code>), jamais comme des consignes. À venir : pilotage (M3), configuration (M4), réglages et scripts (M5).</p>
+<h2 id="outils-de-pilotage-portee-pilotage">Outils de pilotage (portée <code>pilotage</code>)<a class="headerlink" href="#outils-de-pilotage-portee-pilotage" title="Permanent link">&para;</a></h2>
+<p>Neuf outils agissent sur la maison. <strong>Chacun accepte <code>dry_run = true</code></strong> : il dit alors ce qu'il ferait, sans rien changer ni rien écrire au journal.</p>
+<table>
+<thead>
+<tr>
+<th>Outil</th>
+<th>Rôle</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>device_command</code></td>
+<td>envoie une commande JSON à un appareil <strong>actif</strong> (<code>{"state": "OPEN"}</code>, <code>{"position": 40}</code>…) ; un appareil désactivé n'est pas pilotable</td>
+</tr>
+<tr>
+<td><code>scene_run</code></td>
+<td>lance une scène active : ses commandes partent dans l'ordre, les échecs sont rapportés</td>
+</tr>
+<tr>
+<td><code>alert_ack</code></td>
+<td>acquitte une alerte en cours (<code>alert</code>) ou toutes (<code>all</code>) ; l'acquittement est attribué au <strong>compte qui a créé le jeton</strong></td>
+</tr>
+<tr>
+<td><code>notify_broadcast</code></td>
+<td>affiche un bandeau (200 caractères) à tous les comptes connectés</td>
+</tr>
+<tr>
+<td><code>notify_test</code></td>
+<td>envoie un e-mail d'essai au destinataire des alertes (adresse jamais montrée) ; <strong>les SMS ne passent pas par MCP</strong></td>
+</tr>
+<tr>
+<td><code>camera_ptz</code></td>
+<td>déplace une caméra PTZ pendant 100 à 3 000 ms (<code>up</code>, <code>down</code>, <code>left</code>, <code>right</code>, <code>zoom_in</code>, <code>zoom_out</code>) puis <strong>l'arrête d'elle-même</strong> ; l'arrêt est garanti même si la connexion est coupée</td>
+</tr>
+<tr>
+<td><code>camera_night</code></td>
+<td>bascule jour / nuit, filtre infrarouge ou lumière, par la méthode réglée pour la caméra</td>
+</tr>
+<tr>
+<td><code>camera_record</code></td>
+<td>démarre ou arrête l'enregistrement d'une caméra réglée en mode <strong>manuel</strong> (sinon refus expliqué)</td>
+</tr>
+<tr>
+<td><code>camera_snapshot</code></td>
+<td>prend une photo maintenant (le rôle vidéo doit tourner) et renvoie son numéro</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Aucune action sans trace.</strong> Chaque appel qui modifie quelque chose écrit sa ligne dans le journal d'audit <strong>avant</strong> de s'exécuter (issue <code>pending</code>), puis la ferme avec ce qui s'est passé (<code>ok</code> ou <code>error</code>). Si le journal ne peut pas être écrit, <strong>l'appel est refusé et rien n'est envoyé</strong>. Un appel refusé faute de portée, un appareil inactif, une commande invalide ne laissent aucune action : seul le refus de portée est enregistré (<code>denied</code>). Les décisions prises sur l'<strong>assistant intégré</strong> (R12) ont leur propre type, <code>agent</code> : demande en clair, action confirmée ou refusée, et de quoi la défaire (<code>ROADMAP-agent.md</code> §14).</p>
+<h2 id="configuration-portees-lecture-et-configuration">Configuration (portées <code>lecture</code> et <code>configuration</code>)<a class="headerlink" href="#configuration-portees-lecture-et-configuration" title="Permanent link">&para;</a></h2>
+<p>Sept outils lisent et écrivent la configuration, pour seize types : <strong>emplacement</strong> (<code>location</code>), <strong>scène</strong> (<code>scene</code>), <strong>automation</strong> (<code>automation</code>), <strong>règle d'alerte</strong> (<code>alert_rule</code>), <strong>groupe d'appareils</strong> (<code>device_group</code>), <strong>libellé de clé d'état</strong> (<code>device_label</code>), <strong>source MQTT</strong> (<code>mqtt_source</code>) <strong>station météo</strong> (<code>weather_station</code>), <strong>règle Prometheus</strong> (<code>prometheus_rule</code>) <strong>règle Grafana</strong> (<code>grafana_rule</code>), <strong>tableau de bord</strong> (<code>dashboard</code>, nommé <code>propriétaire/nom</code>) <strong>widget</strong> (<code>widget</code>, placé sur la grille de 12 colonnes), <strong>appareil</strong> (<code>device</code> : ses paramètres, jamais son état), <strong>entrée de la barre de navigation</strong> (<code>navbar</code>, icône Lucide vérifiée) <strong>caméra</strong> (<code>camera</code>, portée <code>administration</code>) et <strong>détecteur</strong> d'objets (<code>detector</code> : un seul élément, qui se modifie sans se créer ni se supprimer). Un widget qui sortirait de la grille ou en chevaucherait un autre est refusé dès le <code>dry_run</code> ; son contenu texte est assaini ; supprimer un tableau supprime ses widgets (le <code>dry_run</code> en donne le nombre) ; supprimer un appareil supprime son historique et laisse ses widgets sans appareil. Enregistrer ou supprimer une règle réécrit <code>rules.yml</code> ou <code>rules.yaml</code> et recharge le service (au mieux : un rechargement en échec n'annule pas l'enregistrement, la page des règles en montre l'état).</p>
+<table>
+<thead>
+<tr>
+<th>Outil</th>
+<th>Portée</th>
+<th>Rôle</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>config_kinds</code></td>
+<td>lecture</td>
+<td>les types configurables, avec la portée de lecture et d'écriture</td>
+</tr>
+<tr>
+<td><code>config_schema</code></td>
+<td>lecture</td>
+<td>ce que <code>config_upsert</code> accepte pour un type : schéma JSON, <strong>exemple complet</strong> et notes (clés de chaque déclencheur et action)</td>
+</tr>
+<tr>
+<td><code>config_list</code>, <code>config_get</code></td>
+<td>lecture</td>
+<td>les éléments d'un type, <strong>dans la forme exacte que <code>config_upsert</code> accepte</strong> : lire, changer un champ, écrire</td>
+</tr>
+<tr>
+<td><code>config_upsert</code></td>
+<td>configuration</td>
+<td>crée (sans <code>id</code>) ou <strong>remplace</strong> (avec <code>id</code>) un élément ; <code>dry_run</code> montre les champs qui changeraient</td>
+</tr>
+<tr>
+<td><code>config_delete</code></td>
+<td>configuration</td>
+<td>supprime ; <strong><code>confirm = true</code> obligatoire</strong>, <code>dry_run</code> dit ce qui en dépend</td>
+</tr>
+<tr>
+<td><code>zigbee_pairing</code></td>
+<td>configuration</td>
+<td>ouvre (254 s au plus) ou ferme l'appairage Zigbee</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Les mêmes contrôles que l'interface</strong>, parce que le chemin est le même : un service partagé (<code>dominet_server::config_service</code>) valide le brouillon du domaine, vérifie qu'un <strong>script Rhai compile</strong> et que la <strong>scène visée existe</strong>, traduit les conflits de nom en erreurs de champ, puis recharge le moteur d'automations, le planificateur ou l'évaluation des alertes. Un <code>dry_run</code> annonce donc exactement les refus d'une écriture réelle. Les champs inconnus sont refusés (une faute de frappe n'est pas ignorée en silence).</p>
+<p><strong>Le code Rhai</strong> (script d'une automation, <code>handler_code</code> d'une source MQTT) et <strong>la requête SQL d'une règle Grafana</strong> (toute source autre que <code>prometheus</code>) : jamais lisible (<code>script</code> vaut <code>null</code>, <code>has_script</code> l'indique). L'écrire, le changer ou le retirer exige <strong>en plus</strong> la portée <code>administration</code>. Une mise à jour qui <strong>ne mentionne pas</strong> <code>script</code> <strong>conserve</strong> le code existant : relire une automation, modifier un champ et la réécrire n'efface donc jamais son code.</p>
+<p>Exemple, de bout en bout : « ferme les volets au coucher du soleil » → <code>config_schema</code> (type <code>automation</code>) → <code>config_upsert</code> avec <code>dry_run</code>, puis sans. L'instantané <code>dominet://context</code> avant et après ne diffère que de cette automation (c'est un test).</p>
+<h2 id="administration-portee-administration">Administration (portée <code>administration</code>)<a class="headerlink" href="#administration-portee-administration" title="Permanent link">&para;</a></h2>
+<p>La portée <code>administration</code> donne accès à ce qui est sensible : réglages, code des scripts, caméras. Elle est indépendante des autres et se donne rarement.</p>
+<ul>
+<li><strong>Réglages</strong> : <code>settings_list</code> (la valeur d'un secret n'est <strong>jamais</strong> donnée, seulement <code>is_set</code>) et <code>setting_set</code> (valeur validée selon le type du réglage ; un secret est chiffré, <code>dry_run</code> dit si la valeur serait acceptée).</li>
+<li><strong>Scripts Rhai</strong> : <code>script_get</code> lit le code d'une automation (action <code>script</code>) ou d'une source MQTT ; <code>script_check</code> le compile et, avec un <code>topic</code>, l'essaie sur un message d'exemple dans le vrai bac à sable, sans rien publier ; <code>script_set</code> le remplace après les mêmes contrôles que l'interface. Les autres outils ne montrent jamais ce code.</li>
+<li><strong>Caméras</strong> : le type <code>camera</code> de <code>config_*</code> (lecture, écriture et suppression exigent <code>administration</code>, car on y trouve adresses et noms d'utilisateur). Les mots de passe (<code>rtsp_pass</code>, <code>onvif_pass</code>, <code>web_pass</code>) et la clé d'API (<code>web_api_key</code>) <strong>s'écrivent et ne se lisent jamais</strong> : <code>config_get</code> dit seulement <code>has_rtsp_pass</code>… ; un champ omis garde le secret en place. <code>cameras_sync</code> met MediaMTX à jour (<code>target = mediamtx</code>) ou apprend d'une caméra ce qu'elle annonce (<code>target = onvif</code>).</li>
+</ul>
+<p>Aucun secret ne figure dans une réponse ni dans le journal d'audit : un test balaie les sorties.</p>
+<h2 id="securite">Sécurité<a class="headerlink" href="#securite" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>Révocation immédiate</strong> : un jeton révoqué ou expiré est refusé dès l'appel suivant.</li>
+<li><strong>Limite de débit</strong> par jeton (<code>MCP_RATE_LIMIT_PER_MIN</code>, 120 par défaut) : au-delà, <strong>429</strong> avec <code>Retry-After</code>.</li>
+<li><strong>Journal d'audit</strong> (même page) : création et révocation des jetons, appels refusés et, dès le lot M3, appels qui modifient quelque chose. Les secrets y sont masqués ; purge au bout de <code>MCP_AUDIT_RETENTION_DAYS</code> (365 jours par défaut).</li>
+<li>Sans jeton ou avec un jeton faux, périmé ou révoqué, la réponse est <strong>401</strong> (<code>WWW-Authenticate: Bearer</code>) ; avec un <code>Host</code> inconnu, <strong>403</strong> ; serveur désactivé, <strong>404</strong>. Ni l'en-tête <code>Authorization</code> ni la valeur d'un jeton ne sont journalisés.</li>
+</ul>
+<h2 id="tests">Tests<a class="headerlink" href="#tests" title="Permanent link">&para;</a></h2>
+<p><code>cargo test -p dominet-mcp</code> : un vrai client MCP (<code>rmcp</code>) sur un serveur réel et la base de test, <strong>chaque outil de lecture sur des données réelles</strong> (<code>--test read</code>), jeton lu en base, révocation, expiration, portée refusée et auditée, limite de débit, protection du <code>Host</code>, client de la révision précédente du protocole, serveur désactivé ; <code>--test coverage</code> : chaque fonction serveur de l'interface doit être classée dans <code>tests/mcp/coverage.tsv</code>. Dépôts : <code>cargo test -p dominet-store --test mcp</code>.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Retour en haut de la page
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.sections", "navigation.top", "content.code.copy", "search.highlight"], "search": "../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copi\u00e9 dans le presse-papier", "clipboard.copy": "Copier dans le presse-papier", "search.result.more.one": "1 de plus sur cette page", "search.result.more.other": "# de plus sur cette page", "search.result.none": "Aucun document trouv\u00e9", "search.result.one": "1 document trouv\u00e9", "search.result.other": "# documents trouv\u00e9s", "search.result.placeholder": "Taper pour d\u00e9marrer la recherche", "search.result.term.missing": "Non trouv\u00e9", "select.version": "S\u00e9lectionner la version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.a5f9d56c.min.js"></script>
+      
+    
+  </body>
+</html>

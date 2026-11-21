@@ -1,0 +1,2410 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Domotique et videosurveillance auto-hebergees (Rust)">
+      
+      
+      
+      
+        <link rel="prev" href="../energy/">
+      
+      
+        <link rel="next" href="../automations/">
+      
+      
+        
+          <link rel="alternate" href="./" hreflang="en">
+        
+          <link rel="alternate" href="../fr/interface/" hreflang="fr">
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.1">
+    
+    
+      
+        <title>User interface - DomiNet — Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.57a0d79d.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.fb2fffe2.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#web-interface" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="DomiNet — Documentation" class="md-header__button md-logo" aria-label="DomiNet — Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            DomiNet — Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              User interface
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Mode clair / Light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Mode clair / Light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Mode sombre / Dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Mode sombre / Dark mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+      <div class="md-header__option">
+  <div class="md-select">
+    
+    <button class="md-header__button md-icon" aria-label="Select language">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m12.87 15.07-2.54-2.51.03-.03A17.5 17.5 0 0 0 14.07 6H17V4h-7V2H8v2H1v2h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2zm-2.62 7 1.62-4.33L19.12 17z"/></svg>
+    </button>
+    <div class="md-select__inner">
+      <ul class="md-select__list">
+        
+          <li class="md-select__item">
+            <a href="./" hreflang="en" class="md-select__link">
+              English
+            </a>
+          </li>
+        
+          <li class="md-select__item">
+            <a href="../fr/interface/" hreflang="fr" class="md-select__link">
+              Français
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</div>
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="DomiNet — Documentation" class="md-nav__button md-logo" aria-label="DomiNet — Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    DomiNet — Documentation
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Installation
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../quick-install/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quick install
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../troubleshooting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../machines/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Supported machines
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../migration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Moving to another machine
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../licenses/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Licences
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../security/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../releasing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Releasing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../deployment/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Production deployment
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../installation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fresh install
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../dev-machine/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Development machine
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../appearance/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Appearance and customisation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Features
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Features
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../authentication/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Authentication
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../devices/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Devices
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../energy/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Energy
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User interface
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User interface
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#code-layout" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Code layout
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#build-and-run" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Build and run
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#check" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Check
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#layout" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Layout
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sign-in-guards-and-account" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sign-in, guards and account
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#administration-and-generic-crud" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Administration and generic CRUD
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#users-adminusers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Users (/admin/users)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#server-integration-csp-and-real-time" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Server integration, CSP and real time
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dashboard" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Dashboard (/)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#translations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Translations
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Translations">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#adding-a-language" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Adding a language
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../automations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../scenes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Scenes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../scripts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Scripts
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../mcp/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MCP server
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../assistant/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local assistant
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../alerts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Alerts
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../notifications/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Notifications
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../messaging/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Messaging
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../settings/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Settings
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../publishers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Publishers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../android/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Android
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../mqtt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MQTT
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Operations
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Operations
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../observability/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Observability
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../prometheus-grafana-rules/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Prometheus and Grafana rules
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../backups/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Backups and restore
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../database/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Database
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Development
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Development
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tests/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tests
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../pitfalls/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Pitfalls and lessons
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../measures/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Measurements
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../decisions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Decisions by theme
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../rebuild/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Rebuilding from scratch
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../mcp-audit/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Server function audit (MCP)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../bench/agent-bench-2026-11-17/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local assistant bench
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../bench/agent-bench-2026-11-17-mistral/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mistral bench
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../bench/agent-eval-2026-11-17/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Assistant evaluation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../to-improve/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    To improve
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture decisions
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Architecture decisions
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR index
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#code-layout" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Code layout
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#build-and-run" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Build and run
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#check" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Check
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#layout" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Layout
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sign-in-guards-and-account" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sign-in, guards and account
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#administration-and-generic-crud" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Administration and generic CRUD
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#users-adminusers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Users (/admin/users)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#server-integration-csp-and-real-time" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Server integration, CSP and real time
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dashboard" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Dashboard (/)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#translations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Translations
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Translations">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#adding-a-language" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Adding a language
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="web-interface">Web interface<a class="headerlink" href="#web-interface" title="Permanent link">&para;</a></h1>
+<p>Server-side rendering (SSR) then WASM hydration, with Leptos 0.8. Decisions: <a href="../adr/0007-leptos-ssr-frontend/">ADR 0007</a> and
+<a href="../adr/0012-interface-architecture/">ADR 0012</a> (in French).</p>
+<h2 id="code-layout">Code layout<a class="headerlink" href="#code-layout" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Crate</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>dominet-server</code></td>
+<td>library: configuration, state, authentication, settings, JSON API <code>/api</code>, CLI</td>
+</tr>
+<tr>
+<td><code>dominet-web</code></td>
+<td>interface: components, pages, Fluent translations, server functions (<code>/sf/…</code>), CSS</td>
+</tr>
+<tr>
+<td><code>dominet</code></td>
+<td>the <code>dominet</code> binary: assembles the server and the interface</td>
+</tr>
+<tr>
+<td><code>dominet-proto</code></td>
+<td>types shared between server and browser (DTOs)</td>
+</tr>
+</tbody>
+</table>
+<h2 id="build-and-run">Build and run<a class="headerlink" href="#build-and-run" title="Permanent link">&para;</a></h2>
+<pre><code class="language-bash">make dev-up &amp;&amp; make db-migrate             # dev database
+cargo run -p dominet -- migrate
+DOMINET_PASSWORD='a solid password' cargo run -p dominet -- createsuperuser --username admin
+make front                                 # cargo leptos build: WASM + JS + CSS in target/site, binary in target/debug
+COOKIE_SECURE=false DATABASE_URL=postgres://dominet:dominet-dev@127.0.0.1:15432/dominet target/debug/dominet serve
+# http://127.0.0.1:8000
+</code></pre>
+<p><strong>Pitfall</strong>: the server and the WASM must be compiled with the same settings, otherwise the page renders but stays inert (disabled buttons).
+<code>.cargo/config.toml</code> fixes them for every command (<code>--cfg erase_components</code>, <code>LEPTOS_OUTPUT_NAME</code>); do not remove them.</p>
+<p><code>SITE_ROOT</code> (default <code>target/site</code>) is the static files folder. No hot reload: re-run <code>make front</code> then restart the server
+after a change.</p>
+<h2 id="check">Check<a class="headerlink" href="#check" title="Permanent link">&para;</a></h2>
+<ul>
+<li><code>make ci</code>: formatting, clippy (server <strong>and</strong> WASM), tests, <code>cargo deny</code>, <code>cargo audit</code>, <code>sqlx</code> metadata.</li>
+<li><code>crates/dominet/tests/ui.rs</code>: full router (FR/EN rendered page, 404, security headers, server function with session, CSRF).</li>
+<li>Browser E2E (hydration, live translations, session):
+  <code>bash
+  firefox --headless --marionette --profile &lt;folder&gt; -no-remote about:blank &amp;
+  python3 tests/e2e/home.py http://127.0.0.1:8000/ admin 'a solid password'
+  python3 tests/e2e/layout.py http://127.0.0.1:8000/ admin 'a solid password'
+  python3 tests/e2e/auth.py http://127.0.0.1:8000/ admin 'a solid password'
+  python3 tests/e2e/locations.py http://127.0.0.1:8000/ admin 'a solid password'
+  python3 tests/e2e/admin.py http://127.0.0.1:8000/ admin 'a solid password'
+  python3 tests/e2e/users.py http://127.0.0.1:8000/ admin 'a solid password'
+  python3 tests/e2e/realtime.py http://127.0.0.1:8000/ admin 'a solid password'
+  SYSTEM_STATS_SECS=1 …   # server started like this for: python3 tests/e2e/system.py http://127.0.0.1:8000/ admin 'a solid password'</code></li>
+</ul>
+<h2 id="layout">Layout<a class="headerlink" href="#layout" title="Permanent link">&para;</a></h2>
+<p><code>layout.rs</code> wraps every page (404 included). For a signed-in account the <strong>sidebar</strong> is part of the server-rendered HTML
+(blocking <code>layout_data</code> resource), so nothing jumps at hydration. The content offset comes from CSS
+(<code>.vc-sidebar + .vc-main-wrap</code>), not from a class set in JavaScript.</p>
+<ul>
+<li><strong>Dynamic navigation</strong>: <code>/sf/layout</code> reads the <code>navbar</code> table, drops <code>admin_only</code> entries for a <code>user</code> account and
+  splits top/bottom. An anonymous visitor gets an empty answer (no sidebar).</li>
+<li><strong>Lucide icons</strong>: generated server-side (<code>crates/dominet-server/src/icons.rs</code>, shared with the MCP server) from <code>data/lucide.tsv</code>, built by <code>tools/gen-lucide.py</code> from the
+  the official <code>lucide.min.js</code> (ISC, see <code>data/LUCIDE-LICENSE.txt</code>). Only whitelisted graphic tags are kept; an
+  unknown or invalid name yields the <code>circle-help</code> icon, never free-form HTML.</li>
+<li><strong>Collapse</strong> remembered in <code>localStorage</code> (<code>vc-sidebar-collapsed</code>), mobile menu, full screen, language switcher,
+  sign-out (<code>/sf/logout</code>, which closes the session server-side).</li>
+<li><strong><code>SsrMode::Async</code> rendering</strong> on routes: everything is resolved server-side before sending. With out-of-order streaming
+  (the default) the sidebar arrived in a <code>&lt;template&gt;</code> inserted by JS after <code>&lt;/html&gt;</code> and the content slid from 0 to 220 px
+  (seen in ~2 of 12 loads). <code>ui.rs</code> checks that <code>&lt;aside&gt;</code> precedes the content and that there is no <code>&lt;template&gt;</code>.</li>
+<li>The <code>ui.rs</code> tests run <strong>one at a time</strong> (static lock): several Leptos applications rendered in parallel inside one test
+  process disturb each other (frozen render or <code>AppState</code> context not found, ~15% of runs, 0 of 25 when serial). Concurrency
+  on a single application was checked on the real server: 3000 requests, 64 in parallel, all correct.</li>
+<li>The "Administration" link and the system gauges are deliberately absent: admin pages come in 7d-7f, statistics in R2.</li>
+</ul>
+<h2 id="sign-in-guards-and-account">Sign-in, guards and account<a class="headerlink" href="#sign-in-guards-and-account" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong><code>/login</code></strong>: form (username, password) calling the <code>login</code> server function. Expected refusals are <em>values</em> of the
+  result (<code>InvalidCredentials</code>, <code>Locked { retry_after_s }</code>), translated in the UI; only an outage is an error (logged,
+  never detailed to the browser). An unknown username and a wrong password give the same answer. Brute-force lockout (5
+  failures per account+IP pair, 20 per account, 30 per IP over 15 min) applies. The <code>?next=</code> parameter is filtered by
+  <code>nav::safe_next</code> (internal paths only): no open redirect.</li>
+<li><strong>Guards</strong>: <code>RequireAuth</code> wraps <code>/</code> and <code>/account</code>. For a browser (<code>Accept: text/html</code>) an anonymous visitor gets a real
+  <strong>302</strong> to <code>/login?next=...</code>; the protected page is never sent. An already signed-in account opening <code>/login</code> is sent
+  to its target. These guards are for display: <strong>every server function re-checks the session</strong>.</li>
+<li><strong><code>/account</code></strong>: identity (name, username, email, role, last sign-in) and password change. The current password is
+  required; the policy (10 to 128 characters, not only digits, different from the username) is enforced server-side and
+  each refusal reason is translated. The <strong>same lockout as sign-in</strong> applies (a stolen session cannot be used to guess the old password): checks are logged as sign-in attempts. A successful change <strong>closes every session</strong> of the account and sends to
+  <code>/login?notice=password-changed</code>.</li>
+<li><strong>Before hydration</strong> submit buttons are disabled (<code>use_hydrated</code>): otherwise a too-quick submit would go out as a plain
+  HTML form. Forms also use <code>method="post"</code> so a password never ends up in the address.</li>
+<li><strong>Voluntary leave</strong> (<code>leave_session</code>): sign-out and password change navigate to <code>/login</code> and declare the anonymous
+  state before reloading; without this flag the guard of the page being left redirected to <code>/login?next=...</code> and the
+  login page sent back to the home page.</li>
+<li>E2E: <code>python3 tests/e2e/auth.py url username password</code> (guard, failure then success, live translation, open redirect
+  refused, round-trip password change, sign-out).</li>
+</ul>
+<h2 id="administration-and-generic-crud">Administration and generic CRUD<a class="headerlink" href="#administration-and-generic-crud" title="Permanent link">&para;</a></h2>
+<p>Decision: <a href="../adr/0014-generic-crud/">ADR 0014</a> (in French). <code>crud.rs</code> provides <code>CrudTable</code>; a page describes its fields (<code>FieldSpec</code>),
+its list and two actions (save, delete). Admin pages: <strong>"Administration" drawer that can be hidden, on the right</strong> (tab on the right edge of
+the screen; administrators only; closes with the arrow, Escape, a click outside or by choosing a page). The links stay in the HTML even when closed (<code>#vc-nav-admin</code>), only hidden.
+- <strong>Logs</strong>: <code>/admin/logs</code> (administrators) browses the application log since its last start (in-memory buffer of 20,000 lines, <code>dominet_server::logbuf</code>), newest first, with filters: minimum level, module, text, period, number of lines, refresh every 5 s. The other services stay in <code>make prod-logs</code>.
+- <strong>Tables</strong>: a truncated cell (narrow column) carries its full value in its <code>title</code> (tooltip); "Edit" and "Add" bring you back to the top of the page,
+  where the form opens, even from the bottom of a long list.</p>
+<ul>
+<li><strong><code>/admin/locations</code></strong>: filterable list (case-insensitive search), add and edit in a form, delete with in-place confirmation.
+  Validation errors come from the server <strong>field by field</strong> and are translated under the field. An item deleted in the meantime
+  gives a message and a refreshed list, not an error.</li>
+<li><strong>Permissions</strong>: <code>RequireAdmin</code> shows an ordinary account an "Access denied" page (status 403, no data at all); an anonymous
+  visitor is sent to sign-in. Every server function (<code>/sf/locations/{list,save,delete}</code>) re-checks the role.</li>
+<li>E2E: <code>python3 tests/e2e/locations.py url admin_user password</code> (deletes what it creates).</li>
+<li><strong><code>/admin/navbar</code></strong>: same component, with dropdown (position, opens in) and number (order) field types and a help text under the
+  fields. Server-side field-by-field validation (<code>NavbarDraft::problems</code>): icon in lowercase with dashes <strong>and existing in Lucide</strong>
+  (otherwise the entry would show the fallback icon), internal URL or <code>http(s)://</code> without spaces (<code>javascript:</code> refused), target
+  <code>_self</code>/<code>_blank</code>, order between 0 and 32767. The sidebar <strong>updates immediately</strong> (navigation reloaded after every write). An internal
+  entry opened in a new tab is a plain HTML link (the router would ignore the target).</li>
+<li><strong><code>/admin/settings</code></strong>: the 17 settings are fixed (registry): no CRUD table but one card per category and one editor per type (text,
+  integer, decimal, checkbox). A value incompatible with the type is refused with a translated message. <strong>A secret never reaches the
+  browser</strong>: it shows "Set / Not set", the field is a password input that is always empty, entering a value replaces it, "Clear" empties
+  it; without <code>DOMINET_MASTER_KEY</code> saving a secret is refused (dedicated message). Descriptions come from the registry and stay in French
+  in both languages. A change applies immediately (service cache and subscribers).</li>
+<li><strong>Guards and reloads</strong>: <code>RequireAuth</code>/<code>RequireAdmin</code> use a <code>Gate</code> component that reads the resource <em>under</em> a <code>Transition</code> (otherwise
+  server rendering does not wait for it) and reacts only to a <strong>status</strong> change (anonymous / account / administrator) through a memo.
+  Without it, reloading the navigation (what the Navigation page does) re-created the displayed page, which then re-read the stale value
+  serialised in the initial HTML instead of reloading. Every <code>Suspense</code> is a <code>Transition</code>: the old content stays visible during a reload.</li>
+<li>E2E: <code>python3 tests/e2e/admin.py url admin_user password</code> (navigation and settings; restores everything it changes).</li>
+</ul>
+<h2 id="users-adminusers">Users (<code>/admin/users</code>)<a class="headerlink" href="#users-adminusers" title="Permanent link">&para;</a></h2>
+<p>Same CRUD component, with three more field types: password (never prefilled or displayed), display-only column (full name, last
+sign-in) and a field that is <strong>read-only after creation</strong> (username). Everything is validated server-side, field by field: username (1 to
+150 characters, letters, digits and <code>@ . + - _</code>, case-insensitive uniqueness), email, mobile (normalised), role, password (same policy as
+<code>My account</code>).</p>
+<ul>
+<li><strong>"Last administrator" rule</strong>: enforced <strong>in the repository</strong> (<code>update_profile</code> and <code>delete</code>), not only in the screen. A transaction takes
+  a PostgreSQL advisory lock on the administrator set, re-reads the target account and refuses (<code>RepoError::LastAdmin</code>) any operation that
+  would leave zero active administrators: delete, deactivate, demote. Without the lock, two administrators demoting each other at the same
+  time would each see "one remains" and both succeed (race test in <code>repos.rs</code> and <code>ui.rs</code>, verified by disabling the lock).</li>
+<li><strong>Protections on your own account</strong> (deliberately stricter than the rule above): an administrator cannot delete, deactivate, demote
+  themselves or change their password from this screen (<code>My account</code> is for that): their session would be cut mid-page. To lift it, remove
+  the <code>Blocked::Yourself</code> / <code>Blocked::OwnPassword</code> checks in <code>save_user</code> and <code>delete_user</code>.</li>
+<li><strong>Immediate effect</strong>: deactivating an account cuts its current session (the account is re-read on every request); resetting its password
+  closes all its sessions; deleting an account deletes its sessions (cascade).</li>
+<li>Passwords are never returned or logged (<code>UserInput</code> and <code>NewAccount</code> hide the field in <code>Debug</code>).</li>
+<li>E2E: <code>python3 tests/e2e/users.py url admin_user password</code> (deletes the account it creates).</li>
+</ul>
+<h2 id="server-integration-csp-and-real-time">Server integration, CSP and real time<a class="headerlink" href="#server-integration-csp-and-real-time" title="Permanent link">&para;</a></h2>
+<p>Decisions: <a href="../adr/0016-csp-and-websocket-hub/">ADR 0016</a> (in French).</p>
+<ul>
+<li><strong>Nonce-based CSP</strong>, set <strong>during rendering</strong> (<code>csp.rs</code>, called by <code>App</code>): a different nonce per response, on Leptos's scripts and in the
+  header. No inline script or style: write neither <code>style="…"</code> nor <code>on…="…"</code> in views (use classes and <code>on:</code>). If a feature needs a third-party
+  resource (Grafana iframe, camera stream), add the matching directive in <code>csp::policy</code>.</li>
+<li><strong>Page rendering</strong>: a <code>GET</code> whose render does not answer within 5 s is abandoned and retried (3 attempts, then 503 with <code>Retry-After</code>), a workaround for a Leptos 0.8.23
+  defect (<a href="../adr/0021-page-render-guard/">ADR 0021</a>, in French); <code>tools/stress-cold-render.sh</code> measures the defect on the image.</li>
+<li><strong>Static files</strong>: <code>/pkg/*</code> revalidated on every load (<code>no-cache</code>), pages and server functions <code>no-store</code>, gzip, COOP/CORP <code>same-origin</code>.</li>
+<li><strong>WebSocket <code>/ws/notifications/</code></strong>: session required, <code>Origin</code> checked, <code>ping</code>/<code>pong</code> heartbeat (<code>WS_HEARTBEAT_SECS</code>), <strong>session re-validated at every
+  beat</strong> (sign-out, deactivation, deletion or password change cut the connection), at most 8 connections per account.</li>
+<li><strong>Browser</strong>: the "Real time" indicator in the sidebar shows the state (connecting, connected, offline); the connection comes back by itself with an
+  increasing delay. Notifications are shown as plain text. <strong>Settings → Broadcast a message</strong> (administrators) sends a message to every signed-in user:
+  it also checks the chain.</li>
+<li><strong>Per-topic subscriptions</strong> (<a href="../adr/0019-multiplexed-websocket-protocol/">ADR 0019</a>, in French): on the same connection the client sends
+  <code>{"type":"subscribe","topic":"device:7"}</code> (or <code>unsubscribe</code>); topics are <code>notifications</code> (automatic), <code>system</code>, <code>device:&lt;id&gt;</code>, <code>camera:&lt;uuid&gt;</code> (refused until R6).
+  The server answers <code>subscribed</code>, then sends the topic's <strong>last known state</strong>, or <code>refused</code> (<code>invalid</code>, <code>forbidden</code>, <code>limit</code> at 128 subscriptions). In the
+  browser: <code>Realtime::subscribe(&amp;Topic::Device(7))</code> / <code>unsubscribe</code> (reference-counted, restored on every reconnection) and <code>Realtime::device(id)</code> to read the state.</li>
+<li><strong>System gauges</strong> (<a href="../adr/0020-system-statistics/">ADR 0020</a>, in French): processor, memory, disk and temperature in the sidebar, fed by the <code>system</code>
+  topic (measured every <code>SYSTEM_STATS_SECS</code> s). <code>GET /api/system-stats/</code> (signed-in account) returns the document described here (<code>cpu</code>, <code>memory</code>,
+  <code>disk</code>, <code>updated_at</code>) plus <code>temperature</code>; <code>disk</code> and <code>temperature</code> are <code>null</code> when the machine does not expose them, and the API answers 503 until a first
+  measure exists. Bars get their width through the CSSOM (<code>style:width</code>): the CSP forbids a rendered <code>style</code> attribute.</li>
+<li><strong>Settings → Device state simulator</strong> (administrators): publishes a JSON state for a device number and shows live what the browser receives; it is the
+  source until MQTT (R3) lands.</li>
+<li>Extending: add a variant to <code>WsServerMsg</code> (<code>dominet-proto</code>) and, for a new topic, a <code>Topic</code> variant and a rule in <code>authorize</code> (<code>web/ws.rs</code>); publish with
+  <code>state.hub.publish(&amp;topic, message)</code> (or <code>publish_retained</code> to keep the last state); handle the message in <code>realtime.rs</code>.</li>
+<li>Tests: <code>crates/dominet/tests/ws.rs</code> (real server and WebSocket client: authentication, foreign origin, limit, heartbeats, cut on sign-out/deactivation, subscriptions, last state, refusals, 128 limit),
+  <code>ui.rs</code> (CSP and nonce on every page, cache, compression), E2E <code>python3 tests/e2e/realtime.py url admin_user password ["server restart command"]</code>
+  (nonce-less script blocked, WebSocket connected, broadcast, sign-out, reconnection after restart, device state simulator, resubscription after restart).</li>
+</ul>
+<h2 id="dashboard">Dashboard (<code>/</code>)<a class="headerlink" href="#dashboard" title="Permanent link">&para;</a></h2>
+<p>Decisions: <a href="../adr/0022-dashboard-read-view/">ADR 0022</a> (in French). Read-only (editing arrives in lot 5).</p>
+<ul>
+<li><strong>Data</strong>: <code>dashboard_page(d)</code> (server function) returns <strong>the account's own</strong> dashboards (never another account's), the open one (<code>?d=&lt;id&gt;</code> if it belongs to the account, else the default,
+  else the first) and its widgets ready to display: HTML already sanitized, iframe address already checked, last known device state. <code>create_dashboard(name)</code> creates a dashboard (the first one
+  becomes the default). An account without a dashboard sees an invitation to create one.</li>
+<li><strong>Placement</strong>: a widget carries the classes <code>vc-c-N</code>, <code>vc-r-N</code>, <code>vc-w-N</code>, <code>vc-h-N</code> (column 1–12, row 1–100, width and height 1–12). <strong>Never a <code>style</code> attribute</strong> (CSP). On medium and narrow
+  screens widgets flow one after the other. Maximum row in the domain: 99.</li>
+<li><strong>Types</strong>: <code>text</code> (HTML sanitized by <code>ammonia</code>), <code>grille</code>, <code>grafana</code> (iframe only towards the origin of <code>GRAFANA_PUBLIC_URL</code>, otherwise "address refused"; the CSP gets <code>frame-src</code> for that origin),
+  <code>device</code> (below), <code>camera</code> (R6) announced and <code>scene</code> (<a href="../scenes/">scenes</a>: name and activation button).</li>
+<li><strong>Devices</strong>: the widget subscribes to <code>device:&lt;id&gt;</code> (ADR 0019) and follows the state live; the frame is green when the device is on, dimmed when unavailable. The requested presentation (<code>device/light</code>…)
+  wins; when automatic it is inferred from the state keys (<code>dominet_domain::widget_view</code>). Controls (ON/OFF, sliders, +/−) are present but <strong>disabled until R3</strong>. Before R3 the state comes from the
+  <strong>simulator</strong> (Settings → Device state simulator).</li>
+<li><strong>Extending</strong>: a new presentation = a <code>Presentation</code> variant (domain), a case in <code>resolve_presentation</code> if it must be inferred, a <code>*_view</code> function in <code>dashboard.rs</code>.</li>
+<li><strong>Editing</strong> (<a href="../adr/0023-dashboard-editing/">ADR 0023</a>, in French) — <strong>administrators only</strong> (every server function refuses the others: 403):</li>
+<li><em>Move</em>: drag a widget's header (mouse, finger or stylus) on wide screens (≥ 1201 px). A dashed frame shows the target cell; on release <code>move_widget</code> saves, or refuses (outside the grid,
+    position taken) and the widget snaps back with a message. Persistent (reload).</li>
+<li><em>Dashboards</em>: <code>/admin/dashboards</code> (all accounts; owner = user name, fixed at creation).</li>
+<li><em>Widgets</em>: <code>/admin/widgets?d=&lt;id&gt;</code>; the form only shows the fields of the chosen type (<code>field_visible</code> of the generic CRUD); overlap reported on "Column"; <code>text</code> widget HTML sanitized when
+    saving; an "Edit widgets" button on the dashboard.</li>
+<li>An ordinary account sees its dashboards without editing them: an administrator fills them for it.</li>
+<li><strong>Pitfalls</strong>: no <code>StoredValue::new_local</code> in a server-rendered component (panic, stalled page); no resource whose source depends on another resource (out-of-order loads at hydration); no braces <code>{…}</code>
+  in a <code>.ftl</code>; wait for hydration ("Real time: connected") before clicking in an E2E.</li>
+<li>Tests: <code>ui.rs</code> (invitation, creation, placement, sanitizing, Grafana and CSP, selector and account isolation, editing rights, per-field validation, refused moves), <code>widget_view</code> and <code>html</code> (unit), E2E <code>dashboard.py</code> (prepares its widgets in SQL
+  through <code>E2E_DB_SHELL</code>, set by <code>tools/e2e.sh</code>).</li>
+</ul>
+<h2 id="translations">Translations<a class="headerlink" href="#translations" title="Permanent link">&para;</a></h2>
+<p>Fluent (<code>crates/dominet-web/locales/{fr,en}/main.ftl</code>). English by default; the language comes from the <code>lang</code> cookie, then
+<code>Accept-Language</code>; the switcher changes it without reloading. <code>&lt;html lang&gt;</code> is kept in sync.</p>
+<h3 id="adding-a-language">Adding a language<a class="headerlink" href="#adding-a-language" title="Permanent link">&para;</a></h3>
+<p>French and English are the reference languages (documentation, E2E tests); another language is added without touching the code:</p>
+<pre><code class="language-bash">make i18n-new LANGUE=es          # creates crates/dominet-web/locales/es/main.ftl from English (FROM=fr to start from French)
+make i18n-status                 # per language: messages still identical to English, missing or extra keys, differing variables
+make i18n-status LIST=1          # ... and the list of keys to translate
+make front                       # rebuilds the interface: the language shows up in the selector
+</code></pre>
+<p>Translate each value <strong>without touching the keys or the variables</strong> (<code>{ $minutes }</code>); texts that French shares with English ("OK", "Grafana"…) stay as they are. The name shown in the selector ("Español") comes from the code: it must be known to <code>leptos-fluent</code> (<code>es</code>, <code>de</code>, <code>it</code>, <code>pt-BR</code>…), otherwise the build stops and says so. The language is then chosen like the others: <code>lang</code> cookie, then <code>Accept-Language</code>; an unknown language falls back to French.</p>
+<p>Translations are <strong>compiled into the binary</strong>: a new language requires rebuilding the image (<code>make prod-up</code>). The test <code>cargo test -p dominet-web --test i18n</code>, replayed by <code>make ci</code>, requires every language to define exactly the keys of English, with the same variables: an incomplete file or a renamed variable fails the push. The documentation (this site) stays in French and English.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.sections", "navigation.top", "content.code.copy", "search.highlight"], "search": "../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.a5f9d56c.min.js"></script>
+      
+    
+  </body>
+</html>

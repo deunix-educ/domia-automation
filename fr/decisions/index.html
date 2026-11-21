@@ -1,0 +1,2353 @@
+
+<!doctype html>
+<html lang="fr" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Domotique et videosurveillance auto-hebergees (Rust)">
+      
+      
+      
+      
+        <link rel="prev" href="../measures/">
+      
+      
+        <link rel="next" href="../rebuild/">
+      
+      
+        
+          <link rel="alternate" href="../../decisions/" hreflang="en">
+        
+          <link rel="alternate" href="./" hreflang="fr">
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.1">
+    
+    
+      
+        <title>Décisions par thème - DomiNet — Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.57a0d79d.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.fb2fffe2.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#decisions-darchitecture-index-par-theme" class="md-skip">
+          Aller au contenu
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="En-tête">
+    <a href="../" title="DomiNet — Documentation" class="md-header__button md-logo" aria-label="DomiNet — Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            DomiNet — Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Décisions par thème
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Mode clair / Light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Mode clair / Light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Mode sombre / Dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Mode sombre / Dark mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+      <div class="md-header__option">
+  <div class="md-select">
+    
+    <button class="md-header__button md-icon" aria-label="Sélectionner la langue">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m12.87 15.07-2.54-2.51.03-.03A17.5 17.5 0 0 0 14.07 6H17V4h-7V2H8v2H1v2h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2zm-2.62 7 1.62-4.33L19.12 17z"/></svg>
+    </button>
+    <div class="md-select__inner">
+      <ul class="md-select__list">
+        
+          <li class="md-select__item">
+            <a href="../../decisions/" hreflang="en" class="md-select__link">
+              English
+            </a>
+          </li>
+        
+          <li class="md-select__item">
+            <a href="./" hreflang="fr" class="md-select__link">
+              Français
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</div>
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Rechercher" placeholder="Rechercher" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Recherche">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Effacer" aria-label="Effacer" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initialisation de la recherche
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../" title="DomiNet — Documentation" class="md-nav__button md-logo" aria-label="DomiNet — Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    DomiNet — Documentation
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Accueil
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Installation
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../quick-install/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation rapide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../troubleshooting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dépannage
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../machines/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Machines prises en charge
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../migration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Déménager vers une autre machine
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../licenses/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Licences
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../security/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sécurité
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../releasing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Publier une version
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../deployment/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Déploiement en production
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../installation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation neuve
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../dev-machine/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Poste de développement
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../appearance/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apparence et personnalisation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fonctions
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Fonctions
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../authentication/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Authentification
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../devices/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Appareils
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../energy/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Énergie
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../interface/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Interface
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../automations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../scenes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Scènes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../scripts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Scripts
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../mcp/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Serveur MCP
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../assistant/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Assistant local
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../alerts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Alertes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../notifications/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Notifications
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../messaging/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Messagerie
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../settings/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Réglages
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../publishers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Publishers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../android/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Android
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../mqtt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MQTT
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Exploitation
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Exploitation
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../observability/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Observabilité
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../prometheus-grafana-rules/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Règles Prometheus et Grafana
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../backups/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sauvegardes et restauration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../database/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Base de données
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Développement
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Développement
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tests/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tests
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../pitfalls/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Pièges et leçons
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../measures/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mesures
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Décisions par thème
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Décisions par thème
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table des matières">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table des matières
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#par-theme" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Par thème
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Par thème">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#architecture-et-construction" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Architecture et construction
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#donnees-et-stockage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Données et stockage
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#securite-et-acces" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sécurité et accès
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#temps-reel-et-mqtt" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Temps réel et MQTT
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#automations-alertes-et-energie" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Automations, alertes et énergie
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#messagerie-et-relais-telephone" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Messagerie et relais téléphone
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#surveillance-et-video" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Surveillance et vidéo
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#observabilite-et-exploitation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Observabilité et exploitation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mcp-et-assistant-local" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MCP et assistant local
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#decisions-renversees-remplacees-ou-abandonnees" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Décisions renversées, remplacées ou abandonnées
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#decide-et-pas-encore-fait" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Décidé et pas encore fait
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#conventions-apprises-a-leurs-depens" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Conventions apprises à leurs dépens
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../rebuild/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reconstruire de zéro
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../mcp-audit/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Audit des fonctions serveur (MCP)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../bench/agent-bench-2026-11-17/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Bench de l'assistant local
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../bench/agent-bench-2026-11-17-mistral/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Bench Mistral
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../bench/agent-eval-2026-11-17/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Évaluation de l'assistant
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../to-improve/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    À améliorer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Décisions d'architecture
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Décisions d'architecture
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Index des ADR
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table des matières">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table des matières
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#par-theme" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Par thème
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Par thème">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#architecture-et-construction" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Architecture et construction
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#donnees-et-stockage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Données et stockage
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#securite-et-acces" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sécurité et accès
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#temps-reel-et-mqtt" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Temps réel et MQTT
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#automations-alertes-et-energie" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Automations, alertes et énergie
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#messagerie-et-relais-telephone" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Messagerie et relais téléphone
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#surveillance-et-video" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Surveillance et vidéo
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#observabilite-et-exploitation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Observabilité et exploitation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mcp-et-assistant-local" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MCP et assistant local
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#decisions-renversees-remplacees-ou-abandonnees" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Décisions renversées, remplacées ou abandonnées
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#decide-et-pas-encore-fait" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Décidé et pas encore fait
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#conventions-apprises-a-leurs-depens" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Conventions apprises à leurs dépens
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="decisions-darchitecture-index-par-theme">Décisions d'architecture : index par thème<a class="headerlink" href="#decisions-darchitecture-index-par-theme" title="Permanent link">&para;</a></h1>
+<p>Les fiches complètes sont les ADR de <a href="../adr/"><code>adr/</code></a> (en anglais, avec la version française <code>*.fr.md</code>) (contexte, options, décision, conséquences). Cette page est la carte : ce qui a été décidé dans chaque domaine, les décisions <strong>renversées ou abandonnées</strong> et pourquoi, et ce qui est volontairement repoussé.</p>
+<h2 id="par-theme">Par thème<a class="headerlink" href="#par-theme" title="Permanent link">&para;</a></h2>
+<h3 id="architecture-et-construction">Architecture et construction<a class="headerlink" href="#architecture-et-construction" title="Permanent link">&para;</a></h3>
+<p>Un binaire à rôles ; Leptos en rendu serveur avec WebSocket et traductions Fluent ; fonctions serveur sous <code>/sf/</code> ; un composant CRUD générique pour les pages d'administration ; une image construite avec <code>cargo-leptos</code> ; un garde-fou qui relance un rendu figé ; tests navigateur sur Marionette/Firefox.</p>
+<p>ADR : <a href="../adr/0001-global-architecture/">0001</a>, <a href="../adr/0007-leptos-ssr-frontend/">0007</a>, <a href="../adr/0012-interface-architecture/">0012</a>, <a href="../adr/0014-generic-crud/">0014</a>, <a href="../adr/0017-docker-image-and-e2e/">0017</a>, <a href="../adr/0021-page-render-guard/">0021</a>, <a href="../adr/0024-e2e-marionette/">0024</a>.</p>
+<h3 id="donnees-et-stockage">Données et stockage<a class="headerlink" href="#donnees-et-stockage" title="Permanent link">&para;</a></h3>
+<p>ReductStore pour l'historique brut, PostgreSQL pour l'état courant et les agrégats ; un état remplacé plus un historique à la seconde ; images en base ; secrets chiffrés au repos en AES-256-GCM ; <code>pg_dump</code> et archive ReductStore pour les sauvegardes.</p>
+<p>ADR : <a href="../adr/0002-iot-storage/">0002</a>, <a href="../adr/0018-dashboard-schema/">0018</a>, <a href="../adr/0025-device-schema/">0025</a>, <a href="../adr/0028-mqtt-sources-and-raw-archive/">0028</a>, <a href="../adr/0011-secrets-encryption/">0011</a>, <a href="../adr/0054-backups/">0054</a>.</p>
+<h3 id="securite-et-acces">Sécurité et accès<a class="headerlink" href="#securite-et-acces" title="Permanent link">&para;</a></h3>
+<p>Sessions côté serveur avec argon2id ; CSP à nonce ; MQTT avec un seul listener authentifié et des comptes par client ; jetons MCP hachés, à portées, révocables, avec journal d'audit.</p>
+<p>ADR : <a href="../adr/0004-auth-sessions/">0004</a>, <a href="../adr/0016-csp-and-websocket-hub/">0016</a>, <a href="../adr/0057-authenticated-mqtt/">0057</a>, <a href="../adr/0059-mcp-access-tokens/">0059</a>.</p>
+<h3 id="temps-reel-et-mqtt">Temps réel et MQTT<a class="headerlink" href="#temps-reel-et-mqtt" title="Permanent link">&para;</a></h3>
+<p><code>rumqttc</code> ; sujets WebSocket typés qui gardent le dernier état ; client supervisé qui publie tout de suite ou refuse ; ingestion Zigbee2MQTT ; publishers météo et solaire supervisés.</p>
+<p>ADR : <a href="../adr/0005-mqtt-client-rumqttc/">0005</a>, <a href="../adr/0019-multiplexed-websocket-protocol/">0019</a>, <a href="../adr/0020-system-statistics/">0020</a>, <a href="../adr/0026-supervised-mqtt-client/">0026</a>, <a href="../adr/0027-zigbee2mqtt-ingestion/">0027</a>, <a href="../adr/0030-weather-and-solarmax-publishers/">0030</a>.</p>
+<h3 id="automations-alertes-et-energie">Automations, alertes et énergie<a class="headerlink" href="#automations-alertes-et-energie" title="Permanent link">&para;</a></h3>
+<p>Rhai isolé ; stocké dans la forme JSON des scénarios ; un moteur, une file ; un planificateur unique avec événements solaires ; évaluation et cycle de vie des alertes ; bilan d'énergie journalier ; alertes sur les canaux réels.</p>
+<p>ADR : <a href="../adr/0006-rhai-sandbox/">0006</a>, <a href="../adr/0031-automation-schema/">0031</a>, <a href="../adr/0032-automation-engine/">0032</a>, <a href="../adr/0033-scheduler/">0033</a>, <a href="../adr/0034-rhai-scripts/">0034</a>, <a href="../adr/0035-alerts/">0035</a>, <a href="../adr/0036-energy/">0036</a>, <a href="../adr/0042-alerts-on-real-channels/">0042</a>.</p>
+<h3 id="messagerie-et-relais-telephone">Messagerie et relais téléphone<a class="headerlink" href="#messagerie-et-relais-telephone" title="Permanent link">&para;</a></h3>
+<p>Canaux SMTP et SMS dans une crate à part ; le relais Android garde son contrat WebSocket ; jetons d'appareil hachés et affichés une fois ; envoi asynchrone avec statuts en direct.</p>
+<p>ADR : <a href="../adr/0037-android-relay-and-messaging/">0037</a>, <a href="../adr/0038-delivery-channels/">0038</a>, <a href="../adr/0039-android-relay-server/">0039</a>, <a href="../adr/0040-android-pages/">0040</a>, <a href="../adr/0041-asynchronous-messaging/">0041</a>.</p>
+<h3 id="surveillance-et-video">Surveillance et vidéo<a class="headerlink" href="#surveillance-et-video" title="Permanent link">&para;</a></h3>
+<p><code>ffmpeg</code> en sous-processus supervisé derrière un trait <code>FrameSource</code> ; client ONVIF minimal écrit à la main ; YOLOv8n par ONNX Runtime ; live WHEP en WASM via MediaMTX ; MediaMTX enregistre et l'application indexe ; détection de mouvement en Rust pur.</p>
+<p>ADR : <a href="../adr/0003-video-decoding/">0003</a>, <a href="../adr/0008-minimal-onvif-client/">0008</a>, <a href="../adr/0009-yolo-ort/">0009</a>, <a href="../adr/0010-whep-live-wasm/">0010</a>, <a href="../adr/0043-surveillance-schema/">0043</a>, <a href="../adr/0044-mediamtx-and-cameras/">0044</a>, <a href="../adr/0045-onvif-and-discovery/">0045</a>, <a href="../adr/0046-whep-live-view/">0046</a>, <a href="../adr/0047-ptz-and-night-mode/">0047</a>, <a href="../adr/0048-decoded-frames-and-snapshots/">0048</a>, <a href="../adr/0049-recording-and-replay/">0049</a>, <a href="../adr/0050-motion-and-detection/">0050</a>.</p>
+<h3 id="observabilite-et-exploitation">Observabilité et exploitation<a class="headerlink" href="#observabilite-et-exploitation" title="Permanent link">&para;</a></h3>
+<p>Un point <code>/metrics</code> ; règles Prometheus et Grafana stockées en base ; relais des alertes externes ; base Compose et surcouches ; MkDocs servi par l'application ; barrière locale avant push ; alertes de plateforme en lecture seule dans la page des alertes.</p>
+<p>ADR : <a href="../adr/0013-self-hosted-ci/">0013</a>, <a href="../adr/0015-local-gate/">0015</a>, <a href="../adr/0051-prometheus-metrics/">0051</a>, <a href="../adr/0052-prometheus-and-grafana-alert-rules/">0052</a>, <a href="../adr/0053-prometheus-alerts-and-grafana-dashboards/">0053</a>, <a href="../adr/0055-compose-base-and-overlays/">0055</a>, <a href="../adr/0056-mkdocs-documentation/">0056</a>, <a href="../adr/0061-platform-alerts-in-the-alerts-page/">0061</a>.</p>
+<h3 id="mcp-et-assistant-local">MCP et assistant local<a class="headerlink" href="#mcp-et-assistant-local" title="Permanent link">&para;</a></h3>
+<p>Un serveur MCP intégré au binaire ; jetons à portées ; un modèle local qui propose et une application qui décide.</p>
+<p>ADR : <a href="../adr/0058-mcp-server/">0058</a>, <a href="../adr/0059-mcp-access-tokens/">0059</a>, <a href="../adr/0060-local-assistant/">0060</a>.</p>
+<h2 id="decisions-renversees-remplacees-ou-abandonnees">Décisions renversées, remplacées ou abandonnées<a class="headerlink" href="#decisions-renversees-remplacees-ou-abandonnees" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Décision</th>
+<th>Ce qui s'est passé</th>
+<th>Pourquoi</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>CI sur GitHub Actions (au départ)</td>
+<td>Remplacée par un runner auto-hébergé (<a href="../adr/0013-self-hosted-ci/">0013</a>), puis par une barrière locale : le hook <code>pre-push</code> relance <code>make ci</code> sur une copie propre (<a href="../adr/0015-local-gate/">0015</a>). Le dépôt public ne garde que la barrière locale</td>
+<td>Le workflow ne faisait que relancer <code>make ci</code>, que le développeur lance déjà sur la même machine (aussi serveur de développement et de production) : 8 à 10 minutes par push, un utilisateur système dédié, Docker sans root, des plafonds de ressources à entretenir, des échecs difficiles à lire ou à reproduire. Un seul développeur n'y gagne rien</td>
+</tr>
+<tr>
+<td>Deux listeners Mosquitto, dont un anonyme sur le LAN (<a href="../adr/0055-compose-base-and-overlays/">0055</a>)</td>
+<td>Un seul listener avec mots de passe et comptes par client (<a href="../adr/0057-authenticated-mqtt/">0057</a>)</td>
+<td>La nouvelle pile s'installe à neuf, sans client MQTT existant à ménager ; un listener anonyme, même désactivé par défaut, rouvre le courtier au LAN au moindre oubli de configuration</td>
+</tr>
+<tr>
+<td>Deux modèles d'assistant, 8B au quotidien et 14B pour la configuration (<a href="../adr/0060-local-assistant/">0060</a>)</td>
+<td>Un seul Qwen3-8B</td>
+<td>Mesuré à 98 % contre 96 %, trois fois plus rapide</td>
+</tr>
+<tr>
+<td>Un assistant qui renomme et modifie des éléments existants</td>
+<td>Abandonné ; l'assistant lit, pilote et crée</td>
+<td>Peu fiable avec le 8B, et le nom d'un appareil est aussi son topic MQTT ; l'administration le fait mieux</td>
+</tr>
+<tr>
+<td>La phase de l'assistant local (R12)</td>
+<td>Mise de côté le 2026-11-18 après essais</td>
+<td>Lecture, pilotage et création fiables ; modification non</td>
+</tr>
+<tr>
+<td>Migrer <code>chrono</code> vers <code>jiff</code> ou <code>time</code></td>
+<td>Rejeté le 2026-11-20</td>
+<td><code>sqlx</code> 0.9 n'a pas de support <code>jiff</code>, et <code>rmcp</code> et <code>schemars</code> gardent <code>chrono</code> dans l'arbre de toute façon. À rouvrir seulement sur avis de sécurité, support <code>jiff</code> de <code>sqlx</code>, ou besoin que <code>chrono</code> ne couvre pas</td>
+</tr>
+<tr>
+<td>Leptos 0.9 (<a href="../adr/0007-leptos-ssr-frontend/">0007</a>)</td>
+<td>Resté en 0.8.x</td>
+<td><code>leptos-fluent</code> exigeait moins de 0.9 à l'époque ; à réévaluer quand la 0.9 sera stable et prise en charge</td>
+</tr>
+<tr>
+<td>Un décodeur H.264 en Rust pur ou lié</td>
+<td>Rejeté : sous-processus <code>ffmpeg</code> (<a href="../adr/0003-video-decoding/">0003</a>)</td>
+<td>Aucun décodeur Rust pur mature n'existe (<code>retina</code> ne décode pas) ; <code>ffmpeg-next</code> exige les en-têtes de développement ; <code>openh264</code> coûtait environ deux fois plus de processeur et a échoué sur deux familles de caméras. Mesuré : 4 caméras à 22 % de la machine en logiciel, 8 % avec VAAPI</td>
+</tr>
+<tr>
+<td>Une liaison OpenCV pour le mouvement</td>
+<td>Rejetée : mouvement en Rust pur (<a href="../adr/0050-motion-and-detection/">0050</a>)</td>
+<td>Aucune dépendance à OpenCV ; l'algorithme et les détails propres d'OpenCV sont reproduits et la parité est mesurée sur des paires d'images synthétiques</td>
+</tr>
+<tr>
+<td>Une crate ONVIF</td>
+<td>Rejetée : client SOAP minimal écrit à la main (<a href="../adr/0008-minimal-onvif-client/">0008</a>)</td>
+<td>Aucune crate ONVIF mature ne convient ; il faut peu d'appels, et les familles de caméras utilisent des préfixes de noms différents, les réponses sont donc lues sans s'y fier</td>
+</tr>
+<tr>
+<td>Remplacer MediaMTX par une pile vidéo tout-Rust</td>
+<td>Repoussé (phase optionnelle R9)</td>
+<td>N'a de sens que si les mesures montrent un gain réel</td>
+</tr>
+<tr>
+<td>Acquittement des alertes de plateforme</td>
+<td>Non proposé : lecture seule (<a href="../adr/0061-platform-alerts-in-the-alerts-page/">0061</a>)</td>
+<td>Choix du propriétaire (lecture seule, un seul total dans la pastille) ; l'acquittement reste dans les outils qui possèdent ces alertes</td>
+</tr>
+</tbody>
+</table>
+<h2 id="decide-et-pas-encore-fait">Décidé et pas encore fait<a class="headerlink" href="#decide-et-pas-encore-fait" title="Permanent link">&para;</a></h2>
+<ul>
+<li>Une image arm64 n'a jamais été construite (<a href="../adr/0017-docker-image-and-e2e/">0017</a>) ; nécessaire pour le Raspberry Pi 5.</li>
+<li>L'envoi de SMS est volontairement exclu des outils MCP.</li>
+<li>L'assistant vocal, la vidéo tout-Rust (R9) et les extensions matérielles (R10) sont des phases ultérieures.</li>
+</ul>
+<h2 id="conventions-apprises-a-leurs-depens">Conventions apprises à leurs dépens<a class="headerlink" href="#conventions-apprises-a-leurs-depens" title="Permanent link">&para;</a></h2>
+<ul>
+<li>Toute décision non évidente reçoit un ADR avec les options écartées.</li>
+<li>Ne jamais publier avec <code>-C target-cpu=native</code> ; la base est <code>x86-64-v2</code> (<a href="../adr/0001-global-architecture/">0001</a>).</li>
+<li>Rien ne s'inclut depuis l'extérieur de <code>crates/</code> (l'image ne copie que cela et <code>.sqlx/</code>).</li>
+<li>Un script n'atteint le système que par la portée <code>administration</code> (<a href="../adr/0059-mcp-access-tokens/">0059</a>).</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Retour en haut de la page
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.sections", "navigation.top", "content.code.copy", "search.highlight"], "search": "../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copi\u00e9 dans le presse-papier", "clipboard.copy": "Copier dans le presse-papier", "search.result.more.one": "1 de plus sur cette page", "search.result.more.other": "# de plus sur cette page", "search.result.none": "Aucun document trouv\u00e9", "search.result.one": "1 document trouv\u00e9", "search.result.other": "# documents trouv\u00e9s", "search.result.placeholder": "Taper pour d\u00e9marrer la recherche", "search.result.term.missing": "Non trouv\u00e9", "select.version": "S\u00e9lectionner la version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.a5f9d56c.min.js"></script>
+      
+    
+  </body>
+</html>

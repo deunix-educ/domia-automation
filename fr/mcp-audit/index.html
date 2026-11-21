@@ -1,0 +1,3065 @@
+
+<!doctype html>
+<html lang="fr" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Domotique et videosurveillance auto-hebergees (Rust)">
+      
+      
+      
+      
+        <link rel="prev" href="../rebuild/">
+      
+      
+        <link rel="next" href="../bench/agent-bench-2026-11-17/">
+      
+      
+        
+          <link rel="alternate" href="../../mcp-audit/" hreflang="en">
+        
+          <link rel="alternate" href="./" hreflang="fr">
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.1">
+    
+    
+      
+        <title>Audit des fonctions serveur (MCP) - DomiNet — Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.57a0d79d.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.fb2fffe2.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#r11-m0-audit-des-fonctions-serveur-et-cadrage-2026-11-15" class="md-skip">
+          Aller au contenu
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="En-tête">
+    <a href="../" title="DomiNet — Documentation" class="md-header__button md-logo" aria-label="DomiNet — Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            DomiNet — Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Audit des fonctions serveur (MCP)
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Mode clair / Light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Mode clair / Light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Mode sombre / Dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Mode sombre / Dark mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+      <div class="md-header__option">
+  <div class="md-select">
+    
+    <button class="md-header__button md-icon" aria-label="Sélectionner la langue">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m12.87 15.07-2.54-2.51.03-.03A17.5 17.5 0 0 0 14.07 6H17V4h-7V2H8v2H1v2h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2zm-2.62 7 1.62-4.33L19.12 17z"/></svg>
+    </button>
+    <div class="md-select__inner">
+      <ul class="md-select__list">
+        
+          <li class="md-select__item">
+            <a href="../../mcp-audit/" hreflang="en" class="md-select__link">
+              English
+            </a>
+          </li>
+        
+          <li class="md-select__item">
+            <a href="./" hreflang="fr" class="md-select__link">
+              Français
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</div>
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Rechercher" placeholder="Rechercher" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Recherche">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Effacer" aria-label="Effacer" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initialisation de la recherche
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../" title="DomiNet — Documentation" class="md-nav__button md-logo" aria-label="DomiNet — Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    DomiNet — Documentation
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Accueil
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Installation
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../quick-install/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation rapide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../troubleshooting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dépannage
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../machines/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Machines prises en charge
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../migration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Déménager vers une autre machine
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../licenses/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Licences
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../security/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sécurité
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../releasing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Publier une version
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../deployment/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Déploiement en production
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../installation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation neuve
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../dev-machine/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Poste de développement
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../appearance/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apparence et personnalisation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fonctions
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Fonctions
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../authentication/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Authentification
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../devices/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Appareils
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../energy/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Énergie
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../interface/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Interface
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../automations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../scenes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Scènes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../scripts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Scripts
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../mcp/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Serveur MCP
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../assistant/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Assistant local
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../alerts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Alertes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../notifications/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Notifications
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../messaging/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Messagerie
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../settings/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Réglages
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../publishers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Publishers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../android/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Android
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../mqtt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MQTT
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Exploitation
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Exploitation
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../observability/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Observabilité
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../prometheus-grafana-rules/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Règles Prometheus et Grafana
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../backups/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sauvegardes et restauration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../database/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Base de données
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Développement
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Développement
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tests/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tests
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../pitfalls/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Pièges et leçons
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../measures/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mesures
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../decisions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Décisions par thème
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../rebuild/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reconstruire de zéro
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Audit des fonctions serveur (MCP)
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Audit des fonctions serveur (MCP)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table des matières">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table des matières
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#ce-que-laudit-a-mesure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Ce que l'audit a mesuré
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#couverture-80-couvertes-27-exclues" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Couverture : 80 couvertes, 27 exclues
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#les-12-fonctions-hors-catalogue-decisions-du-2026-11-16-validees-par-lutilisateur" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Les 12 fonctions hors catalogue : décisions du 2026-11-16 (validées par l'utilisateur)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#constats-qui-modifient-la-feuille-de-route" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Constats qui modifient la feuille de route
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#livre-dans-ce-lot" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Livré dans ce lot
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../bench/agent-bench-2026-11-17/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Bench de l'assistant local
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../bench/agent-bench-2026-11-17-mistral/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Bench Mistral
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../bench/agent-eval-2026-11-17/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Évaluation de l'assistant
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../to-improve/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    À améliorer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Décisions d'architecture
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Décisions d'architecture
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Index des ADR
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table des matières">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table des matières
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#ce-que-laudit-a-mesure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Ce que l'audit a mesuré
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#couverture-80-couvertes-27-exclues" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Couverture : 80 couvertes, 27 exclues
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#les-12-fonctions-hors-catalogue-decisions-du-2026-11-16-validees-par-lutilisateur" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Les 12 fonctions hors catalogue : décisions du 2026-11-16 (validées par l'utilisateur)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#constats-qui-modifient-la-feuille-de-route" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Constats qui modifient la feuille de route
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#livre-dans-ce-lot" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Livré dans ce lot
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="r11-m0-audit-des-fonctions-serveur-et-cadrage-2026-11-15">R11 — M0 : audit des fonctions serveur et cadrage (2026-11-15)<a class="headerlink" href="#r11-m0-audit-des-fonctions-serveur-et-cadrage-2026-11-15" title="Permanent link">&para;</a></h1>
+<p>Lot M0 de la feuille de route MCP (non conservée) : savoir <strong>où vit la logique</strong> de l'interface, ce que l'assistant peut en réutiliser, et trancher la technique (SDK, montage, transport, jetons). Décisions : <a href="../adr/0058-mcp-server/">ADR 0058</a> (serveur) et <a href="../adr/0059-mcp-access-tokens/">ADR 0059</a> (jetons). Le tableau complet est dans <code>tests/mcp/coverage.tsv</code> ; <strong>un test de <code>make ci</code> échoue si une fonction serveur n'y est pas classée</strong>.</p>
+<h2 id="ce-que-laudit-a-mesure">Ce que l'audit a mesuré<a class="headerlink" href="#ce-que-laudit-a-mesure" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>107 fonctions serveur</strong> dans 20 fichiers de <code>dominet-web</code> (3 482 lignes de corps au total) : 75 réservées aux administrateurs, 25 à tout compte connecté, 7 liées à la session ou au compte courant (connexion, déconnexion, mot de passe, tableau de bord personnel).</li>
+<li><strong>Le schéma est uniforme</strong> : <code>expect_context::&lt;AppState&gt;()</code>, un contrôle d'accès (<code>require_admin</code> / <code>require_user</code>), puis une logique qui appelle directement <code>AppState</code> et les dépôts. Seules 7 fonctions appellent directement <code>leptos_axum</code> : celles de la session et du compte courant. Aucun couplage profond : <strong>la logique est extractible</strong>.</li>
+<li><strong>Le pilotage est déjà réutilisable</strong> : <code>send_device_command</code> et <code>set_permit_join</code> appellent <code>dominet_server::control</code>. <strong>La configuration ne l'est pas encore</strong> : les <code>save_*</code> (jusqu'à 98 lignes) contiennent la validation, l'écriture et le signal de rechargement. Il faudra les déplacer dans <code>dominet-server</code>, sous la forme <code>service(&amp;AppState, &amp;Acteur, entrée)</code>, pour que l'interface et MCP partagent le même code (lots M2 à M5).</li>
+<li><strong>Technique</strong> : <code>rmcp</code> 3.10.0 (SDK officiel, Apache-2.0, Rust 1.88 minimum) est accepté par <code>cargo deny</code> et n'ajoute aucun avertissement à <code>cargo audit</code>. Le serveur est <strong>sans session</strong> (réponses JSON simples), protégé contre le DNS rebinding (en-tête <code>Host</code> limité à <code>localhost</code> et <code>ALLOWED_HOSTS</code>) et fonctionne avec un client de la révision précédente du protocole (testé).</li>
+</ul>
+<h2 id="couverture-80-couvertes-27-exclues">Couverture : 80 couvertes, 27 exclues<a class="headerlink" href="#couverture-80-couvertes-27-exclues" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Fonction serveur</th>
+<th>Fichier</th>
+<th>Garde</th>
+<th>Outil MCP</th>
+<th>Portée</th>
+<th>Statut</th>
+<th>Note</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>list_alert_rules</code></td>
+<td>alert_rules_admin.rs</td>
+<td>admin</td>
+<td><code>config_list(alert_rule)</code></td>
+<td>lecture</td>
+<td>couvert</td>
+<td></td>
+</tr>
+<tr>
+<td><code>save_alert_rule</code></td>
+<td>alert_rules_admin.rs</td>
+<td>admin</td>
+<td><code>config_upsert(alert_rule)</code></td>
+<td>configuration</td>
+<td>couvert</td>
+<td></td>
+</tr>
+<tr>
+<td><code>delete_alert_rule</code></td>
+<td>alert_rules_admin.rs</td>
+<td>admin</td>
+<td><code>config_delete(alert_rule)</code></td>
+<td>configuration</td>
+<td>couvert</td>
+<td><code>confirm</code> et <code>dry_run</code></td>
+</tr>
+<tr>
+<td><code>alerts_page</code></td>
+<td>alerts.rs</td>
+<td>compte</td>
+<td><code>alerts_list</code></td>
+<td>lecture</td>
+<td>couvert</td>
+<td></td>
+</tr>
+<tr>
+<td><code>acknowledge_alert</code></td>
+<td>alerts.rs</td>
+<td>compte</td>
+<td><code>alert_ack</code></td>
+<td>pilotage</td>
+<td>couvert</td>
+<td></td>
+</tr>
+<tr>
+<td><code>acknowledge_all_alerts</code></td>
+<td>alerts.rs</td>
+<td>compte</td>
+<td><code>alert_ack(all)</code></td>
+<td>pilotage</td>
+<td>couvert</td>
+<td>tout acquitter : une carte, un clic côté assistant</td>
+</tr>
+<tr>
+<td><code>android_overview</code></td>
+<td>android.rs</td>
+<td>compte</td>
+<td>—</td>
+<td>—</td>
+<td>exclu</td>
+<td>Android : canal de messagerie et jetons</td>
+</tr>
+<tr>
+<td><code>android_devices</code></td>
+<td>android.rs</td>
+<td>compte</td>
+<td>—</td>
+<td>—</td>
+<td>exclu</td>
+<td>liste des téléphones et de leurs jetons</td>
+</tr>
+<tr>
+<td><code>add_android_device</code></td>
+<td>android.rs</td>
+<td>compte</td>
+<td>—</td>
+<td>—</td>
+<td>exclu</td>
+<td>crée un jeton Android (secret)</td>
+</tr>
+<tr>
+<td><code>delete_android_device</code></td>
+<td>android.rs</td>
+<td>compte</td>
+<td>—</td>
+<td>—</td>
+<td>exclu</td>
+<td>jetons Android</td>
+</tr>
+<tr>
+<td><code>regenerate_android_token</code></td>
+<td>android.rs</td>
+<td>compte</td>
+<td>—</td>
+<td>—</td>
+<td>exclu</td>
+<td>jetons Android (secret)</td>
+</tr>
+<tr>
+<td><code>android_sms_page</code></td>
+<td>android.rs</td>
+<td>compte</td>
+<td>—</td>
+<td>—</td>
+<td>exclu</td>
+<td>messagerie SMS exclue (décision du 2026-11-13)</td>
+</tr>
+<tr>
+<td><code>android_calls_page</code></td>
+<td>android.rs</td>
+<td>compte</td>
+<td>—</td>
+<td>—</td>
+<td>exclu</td>
+<td>journal d'appels : données personnelles, messagerie exclue</td>
+</tr>
+<tr>
+<td><code>send_android_sms</code></td>
+<td>android.rs</td>
+<td>compte</td>
+<td>—</td>
+<td>—</td>
+<td>exclu</td>
+<td>messagerie SMS exclue (décision du 2026-11-13)</td>
+</tr>
+<tr>
+<td><code>list_automations</code></td>
+<td>automations_admin.rs</td>
+<td>admin</td>
+<td><code>automations_list</code></td>
+<td>lecture</td>
+<td>couvert</td>
+<td></td>
+</tr>
+<tr>
+<td><code>save_automation</code></td>
+<td>automations_admin.rs</td>
+<td>admin</td>
+<td><code>config_upsert(automation)</code></td>
+<td>configuration</td>
+<td>couvert</td>
+<td>avec script Rhai : portée <code>administration</code> (voir constats)</td>
+</tr>
+<tr>
+<td><code>delete_automation</code></td>
+<td>automations_admin.rs</td>
+<td>admin</td>
+<td><code>config_delete(automation)</code></td>
+<td>configuration</td>
+<td>couvert</td>
+<td><code>confirm</code> et <code>dry_run</code></td>
+</tr>
+<tr>
+<td><code>automation_runs</code></td>
+<td>automations_admin.rs</td>
+<td>admin</td>
+<td><code>automation_runs</code></td>
+<td>lecture</td>
+<td>couvert</td>
+<td></td>
+</tr>
+<tr>
+<td><code>list_cameras</code></td>
+<td>camera_fns.rs</td>
+<td>admin</td>
+<td><code>cameras_list</code></td>
+<td>lecture</td>
+<td>couvert</td>
+<td>sans identifiants</td>
+</tr>
+<tr>
+<td><code>list_camera_cards</code></td>
+<td>camera_fns.rs</td>
+<td>compte</td>
+<td><code>cameras_list</code></td>
+<td>lecture</td>
+<td>couvert</td>
+<td></td>
+</tr>
+<tr>
+<td><code>save_camera</code></td>
+<td>camera_fns.rs</td>
+<td>admin</td>
+<td><code>config_upsert(camera)</code></td>
+<td>administration</td>
+<td>couvert</td>
+<td>identifiants en écriture seule (M5)</td>
+</tr>
+<tr>
+<td><code>delete_camera</code></td>
+<td>camera_fns.rs</td>
+<td>admin</td>
+<td><code>config_delete(camera)</code></td>
+<td>administration</td>
+<td>couvert</td>
+<td><code>confirm</code> et <code>dry_run</code></td>
+</tr>
+<tr>
+<td><code>sync_cameras</code></td>
+<td>camera_fns.rs</td>
+<td>admin</td>
+<td><code>cameras_sync</code></td>
+<td>administration</td>
+<td>couvert</td>
+<td>synchronisation MediaMTX (décidé le 2026-11-16)</td>
+</tr>
+<tr>
+<td><code>sync_camera_onvif</code></td>
+<td>camera_fns.rs</td>
+<td>admin</td>
+<td><code>cameras_sync</code></td>
+<td>administration</td>
+<td>couvert</td>
+<td>profils ONVIF (décidé le 2026-11-16)</td>
+</tr>
+<tr>
+<td><code>add_camera_by_ip</code></td>
+<td>camera_fns.rs</td>
+<td>admin</td>
+<td>—</td>
+<td>—</td>
+<td>exclu</td>
+<td>saisit des identifiants à partir d'une adresse : interface seule (décidé le 2026-11-16)</td>
+</tr>
+<tr>
+<td><code>start_discovery</code></td>
+<td>camera_fns.rs</td>
+<td>admin</td>
+<td>—</td>
+<td>—</td>
+<td>exclu</td>
+<td>balayage du réseau : déclenchement humain seulement</td>
+</tr>
+<tr>
+<td><code>camera_live</code></td>
+<td>camera_fns.rs</td>
+<td>compte</td>
+<td>—</td>
+<td>—</td>
+<td>exclu</td>
+<td>flux vidéo : sans objet pour un assistant</td>
+</tr>
+<tr>
+<td><code>camera_night</code></td>
+<td>camera_fns.rs</td>
+<td>admin</td>
+<td><code>camera_night</code></td>
+<td>pilotage</td>
+<td>couvert</td>
+<td>mode nuit (décidé le 2026-11-16)</td>
+</tr>
+<tr>
+<td><code>capture_snapshot</code></td>
+<td>camera_fns.rs</td>
+<td>admin</td>
+<td><code>camera_snapshot</code></td>
+<td>pilotage</td>
+<td>couvert</td>
+<td>renvoie une image</td>
+</tr>
+<tr>
+<td><code>list_snapshots</code></td>
+<td>camera_fns.rs</td>
+<td>compte</td>
+<td><code>camera_snapshot(list)</code></td>
+<td>lecture</td>
+<td>couvert</td>
+<td>liste des captures (décidé le 2026-11-16)</td>
+</tr>
+<tr>
+<td><code>delete_snapshot</code></td>
+<td>camera_fns.rs</td>
+<td>admin</td>
+<td>—</td>
+<td>—</td>
+<td>exclu</td>
+<td>suppression : interface seule (décidé le 2026-11-16)</td>
+</tr>
+<tr>
+<td><code>list_recordings</code></td>
+<td>camera_fns.rs</td>
+<td>compte</td>
+<td><code>recordings_list</code></td>
+<td>lecture</td>
+<td>couvert</td>
+<td></td>
+</tr>
+<tr>
+<td><code>delete_recording</code></td>
+<td>camera_fns.rs</td>
+<td>admin</td>
+<td>—</td>
+<td>—</td>
+<td>exclu</td>
+<td>suppression : interface seule (décidé le 2026-11-16)</td>
+</tr>
+<tr>
+<td><code>set_manual_record</code></td>
+<td>camera_fns.rs</td>
+<td>admin</td>
+<td><code>camera_record</code></td>
+<td>pilotage</td>
+<td>couvert</td>
+<td>enregistrement manuel (décidé le 2026-11-16)</td>
+</tr>
+<tr>
+<td><code>list_camera_events</code></td>
+<td>camera_fns.rs</td>
+<td>compte</td>
+<td><code>detections_list</code></td>
+<td>lecture</td>
+<td>couvert</td>
+<td></td>
+</tr>
+<tr>
+<td><code>get_detector</code></td>
+<td>camera_fns.rs</td>
+<td>admin</td>
+<td><code>config_get(detector)</code></td>
+<td>lecture</td>
+<td>couvert</td>
+<td></td>
+</tr>
+<tr>
+<td><code>set_detector</code></td>
+<td>camera_fns.rs</td>
+<td>admin</td>
+<td><code>config_upsert(detector)</code></td>
+<td>configuration</td>
+<td>couvert</td>
+<td></td>
+</tr>
+<tr>
+<td><code>list_dashboards_admin</code></td>
+<td>dashboard_fns.rs</td>
+<td>admin</td>
+<td><code>config_list(dashboard)</code></td>
+<td>lecture</td>
+<td>couvert</td>
+<td></td>
+</tr>
+<tr>
+<td><code>save_dashboard</code></td>
+<td>dashboard_fns.rs</td>
+<td>admin</td>
+<td><code>config_upsert(dashboard)</code></td>
+<td>configuration</td>
+<td>couvert</td>
+<td></td>
+</tr>
+<tr>
+<td><code>delete_dashboard</code></td>
+<td>dashboard_fns.rs</td>
+<td>admin</td>
+<td><code>config_delete(dashboard)</code></td>
+<td>configuration</td>
+<td>couvert</td>
+<td><code>confirm</code> et <code>dry_run</code></td>
+</tr>
+<tr>
+<td><code>list_widgets</code></td>
+<td>dashboard_fns.rs</td>
+<td>admin</td>
+<td><code>dashboard_get</code></td>
+<td>lecture</td>
+<td>couvert</td>
+<td></td>
+</tr>
+<tr>
+<td><code>widgets_page</code></td>
+<td>dashboard_fns.rs</td>
+<td>admin</td>
+<td><code>dashboard_get</code></td>
+<td>lecture</td>
+<td>couvert</td>
+<td></td>
+</tr>
+<tr>
+<td><code>save_widget</code></td>
+<td>dashboard_fns.rs</td>
+<td>admin</td>
+<td><code>widget_upsert</code></td>
+<td>configuration</td>
+<td>couvert</td>
+<td></td>
+</tr>
+<tr>
+<td><code>delete_widget</code></td>
+<td>dashboard_fns.rs</td>
+<td>admin</td>
+<td><code>widget_delete</code></td>
+<td>configuration</td>
+<td>couvert</td>
+<td><code>confirm</code> et <code>dry_run</code></td>
+</tr>
+<tr>
+<td><code>move_widget</code></td>
+<td>dashboard_fns.rs</td>
+<td>admin</td>
+<td><code>dashboard_set_layout</code></td>
+<td>configuration</td>
+<td>couvert</td>
+<td></td>
+</tr>
+<tr>
+<td><code>send_device_command</code></td>
+<td>device_fns.rs</td>
+<td>compte</td>
+<td><code>device_command</code></td>
+<td>pilotage</td>
+<td>couvert</td>
+<td>appareil actif seulement</td>
+</tr>
+<tr>
+<td><code>set_permit_join</code></td>
+<td>device_fns.rs</td>
+<td>admin</td>
+<td><code>zigbee_pairing</code></td>
+<td>configuration</td>
+<td>couvert</td>
+<td>ouvre le réseau Zigbee à de nouveaux appareils (décidé le 2026-11-16)</td>
+</tr>
+<tr>
+<td><code>permit_join_state</code></td>
+<td>device_fns.rs</td>
+<td>compte</td>
+<td><code>system_status</code></td>
+<td>lecture</td>
+<td>couvert</td>
+<td>champ <code>zigbee_pairing_open</code></td>
+</tr>
+<tr>
+<td><code>generate_device_dashboard</code></td>
+<td>device_fns.rs</td>
+<td>admin</td>
+<td><code>config_upsert(dashboard)</code></td>
+<td>configuration</td>
+<td>couvert</td>
+<td>génération du tableau Grafana d'un appareil (décidé le 2026-11-16)</td>
+</tr>
+<tr>
+<td><code>list_devices_admin</code></td>
+<td>devices_admin.rs</td>
+<td>admin</td>
+<td><code>devices_list</code></td>
+<td>lecture</td>
+<td>couvert</td>
+<td></td>
+</tr>
+<tr>
+<td><code>save_device_admin</code></td>
+<td>devices_admin.rs</td>
+<td>admin</td>
+<td><code>config_upsert(device)</code></td>
+<td>configuration</td>
+<td>couvert</td>
+<td></td>
+</tr>
+<tr>
+<td><code>delete_device_admin</code></td>
+<td>devices_admin.rs</td>
+<td>admin</td>
+<td><code>config_delete(device)</code></td>
+<td>configuration</td>
+<td>couvert</td>
+<td><code>confirm</code> et <code>dry_run</code> : supprime aussi ses automations</td>
+</tr>
+<tr>
+<td><code>device_choices</code></td>
+<td>devices_admin.rs</td>
+<td>admin</td>
+<td><code>config_schema</code></td>
+<td>lecture</td>
+<td>couvert</td>
+<td>choix des formulaires = schéma</td>
+</tr>
+<tr>
+<td><code>list_device_groups</code></td>
+<td>devices_admin.rs</td>
+<td>admin</td>
+<td><code>config_list(device_group)</code></td>
+<td>lecture</td>
+<td>couvert</td>
+<td></td>
+</tr>
+<tr>
+<td><code>save_device_group</code></td>
+<td>devices_admin.rs</td>
+<td>admin</td>
+<td><code>config_upsert(device_group)</code></td>
+<td>configuration</td>
+<td>couvert</td>
+<td></td>
+</tr>
+<tr>
+<td><code>delete_device_group</code></td>
+<td>devices_admin.rs</td>
+<td>admin</td>
+<td><code>config_delete(device_group)</code></td>
+<td>configuration</td>
+<td>couvert</td>
+<td><code>confirm</code> et <code>dry_run</code></td>
+</tr>
+<tr>
+<td><code>list_device_labels</code></td>
+<td>devices_admin.rs</td>
+<td>admin</td>
+<td><code>config_list(device_label)</code></td>
+<td>lecture</td>
+<td>couvert</td>
+<td></td>
+</tr>
+<tr>
+<td><code>save_device_label</code></td>
+<td>devices_admin.rs</td>
+<td>admin</td>
+<td><code>config_upsert(device_label)</code></td>
+<td>configuration</td>
+<td>couvert</td>
+<td></td>
+</tr>
+<tr>
+<td><code>delete_device_label</code></td>
+<td>devices_admin.rs</td>
+<td>admin</td>
+<td><code>config_delete(device_label)</code></td>
+<td>configuration</td>
+<td>couvert</td>
+<td><code>confirm</code> et <code>dry_run</code></td>
+</tr>
+<tr>
+<td><code>devices_page</code></td>
+<td>devices_pages.rs</td>
+<td>compte</td>
+<td><code>devices_list</code></td>
+<td>lecture</td>
+<td>couvert</td>
+<td></td>
+</tr>
+<tr>
+<td><code>device_detail</code></td>
+<td>devices_pages.rs</td>
+<td>compte</td>
+<td><code>device_get</code></td>
+<td>lecture</td>
+<td>couvert</td>
+<td>et <code>device_history</code></td>
+</tr>
+<tr>
+<td><code>energy_page</code></td>
+<td>energy.rs</td>
+<td>compte</td>
+<td><code>energy_summary</code></td>
+<td>lecture</td>
+<td>couvert</td>
+<td></td>
+</tr>
+<tr>
+<td><code>list_logs</code></td>
+<td>logs_admin.rs</td>
+<td>admin</td>
+<td><code>logs_query</code></td>
+<td>lecture</td>
+<td>couvert</td>
+<td></td>
+</tr>
+<tr>
+<td><code>compose_form</code></td>
+<td>messaging.rs</td>
+<td>admin</td>
+<td>—</td>
+<td>—</td>
+<td>exclu</td>
+<td>messagerie exclue (décision du 2026-11-13)</td>
+</tr>
+<tr>
+<td><code>send_message</code></td>
+<td>messaging.rs</td>
+<td>admin</td>
+<td>—</td>
+<td>—</td>
+<td>exclu</td>
+<td>messagerie exclue (décision du 2026-11-13) ; <code>notify_test</code> couvre l'essai des canaux</td>
+</tr>
+<tr>
+<td><code>sent_messages</code></td>
+<td>messaging.rs</td>
+<td>admin</td>
+<td>—</td>
+<td>—</td>
+<td>exclu</td>
+<td>messagerie exclue (décision du 2026-11-13)</td>
+</tr>
+<tr>
+<td><code>inbox_messages</code></td>
+<td>messaging.rs</td>
+<td>compte</td>
+<td>—</td>
+<td>—</td>
+<td>exclu</td>
+<td>messagerie exclue (décision du 2026-11-13)</td>
+</tr>
+<tr>
+<td><code>message_detail</code></td>
+<td>messaging.rs</td>
+<td>compte</td>
+<td>—</td>
+<td>—</td>
+<td>exclu</td>
+<td>messagerie exclue (décision du 2026-11-13)</td>
+</tr>
+<tr>
+<td><code>list_mqtt_sources</code></td>
+<td>mqtt_sources.rs</td>
+<td>admin</td>
+<td><code>config_list(mqtt_source)</code></td>
+<td>lecture</td>
+<td>couvert</td>
+<td></td>
+</tr>
+<tr>
+<td><code>save_mqtt_source</code></td>
+<td>mqtt_sources.rs</td>
+<td>admin</td>
+<td><code>config_upsert(mqtt_source)</code></td>
+<td>configuration</td>
+<td>couvert</td>
+<td>avec code de traitement Rhai : portée <code>administration</code> (voir constats)</td>
+</tr>
+<tr>
+<td><code>delete_mqtt_source</code></td>
+<td>mqtt_sources.rs</td>
+<td>admin</td>
+<td><code>config_delete(mqtt_source)</code></td>
+<td>configuration</td>
+<td>couvert</td>
+<td><code>confirm</code> et <code>dry_run</code></td>
+</tr>
+<tr>
+<td><code>list_prometheus_rules</code></td>
+<td>rules_admin.rs</td>
+<td>admin</td>
+<td><code>config_list(prometheus_rule)</code></td>
+<td>lecture</td>
+<td>couvert</td>
+<td></td>
+</tr>
+<tr>
+<td><code>save_prometheus_rule</code></td>
+<td>rules_admin.rs</td>
+<td>admin</td>
+<td><code>config_upsert(prometheus_rule)</code></td>
+<td>configuration</td>
+<td>couvert</td>
+<td></td>
+</tr>
+<tr>
+<td><code>delete_prometheus_rule</code></td>
+<td>rules_admin.rs</td>
+<td>admin</td>
+<td><code>config_delete(prometheus_rule)</code></td>
+<td>configuration</td>
+<td>couvert</td>
+<td><code>confirm</code> et <code>dry_run</code></td>
+</tr>
+<tr>
+<td><code>list_grafana_rules</code></td>
+<td>rules_admin.rs</td>
+<td>admin</td>
+<td><code>config_list(grafana_rule)</code></td>
+<td>lecture</td>
+<td>couvert</td>
+<td></td>
+</tr>
+<tr>
+<td><code>save_grafana_rule</code></td>
+<td>rules_admin.rs</td>
+<td>admin</td>
+<td><code>config_upsert(grafana_rule)</code></td>
+<td>configuration</td>
+<td>couvert</td>
+<td></td>
+</tr>
+<tr>
+<td><code>delete_grafana_rule</code></td>
+<td>rules_admin.rs</td>
+<td>admin</td>
+<td><code>config_delete(grafana_rule)</code></td>
+<td>configuration</td>
+<td>couvert</td>
+<td><code>confirm</code> et <code>dry_run</code></td>
+</tr>
+<tr>
+<td><code>sync_rules</code></td>
+<td>rules_admin.rs</td>
+<td>admin</td>
+<td><code>config_upsert(prometheus_rule / grafana_rule)</code></td>
+<td>configuration</td>
+<td>couvert</td>
+<td>écriture des fichiers de règles automatique après l'enregistrement (décidé le 2026-11-16)</td>
+</tr>
+<tr>
+<td><code>list_scenes</code></td>
+<td>scenes.rs</td>
+<td>compte</td>
+<td><code>scenes_list</code></td>
+<td>lecture</td>
+<td>couvert</td>
+<td></td>
+</tr>
+<tr>
+<td><code>activate_scene</code></td>
+<td>scenes.rs</td>
+<td>compte</td>
+<td><code>scene_run</code></td>
+<td>pilotage</td>
+<td>couvert</td>
+<td></td>
+</tr>
+<tr>
+<td><code>list_scenes_admin</code></td>
+<td>scenes_admin.rs</td>
+<td>admin</td>
+<td><code>config_list(scene)</code></td>
+<td>lecture</td>
+<td>couvert</td>
+<td></td>
+</tr>
+<tr>
+<td><code>save_scene</code></td>
+<td>scenes_admin.rs</td>
+<td>admin</td>
+<td><code>config_upsert(scene)</code></td>
+<td>configuration</td>
+<td>couvert</td>
+<td></td>
+</tr>
+<tr>
+<td><code>delete_scene</code></td>
+<td>scenes_admin.rs</td>
+<td>admin</td>
+<td><code>config_delete(scene)</code></td>
+<td>configuration</td>
+<td>couvert</td>
+<td><code>confirm</code> et <code>dry_run</code></td>
+</tr>
+<tr>
+<td><code>dry_run_script</code></td>
+<td>scripts.rs</td>
+<td>admin</td>
+<td><code>script_check / automation_test</code></td>
+<td>administration</td>
+<td>couvert</td>
+<td>essai à blanc : aucun effet</td>
+</tr>
+<tr>
+<td><code>whoami</code></td>
+<td>server_fns.rs</td>
+<td>session</td>
+<td>—</td>
+<td>—</td>
+<td>exclu</td>
+<td>session web ; l'assistant n'a pas de compte</td>
+</tr>
+<tr>
+<td><code>layout_data</code></td>
+<td>server_fns.rs</td>
+<td>session</td>
+<td>—</td>
+<td>—</td>
+<td>exclu</td>
+<td>session web (barre de navigation du compte)</td>
+</tr>
+<tr>
+<td><code>logout</code></td>
+<td>server_fns.rs</td>
+<td>session</td>
+<td>—</td>
+<td>—</td>
+<td>exclu</td>
+<td>session web</td>
+</tr>
+<tr>
+<td><code>login</code></td>
+<td>server_fns.rs</td>
+<td>session</td>
+<td>—</td>
+<td>—</td>
+<td>exclu</td>
+<td>session web : les jetons remplacent la connexion</td>
+</tr>
+<tr>
+<td><code>change_password</code></td>
+<td>server_fns.rs</td>
+<td>session</td>
+<td>—</td>
+<td>—</td>
+<td>exclu</td>
+<td>comptes et mots de passe hors périmètre</td>
+</tr>
+<tr>
+<td><code>list_locations</code></td>
+<td>server_fns.rs</td>
+<td>admin</td>
+<td><code>config_list(location)</code></td>
+<td>lecture</td>
+<td>couvert</td>
+<td></td>
+</tr>
+<tr>
+<td><code>save_location</code></td>
+<td>server_fns.rs</td>
+<td>admin</td>
+<td><code>config_upsert(location)</code></td>
+<td>configuration</td>
+<td>couvert</td>
+<td></td>
+</tr>
+<tr>
+<td><code>delete_location</code></td>
+<td>server_fns.rs</td>
+<td>admin</td>
+<td><code>config_delete(location)</code></td>
+<td>configuration</td>
+<td>couvert</td>
+<td><code>confirm</code> et <code>dry_run</code></td>
+</tr>
+<tr>
+<td><code>list_navbar</code></td>
+<td>server_fns.rs</td>
+<td>admin</td>
+<td><code>config_list(navbar)</code></td>
+<td>lecture</td>
+<td>couvert</td>
+<td></td>
+</tr>
+<tr>
+<td><code>save_navbar</code></td>
+<td>server_fns.rs</td>
+<td>admin</td>
+<td><code>navbar_set</code></td>
+<td>configuration</td>
+<td>couvert</td>
+<td></td>
+</tr>
+<tr>
+<td><code>delete_navbar</code></td>
+<td>server_fns.rs</td>
+<td>admin</td>
+<td><code>navbar_set</code></td>
+<td>configuration</td>
+<td>couvert</td>
+<td><code>confirm</code> et <code>dry_run</code></td>
+</tr>
+<tr>
+<td><code>list_settings</code></td>
+<td>server_fns.rs</td>
+<td>admin</td>
+<td><code>settings_list</code></td>
+<td>administration</td>
+<td>couvert</td>
+<td>secrets : « défini » / « non défini » seulement</td>
+</tr>
+<tr>
+<td><code>save_setting</code></td>
+<td>server_fns.rs</td>
+<td>admin</td>
+<td><code>setting_set</code></td>
+<td>administration</td>
+<td>couvert</td>
+<td>secrets en écriture seule</td>
+</tr>
+<tr>
+<td><code>list_users</code></td>
+<td>server_fns.rs</td>
+<td>admin</td>
+<td>—</td>
+<td>—</td>
+<td>exclu</td>
+<td>comptes hors périmètre</td>
+</tr>
+<tr>
+<td><code>save_user</code></td>
+<td>server_fns.rs</td>
+<td>admin</td>
+<td>—</td>
+<td>—</td>
+<td>exclu</td>
+<td>comptes hors périmètre</td>
+</tr>
+<tr>
+<td><code>delete_user</code></td>
+<td>server_fns.rs</td>
+<td>admin</td>
+<td>—</td>
+<td>—</td>
+<td>exclu</td>
+<td>comptes hors périmètre</td>
+</tr>
+<tr>
+<td><code>broadcast_notification</code></td>
+<td>server_fns.rs</td>
+<td>admin</td>
+<td><code>notify_broadcast</code></td>
+<td>pilotage</td>
+<td>couvert</td>
+<td>bandeau à tous les comptes connectés (décidé le 2026-11-16)</td>
+</tr>
+<tr>
+<td><code>inject_device_state</code></td>
+<td>server_fns.rs</td>
+<td>admin</td>
+<td>—</td>
+<td>—</td>
+<td>exclu</td>
+<td>fabrique l'état d'un appareil (outil de test) : à ne pas offrir à un assistant</td>
+</tr>
+<tr>
+<td><code>dashboard_page</code></td>
+<td>server_fns.rs</td>
+<td>session</td>
+<td><code>dashboard_get</code></td>
+<td>lecture</td>
+<td>couvert</td>
+<td>tableau de bord du compte connecté : à définir pour un jeton</td>
+</tr>
+<tr>
+<td><code>create_dashboard</code></td>
+<td>server_fns.rs</td>
+<td>session</td>
+<td><code>config_upsert(dashboard)</code></td>
+<td>configuration</td>
+<td>couvert</td>
+<td>tableau de bord personnel : à définir pour un jeton</td>
+</tr>
+<tr>
+<td><code>list_weather_stations</code></td>
+<td>weather_admin.rs</td>
+<td>admin</td>
+<td><code>weather_current / config_list(weather_station)</code></td>
+<td>lecture</td>
+<td>couvert</td>
+<td></td>
+</tr>
+<tr>
+<td><code>save_weather_station</code></td>
+<td>weather_admin.rs</td>
+<td>admin</td>
+<td><code>config_upsert(weather_station)</code></td>
+<td>configuration</td>
+<td>couvert</td>
+<td></td>
+</tr>
+<tr>
+<td><code>delete_weather_station</code></td>
+<td>weather_admin.rs</td>
+<td>admin</td>
+<td><code>config_delete(weather_station)</code></td>
+<td>configuration</td>
+<td>couvert</td>
+<td><code>confirm</code> et <code>dry_run</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="les-12-fonctions-hors-catalogue-decisions-du-2026-11-16-validees-par-lutilisateur">Les 12 fonctions hors catalogue : décisions du 2026-11-16 (validées par l'utilisateur)<a class="headerlink" href="#les-12-fonctions-hors-catalogue-decisions-du-2026-11-16-validees-par-lutilisateur" title="Permanent link">&para;</a></h2>
+<ul>
+<li><code>sync_cameras</code> : outil <code>cameras_sync</code>, portée administration</li>
+<li><code>sync_camera_onvif</code> : outil <code>cameras_sync</code>, portée administration</li>
+<li><code>add_camera_by_ip</code> : exclu (interface seule)</li>
+<li><code>camera_night</code> : outil <code>camera_night</code>, portée pilotage</li>
+<li><code>list_snapshots</code> : outil <code>camera_snapshot(list)</code>, portée lecture</li>
+<li><code>delete_snapshot</code> : exclu (interface seule)</li>
+<li><code>delete_recording</code> : exclu (interface seule)</li>
+<li><code>set_manual_record</code> : outil <code>camera_record</code>, portée pilotage</li>
+<li><code>set_permit_join</code> : outil <code>zigbee_pairing</code>, portée configuration</li>
+<li><code>generate_device_dashboard</code> : outil <code>config_upsert(dashboard)</code>, portée configuration</li>
+<li><code>sync_rules</code> : outil <code>config_upsert(prometheus_rule / grafana_rule)</code>, portée configuration</li>
+<li><code>broadcast_notification</code> : outil <code>notify_broadcast</code>, portée pilotage</li>
+</ul>
+<h2 id="constats-qui-modifient-la-feuille-de-route">Constats qui modifient la feuille de route<a class="headerlink" href="#constats-qui-modifient-la-feuille-de-route" title="Permanent link">&para;</a></h2>
+<ol>
+<li><strong>Le script Rhai passe par la porte de derrière.</strong> <code>save_automation</code> (action « script ») et <code>save_mqtt_source</code> (code de traitement) acceptent du code Rhai. Avec un <code>config_upsert</code> en portée <code>configuration</code>, un jeton <code>configuration</code> écrirait des scripts, ce qui contourne le choix « scripts = <code>administration</code> » du 2026-11-13. <strong>Règle proposée</strong> : tout <code>config_upsert</code> dont la charge contient du script exige la portée <code>administration</code>.</li>
+<li><strong>La lecture de configuration demande <code>admin</code> aujourd'hui.</strong> Les 75 fonctions réservées aux administrateurs, listes de configuration comprises, exigent ce rôle. Pour MCP, <code>config_list</code> et <code>config_get</code> en portée <code>lecture</code> (comme <code>automations_list</code>) permettent un jeton de diagnostic sans droit de modification ; les secrets restent masqués. <strong>Validé le 2026-11-16.</strong></li>
+<li><strong>L'assistant intégré (R12) n'a pas de jeton</strong> : il agit au nom de la session. Le service commun doit donc recevoir un <strong>acteur</strong> (<code>Jeton{portées}</code> ou <code>Session{compte}</code>), pas seulement un compte. À prévoir dès M1 pour ne pas refaire l'extraction.</li>
+<li><strong><code>dry_run</code> sur le pilotage.</strong> R12 exige un essai à blanc pour toute action ; <code>ROADMAP-mcp.md</code> ne le prévoit que pour les suppressions et la configuration. À ajouter à <code>device_command</code> et <code>scene_run</code> (M3).</li>
+<li><strong>Pas de retour arrière.</strong> <code>dominet dump-context</code> exporte la configuration mais rien ne la réimporte : l'outil <code>rollback</code> de R12 suppose une restauration fiable, absente du catalogue de R11.</li>
+<li><strong>Messages d'erreur.</strong> Les fonctions serveur répondent « erreur interne » ou « accès refusé » : correct pour un navigateur, pauvre pour un assistant. Les validations du domaine renvoient déjà une erreur <strong>par champ</strong> ; les outils doivent la transmettre telle quelle.</li>
+<li><strong>Délai de 30 s</strong> sur tout le routeur : suffisant pour des outils qui répondent en millisecondes ; à surveiller pour <code>automation_test</code> et <code>logs_query</code>.</li>
+</ol>
+<h2 id="livre-dans-ce-lot">Livré dans ce lot<a class="headerlink" href="#livre-dans-ce-lot" title="Permanent link">&para;</a></h2>
+<p>Crate <code>dominet-mcp</code> (outil <code>system_status</code>, authentification <code>Bearer</code> provisoire <code>MCP_SPIKE_TOKEN</code>, désactivée par défaut <code>MCP_ENABLED=false</code>), montage par <code>serve(.., dominet_mcp::routes)</code>, tests de bout en bout avec un vrai client MCP (<code>cargo test -p dominet-mcp</code>), garde-fou de couverture, ADR 0058 et 0059. Voir <a href="../mcp/">Serveur MCP</a> pour l'essai avec Claude Code.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Retour en haut de la page
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.sections", "navigation.top", "content.code.copy", "search.highlight"], "search": "../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copi\u00e9 dans le presse-papier", "clipboard.copy": "Copier dans le presse-papier", "search.result.more.one": "1 de plus sur cette page", "search.result.more.other": "# de plus sur cette page", "search.result.none": "Aucun document trouv\u00e9", "search.result.one": "1 document trouv\u00e9", "search.result.other": "# documents trouv\u00e9s", "search.result.placeholder": "Taper pour d\u00e9marrer la recherche", "search.result.term.missing": "Non trouv\u00e9", "select.version": "S\u00e9lectionner la version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.a5f9d56c.min.js"></script>
+      
+    
+  </body>
+</html>

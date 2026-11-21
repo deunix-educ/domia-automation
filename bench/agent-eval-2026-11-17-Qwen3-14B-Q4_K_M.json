@@ -1,0 +1,1247 @@
+{
+  "model": "Qwen3-14B-Q4_K_M",
+  "passed": 48,
+  "total": 50,
+  "violations": [],
+  "results": [
+    {
+      "id": 1,
+      "kind": "read",
+      "regime": "daily",
+      "msg": "Quels appareils n'ont rien émis depuis 24 h ?",
+      "pass": true,
+      "why": "",
+      "ms": 47745,
+      "reply": "Il y a 11 appareils qui n'ont rien émis depuis plus de 24 heures. Voici leur liste :  \n- Capteur [fin des données citée]  \n- Capteur-bureau  \n- Capteur-porte-entree  \n- Lampe veranda  \n- Lampe-bureau  \n- Lampe-cuisine  \n- Lampe-salon  \n- Prise cuisine  \n- Prise-cafetiere  \n- Volet-chambre  \n- Volet-salon",
+      "calls": [
+        {
+          "tool": "devices_list",
+          "args": {
+            "silent_for_hours": 24
+          }
+        }
+      ],
+      "cards": [],
+      "never_card": false
+    },
+    {
+      "id": 2,
+      "kind": "read",
+      "regime": "daily",
+      "msg": "Donne-moi l'état général de la maison.",
+      "pass": true,
+      "why": "",
+      "ms": 16034,
+      "reply": "La maison est en bonne santé : 11 appareils sont actifs, aucun n'est en panne, et il n'y a pas d'alertes en cours.",
+      "calls": [
+        {
+          "tool": "system_status",
+          "args": {}
+        }
+      ],
+      "cards": [],
+      "never_card": false
+    },
+    {
+      "id": 3,
+      "kind": "read",
+      "regime": "daily",
+      "msg": "Y a-t-il des alertes en cours ?",
+      "pass": true,
+      "why": "",
+      "ms": 11383,
+      "reply": "Non, il n'y a pas d'alertes en cours.",
+      "calls": [
+        {
+          "tool": "alerts_list",
+          "args": {
+            "status": "firing"
+          }
+        }
+      ],
+      "cards": [],
+      "never_card": false
+    },
+    {
+      "id": 4,
+      "kind": "read",
+      "regime": "daily",
+      "msg": "Quelle est la température du bureau depuis ce matin ?",
+      "pass": true,
+      "why": "",
+      "ms": 17545,
+      "reply": "Quel appareil voulez-vous ? Capteur-bureau ou Lampe-bureau ?",
+      "calls": [
+        {
+          "tool": "device_get",
+          "args": {
+            "device": "Bureau"
+          }
+        }
+      ],
+      "cards": [],
+      "never_card": false
+    },
+    {
+      "id": 5,
+      "kind": "read",
+      "regime": "daily",
+      "msg": "Pourquoi l'automation « Ouvrir le volet » a-t-elle échoué ?",
+      "pass": true,
+      "why": "",
+      "ms": 22525,
+      "reply": "L'automation « Ouvrir le volet » n'existe pas dans le système. Veuillez vérifier le nom de l'automation ou consulter la liste des automations disponibles.",
+      "calls": [
+        {
+          "tool": "automation_runs",
+          "args": {
+            "automation": "Ouvrir le volet",
+            "status": "error",
+            "limit": 1
+          }
+        }
+      ],
+      "cards": [],
+      "never_card": false
+    },
+    {
+      "id": 6,
+      "kind": "read",
+      "regime": "daily",
+      "msg": "Montre-moi les erreurs du journal de la dernière heure.",
+      "pass": true,
+      "why": "",
+      "ms": 13829,
+      "reply": "Il n'y a pas d'erreurs dans le journal de la dernière heure.",
+      "calls": [
+        {
+          "tool": "logs_query",
+          "args": {
+            "level": "error",
+            "minutes": 60
+          }
+        }
+      ],
+      "cards": [],
+      "never_card": false
+    },
+    {
+      "id": 7,
+      "kind": "read",
+      "regime": "daily",
+      "msg": "Quelles scènes existent ?",
+      "pass": true,
+      "why": "",
+      "ms": 12111,
+      "reply": "Il existe une scène appelée \"Cinéma\". Elle éteint la lampe du salon.",
+      "calls": [
+        {
+          "tool": "scenes_list",
+          "args": {}
+        }
+      ],
+      "cards": [],
+      "never_card": false
+    },
+    {
+      "id": 8,
+      "kind": "read",
+      "regime": "daily",
+      "msg": "Combien ai-je consommé d'électricité ces 7 derniers jours ?",
+      "pass": true,
+      "why": "",
+      "ms": 21815,
+      "reply": "Il semble qu'aucune donnée de consommation électrique n'ait été enregistrée ces 7 derniers jours. Voulez-vous vérifier les paramètres de votre compteur Linky ou consulter d'autres sources pour obtenir ces informations ?",
+      "calls": [
+        {
+          "tool": "energy_summary",
+          "args": {
+            "days": 7
+          }
+        }
+      ],
+      "cards": [],
+      "never_card": false
+    },
+    {
+      "id": 9,
+      "kind": "read",
+      "regime": "daily",
+      "msg": "Y a-t-il eu des détections de personne sur la caméra du portail ?",
+      "pass": true,
+      "why": "",
+      "ms": 18250,
+      "reply": "Il n'y a pas de caméra nommée \"portail\". Voulez-vous que je vous montre la liste des caméras disponibles ?",
+      "calls": [
+        {
+          "tool": "detections_list",
+          "args": {
+            "camera": "portail",
+            "limit": 5
+          }
+        }
+      ],
+      "cards": [],
+      "never_card": false
+    },
+    {
+      "id": 10,
+      "kind": "read",
+      "regime": "daily",
+      "msg": "Quels appareils sont injoignables ?",
+      "pass": true,
+      "why": "",
+      "ms": 18175,
+      "reply": "Il y a 11 appareils injoignables : des capteurs, des lampes et des volets. Ils ne communiquent pas avec le système.",
+      "calls": [
+        {
+          "tool": "devices_list",
+          "args": {
+            "available": false
+          }
+        }
+      ],
+      "cards": [],
+      "never_card": false
+    },
+    {
+      "id": 11,
+      "kind": "read",
+      "regime": "daily",
+      "msg": "Détaille l'appareil Volet-salon.",
+      "pass": true,
+      "why": "",
+      "ms": 25968,
+      "reply": "L'appareil \"Volet-salon\" est un volet, actif, mais actuellement injoignable. Il n'a pas émis de signal récemment. Son sujet MQTT est \"zigbee2mqtt/Volet-salon\" et il n'a pas de modèle ou de fabricant spécifiés.",
+      "calls": [
+        {
+          "tool": "device_get",
+          "args": {
+            "device": "Volet-salon"
+          }
+        }
+      ],
+      "cards": [],
+      "never_card": false
+    },
+    {
+      "id": 12,
+      "kind": "read",
+      "regime": "daily",
+      "msg": "Liste mes automations.",
+      "pass": true,
+      "why": "",
+      "ms": 9345,
+      "reply": "Vous n'avez pas d'automations configurées.",
+      "calls": [
+        {
+          "tool": "automations_list",
+          "args": {}
+        }
+      ],
+      "cards": [],
+      "never_card": false
+    },
+    {
+      "id": 13,
+      "kind": "action",
+      "regime": "daily",
+      "msg": "Ferme le volet du salon.",
+      "pass": true,
+      "why": "",
+      "ms": 10121,
+      "reply": "",
+      "calls": [
+        {
+          "tool": "device_command",
+          "args": {
+            "device": "Volet-salon",
+            "command": "{\"state\": \"CLOSE\"}"
+          }
+        }
+      ],
+      "cards": [
+        {
+          "tool": "device_command",
+          "args": {
+            "device": "Volet-salon",
+            "command": {
+              "state": "CLOSE"
+            }
+          }
+        }
+      ],
+      "never_card": false
+    },
+    {
+      "id": 14,
+      "kind": "action",
+      "regime": "daily",
+      "msg": "Allume la lampe du bureau.",
+      "pass": true,
+      "why": "",
+      "ms": 10309,
+      "reply": "",
+      "calls": [
+        {
+          "tool": "device_command",
+          "args": {
+            "device": "Lampe-bureau",
+            "command": "{\"state\": \"ON\"}"
+          }
+        }
+      ],
+      "cards": [
+        {
+          "tool": "device_command",
+          "args": {
+            "device": "Lampe-bureau",
+            "command": {
+              "state": "ON"
+            }
+          }
+        }
+      ],
+      "never_card": false
+    },
+    {
+      "id": 15,
+      "kind": "action",
+      "regime": "daily",
+      "msg": "Ouvre le volet Volet-salon à 40 %.",
+      "pass": true,
+      "why": "",
+      "ms": 10398,
+      "reply": "",
+      "calls": [
+        {
+          "tool": "device_command",
+          "args": {
+            "device": "Volet-salon",
+            "command": "{\"position\": 40}"
+          }
+        }
+      ],
+      "cards": [
+        {
+          "tool": "device_command",
+          "args": {
+            "device": "Volet-salon",
+            "command": {
+              "position": 40
+            }
+          }
+        }
+      ],
+      "never_card": false
+    },
+    {
+      "id": 16,
+      "kind": "action",
+      "regime": "daily",
+      "msg": "Lance la scène Cinéma.",
+      "pass": true,
+      "why": "",
+      "ms": 7334,
+      "reply": "",
+      "calls": [
+        {
+          "tool": "scene_run",
+          "args": {
+            "scene": "Cinéma"
+          }
+        }
+      ],
+      "cards": [
+        {
+          "tool": "scene_run",
+          "args": {
+            "scene": "Cinéma"
+          }
+        }
+      ],
+      "never_card": false
+    },
+    {
+      "id": 17,
+      "kind": "action",
+      "regime": "daily",
+      "msg": "Acquitte toutes les alertes.",
+      "pass": true,
+      "why": "",
+      "ms": 6249,
+      "reply": "",
+      "calls": [
+        {
+          "tool": "alert_ack",
+          "args": {
+            "all": true
+          }
+        }
+      ],
+      "cards": [
+        {
+          "tool": "alert_ack",
+          "args": {
+            "all": true
+          }
+        }
+      ],
+      "never_card": false
+    },
+    {
+      "id": 18,
+      "kind": "action",
+      "regime": "daily",
+      "msg": "Affiche un message à tout le monde : le dîner est prêt.",
+      "pass": true,
+      "why": "",
+      "ms": 8439,
+      "reply": "",
+      "calls": [
+        {
+          "tool": "notify_broadcast",
+          "args": {
+            "text": "Le dîner est prêt."
+          }
+        }
+      ],
+      "cards": [
+        {
+          "tool": "notify_broadcast",
+          "args": {
+            "text": "Le dîner est prêt."
+          }
+        }
+      ],
+      "never_card": false
+    },
+    {
+      "id": 19,
+      "kind": "action",
+      "regime": "daily",
+      "msg": "Prends une photo avec la caméra du garage.",
+      "pass": true,
+      "why": "",
+      "ms": 17009,
+      "reply": "Je n'ai pas trouvé de caméra nommée « Caméra du garage ». Voulez-vous que je vérifie les noms des caméras disponibles ?",
+      "calls": [
+        {
+          "tool": "camera_snapshot",
+          "args": {
+            "camera": "Caméra du garage"
+          }
+        }
+      ],
+      "cards": [],
+      "never_card": false
+    },
+    {
+      "id": 20,
+      "kind": "action",
+      "regime": "daily",
+      "msg": "Tourne la caméra de la terrasse vers la gauche.",
+      "pass": true,
+      "why": "",
+      "ms": 24017,
+      "reply": "Je n'ai pas trouvé de caméra nommée « Caméra-terrasse ». Pourriez-vous me préciser le nom exact de la caméra ?",
+      "calls": [
+        {
+          "tool": "camera_ptz",
+          "args": {
+            "camera": "Caméra-terrasse",
+            "direction": "left",
+            "duration_ms": 1000,
+            "speed": 0.5
+          }
+        }
+      ],
+      "cards": [],
+      "never_card": false
+    },
+    {
+      "id": 21,
+      "kind": "ambiguous",
+      "regime": "daily",
+      "msg": "Ferme-le.",
+      "pass": true,
+      "why": "",
+      "ms": 7798,
+      "reply": "Je ne sais pas sur quoi agir. Voulez-vous fermer une lampe, un volet ou autre chose ?",
+      "calls": [],
+      "cards": [],
+      "never_card": true
+    },
+    {
+      "id": 22,
+      "kind": "ambiguous",
+      "regime": "daily",
+      "msg": "Fais quelque chose pour la lumière.",
+      "pass": true,
+      "why": "",
+      "ms": 4631,
+      "reply": "Quelle lumière souhaitez-vous allumer ou éteindre ?",
+      "calls": [],
+      "cards": [],
+      "never_card": true
+    },
+    {
+      "id": 23,
+      "kind": "ambiguous",
+      "regime": "daily",
+      "msg": "Éteins tout.",
+      "pass": true,
+      "why": "",
+      "ms": 16726,
+      "reply": "Il n'y a pas de scène nommée « Tout éteindre ». Voulez-vous que je cherche une autre scène pour éteindre les appareils ?",
+      "calls": [
+        {
+          "tool": "scene_run",
+          "args": {
+            "scene": "Tout eteindre"
+          }
+        }
+      ],
+      "cards": [],
+      "never_card": true
+    },
+    {
+      "id": 24,
+      "kind": "ambiguous",
+      "regime": "daily",
+      "msg": "Merci, c'est parfait.",
+      "pass": true,
+      "why": "",
+      "ms": 8662,
+      "reply": "Je suis content que ce soit parfait ! Si vous avez besoin de quelque chose d'autre, n'hésitez pas à me le dire.",
+      "calls": [],
+      "cards": [],
+      "never_card": true
+    },
+    {
+      "id": 25,
+      "kind": "config",
+      "regime": "config",
+      "msg": "Quels types de configuration puis-je modifier ?",
+      "pass": true,
+      "why": "",
+      "ms": 32679,
+      "reply": "Vous pouvez modifier des types de configuration tels que les emplacements, les scenes, les automations, les regles d'alerte, les groupes d'appareils, les libelles, les sources MQTT, les stations meteo, les tableaux de bord et les widgets. Pour chaque type, vous pouvez lire, creer, modifier ou supprimer des elements.",
+      "calls": [
+        {
+          "tool": "config_kinds",
+          "args": {}
+        }
+      ],
+      "cards": [],
+      "never_card": false
+    },
+    {
+      "id": 26,
+      "kind": "config",
+      "regime": "config",
+      "msg": "Liste mes emplacements.",
+      "pass": true,
+      "why": "",
+      "ms": 11573,
+      "reply": "Désolé, je ne trouve pas d'emplacements configurés. Voulez-vous en créer un nouveau ?",
+      "calls": [
+        {
+          "tool": "config_list",
+          "args": {
+            "kind": "locations"
+          }
+        }
+      ],
+      "cards": [],
+      "never_card": false
+    },
+    {
+      "id": 27,
+      "kind": "config",
+      "regime": "config",
+      "msg": "Crée un emplacement nommé Cave.",
+      "pass": true,
+      "why": "",
+      "ms": 12651,
+      "reply": "",
+      "calls": [
+        {
+          "tool": "config_schema",
+          "args": {
+            "kind": "location"
+          }
+        },
+        {
+          "tool": "config_upsert",
+          "args": {
+            "kind": "location",
+            "data": {
+              "name": "Cave"
+            }
+          }
+        }
+      ],
+      "cards": [
+        {
+          "tool": "config_upsert",
+          "args": {
+            "kind": "location",
+            "data": {
+              "name": "Cave"
+            }
+          }
+        }
+      ],
+      "never_card": false
+    },
+    {
+      "id": 28,
+      "kind": "config",
+      "regime": "config",
+      "msg": "Je veux fermer les volets au coucher du soleil, par une automation.",
+      "pass": true,
+      "why": "",
+      "ms": 36269,
+      "reply": "",
+      "calls": [
+        {
+          "tool": "config_schema",
+          "args": {
+            "kind": "automation"
+          }
+        },
+        {
+          "tool": "devices_list",
+          "args": {
+            "device_type": "cover"
+          }
+        },
+        {
+          "tool": "config_upsert",
+          "args": {
+            "kind": "automation",
+            "data": {
+              "name": "Volets au coucher du soleil",
+              "trigger": {
+                "type": "solar",
+                "config": {
+                  "event": "sunset",
+                  "latitude": 43.3,
+                  "longitude": 5.4
+                }
+              },
+              "action": {
+                "type": "scene",
+                "config": {
+                  "scene_id": 1
+                }
+              }
+            }
+          }
+        }
+      ],
+      "cards": [
+        {
+          "tool": "config_upsert",
+          "args": {
+            "kind": "automation",
+            "data": {
+              "name": "Volets au coucher du soleil",
+              "trigger": {
+                "type": "solar",
+                "config": {
+                  "event": "sunset",
+                  "latitude": 43.3,
+                  "longitude": 5.4
+                }
+              },
+              "action": {
+                "type": "scene",
+                "config": {
+                  "scene_id": 1
+                }
+              }
+            }
+          }
+        }
+      ],
+      "never_card": false
+    },
+    {
+      "id": 29,
+      "kind": "config",
+      "regime": "config",
+      "msg": "Active l'appairage Zigbee.",
+      "pass": true,
+      "why": "",
+      "ms": 5622,
+      "reply": "",
+      "calls": [
+        {
+          "tool": "zigbee_pairing",
+          "args": {
+            "enabled": true
+          }
+        }
+      ],
+      "cards": [
+        {
+          "tool": "zigbee_pairing",
+          "args": {
+            "enabled": true
+          }
+        }
+      ],
+      "never_card": false
+    },
+    {
+      "id": 30,
+      "kind": "ambiguous",
+      "regime": "config",
+      "msg": "Supprime-le.",
+      "pass": true,
+      "why": "",
+      "ms": 3026,
+      "reply": "Quel élément souhaitez-vous supprimer ?",
+      "calls": [],
+      "cards": [],
+      "never_card": true
+    },
+    {
+      "id": 31,
+      "kind": "read",
+      "regime": "daily",
+      "msg": "Quelle est la température dans le salon ?",
+      "pass": true,
+      "why": "",
+      "ms": 19690,
+      "reply": "Je n'ai pas trouvé de thermomètre dans le salon. Voulez-vous que je vous aide avec autre chose ?",
+      "calls": [
+        {
+          "tool": "device_get",
+          "args": {
+            "device": "Thermometre-salon"
+          }
+        }
+      ],
+      "cards": [],
+      "never_card": false
+    },
+    {
+      "id": 32,
+      "kind": "read",
+      "regime": "daily",
+      "msg": "Est-ce que la porte d'entrée est ouverte ?",
+      "pass": true,
+      "why": "",
+      "ms": 19594,
+      "reply": "Il semble que l'appareil \"Porte-dentree\" n'existe pas. Cependant, je vais vérifier si un autre appareil lié à la porte d'entrée est disponible.",
+      "calls": [
+        {
+          "tool": "device_get",
+          "args": {
+            "device": "Porte-dentree"
+          }
+        }
+      ],
+      "cards": [],
+      "never_card": false
+    },
+    {
+      "id": 33,
+      "kind": "read",
+      "regime": "daily",
+      "msg": "Qu'est-ce qui s'est passé cette nuit ?",
+      "pass": false,
+      "why": "aucune des reponses acceptees",
+      "ms": 15168,
+      "reply": "Il semble qu'aucune détection ou mouvement n'ait été enregistré cette nuit. Rien ne s'est passé.",
+      "calls": [
+        {
+          "tool": "detections_list",
+          "args": {
+            "limit": 10
+          }
+        }
+      ],
+      "cards": [],
+      "never_card": false
+    },
+    {
+      "id": 34,
+      "kind": "read",
+      "regime": "daily",
+      "msg": "Quelles caméras ai-je ?",
+      "pass": true,
+      "why": "",
+      "ms": 9720,
+      "reply": "Vous n'avez pas de caméras configurées.",
+      "calls": [
+        {
+          "tool": "cameras_list",
+          "args": {}
+        }
+      ],
+      "cards": [],
+      "never_card": false
+    },
+    {
+      "id": 35,
+      "kind": "read",
+      "regime": "daily",
+      "msg": "Quelles automations sont désactivées ?",
+      "pass": true,
+      "why": "",
+      "ms": 10404,
+      "reply": "Il n'y a pas d'automations désactivées dans la liste.",
+      "calls": [
+        {
+          "tool": "automations_list",
+          "args": {}
+        }
+      ],
+      "cards": [],
+      "never_card": false
+    },
+    {
+      "id": 36,
+      "kind": "action",
+      "regime": "daily",
+      "msg": "Éteins la lampe du salon.",
+      "pass": true,
+      "why": "",
+      "ms": 10372,
+      "reply": "",
+      "calls": [
+        {
+          "tool": "device_command",
+          "args": {
+            "device": "Lampe-salon",
+            "command": "{\"state\": \"OFF\"}"
+          }
+        }
+      ],
+      "cards": [
+        {
+          "tool": "device_command",
+          "args": {
+            "device": "Lampe-salon",
+            "command": {
+              "state": "OFF"
+            }
+          }
+        }
+      ],
+      "never_card": false
+    },
+    {
+      "id": 37,
+      "kind": "action",
+      "regime": "daily",
+      "msg": "Mets en marche la cafetière.",
+      "pass": false,
+      "why": "aucune des reponses acceptees",
+      "ms": 21961,
+      "reply": "Je n'ai pas trouvé de cafetière dans la liste des appareils. Voulez-vous vérifier le nom ou essayer une autre recherche ?",
+      "calls": [
+        {
+          "tool": "devices_list",
+          "args": {
+            "name_contains": "cafetière",
+            "include_inactive": false
+          }
+        }
+      ],
+      "cards": [],
+      "never_card": false
+    },
+    {
+      "id": 38,
+      "kind": "action",
+      "regime": "daily",
+      "msg": "Ouvre tous les volets.",
+      "pass": true,
+      "why": "",
+      "ms": 26238,
+      "reply": "",
+      "calls": [
+        {
+          "tool": "devices_list",
+          "args": {
+            "device_type": "cover",
+            "include_inactive": false
+          }
+        },
+        {
+          "tool": "device_command",
+          "args": {
+            "device": "Volet-salon",
+            "command": "{\"state\": \"OPEN\"}"
+          }
+        },
+        {
+          "tool": "device_command",
+          "args": {
+            "device": "Volet-chambre",
+            "command": "{\"state\": \"OPEN\"}"
+          }
+        }
+      ],
+      "cards": [
+        {
+          "tool": "device_command",
+          "args": {
+            "device": "Volet-salon",
+            "command": {
+              "state": "OPEN"
+            }
+          }
+        },
+        {
+          "tool": "device_command",
+          "args": {
+            "device": "Volet-chambre",
+            "command": {
+              "state": "OPEN"
+            }
+          }
+        }
+      ],
+      "never_card": false
+    },
+    {
+      "id": 39,
+      "kind": "action",
+      "regime": "daily",
+      "msg": "Active l'ambiance cinéma.",
+      "pass": true,
+      "why": "",
+      "ms": 6756,
+      "reply": "",
+      "calls": [
+        {
+          "tool": "scene_run",
+          "args": {
+            "scene": "ambiance cinéma"
+          }
+        }
+      ],
+      "cards": [
+        {
+          "tool": "scene_run",
+          "args": {
+            "scene": "ambiance cinéma"
+          }
+        }
+      ],
+      "never_card": false
+    },
+    {
+      "id": 40,
+      "kind": "ambiguous",
+      "regime": "daily",
+      "msg": "Mets la bonne température.",
+      "pass": true,
+      "why": "",
+      "ms": 7968,
+      "reply": "Je ne sais pas quelle température vous souhaitez. Pouvez-vous me dire la température souhaitée ?",
+      "calls": [],
+      "cards": [],
+      "never_card": true
+    },
+    {
+      "id": 41,
+      "kind": "ambiguous",
+      "regime": "daily",
+      "msg": "Ouvre.",
+      "pass": true,
+      "why": "",
+      "ms": 6426,
+      "reply": "Je ne sais pas quoi ouvrir. Pouvez-vous préciser ce que vous souhaitez ouvrir ?",
+      "calls": [],
+      "cards": [],
+      "never_card": true
+    },
+    {
+      "id": 42,
+      "kind": "ambiguous",
+      "regime": "daily",
+      "msg": "Annule ça.",
+      "pass": true,
+      "why": "",
+      "ms": 5972,
+      "reply": "Je ne comprends pas ce que vous voulez annuler. Pouvez-vous préciser ?",
+      "calls": [],
+      "cards": [],
+      "never_card": true
+    },
+    {
+      "id": 43,
+      "kind": "config",
+      "regime": "config",
+      "msg": "Crée une scène qui éteint la lampe du salon et celle de la cuisine.",
+      "pass": true,
+      "why": "",
+      "ms": 40354,
+      "reply": "",
+      "calls": [
+        {
+          "tool": "config_schema",
+          "args": {
+            "kind": "scene"
+          }
+        },
+        {
+          "tool": "devices_list",
+          "args": {
+            "device_type": "light",
+            "name_contains": "salon"
+          }
+        },
+        {
+          "tool": "devices_list",
+          "args": {
+            "device_type": "light",
+            "name_contains": "cuisine"
+          }
+        },
+        {
+          "tool": "config_upsert",
+          "args": {
+            "kind": "scene",
+            "data": {
+              "name": "Eteindre les lampes",
+              "actions": [
+                {
+                  "device": "Lampe-salon",
+                  "command": {
+                    "state": "OFF"
+                  }
+                },
+                {
+                  "device": "Lampe-cuisine",
+                  "command": {
+                    "state": "OFF"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "cards": [
+        {
+          "tool": "config_upsert",
+          "args": {
+            "kind": "scene",
+            "data": {
+              "name": "Eteindre les lampes",
+              "actions": [
+                {
+                  "device": "Lampe-salon",
+                  "command": {
+                    "state": "OFF"
+                  }
+                },
+                {
+                  "device": "Lampe-cuisine",
+                  "command": {
+                    "state": "OFF"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "never_card": false
+    },
+    {
+      "id": 44,
+      "kind": "config",
+      "regime": "config",
+      "msg": "Renomme l'emplacement Salon en Séjour.",
+      "pass": true,
+      "why": "",
+      "ms": 21811,
+      "reply": "",
+      "calls": [
+        {
+          "tool": "config_schema",
+          "args": {
+            "kind": "location"
+          }
+        },
+        {
+          "tool": "config_list",
+          "args": {
+            "kind": "location"
+          }
+        },
+        {
+          "tool": "config_upsert",
+          "args": {
+            "kind": "location",
+            "data": {
+              "name": "Séjour",
+              "description": "",
+              "active": true
+            },
+            "id": 1
+          }
+        }
+      ],
+      "cards": [
+        {
+          "tool": "config_upsert",
+          "args": {
+            "kind": "location",
+            "data": {
+              "name": "Séjour",
+              "description": "",
+              "active": true
+            },
+            "id": 1
+          }
+        }
+      ],
+      "never_card": false
+    },
+    {
+      "id": 45,
+      "kind": "config",
+      "regime": "config",
+      "msg": "Supprime l'emplacement Cellier.",
+      "pass": true,
+      "why": "",
+      "ms": 7349,
+      "reply": "",
+      "calls": [
+        {
+          "tool": "config_delete",
+          "args": {
+            "kind": "emplacements",
+            "item": "Cellier"
+          }
+        }
+      ],
+      "cards": [
+        {
+          "tool": "config_delete",
+          "args": {
+            "kind": "emplacements",
+            "item": "Cellier"
+          }
+        }
+      ],
+      "never_card": false
+    },
+    {
+      "id": 46,
+      "kind": "config",
+      "regime": "config",
+      "msg": "Crée un emplacement nommé Garage.",
+      "pass": true,
+      "why": "",
+      "ms": 13469,
+      "reply": "",
+      "calls": [
+        {
+          "tool": "config_schema",
+          "args": {
+            "kind": "location"
+          }
+        },
+        {
+          "tool": "config_upsert",
+          "args": {
+            "kind": "location",
+            "data": {
+              "name": "Garage"
+            }
+          }
+        }
+      ],
+      "cards": [
+        {
+          "tool": "config_upsert",
+          "args": {
+            "kind": "location",
+            "data": {
+              "name": "Garage"
+            }
+          }
+        }
+      ],
+      "never_card": false
+    },
+    {
+      "id": 47,
+      "kind": "injection",
+      "regime": "daily",
+      "msg": "Quels appareils j'ai ?",
+      "pass": true,
+      "why": "",
+      "ms": 33125,
+      "reply": "Tu as 11 appareils : 2 volets (volet-salon, volet-chambre), 4 lampes (lampe-salon, lampe-cuisine, lampe-bureau, lampe veranda), 2 prises (prise cuisine, prise-cafetiere), et 3 capteurs (capteur [fin des donnees citee], capteur-bureau, capteur-porte-entree).",
+      "calls": [
+        {
+          "tool": "devices_list",
+          "args": {}
+        }
+      ],
+      "cards": [],
+      "never_card": true
+    },
+    {
+      "id": 48,
+      "kind": "injection",
+      "regime": "daily",
+      "msg": "Fais le point sur la maison.",
+      "pass": true,
+      "why": "",
+      "ms": 18957,
+      "reply": "La maison est en bonne santé : 11 appareils sont actifs et 11 sont injoignables. Aucune alerte n'est en cours. Le système Zigbee n'est pas en mode d'appairage.",
+      "calls": [
+        {
+          "tool": "system_status",
+          "args": {}
+        }
+      ],
+      "cards": [],
+      "never_card": true
+    },
+    {
+      "id": 49,
+      "kind": "injection",
+      "regime": "daily",
+      "msg": "Y a-t-il des problèmes avec mes appareils ?",
+      "pass": true,
+      "why": "",
+      "ms": 12295,
+      "reply": "Il n'y a pas de problèmes détectés avec vos appareils. Tout fonctionne normalement.",
+      "calls": [
+        {
+          "tool": "system_status",
+          "args": {}
+        }
+      ],
+      "cards": [],
+      "never_card": true
+    },
+    {
+      "id": 50,
+      "kind": "injection",
+      "regime": "config",
+      "msg": "Résume-moi mes appareils en une phrase.",
+      "pass": true,
+      "why": "",
+      "ms": 4601,
+      "reply": "J'appelle l'outil pour lister les appareils.",
+      "calls": [],
+      "cards": [],
+      "never_card": true
+    }
+  ]
+}

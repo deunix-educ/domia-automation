@@ -1,0 +1,2356 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Domotique et videosurveillance auto-hebergees (Rust)">
+      
+      
+      
+      
+        <link rel="prev" href="../database/">
+      
+      
+        <link rel="next" href="../pitfalls/">
+      
+      
+        
+          <link rel="alternate" href="./" hreflang="en">
+        
+          <link rel="alternate" href="../fr/tests/" hreflang="fr">
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.1">
+    
+    
+      
+        <title>Tests - DomiNet — Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.57a0d79d.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.fb2fffe2.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#tests" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="DomiNet — Documentation" class="md-header__button md-logo" aria-label="DomiNet — Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            DomiNet — Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Tests
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Mode clair / Light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Mode clair / Light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Mode sombre / Dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Mode sombre / Dark mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+      <div class="md-header__option">
+  <div class="md-select">
+    
+    <button class="md-header__button md-icon" aria-label="Select language">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m12.87 15.07-2.54-2.51.03-.03A17.5 17.5 0 0 0 14.07 6H17V4h-7V2H8v2H1v2h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2zm-2.62 7 1.62-4.33L19.12 17z"/></svg>
+    </button>
+    <div class="md-select__inner">
+      <ul class="md-select__list">
+        
+          <li class="md-select__item">
+            <a href="./" hreflang="en" class="md-select__link">
+              English
+            </a>
+          </li>
+        
+          <li class="md-select__item">
+            <a href="../fr/tests/" hreflang="fr" class="md-select__link">
+              Français
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</div>
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="DomiNet — Documentation" class="md-nav__button md-logo" aria-label="DomiNet — Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    DomiNet — Documentation
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Installation
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../quick-install/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quick install
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../troubleshooting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../machines/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Supported machines
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../migration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Moving to another machine
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../licenses/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Licences
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../security/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../releasing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Releasing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../deployment/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Production deployment
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../installation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fresh install
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../dev-machine/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Development machine
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../appearance/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Appearance and customisation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Features
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Features
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../authentication/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Authentication
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../devices/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Devices
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../energy/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Energy
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../interface/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User interface
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../automations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../scenes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Scenes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../scripts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Scripts
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../mcp/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MCP server
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../assistant/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local assistant
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../alerts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Alerts
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../notifications/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Notifications
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../messaging/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Messaging
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../settings/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Settings
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../publishers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Publishers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../android/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Android
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../mqtt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MQTT
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Operations
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Operations
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../observability/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Observability
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../prometheus-grafana-rules/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Prometheus and Grafana rules
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../backups/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Backups and restore
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../database/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Database
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Development
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Development
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tests
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tests
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#rust-tests-cargo-test-workspace" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Rust tests (cargo test --workspace)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#browser-e2e-toolse2esh" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Browser E2E (tools/e2e.sh)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#adding-a-test" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Adding a test
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../pitfalls/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Pitfalls and lessons
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../measures/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Measurements
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../decisions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Decisions by theme
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../rebuild/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Rebuilding from scratch
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../mcp-audit/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Server function audit (MCP)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../bench/agent-bench-2026-11-17/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local assistant bench
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../bench/agent-bench-2026-11-17-mistral/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mistral bench
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../bench/agent-eval-2026-11-17/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Assistant evaluation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../to-improve/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    To improve
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture decisions
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Architecture decisions
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR index
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#rust-tests-cargo-test-workspace" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Rust tests (cargo test --workspace)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#browser-e2e-toolse2esh" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Browser E2E (tools/e2e.sh)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#adding-a-test" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Adding a test
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="tests">Tests<a class="headerlink" href="#tests" title="Permanent link">&para;</a></h1>
+<p>637 Rust tests + 22 browser E2E scripts (604 checks). Everything runs locally: there is no automatic CI any more
+(<a href="../adr/0015-local-gate/">ADR 0015</a>, in French).</p>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>Contents</th>
+<th>Duration</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>make ci</code></td>
+<td>formatting, clippy (server <strong>and</strong> WASM), Rust tests, <code>cargo deny</code>, <code>cargo audit</code>, <code>sqlx</code> metadata</td>
+<td>≈ 2 min warm</td>
+</tr>
+<tr>
+<td><code>make e2e</code></td>
+<td>browser E2E on <code>target/debug/dominet</code> (after <code>make front</code>)</td>
+<td>≈ 2.5 min</td>
+</tr>
+<tr>
+<td><code>make ci-full</code></td>
+<td><code>make ci</code> + Docker image (build, smoke test) + <strong>E2E on the image</strong></td>
+<td>depends on the Docker cache</td>
+</tr>
+<tr>
+<td><code>tools/stress-cold-render.sh [image] [n] [concurrency] [page]</code></td>
+<td>cold starts in a loop with concurrent requests: measures the Leptos stalled-render defect the guard works around (<a href="../adr/0021-page-render-guard/">ADR 0021</a>, in French); expected: 0 anomalies</td>
+<td>≈ 3 s per start</td>
+</tr>
+<tr>
+<td><code>make hooks</code></td>
+<td><code>pre-push</code> guard: <code>make ci</code> on a clean copy of the pushed commit</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h2 id="rust-tests-cargo-test-workspace">Rust tests (<code>cargo test --workspace</code>)<a class="headerlink" href="#rust-tests-cargo-test-workspace" title="Permanent link">&para;</a></h2>
+<p>Database tests use <code>#[sqlx::test]</code>: one isolated database per test, created on the dev stack's PostgreSQL (<code>make dev-up</code>).</p>
+<table>
+<thead>
+<tr>
+<th>Level</th>
+<th>Where</th>
+<th>Tests</th>
+<th>Covers</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Unit</td>
+<td><code>dominet-domain</code></td>
+<td>59</td>
+<td>validated types, password policy, lockout, per-field refusal reasons, grid and widgets</td>
+</tr>
+<tr>
+<td></td>
+<td><code>dominet-proto</code></td>
+<td>9</td>
+<td>message, topic and DTO format (server / browser contract)</td>
+</tr>
+<tr>
+<td></td>
+<td><code>dominet-server</code> (lib)</td>
+<td>85</td>
+<td>configuration, errors, secret encryption, WebSocket hub, CSRF</td>
+</tr>
+<tr>
+<td></td>
+<td><code>dominet-automation</code> (lib)</td>
+<td>20</td>
+<td>topic routing, burst coalescing, <strong>Rhai host</strong> (API, effects in order, all or nothing, <strong>hostile scripts</strong>: loops, recursion, giant strings / arrays / maps, <code>pad</code>, <code>eval</code>, nesting, endless effects; time limit alone; another language refused)</td>
+</tr>
+<tr>
+<td></td>
+<td><code>dominet-mqtt</code> (lib)</td>
+<td>12</td>
+<td>topic matching, payload decoding, subscription diff, publish topics, masked password, immediate failure without a broker</td>
+</tr>
+<tr>
+<td></td>
+<td><code>dominet-integrations</code> (lib)</td>
+<td>9</td>
+<td>SolarMax protocol: requests byte-identical to the reference ones, answers, scaling, half-even rounding, derived values (frozen reference vectors); Open-Meteo request and normalization</td>
+</tr>
+<tr>
+<td>Publishers</td>
+<td><code>dominet-integrations/tests</code></td>
+<td>10</td>
+<td>SolarMax client against a <strong>simulated</strong> inverter (cycle, alarms, unknown model, silence, noise, recovery, closed port); weather against a simulated API (a failing station does not stop the others, pause = shortest interval), supervision of a panicking task</td>
+</tr>
+<tr>
+<td></td>
+<td><code>dominet-web</code> (lib)</td>
+<td>21</td>
+<td>return addresses (<code>next</code>), reconnection, counted subscriptions, CSP, Lucide icons, form pairs editor</td>
+</tr>
+<tr>
+<td>Repositories and schema</td>
+<td><code>dominet-store/tests</code></td>
+<td>83</td>
+<td>schema (18, including the widget overlap exclusion), devices, history, images, sources and stations (14: constraints, MQTT-listener semantics, widget foreign key), repositories (27, including the last-administrator rule, the races on the default dashboard and on widget placement), sessions and attempts (12)</td>
+</tr>
+<tr>
+<td>API and services</td>
+<td><code>dominet-server/tests</code></td>
+<td>77</td>
+<td>authentication and lockout (20), accounts (6), settings and secrets (17), health (6), database errors (4), <strong>automation engine end to end</strong> on the dev broker (3: the production remote control moves the shutter, the production sunset / sunrise activates its scenes through the scheduler, topic without source, scene, hot disable), <strong>production heatwave rule end to end</strong> on the dev broker (1: alert, banner, badge, cooldown, resolution), <strong>production Rhai plugins and source code end to end</strong> on the dev broker (1), <strong>scene activation</strong> on the dev broker (3: command order, a failure does not stop the next, the 3 production scenes: 6 / 4 / 4 commands on the right topics)</td>
+</tr>
+<tr>
+<td>Session replay</td>
+<td><code>dominet-automation/tests/replay.rs</code></td>
+<td>4</td>
+<td>64-message session replayed one by one, in one-second batches and twice in a row: same devices, states and history as the reference result; 4,000-message burst</td>
+</tr>
+<tr>
+<td>Sources replay</td>
+<td><code>dominet-automation/tests/replay_sources.rs</code></td>
+<td>1</td>
+<td>36-item session (sources, automatic devices, reactivation, "seen" marking, prefixes, inactive sources, non-object payloads): same devices, states and history as the reference result — a single documented deviation (first message of an automatic device)</td>
+</tr>
+<tr>
+<td>Throughput</td>
+<td><code>dominet-server/tests/throughput.rs</code></td>
+<td>1</td>
+<td>2,000 messages/s for 5 s, QoS 1, end to end (dev broker → database → broadcast): last state of 50 devices kept, final lag &lt; 5 s (measured ≈ 0.1 s)</td>
+</tr>
+<tr>
+<td>MQTT sources</td>
+<td><code>dominet-automation/tests/sources.rs</code></td>
+<td>7</td>
+<td>automatic device (name without prefix, type, state replaced, reactivation), history and archive of tracked keys, inactive sources, non-object payloads, devices marked as seen</td>
+</tr>
+<tr>
+<td>Scenes, automations, alerts, energy</td>
+<td><code>dominet-store/tests/automation.rs</code></td>
+<td>10</td>
+<td>scenes (action order, transactional replacement, unique name, missing device, widget foreign key), <strong>production scenarios</strong> (3 scenes of 6 / 4 / 4 actions, 7 automations read back unchanged), counters and run journal, scheduler job, 9 solar events, alerts (firing / resolved / acknowledged), energy balance</td>
+</tr>
+<tr>
+<td>Automation engine</td>
+<td><code>dominet-automation/tests</code> (<code>matching</code>, <code>engine</code>, <code>hooks</code>)</td>
+<td>3 + 7 + 2</td>
+<td><strong>396 cases compared with frozen reference values</strong> (topic matching, condition, payload filter: les fichiers de référence); <code>device_state</code> / <code>mqtt_message</code> triggers, condition, actions, log and counters, 30/min guard, bounded queue, <strong>production automations</strong>; messages and coalesced states announced to the engine</td>
+</tr>
+<tr>
+<td>Scripts in the engine</td>
+<td><code>dominet-automation/tests/engine.rs</code></td>
+<td>(within the 10)</td>
+<td>script seeing trigger, devices and effects in order; failing or hostile script: nothing applied, journaled, engine carries on; <strong>the two production plugins ported to Rhai</strong>; source code muted after a failure</td>
+</tr>
+<tr>
+<td>Energy</td>
+<td><code>dominet-automation/tests/energy.rs</code></td>
+<td>2</td>
+<td><strong>13 days compared with frozen reference values real <code>compute_daily_energy</code></strong>` truncation); local day length (23 / 24 / 25 h)</td>
+</tr>
+<tr>
+<td>R4 acceptance</td>
+<td><code>dominet-server/tests/acceptance_r4.rs</code></td>
+<td>1</td>
+<td><strong>the whole production <code>context.yaml</code> at once</strong> (29 devices, 3 scenes, 7 automations including the 2 Rhai plugins, the heatwave rule) on the dev Mosquitto: remote, plugin, alert and banner, sunset → the scene's six commands, without getting in each other's way</td>
+</tr>
+<tr>
+<td>Alerts</td>
+<td><code>dominet-domain/tests/alerts_oracle.rs</code>, <code>dominet-automation/tests/alerts.rs</code></td>
+<td>1 + 4</td>
+<td><strong>2,030 rule evaluations compared with frozen reference values</strong>; <strong>8 alert-cycle scenarios</strong> (cooldown, acknowledgement leaving the cooldown, missing value, text, quick toggle) compared with frozen reference values <strong>after every step</strong> on a throwaway database; reference texts, restart, disabled rules, handle</td>
+</tr>
+<tr>
+<td>Android relay</td>
+<td><code>dominet-domain/tests/android_fixtures.rs</code>, <code>dominet-store/tests/android.rs</code>, <code>dominet/tests/android_ws.rs</code>, <code>dominet/tests/android_oracle.rs</code></td>
+<td>2 + 7 + 15 + 1 + 2 + E2E</td>
+<td>frames taken from the <strong>Kotlin code</strong>; repositories (hashed token, acks, timeout); endpoint on a real TCP server (token, presence, replacement, heartbeat, SMS, calls, acks, 60 s timeout, messaging, alerts, rights); <strong>21 sessions replayed against frozen reference exchanges</strong></td>
+</tr>
+<tr>
+<td>Alert channels</td>
+<td><code>dominet/tests/alert_channels.rs</code></td>
+<td>5 + E2E</td>
+<td>the <strong>real alert engine</strong> fires: email (sender, recipient, subject <code>[DomiNet Alerte …]</code>, long text), SMS (credentials, short text), push received by a connected phone, the rule's channels only, one channel failing does not affect the others, unconfigured channel skipped, automation notification (SMS only if asked)</td>
+</tr>
+<tr>
+<td>Messaging</td>
+<td><code>dominet/tests/messaging.rs</code>, <code>dominet-server</code> (unit <code>resolve_audience</code>)</td>
+<td>6 + 1 + E2E</td>
+<td>emails to a <strong>fake SMTP</strong> (sender, subject, text), SMS handed to a phone that speaks like the app, statuses before / after the ack, failures with their reason, SMS with no ack failed at 60 s, <code>message:&lt;id&gt;</code> events until done, subscription rights, recovery after restart</td>
+</tr>
+<tr>
+<td>Scheduler</td>
+<td><code>dominet-domain/tests/schedule_oracle.rs</code>, <code>dominet-automation/tests</code> (<code>schedule</code>, <code>scheduler</code>)</td>
+<td>1 + 2 + 4</td>
+<td><strong>cron and sun compared with frozen reference values</strong>: 119 sequences of six cron runs in <code>Europe/Paris</code> (daylight-saving nights, 29 February) identical to <code>TzAwareCrontab</code>, 1,036 solar events within 13 s of <code>ephem</code>; synchronisation with automations, on-time runs, no catch-up, failures, <strong>production sunset / sunrise</strong></td>
+</tr>
+<tr>
+<td>ReductStore archive</td>
+<td><code>dominet-store/tests/reduct.rs</code></td>
+<td>2</td>
+<td>records with numeric labels and distinct timestamps (disposable bucket on the dev ReductStore); unreachable server: never blocking, records counted</td>
+</tr>
+<tr>
+<td>End-to-end publishers</td>
+<td><code>dominet-server/tests/publishers.rs</code></td>
+<td>2</td>
+<td>simulated weather API and inverter → publisher → dev Mosquitto → MQTT sources → devices; without a station or <code>SOLARMAX_HOST</code> nothing is requested</td>
+</tr>
+<tr>
+<td>Context</td>
+<td><code>dominet-server/tests/context.rs</code></td>
+<td>1</td>
+<td><code>dump-context</code>: active devices sorted by type then name, state schema, YAML</td>
+</tr>
+<tr>
+<td>MQTT broker</td>
+<td><code>dominet-mqtt/tests</code></td>
+<td>6</td>
+<td>dev Mosquitto (decoded round trip, retained messages, live subscription changes, shutdown) and a <strong>throwaway Mosquitto</strong> (broker appearing after the client; 3 s outage: no accepted message lost, publications refused during the outage) — Docker required</td>
+</tr>
+<tr>
+<td>Whole application</td>
+<td><code>dominet/tests/ui.rs</code></td>
+<td>84</td>
+<td>FR/EN server rendering, guards, sign-in, password, CRUD of the four pages, permissions, secrets, CSP, cache, compression, <strong>no sensitive data in logs</strong></td>
+</tr>
+<tr>
+<td>WebSocket</td>
+<td><code>dominet/tests/ws.rs</code></td>
+<td>15</td>
+<td>real TCP server and client: session, foreign origin, limit, heartbeats, cut on sign-out, subscriptions, last state, refusals, connection independence</td>
+</tr>
+<tr>
+<td>Translations</td>
+<td><code>dominet-web/tests/i18n.rs</code></td>
+<td>3</td>
+<td>same keys in FR and EN, no used key missing, no dead key</td>
+</tr>
+</tbody>
+</table>
+<p>R1 critical paths and their tests: <strong>sign-in and lockout</strong> (<code>auth.rs</code>, <code>ui.rs</code>), <strong>sessions</strong> (revocation, fixation: <code>auth_store.rs</code>, <code>auth.rs</code>),
+<strong>administrator permissions</strong> (<code>ui.rs</code>, every server function tested anonymous and as an ordinary account), <strong>secrets</strong> (never returned: <code>settings.rs</code>, <code>ui.rs</code>),
+<strong>last administrator</strong> (<code>repos.rs</code>, <code>ui.rs</code>: race between two administrators, checked by disabling the lock), <strong>WebSocket</strong> (<code>ws.rs</code>),
+<strong>CSP and nonce</strong> (<code>ui.rs</code>), <strong>hydration</strong> (WASM name and markers in the HTML: <code>ui.rs</code>).</p>
+<h2 id="browser-e2e-toolse2esh">Browser E2E (<code>tools/e2e.sh</code>)<a class="headerlink" href="#browser-e2e-toolse2esh" title="Permanent link">&para;</a></h2>
+<p>Headless Firefox driven by Marionette (<code>tests/e2e/marionette.py</code>, no external Python dependency). The runner creates a <strong>throwaway database</strong>, a temporary
+Firefox profile and a server, replays the scripts, then deletes everything (even on failure):</p>
+<table>
+<thead>
+<tr>
+<th>Script</th>
+<th>Checks</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>home.py</code></td>
+<td>server rendering, <strong>WASM hydration</strong> (menu collapse), live translations, session</td>
+</tr>
+<tr>
+<td><code>r2.py</code></td>
+<td><strong>R2 journey through the UI only (no SQL)</strong>: dashboard created from the invitation, one widget of each type added through administration, test message and device state, live follow, pointer move, reload, occupied position refused</td>
+</tr>
+<tr>
+<td><code>dashboard_edit.py</code></td>
+<td>editing: pointer move (persistent, occupied position refused), widget administration (fields by type, overlap, sanitized HTML, deletion) and dashboards</td>
+</tr>
+<tr>
+<td><code>dashboard.py</code></td>
+<td>dashboard: creation from the invitation, class-based placement, sanitized text, Grafana (iframe, refusal, CSP), device followed live, selector without reload, small screen; prepares its widgets in SQL (<code>E2E_DB_SHELL</code>)</td>
+</tr>
+<tr>
+<td><code>auth.py</code></td>
+<td>guards, autofill, failure then success, translation, open redirect refused, password change, sign-out</td>
+</tr>
+<tr>
+<td><code>layout.py</code></td>
+<td>server-rendered sidebar, active link, remembered collapse, language, 404, sign-out</td>
+</tr>
+<tr>
+<td><code>locations.py</code>, <code>admin.py</code>, <code>users.py</code></td>
+<td>generic CRUD, navigation (the sidebar follows), settings (secret never shown), users (protections)</td>
+</tr>
+<tr>
+<td><code>mqtt.py</code></td>
+<td>MQTT → database → real time → widget: discovery (inferred type), state replacing the previous one, history, availability, ignored noise, live-changeable prefix; on the dev Mosquitto</td>
+</tr>
+<tr>
+<td><code>mqtt_sources.py</code></td>
+<td><code>/admin/mqtt-sources</code> page: add (invalid filter refused), device created by a message, state replaced, non-object payloads ignored, live deactivation and deletion</td>
+</tr>
+<tr>
+<td><code>devices.py</code></td>
+<td>administration (group, device, dropdown), <code>/automation/</code> (cards, filters), state published on the broker, commands (button, slider) received by the broker, offline, pairing, device page (topics, uploaded image reduced then deleted, curve, Grafana dashboard)</td>
+</tr>
+<tr>
+<td><code>scenes.py</code></td>
+<td>scenes (R4): administration (ordered commands, device dropdown, invalid JSON refused, order reversed), <code>/automation/scenes</code> page, activation publishing <strong>in order</strong> on the dev broker, ✓ / ✗ feedback (inactive device skipped, the rest goes out), scene widget (dropdown, button), deletion</td>
+</tr>
+<tr>
+<td><code>automations.py</code></td>
+<td>automations (R4): form by type, invalid JSON refused, state published → command published, topic without source (filter, condition), notification shown, log, 30/min guard, scheduler (every-minute cron, sunset, next run), hot disable and delete</td>
+</tr>
+<tr>
+<td>(in <code>automations.py</code>)</td>
+<td>Rhai scripts: syntax refused with the line, code in another language refused, dry run (effects, log, infinite loop interrupted), execution on a message, infinite loop while the server keeps answering, engine still alive afterwards</td>
+</tr>
+<tr>
+<td><code>alerts.py</code></td>
+<td>alerts (R4): rule created from the administration (unreadable threshold refused, decimal comma), state published → alert, live banner and badge, <code>/alerts</code> page (filters, acknowledge, acknowledge all), acknowledged alert = out of the cooldown, resolution, deleted rule: alerts stay</td>
+</tr>
+<tr>
+<td><code>energy.py</code></td>
+<td>energy (R4): counter history, <strong>the real scheduler</strong> computes yesterday (same Wh as the reference computation), <code>/automation/energy</code> page (script-free SVG, ranges, table), <code>/api/energy/</code> API, live state (production, Linky, heat pump, net balance) without reload</td>
+</tr>
+<tr>
+<td><code>weather.py</code></td>
+<td>weather stations (administration, decimal comma, latitude out of range), immediate reading on creation against a <strong>simulated</strong> API, simulated inverter → devices (MQTT source) visible on <code>/automation/</code>, disabling = no more requests; diagnostics <code>publish solarmax --print-only</code> and <code>dump-context</code></td>
+</tr>
+<tr>
+<td><code>android.py</code></td>
+<td>Android pages with a <strong>simulated phone</strong> (<code>tools/sim_android.py</code>): device added (token shown once, hashed in the database), presence, SMS and calls live, SMS written in the browser (pending / sent / failed), regenerated token (the old one cut with 4001), deletion</td>
+</tr>
+<tr>
+<td><code>messaging.py</code></td>
+<td>messaging: empty form refused, asynchronous sending, live statuses (emails to a <strong>simulated SMTP</strong> <code>tools/sim-smtp.py</code>, SMS acknowledged by hand by the simulated phone), recipient's inbox without the others' table, restricted pages, failure with no phone and its reason</td>
+</tr>
+<tr>
+<td><code>mcp.py</code></td>
+<td>MCP server (R11 M1): token created in <code>/admin/mcp</code> (form refused without a name or a scope), <strong>value shown once</strong>, real <code>/mcp</code> call with that token (<code>system_status</code>), 401 without a token or with an unknown one, revocation with confirmation then 401 from the next call, audit trail without the value, live translation</td>
+</tr>
+<tr>
+<td><code>mqtt_outage.py</code></td>
+<td>recovery after an outage: the dev Mosquitto is <strong>stopped then restarted</strong>; during the outage a command is refused immediately with a message, the server stays reachable; afterwards, without a restart, states and commands resume and the refusal message clears</td>
+</tr>
+<tr>
+<td><code>realtime.py</code></td>
+<td>CSP enforced (nonce-less script blocked), WebSocket, broadcast, device state simulator, reconnection and resubscription after a server restart</td>
+</tr>
+</tbody>
+</table>
+<p><code>tools/e2e.sh --image dominet:dev</code> (or <code>make e2e-image</code>) replays everything <strong>on the Docker image</strong>: the only test that sees the production binary (built
+in release mode) together with its WASM files. A server and a WASM compiled differently give an inert interface (see <code>PROJECT_CONTEXT.md</code>, "Pièges connus");
+only tests that really hydrate the page in a browser catch it.</p>
+<h2 id="adding-a-test">Adding a test<a class="headerlink" href="#adding-a-test" title="Permanent link">&para;</a></h2>
+<ul>
+<li>A business rule → unit test in <code>dominet-domain</code>. A SQL query → repository test (<code>dominet-store/tests</code>).</li>
+<li>A server function or a page → <code>dominet/tests/ui.rs</code> (always: anonymous, ordinary account, administrator).</li>
+<li>Behaviour that only exists in the browser (hydration, click, WebSocket, CSP) → a script in <code>tests/e2e/</code>, added to the list in <code>tools/e2e.sh</code>.
+  Forms are also tested without an <code>input</code> event (autofill).</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.sections", "navigation.top", "content.code.copy", "search.highlight"], "search": "../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.a5f9d56c.min.js"></script>
+      
+    
+  </body>
+</html>
