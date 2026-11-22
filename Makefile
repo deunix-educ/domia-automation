@@ -74,7 +74,9 @@ YOLO_SHA256 := c74cfeb94d6fe7f4ee7b4c450932e97f3bc28e53461f9fd1f4b5baa3e60e20af
 fetch-model: ## Exporte models/yolov8n.onnx (Ultralytics, conteneur jetable) et compare son empreinte
 	mkdir -p models
 	docker run --rm -v "$(CURDIR)/models:/out" -w /out python:3.13-slim sh -c "apt-get update -qq && apt-get install -y -qq --no-install-recommends libgl1 libglib2.0-0 >/dev/null && pip install --quiet --no-cache-dir --extra-index-url https://download.pytorch.org/whl/cpu ultralytics==$(ULTRALYTICS_VERSION) onnx onnxslim && yolo export model=yolov8n.pt format=onnx opset=12 simplify=True; status=\$$?; chown -R $(shell id -u):$(shell id -g) /out; exit \$$status"
-	@echo "$(YOLO_SHA256)  models/yolov8n.onnx" | sha256sum -c - || echo "NOTE : empreinte differente de celle du fichier de reference ; lancer les tests yolo_parity pour verifier les detections."
+	@got=$$(sha256sum models/yolov8n.onnx | cut -d' ' -f1); \
+	if [ "$$got" = "$(YOLO_SHA256)" ]; then echo "Modele exporte : identique au fichier de reference (sha256 $$got)."; \
+	else echo "Modele exporte (sha256 $$got)."; echo "Ce n'est pas une erreur : l'empreinte differe de la reference ($(YOLO_SHA256)), un export peut varier d'un octet."; echo "Pour verifier que les detections restent les memes : cargo test -p dominet-surveillance --test yolo_parity"; fi
 
 DEV_COMPOSE := DB_PASSWORD=dominet-dev REDUCTSTORE_TOKEN=dominet-dev-token MQTT_PASSWORD=dominet-dev GRAFANA_PASSWORD=admin docker compose -f deploy/docker-compose.yml -f deploy/docker-compose.dev.yml
 DEV_SERVICES := postgres reductstore mosquitto mediamtx
