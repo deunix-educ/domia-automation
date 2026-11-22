@@ -6,6 +6,10 @@ All notable changes are listed here. Format based on [Keep a Changelog](https://
 
 ### Changed
 - The local assistant (`make agent-install`) now defaults to port 8081, so it no longer collides with Zigbee2MQTT and the demo on 8080. Set `AGENT_LLM_URL` accordingly.
+- `make fetch-model` explains clearly that a different checksum is not an error and points to the `yolo_parity` test.
+
+### Added
+- The installer and `make prod-doctor` detect a PostgreSQL volume left by an earlier installation (a new `.env` cannot open it) and say how to keep or erase it.
 
 ## [1.0.0] - 2026-11-21
 

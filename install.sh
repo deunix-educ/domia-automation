@@ -103,6 +103,8 @@ EN[env_exists]="%s already exists: it will not be overwritten"
 FR[env_exists]="%s existe déjà : il ne sera pas écrasé"
 EN[env_reuse_hint]="rerun with --reuse to keep it and only deploy, or delete it by hand to start over"
 FR[env_reuse_hint]="relancez avec --reuse pour le garder et seulement déployer, ou supprimez-le à la main pour recommencer"
+EN[old_volume]="a database volume (%s) from an earlier installation exists, but there is no %s: a new password would be refused by the old database. To keep that data, put the old .env back and run ./install.sh --reuse. To start from scratch (this ERASES that data): make prod-down, then docker volume rm %s"
+FR[old_volume]="un volume de base de données (%s) d'une installation précédente existe, mais il n'y a pas de %s : un nouveau mot de passe serait refusé par l'ancienne base. Pour garder ces données, remettez l'ancien .env et lancez ./install.sh --reuse. Pour repartir de zéro (cela EFFACE ces données) : make prod-down, puis docker volume rm %s"
 EN[blocked]="%s blocking problem(s): fix them and run ./install.sh again."
 FR[blocked]="%s problème(s) bloquant(s) : corrigez-les et relancez ./install.sh."
 EN[q_domain]="Address the devices will use to reach the house"
@@ -297,6 +299,12 @@ fi
 if [ -f "$ENV_FILE" ] && grep -qE '^DB_PASSWORD=.+' "$ENV_FILE"; then
   if [ "$REUSE" = 1 ]; then ok "$(t env_exists "$ENV_FILE")"
   else block "$(t env_exists "$ENV_FILE"); $(t env_reuse_hint)"; fi
+fi
+
+# A PostgreSQL volume only learns its password when it is created: a new .env next to an old volume can never log in.
+if [ ! -f "$ENV_FILE" ] || ! grep -qE '^DB_PASSWORD=.+' "$ENV_FILE"; then
+  pg_volume="${PROJECT:-dominet}_postgres-data"
+  if docker volume inspect "$pg_volume" >/dev/null 2>&1; then block "$(t old_volume "$pg_volume" "$ENV_FILE" "$pg_volume")"; fi
 fi
 
 if [ "$BLOCKS" -gt 0 ]; then say ""; t blocked "$BLOCKS"; say ""; exit 1; fi

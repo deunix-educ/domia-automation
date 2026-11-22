@@ -18,6 +18,7 @@ It checks the machine (configuration file, disk space, certificate), the service
 | Camera passwords are refused | `DOMINET_MASTER_KEY` is empty or was replaced | Restore the original key from your copy; a new key cannot read old secrets |
 | The first start is very long | The image is being built locally | Normal on a small machine (15 to 40 minutes); published images avoid it |
 | A service restarts in a loop | See its log | `make prod-logs S=<service> N=100` |
+| `password authentication failed for user "dominet"` (the `migrate` service fails, nothing else starts); the installer says "a database volume from an earlier installation exists" | The PostgreSQL volume was created by an earlier installation with another password; a new `.env` cannot open it | Put the old `.env` back and run `./install.sh --reuse`. To start from scratch (**erases that data**): `make prod-down`, then `docker volume rm dominet_postgres-data` |
 | No data from devices | MQTT or Zigbee2MQTT | `make prod-doctor`, then `make prod-logs S=mosquitto N=50` |
 
 ## Asking for help

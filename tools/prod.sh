@@ -294,6 +294,9 @@ cmd_doctor() {
   else att "no certificate in $CERTS_DIR (make certs)"; fi
   say ""; say "== Services"
   if ! compose ps >/dev/null 2>&1; then att "the stack does not answer (is it started? make prod-up)"; else
+    if { compose logs --no-log-prefix --tail 40 migrate postgres 2>/dev/null || true; } | grep -q 'password authentication failed'; then
+      bad "the database refuses the password of $ENV_FILE: its volume was created by an earlier installation with another password. Fix: put the old .env back, or erase the data (make prod-down, then docker volume rm ${PROJECT}_postgres-data) and run make prod-up."
+    fi
     local services running restarting unhealthy
     services="$(compose config --services 2>/dev/null | grep -vxE 'init|migrate' || true)"
     running="$(compose ps --status running --services 2>/dev/null || true)"

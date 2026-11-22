@@ -20,6 +20,7 @@ good_docker() {
   "info "*) echo /var/lib/docker; exit 0;;
   "version -f") echo 27.0.0; exit 0;;
   "compose version") echo v2.30.0; exit 0;;
+  "volume inspect") [ -n "$STUB_VOLUME" ] && exit 0; exit 1;;
 esac
 case "$1" in info) echo /var/lib/docker;; version) echo 27.0.0;; esac; exit 0'
 }
@@ -79,6 +80,11 @@ ENVF="$W/existing.env" run_install --domain home.local; [ "$RC" != 0 ]; check "e
 has "rerun with --reuse";                                 check "existing .env: suggests --reuse" $?
 ENVF="$W/existing.env" run_install --reuse;               check "existing .env with --reuse: accepted" "$RC"
 
+STUB_VOLUME=1 run_install --domain home.local; [ "$RC" != 0 ]; check "old database volume without .env: blocks" $?
+has "ERASES";                                             check "old database volume: warns that the fix erases data" $?
+has "dominet_postgres-data";                              check "old database volume: names the volume" $?
+STUB_VOLUME=1 ENVF="$W/existing.env" run_install --reuse; check "old database volume with the old .env (--reuse): accepted" "$RC"
+
 PASS=short run_install --domain home.local; [ "$RC" = 2 ]; check "short password: refused with --yes" $?
 PASS="" run_install --domain home.local; [ "$RC" = 2 ];   check "missing password: refused with --yes" $?
 PASS=1234567890123 run_install --domain home.local; [ "$RC" = 2 ]; check "numeric-only password: refused with --yes" $?
@@ -123,6 +129,14 @@ has "BLOCKING  postgres is unhealthy";                    check "doctor: names a
 has "OK        dominet running";                          check "doctor: lists a healthy service as OK" $?
 has "make prod-logs S=mosquitto";                         check "doctor: gives the command to read the log" $?
 ! grep -q "DB_PASSWORD\|=abc" "$W/out";                  check "doctor: shows no secret" $?
+
+stub docker 'case "$*" in
+  *" logs "*) echo "FATAL: password authentication failed for user \"dominet\"";;
+esac; exit 0'
+PATH="$W/bin:$PATH" ENV_FILE="$W/doc.env" CERTS_DIR="$W/nocerts" tools/prod.sh doctor > "$W/out" 2>&1; RC=$?
+[ "$RC" != 0 ];                                           check "doctor: refused database password blocks" $?
+has "BLOCKING  the database refuses the password";        check "doctor: explains the old volume with another password" $?
+has "docker volume rm dominet_postgres-data";             check "doctor: gives the command that starts over" $?
 
 after="$(git status --porcelain 2>/dev/null | md5sum)"
 [ "$before" = "$after" ];                                 check "a dry run leaves the working tree untouched" $?
