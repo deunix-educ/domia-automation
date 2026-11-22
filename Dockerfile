@@ -57,6 +57,9 @@ COPY docs ./docs
 RUN NO_MKDOCS_2_WARNING=1 mkdocs build --strict
 
 FROM debian:trixie-slim
+LABEL org.opencontainers.image.source="https://github.com/deunix-educ/domia-automation" \
+      org.opencontainers.image.licenses="AGPL-3.0-or-later" \
+      org.opencontainers.image.description="Self-hosted home automation hub"
 # Certificats racine : le client HTTP de ReductStore (rustls) refuse de se construire sans eux, et les appels HTTPS (meteo) en ont besoin.
 # postgresql-client : `dominet backup` / `dominet restore` (pg_dump, psql ; ADR 0054).
 # ffmpeg : le role `video` decode les flux de MediaMTX (ADR 0003 et 0048). Le dossier des snapshots (volume en production) appartient a l'utilisateur de l'application.
