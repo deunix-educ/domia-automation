@@ -11,6 +11,9 @@ All notable changes are listed here. Format based on [Keep a Changelog](https://
 ### Added
 - The installer and `make prod-doctor` detect a PostgreSQL volume left by an earlier installation (a new `.env` cannot open it) and say how to keep or erase it.
 
+### Fixed
+- The installer no longer builds the alert sender address from an IP address (`dominet@192.168.1.104`): Grafana refused to start with it. `make prod-doctor` reports an existing `.env` with that problem.
+
 ## [1.0.0] - 2026-11-21
 
 First public release.

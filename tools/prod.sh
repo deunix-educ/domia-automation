@@ -277,6 +277,10 @@ cmd_doctor() {
   if [ ! -f "$ENV_FILE" ]; then bad "$ENV_FILE is missing. Fix: ./install.sh (or make prod-init)."; else
     ok "$ENV_FILE present"
     [ "$(stat -c %a "$ENV_FILE")" = 600 ] && ok "$ENV_FILE is readable by you only" || att "$ENV_FILE permissions are $(stat -c %a "$ENV_FILE"): chmod 600 $ENV_FILE"
+    case "$(val DEFAULT_FROM_EMAIL)" in
+      *@*[!0-9.]*|"") ;;
+      *@*) bad "DEFAULT_FROM_EMAIL ends with an IP address: Grafana refuses to start (invalid SMTP from_address). Fix: use a name, for example dominet@dominet.local, then make prod-up." ;;
+    esac
     [ -n "$(val DOMINET_MASTER_KEY)" ] && ok "DOMINET_MASTER_KEY set (is it copied off this machine?)" || att "DOMINET_MASTER_KEY is empty"
   fi
   if ! docker info >/dev/null 2>&1; then bad "Docker is not reachable (daemon stopped, or user not in the docker group)."; else

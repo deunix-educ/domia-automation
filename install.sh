@@ -356,16 +356,20 @@ if [ "$YES" = 0 ]; then
   case "${yn:-y}" in n|N|non|Non|no|No) say "$(t cancelled)"; exit 0 ;; esac
 fi
 
+# Sender address of the alert e-mails. Grafana refuses to start with an IP address as the domain part, so use a name then.
+from_address() { case "$DOMAIN" in *[!0-9.]*) case "$DOMAIN" in *:*) echo "dominet@dominet.local" ;; *) echo "dominet@$DOMAIN" ;; esac ;; *) echo "dominet@dominet.local" ;; esac; }
+
 # ---------------------------------------------------------------- 3. configuration
 say ""; say "== $(t step_conf)"
 if [ "$REUSE" = 0 ]; then
   CURRENT_STEP="make prod-init"
   if [ "$DRY" = 1 ]; then
     printf '  %s\n' "$(t would "LAN_DOMAIN=$DOMAIN make prod-init")"
+    [ -z "$EMAIL" ] || printf '  %s\n' "$(t would "DEFAULT_FROM_EMAIL=$(from_address)")"
   else
     LAN_DOMAIN="$DOMAIN" make prod-init >/dev/null
     ok "$ENV_FILE"
-    [ -z "$EMAIL" ] || { setvar EMAIL_RECIPIENT "$EMAIL"; setvar DEFAULT_FROM_EMAIL "dominet@$DOMAIN"; }
+    [ -z "$EMAIL" ] || { setvar EMAIL_RECIPIENT "$EMAIL"; setvar DEFAULT_FROM_EMAIL "$(from_address)"; }
     if [ "$NOZIGBEE" = 1 ]; then setvar ZIGBEE_DEVICE ""; fi
   fi
 else

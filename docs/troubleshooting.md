@@ -18,6 +18,7 @@ It checks the machine (configuration file, disk space, certificate), the service
 | Camera passwords are refused | `DOMINET_MASTER_KEY` is empty or was replaced | Restore the original key from your copy; a new key cannot read old secrets |
 | The first start is very long | The image is being built locally | Normal on a small machine (15 to 40 minutes); published images avoid it |
 | A service restarts in a loop | See its log | `make prod-logs S=<service> N=100` |
+| Grafana restarts and the log says `invalid email address for SMTP from_address config` (nginx and the application then wait for it) | `DEFAULT_FROM_EMAIL` ends with an IP address (for example `dominet@192.168.1.104`) | Set `DEFAULT_FROM_EMAIL=dominet@dominet.local` in `.env`, then `make prod-up`. `make prod-doctor` reports it |
 | `password authentication failed for user "dominet"` (the `migrate` service fails, nothing else starts); the installer says "a database volume from an earlier installation exists" | The PostgreSQL volume was created by an earlier installation with another password; a new `.env` cannot open it | Put the old `.env` back and run `./install.sh --reuse`. To start from scratch (**erases that data**): `make prod-down`, then `docker volume rm dominet_postgres-data` |
 | No data from devices | MQTT or Zigbee2MQTT | `make prod-doctor`, then `make prod-logs S=mosquitto N=50` |
 
