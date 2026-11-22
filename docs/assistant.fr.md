@@ -28,7 +28,7 @@ Dans **Administration › Réglages**, catégorie **Assistant** :
 | Réglage | Valeur |
 |---|---|
 | `AGENT_ENABLED` | `true` |
-| `AGENT_LLM_URL` | `http://<machine d'inférence>:8080` |
+| `AGENT_LLM_URL` | `http://<machine d'inférence>:8081` (port par défaut de `make agent-install` ; le 8080 reste à Zigbee2MQTT et à la démo) |
 | `AGENT_MODEL` | `Qwen3-8B-Q4_K_M` |
 | `AGENT_MODEL_ADMIN` | vide (même modèle) |
 

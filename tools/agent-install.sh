@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # Installe l'assistant local sur la machine d'inference : modele Qwen3-8B + service systemd (utilisateur) pour llama-server.
-# Usage : tools/agent-install.sh --llama-dir <dossier de llama-server> [--models-dir D] [--port 8080] [--host 0.0.0.0] [--dry-run]
+# Usage : tools/agent-install.sh --llama-dir <dossier de llama-server> [--models-dir D] [--port 8081] [--host 0.0.0.0] [--dry-run]
 # Rien n'est lance en root ; le service est cree dans ~/.config/systemd/user.
 set -euo pipefail
 
 MODEL_FILE="Qwen3-8B-Q4_K_M.gguf"
 MODEL_URL="https://huggingface.co/Qwen/Qwen3-8B-GGUF/resolve/main/${MODEL_FILE}"
 MODELS_DIR="$HOME/IA/models"
-PORT=8080
+PORT=8081
 HOST=127.0.0.1
 LLAMA_DIR=""
 DRY=0

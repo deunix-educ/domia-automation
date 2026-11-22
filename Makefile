@@ -106,7 +106,7 @@ agent-eval: ## Evaluation de l'assistant local (R12 A5, 51 demandes) : LLAMA_DIR
 	python3 tools/agent-bench/eval.py --llama-dir "$(LLAMA_DIR)" --models-dir "$(or $(MODELS_DIR),$$HOME/IA/models)" \
 	  $(if $(AGENT_EVAL_MODELS),--models "$(AGENT_EVAL_MODELS)") --out "docs/bench/agent-eval-$$(hostname)-$$(date +%F).md"
 
-agent-install: ## Installe l'assistant local sur la machine d'inference (R12 A6) : LLAMA_DIR=<dossier de llama-server> [MODELS_DIR=...] [AGENT_PORT=8080] [AGENT_HOST=0.0.0.0] [DRY=1]
+agent-install: ## Installe l'assistant local sur la machine d'inference (R12 A6) : LLAMA_DIR=<dossier de llama-server> [MODELS_DIR=...] [AGENT_PORT=8081] [AGENT_HOST=0.0.0.0] [DRY=1]
 	@test -n "$(LLAMA_DIR)" || { echo "LLAMA_DIR=<dossier de llama-server> requis"; exit 1; }
 	tools/agent-install.sh --llama-dir "$(LLAMA_DIR)" $(if $(MODELS_DIR),--models-dir "$(MODELS_DIR)") \
 	  $(if $(AGENT_PORT),--port "$(AGENT_PORT)") $(if $(AGENT_HOST),--host "$(AGENT_HOST)") $(if $(DRY),--dry-run)

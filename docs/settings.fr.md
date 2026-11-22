@@ -19,7 +19,7 @@ groupés par catégorie. Un réglage absent de la base prend sa **valeur par dé
 | Interface | `MEDIAMTX_WEBRTC_SCHEME` | str | `http` |
 | MQTT | `Z2M_BASE_TOPIC` | str | `zigbee2mqtt` |
 | Assistant | `AGENT_ENABLED` | bool | `false` — active la page Assistant (R12) |
-| Assistant | `AGENT_LLM_URL` | str | *(vide)* — adresse de `llama-server`, ex. `http://192.168.1.20:8080` |
+| Assistant | `AGENT_LLM_URL` | str | *(vide)* — adresse de `llama-server`, ex. `http://192.168.1.20:8081` |
 | Assistant | `AGENT_MODEL` | str | `Qwen3-8B-Q4_K_M` — demandes courantes |
 | Assistant | `AGENT_MODEL_ADMIN` | str | *(vide)* — modèle des demandes de configuration ; vide = le même que `AGENT_MODEL` |
 

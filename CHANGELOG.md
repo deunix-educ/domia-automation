@@ -2,6 +2,11 @@
 
 All notable changes are listed here. Format based on [Keep a Changelog](https://keepachangelog.com/); versions follow [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Changed
+- The local assistant (`make agent-install`) now defaults to port 8081, so it no longer collides with Zigbee2MQTT and the demo on 8080. Set `AGENT_LLM_URL` accordingly.
+
 ## [1.0.0] - 2026-11-21
 
 First public release.

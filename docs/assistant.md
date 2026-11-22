@@ -28,7 +28,7 @@ In **Administration › Settings**, category **Assistant**:
 | Setting | Value |
 |---|---|
 | `AGENT_ENABLED` | `true` |
-| `AGENT_LLM_URL` | `http://<inference machine>:8080` |
+| `AGENT_LLM_URL` | `http://<inference machine>:8081` (the default port of `make agent-install`; 8080 is left to Zigbee2MQTT and the demo) |
 | `AGENT_MODEL` | `Qwen3-8B-Q4_K_M` |
 | `AGENT_MODEL_ADMIN` | empty (same model) |
 

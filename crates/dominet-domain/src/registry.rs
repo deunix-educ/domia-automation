@@ -162,7 +162,7 @@ pub const SETTINGS: [SettingSpec; 17] = [
         "AGENT_LLM_URL",
         Str,
         "Assistant",
-        "Model server address (llama-server), e.g. http://192.168.1.20:8080",
+        "Model server address (llama-server), e.g. http://192.168.1.20:8081",
         "",
     ),
     spec(
