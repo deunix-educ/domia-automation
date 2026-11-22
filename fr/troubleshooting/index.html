@@ -1965,6 +1965,16 @@
 <td><code>make prod-logs S=&lt;service&gt; N=100</code></td>
 </tr>
 <tr>
+<td>Grafana redémarre et le journal dit <code>invalid email address for SMTP from_address config</code> (nginx et l'application l'attendent)</td>
+<td><code>DEFAULT_FROM_EMAIL</code> se termine par une adresse IP (par exemple <code>dominet@192.168.1.104</code>)</td>
+<td>Mettre <code>DEFAULT_FROM_EMAIL=dominet@dominet.local</code> dans <code>.env</code>, puis <code>make prod-up</code>. <code>make prod-doctor</code> le signale</td>
+</tr>
+<tr>
+<td><code>password authentication failed for user "dominet"</code> (le service <code>migrate</code> échoue, rien d'autre ne démarre) ; l'installeur dit « un volume de base de données d'une installation précédente existe »</td>
+<td>Le volume PostgreSQL a été créé par une installation précédente avec un autre mot de passe ; un nouveau <code>.env</code> ne peut pas l'ouvrir</td>
+<td>Remettre l'ancien <code>.env</code> et lancer <code>./install.sh --reuse</code>. Pour repartir de zéro (<strong>efface ces données</strong>) : <code>make prod-down</code>, puis <code>docker volume rm dominet_postgres-data</code></td>
+</tr>
+<tr>
 <td>Aucune donnée des appareils</td>
 <td>MQTT ou Zigbee2MQTT</td>
 <td><code>make prod-doctor</code>, puis <code>make prod-logs S=mosquitto N=50</code></td>
