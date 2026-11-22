@@ -124,6 +124,9 @@ cmd_guard() {
   if [ -n "$(val WG_ADMIN_HASH)" ] && [ -z "$(val DYNDNS_HOST)" ]; then die "WG_ADMIN_HASH renseigne mais DYNDNS_HOST vide (VPN)."; fi
   local zdev; zdev="$(val ZIGBEE_DEVICE)"
   if [ -n "$zdev" ] && [ -e "$zdev" ] && [ -z "$(val ZIGBEE_AUTH_TOKEN)" ]; then die "dongle $zdev present mais ZIGBEE_AUTH_TOKEN vide."; fi
+  if [ -n "$zdev" ] && [ -e "$zdev" ] && [ ! -f "$DEPLOY/zigbee2mqtt/coordinator_backup.json" ] && [ ! -f "$DEPLOY/zigbee2mqtt/database.db" ]; then
+    say "  Attention : le dossier $DEPLOY/zigbee2mqtt est vide et le dongle $zdev est branche. S'il contient deja un reseau Zigbee (appareils appaires, autre installation), Zigbee2MQTT va en creer un NOUVEAU dessus et les appareils seront perdus : copiez d'abord le dossier Zigbee2MQTT d'origine (database.db, coordinator_backup.json, configuration.yaml) ou utilisez make prod-import. Dongle neuf : ignorez ce message."
+  fi
   if grep -qE '^[A-Z_0-9]+==' "$ENV_FILE" 2>/dev/null; then
     say "  Attention : « == » (double signe egal) dans $ENV_FILE, la valeur commencerait par « = » : $(grep -E '^[A-Z_0-9]+==' "$ENV_FILE" | cut -d= -f1 | tr '\n' ' ')"
   fi
@@ -300,6 +303,9 @@ cmd_doctor() {
   if ! compose ps >/dev/null 2>&1; then att "the stack does not answer (is it started? make prod-up)"; else
     if { compose logs --no-log-prefix --tail 40 migrate postgres 2>/dev/null || true; } | grep -q 'password authentication failed'; then
       bad "the database refuses the password of $ENV_FILE: its volume was created by an earlier installation with another password. Fix: put the old .env back, or erase the data (make prod-down, then docker volume rm ${PROJECT}_postgres-data) and run make prod-up."
+    fi
+    if { compose logs --no-log-prefix --tail 60 zigbee2mqtt 2>/dev/null || true; } | grep -q 'network commissioning timed out'; then
+      bad "Zigbee2MQTT cannot create its Zigbee network on the dongle (network commissioning timed out). First stop it so it stops retrying: docker stop ${PROJECT}-zigbee2mqtt-1. If this dongle already held a network with paired devices, restore its Zigbee2MQTT folder (database.db, coordinator_backup.json, configuration.yaml) before anything else. Otherwise unplug and replug the dongle (USB 2.0 port, extension cable), then make prod-up."
     fi
     local services running restarting unhealthy
     services="$(compose config --services 2>/dev/null | grep -vxE 'init|migrate' || true)"

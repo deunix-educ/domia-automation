@@ -88,6 +88,12 @@ STUB_VOLUME=1 ENVF="$W/existing.env" run_install --reuse; check "old database vo
 run_install --domain 192.168.1.50 --email me@example.org; has "DEFAULT_FROM_EMAIL=dominet@dominet.local"; check "IP address as domain: the sender gets a name (Grafana refuses an IP)" $?
 run_install --domain home.local --email me@example.org; has "DEFAULT_FROM_EMAIL=dominet@home.local"; check "name as domain: the sender uses it" $?
 
+mkdir -p "$W/zempty" "$W/zfull"; : > "$W/zdev"; : > "$W/zfull/database.db"
+INSTALL_ZIGBEE_DEVICES="$W/zdev" INSTALL_ZIGBEE_DIR="$W/zempty" run_install --domain home.local; [ "$RC" = 0 ]; check "dongle with an empty Zigbee2MQTT folder: warning only" $?
+has "would create a NEW\|would be lost";                 check "dongle with an empty folder: says paired devices would be lost" $?
+INSTALL_ZIGBEE_DEVICES="$W/zdev" INSTALL_ZIGBEE_DIR="$W/zfull" run_install --domain home.local; ! has "would be lost"; check "dongle with a restored folder: no warning" $?
+INSTALL_ZIGBEE_DEVICES="$W/none" INSTALL_ZIGBEE_DIR="$W/zempty" run_install --domain home.local; ! has "would be lost"; check "no dongle: no warning" $?
+
 PASS=short run_install --domain home.local; [ "$RC" = 2 ]; check "short password: refused with --yes" $?
 PASS="" run_install --domain home.local; [ "$RC" = 2 ];   check "missing password: refused with --yes" $?
 PASS=1234567890123 run_install --domain home.local; [ "$RC" = 2 ]; check "numeric-only password: refused with --yes" $?
@@ -148,6 +154,13 @@ has "BLOCKING  DEFAULT_FROM_EMAIL ends with an IP address"; check "doctor: a sen
 printf 'DB_PASSWORD=x\nDEFAULT_FROM_EMAIL=dominet@home.local\n' > "$W/ok.env"; chmod 600 "$W/ok.env"
 PATH="$W/bin:$PATH" ENV_FILE="$W/ok.env" CERTS_DIR="$W/nocerts" tools/prod.sh doctor > "$W/out" 2>&1
 ! has "DEFAULT_FROM_EMAIL";                               check "doctor: a sender with a name is not reported" $?
+
+stub docker 'case "$*" in
+  *" logs "*) echo "error: z2m: Error: network commissioning timed out - most likely network with the same panId";;
+esac; exit 0'
+PATH="$W/bin:$PATH" ENV_FILE="$W/ok.env" CERTS_DIR="$W/nocerts" tools/prod.sh doctor > "$W/out" 2>&1
+has "BLOCKING  Zigbee2MQTT cannot create its Zigbee network"; check "doctor: a failed Zigbee network creation blocks" $?
+has "docker stop dominet-zigbee2mqtt-1";                  check "doctor: tells to stop the retries first" $?
 
 after="$(git status --porcelain 2>/dev/null | md5sum)"
 [ "$before" = "$after" ];                                 check "a dry run leaves the working tree untouched" $?

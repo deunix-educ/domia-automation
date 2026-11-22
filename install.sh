@@ -129,6 +129,8 @@ EN[q_email]="E-mail address for alerts (empty = none for now)"
 FR[q_email]="Adresse e-mail des alertes (vide = aucune pour l'instant)"
 EN[zigbee_found]="Zigbee dongle detected on %s: Zigbee2MQTT will be enabled"
 FR[zigbee_found]="Clé Zigbee détectée sur %s : Zigbee2MQTT sera activé"
+EN[zigbee_fresh]="the dongle on %s may already hold a Zigbee network with paired devices, and the Zigbee2MQTT folder (%s) is empty: Zigbee2MQTT would create a NEW network on it and the paired devices would be lost. If the dongle comes from another installation, copy that installation's Zigbee2MQTT folder (database.db, coordinator_backup.json, configuration.yaml) there first, or use make prod-import. If the dongle is new, ignore this."
+FR[zigbee_fresh]="la clé sur %s peut déjà contenir un réseau Zigbee avec des appareils appairés, et le dossier Zigbee2MQTT (%s) est vide : Zigbee2MQTT créerait un NOUVEAU réseau dessus et les appareils appairés seraient perdus. Si la clé vient d'une autre installation, copiez d'abord le dossier Zigbee2MQTT de celle-ci (database.db, coordinator_backup.json, configuration.yaml), ou utilisez make prod-import. Si la clé est neuve, ignorez ce message."
 EN[zigbee_none]="no Zigbee dongle detected: Zigbee2MQTT stays off (you can add one later)"
 FR[zigbee_none]="aucune clé Zigbee détectée : Zigbee2MQTT reste désactivé (vous pourrez en ajouter une plus tard)"
 EN[zigbee_off]="Zigbee2MQTT disabled by --no-zigbee"
@@ -319,8 +321,12 @@ EMAIL="$EMAIL_ARG"
 zdev=""
 if [ "$NOZIGBEE" = 1 ]; then ok "$(t zigbee_off)"
 else
-  for d in /dev/ttyUSB0 /dev/ttyACM0; do [ -e "$d" ] && { zdev="$d"; break; }; done
-  if [ -n "$zdev" ]; then ok "$(t zigbee_found "$zdev")"; else ok "$(t zigbee_none)"; fi
+  for d in ${INSTALL_ZIGBEE_DEVICES:-/dev/ttyUSB0 /dev/ttyACM0}; do [ -e "$d" ] && { zdev="$d"; break; }; done
+  if [ -n "$zdev" ]; then
+    ok "$(t zigbee_found "$zdev")"
+    zdir="${INSTALL_ZIGBEE_DIR:-deploy/zigbee2mqtt}"
+    if [ ! -f "$zdir/coordinator_backup.json" ] && [ ! -f "$zdir/database.db" ]; then warn "$(t zigbee_fresh "$zdev" "$zdir")"; fi
+  else ok "$(t zigbee_none)"; fi
 fi
 if [ -e /dev/dri/renderD128 ]; then ok "$(t video_hw)"; else ok "$(t video_sw)"; fi
 
