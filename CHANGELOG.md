@@ -7,6 +7,9 @@ All notable changes are listed here. Format based on [Keep a Changelog](https://
 ### Added
 - The installer and `make prod-up` warn when a Zigbee dongle is plugged in but the Zigbee2MQTT folder is empty (a new network would replace the one on the dongle), and `make prod-doctor` reports a failed network creation and says to stop the retries first.
 
+### Fixed
+- `make prod-import` writes the Zigbee2MQTT folder even when the container left root-owned files in it, refuses (without `--yes`) when a database volume or services of the project already exist, removes them with `--yes`, and has `--no-zigbee` for a rehearsal next to a running production.
+
 ## [1.0.1] - 2026-11-22
 
 ### Changed

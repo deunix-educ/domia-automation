@@ -7,7 +7,7 @@
 #
 #   tools/migrate-pack.sh export [--out DIR] [--no-backup] [--skip-reductstore] [--with-grafana]
 #   tools/migrate-pack.sh verify FILE
-#   tools/migrate-pack.sh import FILE [--dry-run] [--yes] [--skip-reductstore]
+#   tools/migrate-pack.sh import FILE [--dry-run] [--yes] [--skip-reductstore] [--no-zigbee]
 #
 # The passphrase is asked (twice when exporting) or taken from MIGRATE_PASSPHRASE. It is never written anywhere.
 # `export` only READS the installation (and runs one normal `dominet backup`, unless --no-backup). `import` writes on THIS machine only
@@ -218,18 +218,31 @@ add_host() { # add_host FILE VAR VALUE : appends VALUE to a comma list when miss
   case ",$cur," in *",$3,"*) ;; *) setvar "$1" "$2" "${cur:+$cur,}$3" ;; esac
 }
 
+# Copies the archived Zigbee2MQTT folder into ZIGBEE_DIR. Files left there by the container belong to root, so when a plain copy is
+# refused it is redone as root in a throw-away container (the folder keeps its owner).
+restore_zigbee() { # restore_zigbee SRC
+  mkdir -p "$ZIGBEE_DIR"
+  cp -a "$1/." "$ZIGBEE_DIR/" 2>/dev/null && return 0
+  local img owner dst; img="$(tag)"
+  docker image inspect "$img" >/dev/null 2>&1 || img="$(grep -ho 'koenkk/zigbee2mqtt:[^"[:space:]]*' deploy/docker-compose*.yml | head -1)"
+  owner="$(stat -c %u:%g "$ZIGBEE_DIR")"; dst="$(cd "$ZIGBEE_DIR" && pwd)"
+  docker run --rm --user 0 -v "$1:/src:ro" -v "$dst:/dst" --entrypoint sh "$img" -c "cp -a /src/. /dst/ && chown -R $owner /dst" \
+    || die "cannot write the Zigbee2MQTT folder $ZIGBEE_DIR (try: sudo chown -R \$USER $ZIGBEE_DIR)"
+}
+
 cmd_import() {
-  local f="" dry=0 yes=0 skip_rs=0
+  local f="" dry=0 yes=0 skip_rs=0 no_zigbee=0
   while [ $# -gt 0 ]; do
     case "$1" in
       --dry-run) dry=1 ;;
       --yes) yes=1 ;;
       --skip-reductstore) skip_rs=1 ;;
+      --no-zigbee) no_zigbee=1 ;;
       -*) die "unknown option: $1" ;;
       *) f="$1" ;;
     esac; shift
   done
-  [ -n "$f" ] || die "usage: import FILE [--dry-run] [--yes] [--skip-reductstore]"
+  [ -n "$f" ] || die "usage: import FILE [--dry-run] [--yes] [--skip-reductstore] [--no-zigbee]"
   docker info >/dev/null 2>&1 || die "Docker is not reachable"
   passphrase 0
   local W; W="$(mktemp -d)"; trap "rm -rf '$W'" EXIT
@@ -253,13 +266,16 @@ cmd_import() {
   fi
   say "  Schema            $src_migs applied there, $tree_migs here: $([ "$src_migs" -lt "$tree_migs" ] && echo "the missing ones will be applied after the restore" || echo "same")"
 
-  # Existing installation
-  local existing=0 running=0
+  # Existing installation. Running services are looked up by label, so a stack started from ANOTHER folder with the same project name
+  # is seen too; a leftover PostgreSQL volume matters even with nothing running: it keeps the password of the earlier installation,
+  # which the restored .env cannot open.
+  local existing=0 running=0 oldvol=0 pgvol="${PROJECT}_postgres-data"
   { [ -f "$ENV_FILE" ] && grep -qE '^DB_PASSWORD=.+' "$ENV_FILE"; } && existing=1
-  [ -n "$(compose ps --status running --services 2>/dev/null || true)" ] && running=1
-  if { [ "$existing" = 1 ] || [ "$running" = 1 ]; } && [ "$yes" = 0 ]; then
+  [ -n "$(docker ps -q --filter "label=com.docker.compose.project=$PROJECT" 2>/dev/null || true)" ] && running=1
+  docker volume inspect "$pgvol" >/dev/null 2>&1 && oldvol=1
+  if { [ "$existing" = 1 ] || [ "$running" = 1 ] || [ "$oldvol" = 1 ]; } && [ "$yes" = 0 ]; then
     say ""
-    die "this machine already has an installation ($ENV_FILE$([ "$running" = 1 ] && echo " and running services")). Importing REPLACES its database and configuration. Run again with --yes if that is what you want (the old $ENV_FILE is kept as $ENV_FILE.before-import-*)."
+    die "this machine already has an installation ($([ "$existing" = 1 ] && echo "$ENV_FILE")$([ "$running" = 1 ] && echo " running services of project $PROJECT")$([ "$oldvol" = 1 ] && echo " database volume $pgvol")). Importing REPLACES its database and configuration: its containers and its database volume are removed, the data is ERASED. Run again with --yes if that is what you want (the old $ENV_FILE is kept as $ENV_FILE.before-import-*)."
   fi
 
   local newip; newip="$(hostname -I 2>/dev/null | awk '{print $1}')"; newip="${newip:-127.0.0.1}"
@@ -274,14 +290,18 @@ cmd_import() {
   say ""; say "  1/6  Configuration"
   local ts; ts="$(date -u +%Y%m%d-%H%M%S)"
   [ ! -f "$ENV_FILE" ] || cp -p "$ENV_FILE" "$ENV_FILE.before-import-$ts"
-  if [ "$running" = 1 ]; then compose down >/dev/null 2>&1 || true; fi
+  if [ "$running" = 1 ] || [ "$oldvol" = 1 ]; then
+    docker ps -aq --filter "label=com.docker.compose.project=$PROJECT" | xargs -r docker rm -f >/dev/null 2>&1 || true
+  fi
+  if [ "$oldvol" = 1 ]; then docker volume rm "$pgvol" >/dev/null 2>&1 || die "cannot remove the database volume $pgvol (still used?)"; say "       database volume of the previous installation removed"; fi
   cp "$S/env" "$ENV_FILE"; chmod 600 "$ENV_FILE"
   add_host "$ENV_FILE" ALLOWED_HOSTS "$newip"
   add_host "$ENV_FILE" CSRF_TRUSTED_ORIGINS "https://$newip"
   add_host "$ENV_FILE" WEBRTC_ADDITIONAL_HOSTS "$newip"
   setvar "$ENV_FILE" LOCAL_DOMAIN "$newip"
   if [ -n "$(valof "$ENV_FILE" ZIGBEE_DEVICE)" ]; then
-    if [ -n "$dongle" ]; then setvar "$ENV_FILE" ZIGBEE_DEVICE "$dongle"; say "       Zigbee dongle: $dongle"
+    if [ "$no_zigbee" = 1 ]; then setvar "$ENV_FILE" ZIGBEE_DEVICE ""; say "       Zigbee2MQTT stays off here (--no-zigbee): the old machine keeps its Zigbee network to itself"
+    elif [ -n "$dongle" ]; then setvar "$ENV_FILE" ZIGBEE_DEVICE "$dongle"; say "       Zigbee dongle: $dongle"
     else setvar "$ENV_FILE" ZIGBEE_DEVICE ""; say "       No Zigbee dongle here: Zigbee2MQTT stays off (plug it in and set ZIGBEE_DEVICE in $ENV_FILE)"; fi
   fi
   if [ -e /dev/dri/renderD128 ]; then setvar "$ENV_FILE" VIDEO_DEVICE /dev/dri; setvar "$ENV_FILE" RENDER_GID "$(stat -c %g /dev/dri/renderD128)"
@@ -317,7 +337,10 @@ cmd_import() {
   fi
 
   say "  3/6  Zigbee2MQTT folder"
-  if [ -d "$S/zigbee2mqtt" ]; then mkdir -p "$ZIGBEE_DIR"; cp -a "$S/zigbee2mqtt/." "$ZIGBEE_DIR/"; say "       restored in $ZIGBEE_DIR"; else say "       none in the archive"; fi
+  if [ -d "$S/zigbee2mqtt" ]; then
+    restore_zigbee "$S/zigbee2mqtt"; say "       restored in $ZIGBEE_DIR"
+    say "       This is the SAME Zigbee network as on the old machine: never run both coordinators at once (use --no-zigbee for a rehearsal)."
+  else say "       none in the archive"; fi
 
   say "  4/6  Starting the stack (empty database, then replaced)"
   ENV_FILE="$ENV_FILE" PROJECT="$PROJECT" CERTS_DIR="$CERTS_DIR" "${PROD[@]}" up >"$W/up.log" 2>&1 || { tail -20 "$W/up.log" >&2; die "the stack did not start (see above)"; }

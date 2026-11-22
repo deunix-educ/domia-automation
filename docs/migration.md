@@ -42,6 +42,8 @@ make prod-import FILE=/path/to/dominet-migration-….tar
 
 The importer writes the configuration (adapting the address, the Zigbee dongle port and hardware video to this machine), restores the authority and certificates (issuing a new certificate from the same authority if the address changed), starts the stack, restores the MQTT accounts, the database then ReductStore, applies the migrations the old machine did not have, restarts and checks. It **refuses to overwrite an existing installation** unless you add `YES=1` (the old `.env` is then kept as `.env.before-import-<date>`).
 
+**Rehearsal on a second machine while the old one keeps running:** use `--no-zigbee` (`tools/migrate-pack.sh import FILE --no-zigbee`). The archive carries the **same** Zigbee network as the old machine (same key, same identifiers): two coordinators with that identity on one LAN confuse the devices. Never plug the production dongle and a test dongle running that network at the same time. If the machine already holds a database volume of an earlier installation (even stopped), the importer refuses without `--yes`; with `--yes` it removes that volume and the project's containers first (their data is erased), because the old database keeps the old password.
+
 **4. Switch over.** Point the name your devices use (`LAN_DOMAIN`, for example `dominet.local`) at the new machine: give it the old host name, or change the entry on your router. If you use a Zigbee dongle, move it, set `ZIGBEE_DEVICE` in `.env` if the importer did not find it, and `make prod-up`. Check with `make prod-doctor`.
 
 ## Between architectures and versions
