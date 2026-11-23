@@ -23,8 +23,7 @@ Méthode proposée : une seule passe CSS (`crates/dominet-web/style/main.css`) p
 - **Les données d'exemple des schémas de configuration** (noms comme « Fermeture du soir ») et les alias français acceptés pour les types de configuration (`regle_d_alerte`…) restent, car ils aident un modèle francophone.
 
 ## Suites sur les licences
-- **wg-easy** : la version 14 (utilisée pour le VPN facultatif) serait non commerciale (CC BY-NC-SA 4.0) ; la version 15 est AGPL-3.0 mais réécrite. Vérifier à la source, puis passer à la 15 (configuration, commande `wgpw` de `DEPLOY.md`) et tester le profil VPN. Voir [Licences](licenses.md).
-- **Attribution Open-Meteo** : afficher « Weather data by Open-Meteo.com » près des données météo dans l'interface (CC BY 4.0) ; aujourd'hui elle n'est que dans la documentation.
+- **wg-easy** : la version 14 (utilisée pour le VPN facultatif) est non commerciale (CC BY-NC-SA 4.0) et la version 15 est AGPL-3.0, deux points vérifiés à la source le 2026-11-23 ; la version 15 est une réécriture. Passer à la 15 (configuration, commande `wgpw` de `DEPLOY.md`) et tester le profil VPN. Voir [Licences](licenses.md).
 - **Relire les étiquettes épinglées** (`reduct/store:v1.21.5` et les autres images marquées « connu ») avant la première publication.
 - **Visionnage des caméras sans mot de passe sur le LAN** (RTSP 8554, WebRTC 8189) : ajouter des identifiants par spectateur dans MediaMTX et dans l'application. Voir [Sécurité](security.md).
 - **`SECRET_KEY`** est lue par la configuration mais aucun code ne s'en sert : la supprimer, ou l'utiliser.

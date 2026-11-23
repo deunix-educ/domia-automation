@@ -355,6 +355,7 @@ weather-suffix-hint = Publié sur meteo/<suffixe>. Lettres, chiffres, _ . - seul
 weather-refresh = Intervalle (minutes)
 weather-enabled = Active
 weather-description = Description
+weather-attribution = Données météo par Open-Meteo.com
 
 # Scenes (R4 lot 2)
 nav-scenes = Scènes

@@ -379,6 +379,9 @@ fn weather_view(st: &Value, rows: &[StateRow]) -> AnyView {
         {temp.map(primary)}
         {text_of(st, "condition").map(|c| view! { <div class="vc-dev-state-v" id="dev-condition">{c}</div> })}
         {state_grid(&others)}
+        <p class="vc-muted" id="dev-weather-attribution">
+            <a href="https://open-meteo.com/" target="_blank" rel="noopener">{move_tr!("weather-attribution")}</a>
+        </p>
     }
     .into_any()
 }

@@ -5,7 +5,11 @@ All notable changes are listed here. Format based on [Keep a Changelog](https://
 ## [Unreleased]
 
 ### Added
+- The weather widget shows the Open-Meteo attribution ("Weather data by Open-Meteo.com", CC BY 4.0), linked to open-meteo.com.
 - Video load measured on a Raspberry Pi 5 (8 GB, NVMe, software decoding): about 0.25 core per camera, 6 cameras in 1080p at 40 % of the machine in full mode (`docs/measures.md`, section 2). Nothing above 6 cameras was measured.
+
+### Changed
+- Licence of wg-easy checked at the source: 14 is CC BY-NC-SA 4.0, 15 is AGPL-3.0 (`docs/licenses.md`). The VPN profile still pins 14 until 15 is tested.
 
 ## [1.0.2] - 2026-11-23
 

@@ -40,15 +40,15 @@ GPL-3.0-or-later code can be included in an AGPL-3.0-or-later work (section 13 o
 | `nginx:1.27-alpine` | BSD-2-Clause | known |
 | `koenkk/zigbee2mqtt:2.1.1` (optional) | GPL-3.0 | **verified** |
 | `adminer:4.8.1` (optional) | Apache-2.0 or GPL-2.0 | known |
-| `ghcr.io/wg-easy/wg-easy:14` (optional VPN) | **CC BY-NC-SA 4.0 (non-commercial)** up to version 14, AGPL-3.0 from version 15 | **reported**, not read at the source (the repository pages could not be fetched) |
+| `ghcr.io/wg-easy/wg-easy:14` (optional VPN) | **CC BY-NC-SA 4.0 (non-commercial)** up to version 14, AGPL-3.0 from version 15 | **verified** at the source on 2026-11-23: the `LICENSE` file at tag v14.0.0 is CC BY-NC-SA 4.0, at tag v15.0.0 and on `master` it is the AGPL-3.0 text |
 
-**Point to settle before recommending the VPN profile**: version 14 of wg-easy, which `docker-compose.prod.yml` pins, is reported to be non-commercial only. For a home installation that is acceptable, but the project should not present it as freely usable by businesses. Moving to version 15 (AGPL-3.0) needs a configuration change and a test; it is listed in [To improve](to-improve.md).
+**Point to settle before recommending the VPN profile**: version 14 of wg-easy, which `docker-compose.prod.yml` pins, is non-commercial only (CC BY-NC-SA 4.0, checked in its `LICENSE` file). For a home installation that is acceptable, but the project should not present it as freely usable by businesses. Moving to version 15 (AGPL-3.0) needs a configuration change and a test; it is listed in [To improve](to-improve.md).
 
 ## External services
 
 | Service | Terms | What it means for you |
 |---|---|---|
-| **Open-Meteo** (weather; `OPEN_METEO_URL`) | The free API is for **non-commercial use** (limits: 10 000 calls a day, 5 000 an hour, 600 a minute); the data is under **CC BY 4.0, which requires attribution** | **reported** (terms page seen through a search). A home installation stays far below the limits. Keep the attribution **"Weather data by Open-Meteo.com"** wherever you republish the data. A commercial use needs a paid plan, or another provider set in `OPEN_METEO_URL` |
+| **Open-Meteo** (weather; `OPEN_METEO_URL`) | The free API is for **non-commercial use** (limits: 10 000 calls a day, 5 000 an hour, 600 a minute); the data is under **CC BY 4.0, which requires attribution** | **reported** (terms page seen through a search). A home installation stays far below the limits. The weather widget shows the attribution **"Weather data by Open-Meteo.com"** (linked to open-meteo.com); keep it wherever you republish the data. A commercial use needs a paid plan, or another provider set in `OPEN_METEO_URL` |
 | Free Mobile SMS API | the operator's terms, for your own line | known |
 | SMTP server, Prometheus/Grafana alert e-mails | yours | |
 

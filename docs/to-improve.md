@@ -23,8 +23,7 @@ Proposed method: a single CSS pass (`crates/dominet-web/style/main.css`) then re
 - **Example data in configuration schemas** (names such as "Fermeture du soir") and the French aliases accepted for configuration kinds (`regle_d_alerte`…) stay as they help a French-speaking model.
 
 ## Licences follow-ups
-- **wg-easy**: version 14 (pinned for the optional VPN) is reported as non-commercial (CC BY-NC-SA 4.0); version 15 is AGPL-3.0 but a rewrite. Verify at the source, then move to 15 (configuration, `wgpw` command in `DEPLOY.md`) and test the VPN profile. See [Licences](licenses.md).
-- **Open-Meteo attribution**: show "Weather data by Open-Meteo.com" next to weather data in the interface (CC BY 4.0); today it is only in the documentation.
+- **wg-easy**: version 14 (pinned for the optional VPN) is non-commercial (CC BY-NC-SA 4.0) and version 15 is AGPL-3.0, both verified at the source on 2026-11-23; version 15 is a rewrite. Move to 15 (configuration, `wgpw` command in `DEPLOY.md`) and test the VPN profile. See [Licences](licenses.md).
 - **Re-read the pinned tags** (`reduct/store:v1.21.5` and the other images marked "known") before the first public release.
 - **Camera viewing without a password on the LAN** (RTSP 8554, WebRTC 8189): add per-viewer credentials in MediaMTX and in the application. See [Security](security.md).
 - **`SECRET_KEY`** is read by the configuration but no code uses it: remove it, or use it.
