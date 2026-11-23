@@ -18,7 +18,6 @@ Les secrets ne sont jamais affichés ni journalisés.
 | `GRAFANA_ALERTING_PATH` | — | fichier `rules.yaml` du provisionnement d'alertes de Grafana (`/admin/grafana-rules`) |
 | `GRAFANA_URL`, `GRAFANA_USER`, `GRAFANA_PASSWORD` | —, `admin`, — | rechargement du provisionnement d'alertes de Grafana (compte administrateur) |
 | `METRICS_ADDR` | `0.0.0.0:9100` | écouteur `/metrics` pour Prometheus (**jamais publié** sur l'hôte) ; `off` pour le couper ; un port pris n'arrête pas le serveur |
-| `SECRET_KEY` | — | **réservée, non utilisée en R1** (la protection CSRF repose sur l'en-tête `Origin`, les sessions sont en base) ; acceptée pour ne pas casser un `.env` existant, 32 caractères minimum si fournie |
 | `DOMINET_MASTER_KEY` | — | clé AES-256 (32 octets en base64) du chiffrement des secrets au repos (`dominet gen-master-key`) ; validée au démarrage ; voir [Réglages](settings.fr.md) |
 | `SESSION_IDLE_MINUTES` | `480` | déconnexion après cette durée sans activité |
 | `SESSION_MAX_DAYS` | `14` | durée de vie maximale d'une session |

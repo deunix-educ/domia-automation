@@ -70,7 +70,6 @@ services:
     environment:
       <<: *app-env
       HTTP_ADDR: 0.0.0.0:8000
-      SECRET_KEY: ${SECRET_KEY:-}
       DOMINET_MASTER_KEY: ${DOMINET_MASTER_KEY:-}
       ALLOWED_HOSTS: ${ALLOWED_HOSTS:-}
       CSRF_TRUSTED_ORIGINS: ${CSRF_TRUSTED_ORIGINS:-}

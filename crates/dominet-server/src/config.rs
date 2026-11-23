@@ -101,8 +101,6 @@ pub struct Config {
     pub metrics_addr: Option<SocketAddr>,
     /// `DATABASE_URL` (obligatoire, contient un mot de passe).
     pub database_url: Secret,
-    /// `SECRET_KEY` : cle HMAC des jetons CSRF (>= 32 caracteres si definie).
-    pub secret_key: Option<Secret>,
     /// `DOMINET_MASTER_KEY` : cle AES-256 (32 octets en base64) du chiffrement des secrets au repos.
     pub master_key: Option<Secret>,
     /// `SESSION_IDLE_MINUTES` (defaut 480) : deconnexion apres cette duree sans activite.
@@ -312,15 +310,6 @@ impl Env<'_> {
                 None
             }
         }
-    }
-
-    fn secret_key(&mut self) -> Option<Secret> {
-        let v = self.var("SECRET_KEY")?;
-        if v.chars().count() < 32 {
-            self.fail("SECRET_KEY: 32 characters minimum".into());
-            return None;
-        }
-        Some(Secret::new(v))
     }
 
     fn master_key(&mut self) -> Option<Secret> {
@@ -608,7 +597,6 @@ impl Config {
         let http_addr = env.http_addr();
         let metrics_addr = env.metrics_addr();
         let database_url = env.database_url();
-        let secret_key = env.secret_key();
         let master_key = env.master_key();
         let cookie_secure = env.cookie_secure();
         let mcp_enabled = env.mcp_enabled();
@@ -648,7 +636,6 @@ impl Config {
             http_addr,
             metrics_addr,
             database_url,
-            secret_key,
             master_key,
             session_idle_minutes,
             session_max_days,
@@ -770,7 +757,7 @@ mod tests {
         assert!(c.cookie_secure);
         assert_eq!(c.timezone, "Europe/Paris");
         assert_eq!(c.log_format, LogFormat::Pretty);
-        assert!(c.mqtt.is_none() && c.reductstore.is_none() && c.secret_key.is_none());
+        assert!(c.mqtt.is_none() && c.reductstore.is_none());
         assert_eq!(c.allowed_hosts.len(), 0);
         assert_eq!(c.history_retention_days, 400);
         // Aucune adresse d'onduleur par defaut : sans SOLARMAX_HOST, pas de publisher SolarMax.
@@ -949,7 +936,6 @@ mod tests {
         let c = load(&[
             DB,
             ("HTTP_ADDR", "127.0.0.1:9000"),
-            ("SECRET_KEY", "0123456789abcdef0123456789abcdef"),
             ("ALLOWED_HOSTS", "dominet.local, 192.168.1.2 ,"),
             ("COOKIE_SECURE", "false"),
             ("LOG_FORMAT", "json"),
@@ -987,7 +973,6 @@ mod tests {
     fn all_errors_are_reported_together() {
         let e = load(&[
             ("HTTP_ADDR", "n'importe quoi"),
-            ("SECRET_KEY", "trop court"),
             ("COOKIE_SECURE", "peut-etre"),
             ("LOG_FORMAT", "xml"),
             ("MQTT_HOST", "m"),
@@ -995,11 +980,10 @@ mod tests {
             ("REDUCTSTORE_URL", "ftp://x"),
         ])
         .unwrap_err();
-        assert_eq!(e.0.len(), 7, "{e}");
+        assert_eq!(e.0.len(), 6, "{e}");
         for key in [
             "HTTP_ADDR",
             "DATABASE_URL",
-            "SECRET_KEY",
             "COOKIE_SECURE",
             "LOG_FORMAT",
             "MQTT_PORT",
@@ -1122,7 +1106,6 @@ mod tests {
             ("MQTT_PASSWORD", "mqtt-secret"),
             ("REDUCTSTORE_URL", "http://r"),
             ("REDUCTSTORE_TOKEN", "token-secret"),
-            ("SECRET_KEY", "cle-csrf-0123456789abcdef0123456789"),
             (
                 "DOMINET_MASTER_KEY",
                 "MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=",
@@ -1134,7 +1117,6 @@ mod tests {
             "motdepasse-secret",
             "mqtt-secret",
             "token-secret",
-            "cle-csrf",
             "maitre-secret",
         ] {
             assert!(!dump.contains(secret), "{secret} fuit dans {dump}");

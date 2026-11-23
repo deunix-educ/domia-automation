@@ -26,5 +26,4 @@ Proposed method: a single CSS pass (`crates/dominet-web/style/main.css`) then re
 - **wg-easy**: version 14 (pinned for the optional VPN) is non-commercial (CC BY-NC-SA 4.0) and version 15 is AGPL-3.0, both verified at the source on 2026-11-23; version 15 is a rewrite. Move to 15 (configuration, `wgpw` command in `DEPLOY.md`) and test the VPN profile. See [Licences](licenses.md).
 - **Re-read the pinned tags** (`reduct/store:v1.21.5` and the other images marked "known") before the first public release.
 - **Camera viewing without a password on the LAN** (RTSP 8554, WebRTC 8189): add per-viewer credentials in MediaMTX and in the application. See [Security](security.md).
-- **`SECRET_KEY`** is read by the configuration but no code uses it: remove it, or use it.
 

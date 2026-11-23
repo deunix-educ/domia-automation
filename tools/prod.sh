@@ -80,7 +80,6 @@ cmd_init() {
   setvar ALLOWED_HOSTS "$domain,$ip,localhost"
   setvar CSRF_TRUSTED_ORIGINS "https://$domain,https://$ip"
   setvar DB_PASSWORD "$dbpass"
-  setvar SECRET_KEY "$(rand 50)"
   setvar REDUCTSTORE_TOKEN "dominet-$(rand 32)"
   setvar MQTT_PASSWORD "$(rand 24)"
   setvar GRAFANA_PASSWORD "$gpass"

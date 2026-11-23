@@ -9,6 +9,7 @@ All notable changes are listed here. Format based on [Keep a Changelog](https://
 - Video load measured on a Raspberry Pi 5 (8 GB, NVMe, software decoding): about 0.25 core per camera, 6 cameras in 1080p at 40 % of the machine in full mode (`docs/measures.md`, section 2). Nothing above 6 cameras was measured.
 
 ### Changed
+- `SECRET_KEY` is removed: nothing used it (CSRF protection relies on the `Origin` header, ADR 0004). The installer no longer generates it, the configuration no longer reads it, and a `SECRET_KEY` line left in an existing `.env` is ignored.
 - Licence of wg-easy checked at the source: 14 is CC BY-NC-SA 4.0, 15 is AGPL-3.0 (`docs/licenses.md`). The VPN profile still pins 14 until 15 is tested.
 
 ## [1.0.2] - 2026-11-23

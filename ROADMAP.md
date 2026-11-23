@@ -20,7 +20,6 @@ Licences and attributions
 - wg-easy: licences verified (14 is non-commercial, 15 is AGPL-3.0); move the VPN profile to 15 (configuration changes) and test it.
 
 Code
-- `SECRET_KEY` is read but not used: remove it or use it.
 - Code comments still in French in places: translate progressively.
 - Per-viewer camera credentials.
 

@@ -18,7 +18,6 @@ Secrets are never printed or logged.
 | `GRAFANA_ALERTING_PATH` | — | `rules.yaml` file of Grafana's alerting provisioning (`/admin/grafana-rules`) |
 | `GRAFANA_URL`, `GRAFANA_USER`, `GRAFANA_PASSWORD` | —, `admin`, — | reload of Grafana's alerting provisioning (administrator account) |
 | `METRICS_ADDR` | `0.0.0.0:9100` | `/metrics` listener for Prometheus (**never published** on the host); `off` turns it off; a busy port does not stop the server |
-| `SECRET_KEY` | — | **reserved, unused in R1** (CSRF protection relies on the `Origin` header, sessions are in the database); accepted so an existing `.env` keeps working, 32 characters minimum when provided |
 | `DOMINET_MASTER_KEY` | — | AES-256 key (32 bytes, base64) for encrypting secrets at rest (`dominet gen-master-key`); validated at startup; see [Settings](settings.md) |
 | `SESSION_IDLE_MINUTES` | `480` | sign-out after this long without activity |
 | `SESSION_MAX_DAYS` | `14` | maximum lifetime of a session |
