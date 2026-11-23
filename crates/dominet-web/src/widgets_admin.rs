@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Administration des widgets d'un tableau : `/admin/widgets?d=<id>`. Le formulaire n'affiche que les champs utiles au type
-//! choisi (appareil pour `device`, scene pour `scene`, camera pour `camera`, contenu pour `text`, configuration JSON pour
-//! `grafana` et `camera`).
+//! Administration of a dashboard's widgets: `/admin/widgets?d=<id>`. The form only shows the fields useful for the chosen type
+//! (device for `device`, scene for `scene`, camera for `camera`, content for `text`, JSON configuration for
+//! `grafana` and `camera`).
 
 use dominet_proto::{WidgetAdminDto, WidgetInput};
 use leptos::prelude::*;
@@ -61,7 +61,7 @@ fn row(w: &WidgetAdminDto) -> Row {
     }
 }
 
-/// Champs du formulaire utiles au type de widget choisi.
+/// Form fields useful for the chosen widget type.
 fn visible((name, values): (&'static str, Values)) -> bool {
     let kind = values.get("widget_type").map_or("", String::as_str);
     match name {
@@ -112,8 +112,8 @@ fn fields() -> Vec<FieldSpec> {
                 FieldKind::Select(PRESENTATIONS),
             )
         },
-        // Facultatifs pour le navigateur : seul le serveur sait quand une reference est requise (selon le type).
-        // Liste deroulante des appareils existants (R3) : le numero n'a plus a etre connu.
+        // Optional for the browser: only the server knows when a reference is required (depending on the type).
+        // Drop-down list of the existing devices (R3): the number no longer needs to be known.
         FieldSpec::new("device_id", tk!("widgets-device"), FieldKind::Choice).column(),
         FieldSpec::new("scene_id", tk!("widgets-scene"), FieldKind::Choice),
         FieldSpec {
@@ -151,20 +151,20 @@ pub fn WidgetsAdminPage() -> impl IntoView {
     }
 }
 
-/// Page : choix du tableau, puis CRUD de ses widgets. Les ressources et le tableau CRUD sont crees **une seule fois** : recreer le
-/// composant a chaque rechargement de la liste des tableaux laissait l'ecran sur une instance perimee apres un enregistrement.
+/// Page: dashboard choice, then CRUD of its widgets. The resources and the CRUD table are created **only once**: recreating the
+/// component at each reload of the dashboards list left the screen on a stale instance after a save.
 #[component]
 fn WidgetsAdmin() -> impl IntoView {
     crate::devices_admin::provide_choices(&["device_id", "scene_id"]);
     let query = use_query_map();
     let requested = move || query.with(|q| q.get("d").and_then(|v| v.parse::<i64>().ok()));
-    // Liste des tableaux (pour le selecteur seulement).
+    // Dashboards list (for the selector only).
     let boards = Resource::new(
         || (),
         |()| async { list_dashboards_admin().await.unwrap_or_default() },
     );
     let version = RwSignal::new(0u32);
-    // Un seul chargement donne le tableau retenu et ses widgets (aucune dependance entre deux ressources).
+    // A single load gives the chosen dashboard and its widgets (no dependency between two resources).
     let list = Resource::new(
         move || (requested(), version.get()),
         |(d, _)| async move { widgets_page(d).await.map_err(|_| ()) },

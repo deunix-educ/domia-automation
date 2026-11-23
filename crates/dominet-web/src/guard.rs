@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Protection des pages : un visiteur anonyme est redirige vers la page de connexion.
+//! Page protection: an anonymous visitor is redirected to the login page.
 //!
-//! Cote serveur la redirection est une vraie reponse HTTP 302 (rendu `Async`), donc la page protegee n'est jamais
-//! envoyee ; cote navigateur (navigation interne) c'est un changement de route. Le serveur reverifie de toute facon
-//! chaque appel de fonction serveur : cette garde sert a l'affichage, pas a la securite.
+//! On the server side the redirect is a real HTTP 302 response (`Async` rendering), so the protected page is never
+//! sent; in the browser (internal navigation) it is a route change. The server re-checks anyway
+//! every server function call: this guard is for display, not for security.
 
 use leptos::prelude::*;
 use leptos_fluent::move_tr;
@@ -13,7 +13,7 @@ use leptos_router::hooks::use_location;
 use crate::layout::{AuthStatus, LayoutState, status_of};
 use crate::nav::login_url;
 
-/// N'affiche `children` que pour un compte connecte.
+/// Only displays `children` for a logged-in account.
 #[component]
 pub fn RequireAuth(children: ChildrenFn) -> impl IntoView {
     view! {
@@ -23,8 +23,8 @@ pub fn RequireAuth(children: ChildrenFn) -> impl IntoView {
     }
 }
 
-/// N'affiche `children` que pour un administrateur : un anonyme est renvoye vers la connexion, un compte ordinaire
-/// recoit la page « acces refuse » (statut 403 cote serveur).
+/// Only displays `children` for an administrator: an anonymous visitor is sent to the login, an ordinary account
+/// receives the "access denied" page (403 status on the server side).
 #[component]
 pub fn RequireAdmin(children: ChildrenFn) -> impl IntoView {
     view! {
@@ -34,17 +34,17 @@ pub fn RequireAdmin(children: ChildrenFn) -> impl IntoView {
     }
 }
 
-/// Decide quoi afficher selon le *statut* du visiteur.
+/// Decides what to display according to the visitor's *status*.
 ///
-/// Deux contraintes. (1) La ressource doit etre lue **sous** la `Transition` : sinon le rendu serveur ne l'attend
-/// pas. (2) Un rechargement de la navigation (modification du menu par exemple) ne doit pas recreer la page
-/// affichee : le composant n'est cree qu'une fois par page et ne reagit qu'a un changement de *statut*, grace au
-/// memo (qui ne notifie que si la valeur change).
+/// Two constraints. (1) The resource must be read **under** the `Transition`: otherwise the server render does not wait for it.
+/// (2) A reload of the navigation (menu modification for example) must not recreate the displayed
+/// page: the component is created only once per page and only reacts to a change of *status*, thanks to the
+/// memo (which only notifies if the value changes).
 #[component]
 fn Gate(admin: bool, children: ChildrenFn) -> impl IntoView {
     let state = expect_context::<LayoutState>();
     let location = use_location();
-    // Pendant un rechargement la ressource garde sa derniere valeur ; sans valeur du tout on garde le dernier statut.
+    // During a reload the resource keeps its last value; with no value at all we keep the last status.
     let status = Memo::new(
         move |prev: Option<&Option<AuthStatus>>| match state.data.get() {
             Some(d) => Some(status_of(&d)),
@@ -52,11 +52,11 @@ fn Gate(admin: bool, children: ChildrenFn) -> impl IntoView {
         },
     );
     move || match status.get() {
-        // Pas encore de reponse du serveur.
+        // No response from the server yet.
         None => ().into_any(),
         Some(AuthStatus::Anonymous) => {
             if state.leaving.get_untracked() {
-                // Depart volontaire (deconnexion...) : la navigation est deja en cours.
+                // Voluntary departure (logout...): the navigation is already under way.
                 return ().into_any();
             }
             let search = location.search.get_untracked();
@@ -74,7 +74,7 @@ fn Gate(admin: bool, children: ChildrenFn) -> impl IntoView {
 
 #[component]
 pub fn Forbidden() -> impl IntoView {
-    // Le statut HTTP n'existe que cote serveur.
+    // The HTTP status only exists on the server side.
     #[cfg(feature = "ssr")]
     {
         let response = expect_context::<leptos_axum::ResponseOptions>();

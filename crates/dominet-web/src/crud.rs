@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Composant CRUD generique des pages d'administration : tableau filtrable, formulaire d'ajout / modification,
-//! confirmation de suppression, erreurs par champ traduites.
+//! Generic CRUD component of the administration pages: filterable table, add / edit form,
+//! delete confirmation, translated per-field errors.
 //!
-//! Une page decrit sa ressource par des [`FieldSpec`] et fournit deux actions (enregistrer, supprimer) qui appellent
-//! ses fonctions serveur ; le composant ne connait ni le type metier ni le reseau. Les libelles sont des *cles* de
-//! traduction (`tk!`), resolues a l'affichage pour suivre la langue.
+//! A page describes its resource with [`FieldSpec`]s and provides two actions (save, delete) that call
+//! its server functions; the component knows neither the business type nor the network. The labels are translation
+//! *keys* (`tk!`), resolved at display time to follow the language.
 
 use std::collections::BTreeMap;
 
@@ -14,7 +14,7 @@ use leptos_fluent::{I18n, move_tr, tr};
 
 use crate::layout::use_hydrated;
 
-/// Valeurs d'un formulaire, par nom de champ. Une case a cocher vaut `"true"` ou `"false"`.
+/// Values of a form, by field name. A checkbox is `"true"` or `"false"`.
 pub type Values = BTreeMap<&'static str, String>;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -22,34 +22,34 @@ pub enum FieldKind {
     Text,
     TextArea,
     Checkbox,
-    /// Nombre entier dans `min..=max`.
+    /// Integer in `min..=max`.
     Number {
         min: i64,
         max: i64,
     },
-    /// Liste deroulante : (valeur envoyee, cle de traduction du libelle).
+    /// Drop-down list: (value sent, translation key of the label).
     Select(&'static [(&'static str, &'static str)]),
-    /// Mot de passe : jamais prerempli, jamais affiche dans le tableau.
+    /// Password: never prefilled, never shown in the table.
     Password,
-    /// Colonne du tableau seulement (valeur calculee par le serveur) : absente du formulaire.
+    /// Table column only (value computed by the server): absent from the form.
     Display,
-    /// Liste deroulante dont les choix viennent de la base (groupes, emplacements, appareils) : la page les fournit par le
-    /// contexte [`Choices`], sous le nom du champ. Une premiere ligne « aucun » (valeur vide) est toujours proposee.
+    /// Drop-down list whose choices come from the database (groups, locations, devices): the page provides them through the
+    /// [`Choices`] context, under the field's name. A first "none" row (empty value) is always offered.
     Choice,
-    /// Liste ordonnee de couples (choix, texte) : par exemple les commandes d'une scene (appareil + commande JSON). Les
-    /// choix de la liste deroulante de chaque ligne viennent du contexte [`Choices`] sous le nom du champ. La valeur du
-    /// formulaire est la liste en JSON (`[["12","{...}"],...]`).
+    /// Ordered list of pairs (choice, text): for example a scene's commands (device + JSON command). The
+    /// choices of each row's drop-down list come from the [`Choices`] context under the field's name. The form's
+    /// value is the list as JSON (`[["12","{...}"],...]`).
     Pairs,
-    /// Zone de code (script Rhai) en police fixe, avec son panneau d'essai a blanc.
+    /// Code area (Rhai script) in a fixed-width font, with its dry-run panel.
     Code,
 }
 
-/// Choix des champs [`FieldKind::Choice`], par nom de champ : (valeur envoyee, texte affiche tel quel, non traduit).
+/// Choices of the [`FieldKind::Choice`] fields, by field name: (value sent, text displayed as is, not translated).
 #[derive(Clone, Copy, Debug)]
 pub struct Choices(pub Signal<std::collections::BTreeMap<&'static str, Vec<(String, String)>>>);
 
-/// Un champ : nom technique, cle de traduction du libelle, type, valeur initiale d'un nouvel element, obligatoire,
-/// longueur maximale, cle de traduction d'un texte d'aide, colonne du tableau.
+/// A field: technical name, label translation key, type, initial value of a new item, required,
+/// maximum length, translation key of a help text, table column.
 #[derive(Clone, Debug)]
 pub struct FieldSpec {
     pub name: &'static str,
@@ -59,15 +59,15 @@ pub struct FieldSpec {
     pub required: bool,
     pub max_len: Option<u32>,
     pub hint: Option<&'static str>,
-    /// Champ secret : cle de la valeur ("true"/"false") qui dit s'il est deja enregistre (le secret lui-meme n'est jamais renvoye).
+    /// Secret field: key of the value ("true"/"false") that says whether it is already saved (the secret itself is never sent back).
     pub stored_flag: Option<&'static str>,
-    /// Modifiable a la creation seulement (affiche en lecture seule ensuite).
+    /// Editable at creation only (shown read-only afterwards).
     pub create_only: bool,
     pub in_table: bool,
 }
 
 impl FieldSpec {
-    /// Champ facultatif, sans valeur initiale, hors du tableau ; les methodes ci-dessous precisent le reste.
+    /// Optional field, without an initial value, outside the table; the methods below specify the rest.
     #[must_use]
     pub const fn new(name: &'static str, label: &'static str, kind: FieldKind) -> Self {
         Self {
@@ -114,7 +114,7 @@ impl FieldSpec {
         self
     }
 
-    /// Colonne du tableau.
+    /// Table column.
     #[must_use]
     pub const fn column(mut self) -> Self {
         self.in_table = true;
@@ -122,21 +122,21 @@ impl FieldSpec {
     }
 }
 
-/// Une ligne du tableau : identifiant et valeurs de ses champs.
+/// A table row: identifier and values of its fields.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Row {
     pub id: i64,
     pub values: Values,
 }
 
-/// Issue d'une action d'ecriture, deja reduite a ce que l'interface sait afficher.
+/// Outcome of a write action, already reduced to what the interface can display.
 #[derive(Clone, Debug, PartialEq)]
 pub enum CrudResult {
     Done,
     Problems(Vec<FieldProblem>),
     NotFound,
     InUse,
-    /// Refus metier : ni erreur ni champ invalide.
+    /// Business refusal: neither an error nor an invalid field.
     Blocked(Blocked),
     Failed,
 }
@@ -163,7 +163,7 @@ impl From<DeleteOutcome> for CrudResult {
     }
 }
 
-/// Cles de traduction propres a la ressource.
+/// Translation keys specific to the resource.
 #[derive(Clone, Copy, Debug)]
 pub struct Labels {
     pub title: &'static str,
@@ -200,7 +200,7 @@ fn matches(row: &Row, fields: &[FieldSpec], needle: &str) -> bool {
             })
 }
 
-/// Etat du formulaire.
+/// Form state.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum Editing {
     Closed,
@@ -208,7 +208,7 @@ enum Editing {
     Updating(i64),
 }
 
-/// Etat partage entre le tableau et le formulaire.
+/// State shared between the table and the form.
 #[derive(Clone, Copy)]
 struct State {
     editing: RwSignal<Editing>,
@@ -218,7 +218,7 @@ struct State {
     confirm: RwSignal<Option<i64>>,
 }
 
-/// Reagit au resultat des deux actions d'ecriture.
+/// Reacts to the result of the two write actions.
 fn wire_results(
     st: State,
     save: Action<(Option<i64>, Values), CrudResult>,
@@ -263,8 +263,8 @@ fn wire_results(
     });
 }
 
-/// Tableau + formulaire. `rows` est la liste courante ; `on_change` est appele apres toute ecriture reussie (ou
-/// element disparu) pour la recharger.
+/// Table + form. `rows` is the current list; `on_change` is called after any successful write (or vanished
+/// item) to reload it.
 #[component]
 pub fn CrudTable(
     labels: Labels,
@@ -273,8 +273,8 @@ pub fn CrudTable(
     save: Action<(Option<i64>, Values), CrudResult>,
     remove: Action<i64, CrudResult>,
     on_change: Callback<()>,
-    /// Affichage conditionnel d'un champ du formulaire : `(nom du champ, valeurs courantes) -> visible`. Par defaut tous
-    /// les champs sont visibles ; une page l'utilise pour n'afficher que les champs utiles au type choisi.
+    /// Conditional display of a form field: `(field name, current values) -> visible`. By default all
+    /// the fields are visible; a page uses it to show only the fields useful for the chosen type.
     #[prop(optional)]
     field_visible: Option<Callback<(&'static str, Values), bool>>,
 ) -> impl IntoView {
@@ -347,7 +347,7 @@ pub fn CrudTable(
     }
 }
 
-/// Formulaire d'ajout ou de modification.
+/// Add or edit form.
 #[component]
 fn EditForm(
     labels: Labels,
@@ -381,7 +381,7 @@ fn EditForm(
                     .get_value()
                     .into_iter()
                     .map(|f| {
-                        // Valeur calculee par le serveur (non modifiable) : montree en lecture seule, seulement si elle existe.
+                        // Value computed by the server (not editable): shown read-only, only if it exists.
                         if f.kind == FieldKind::Display {
                             let (name, label) = (f.name, f.label);
                             let value = move || st.values.with(|v| v.get(name).cloned().unwrap_or_default());
@@ -395,7 +395,7 @@ fn EditForm(
                             }
                             .into_any();
                         }
-                        // Memo : le champ n'est recree que si sa visibilite change (pas a chaque frappe ailleurs).
+                        // Memo: the field is only recreated if its visibility changes (not at every keystroke elsewhere).
                         let name = f.name;
                         let shown = Memo::new(move |_| {
                             field_visible.is_none_or(|c| c.run((name, st.values.get())))
@@ -426,7 +426,7 @@ fn EditForm(
     }
 }
 
-/// Tableau des lignes, filtre applique.
+/// Table of the rows, filter applied.
 #[component]
 fn DataTable(
     labels: Labels,
@@ -488,7 +488,7 @@ fn DataTable(
     }
 }
 
-/// Message d'erreur affiche sous un champ (rien s'il n'y a pas de probleme pour ce champ).
+/// Error message displayed under a field (nothing if there is no problem for that field).
 pub(crate) fn field_error(
     name: &'static str,
     problems: RwSignal<Vec<FieldProblem>>,
@@ -520,7 +520,7 @@ pub(crate) fn field_error(
     }
 }
 
-/// Un champ de formulaire avec son erreur eventuelle.
+/// A form field with its possible error.
 #[allow(
     clippy::too_many_lines,
     reason = "a single match on the field types, more readable as one block"
@@ -532,7 +532,7 @@ fn field_view(
     editing: RwSignal<Editing>,
 ) -> impl IntoView {
     let i18n = expect_context::<I18n>();
-    // Non modifiable apres la creation (ex. identifiant d'un compte).
+    // Not editable after creation (e.g. an account's identifier).
     let locked = f.create_only;
     let readonly = move || locked && editing.get() != Editing::Creating;
     let (name, label, id) = (f.name, f.label, format!("crud-field-{}", f.name));
@@ -616,7 +616,7 @@ fn field_view(
             />
         }
         .into_any(),
-        // Jamais dans un formulaire (voir `EditForm`).
+        // Never in a form (see `EditForm`).
         FieldKind::Display => ().into_any(),
         FieldKind::Checkbox => view! {
             <input
@@ -638,7 +638,7 @@ fn field_view(
     }
 }
 
-/// Une ligne du tableau, avec ses boutons (la suppression demande confirmation sur place).
+/// A table row, with its buttons (deletion asks for confirmation in place).
 fn row_view(
     row: Row,
     columns: Vec<FieldSpec>,
@@ -683,7 +683,7 @@ fn row_view(
                 let title = shown.clone();
                 view! { <td title=title>{shown}</td> }.into_any()
             } else {
-                // `title` : la cellule est tronquee par le style (colonne etroite) ; l'info-bulle garde la valeur complete.
+                // `title`: the cell is truncated by the style (narrow column); the tooltip keeps the full value.
                 let title = v.clone();
                 view! { <td title=title>{v}</td> }.into_any()
             }
@@ -724,7 +724,7 @@ fn row_view(
     }
 }
 
-/// Liste deroulante dont les choix viennent du contexte [`Choices`] (premiere ligne : aucun).
+/// Drop-down list whose choices come from the [`Choices`] context (first row: none).
 fn choice_select(
     id: String,
     name: &'static str,
@@ -752,7 +752,7 @@ fn choice_select(
     .into_any()
 }
 
-/// Une ligne de l'editeur de couples ; `key` est stable pour que la saisie ne perde pas le focus.
+/// A row of the pairs editor; `key` is stable so that typing does not lose focus.
 #[derive(Clone, Debug, PartialEq)]
 struct PairRow {
     key: u32,
@@ -760,7 +760,7 @@ struct PairRow {
     text: String,
 }
 
-/// Valeur du formulaire -> couples (liste vide si le texte n'est pas une liste JSON de couples).
+/// Form value -> pairs (empty list if the text is not a JSON list of pairs).
 fn parse_pairs(raw: &str) -> Vec<(String, String)> {
     serde_json::from_str(raw).unwrap_or_default()
 }
@@ -773,7 +773,7 @@ fn encode_pairs(rows: &[PairRow]) -> String {
     serde_json::to_string(&list).unwrap_or_else(|_| "[]".to_string())
 }
 
-/// Editeur de couples (liste deroulante + texte), avec ajout, suppression et changement d'ordre.
+/// Pairs editor (drop-down list + text), with add, delete and reorder.
 fn pairs_editor(
     id: String,
     name: &'static str,
@@ -797,8 +797,8 @@ fn pairs_editor(
             })
             .collect::<Vec<_>>()
     };
-    // Valeur du formulaire (ouverture d'un autre element) -> lignes ; lignes -> valeur. Chaque sens ne joue que s'il y a
-    // une difference, donc pas de boucle.
+    // Form value (opening another item) -> rows; rows -> value. Each direction only plays if there is
+    // a difference, hence no loop.
     Effect::new(move |_| {
         let raw = current();
         let shown = rows.with_untracked(|r| encode_pairs(r));
@@ -834,7 +834,7 @@ fn pairs_editor(
     .into_any()
 }
 
-/// Une ligne de l'editeur de couples : liste deroulante, texte, monter, descendre, retirer.
+/// A row of the pairs editor: drop-down list, text, move up, move down, remove.
 #[component]
 fn PairsRow(
     row: PairRow,
@@ -907,8 +907,8 @@ fn PairsRow(
     }
 }
 
-/// Zone de code et essai a blanc : on donne un topic et un message d'exemple, le serveur dit ce que le script ferait
-/// (sans rien publier ni enregistrer).
+/// Code area and dry run: we give a topic and a sample message, the server says what the script would do
+/// (without publishing or saving anything).
 fn code_editor(
     id: String,
     max: Option<u32>,

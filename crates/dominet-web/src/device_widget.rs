@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Corps d'un widget d'appareil : etat en direct (libelles, unites et cles masquees de la table des appareils), commandes
-//! actives (R3 lot 5, ADR 0029). Les commandes reprennent celles de l'implementation de reference (`{"state":"ON"}`, `{"brightness":n}`,
-//! `{"occupied_heating_setpoint":x}`, `{"fan_mode":"low"}`...) ; l'effet se voit quand l'appareil republie son etat.
+//! Body of a device widget: live state (labels, units and hidden keys from the devices table), active commands
+//! (R3 lot 5, ADR 0029). The commands take over those of the reference implementation (`{"state":"ON"}`, `{"brightness":n}`,
+//! `{"occupied_heating_setpoint":x}`, `{"fan_mode":"low"}`...); the effect is seen when the device republishes its state.
 
 use std::str::FromStr;
 
@@ -16,11 +16,11 @@ use serde_json::{Value, json};
 
 use crate::device_fns::send_device_command;
 
-/// Ce qu'il faut aux boutons d'un widget pour commander son appareil.
+/// What a widget's buttons need to command its device.
 #[derive(Clone, Copy)]
 struct Cmd {
     action: Action<String, Result<CommandOutcome, ServerFnError>>,
-    /// Vrai si le serveur sait publier ET que l'appareil est disponible (sinon « source indisponible »).
+    /// True if the server can publish AND the device is available (otherwise "source unavailable").
     enabled: Signal<bool>,
 }
 
@@ -46,7 +46,7 @@ pub(crate) fn device_body(w: &WidgetDto, state: Signal<Option<DeviceStateDto>>) 
         action,
         enabled: Signal::derive(move || commandable && state.get().is_some_and(|s| s.available)),
     };
-    // Message du dernier refus : il s'efface des que l'appareil publie un nouvel etat (la panne est donc finie ou depassee).
+    // Message of the last refusal: it clears as soon as the device publishes a new state (so the failure is over or outdated).
     let refusal = RwSignal::new(None::<&'static str>);
     Effect::new(move |_| {
         refusal.set(match action.value().get() {
@@ -85,7 +85,7 @@ fn humanize(key: &str) -> String {
         .unwrap_or_default()
 }
 
-/// Nom affiche d'une ligne : le libelle de l'appareil, sinon la cle mise en forme.
+/// Displayed name of a row: the device's label, otherwise the formatted key.
 fn row_name(r: &StateRow) -> String {
     if r.name.is_empty() {
         humanize(&r.key)
@@ -135,7 +135,7 @@ fn state_grid(rows: &[StateRow]) -> AnyView {
     .into_any()
 }
 
-/// Bouton de commande : actif si le serveur peut publier et que l'appareil est disponible.
+/// Command button: active if the server can publish and the device is available.
 fn control(label: AnyView, on: bool, cmd: Cmd, command: Value) -> AnyView {
     view! {
         <button
@@ -156,7 +156,7 @@ fn footer(buttons: Vec<AnyView>) -> AnyView {
     view! { <div class="vc-dev-footer">{buttons}</div> }.into_any()
 }
 
-/// Curseur : la commande `{key: valeur}` part au relachement.
+/// Slider: the `{key: value}` command goes out on release.
 fn slider(
     label: AnyView,
     id: &'static str,
@@ -304,7 +304,7 @@ fn cover_view(st: &Value, rows: &[StateRow], cmd: Cmd) -> AnyView {
     parts.into_any()
 }
 
-/// Consigne decalee de `delta`, arrondie au demi-degre (comme en reference).
+/// Setpoint shifted by `delta`, rounded to the half degree (like the reference).
 fn next_setpoint(current: Option<f64>, delta: f64) -> f64 {
     ((current.unwrap_or(20.0) + delta) * 2.0).round() / 2.0
 }
@@ -386,7 +386,7 @@ fn weather_view(st: &Value, rows: &[StateRow]) -> AnyView {
     .into_any()
 }
 
-/// Corps d'un widget d'appareil selon la presentation (demandee, ou deduite du type puis de l'etat si automatique).
+/// Body of a device widget according to the presentation (requested, or deduced from the type then from the state if automatic).
 fn device_view(
     requested: Presentation,
     title: &str,

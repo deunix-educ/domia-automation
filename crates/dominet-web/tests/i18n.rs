@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Coherence des traductions : toutes les langues ont les memes cles et les memes variables, aucune cle utilisee absente, aucune cle morte.
+//! Translation consistency: all the languages have the same keys and the same variables, no used key is missing, no key is dead.
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
 use std::path::Path;
 
-/// Langues presentes : un dossier `locales/<code>/main.ftl` par langue.
+/// Languages present: one `locales/<code>/main.ftl` folder per language.
 fn languages() -> Vec<String> {
     let dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("locales");
     let mut found: Vec<String> = fs::read_dir(dir)
@@ -18,7 +18,7 @@ fn languages() -> Vec<String> {
     found
 }
 
-/// Messages d'une langue : cle -> valeur, lignes de continuation et attributs inclus (meme lecture que `tools/i18n.py`).
+/// Messages of a language: key -> value, continuation lines and attributes included (same reading as `tools/i18n.py`).
 fn messages(lang: &str) -> BTreeMap<String, String> {
     let path = Path::new(env!("CARGO_MANIFEST_DIR")).join(format!("locales/{lang}/main.ftl"));
     let mut out = BTreeMap::new();
@@ -55,7 +55,7 @@ fn keys(lang: &str) -> BTreeSet<String> {
     messages(lang).into_keys().collect()
 }
 
-/// Variables `$nom` d'un message.
+/// `$name` variables of a message.
 fn variables(text: &str) -> BTreeSet<String> {
     let mut out = BTreeSet::new();
     let mut rest = text;
@@ -72,7 +72,7 @@ fn variables(text: &str) -> BTreeSet<String> {
     out
 }
 
-/// Cles passees a `tr!(...)` / `move_tr!(...)` dans les sources.
+/// Keys passed to `tr!(...)` / `move_tr!(...)` in the sources.
 fn used_keys() -> BTreeSet<String> {
     let dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("src");
     let mut used = BTreeSet::new();
@@ -86,7 +86,7 @@ fn used_keys() -> BTreeSet<String> {
             let mut rest = text.as_str();
             let mut before = String::new();
             while let Some(i) = rest.find(marker) {
-                // `include_str!("...")` se termine lui aussi par `tr!("` : on exige une frontiere de mot.
+                // `include_str!("...")` also ends with `tr!("`: we require a word boundary.
                 before.push_str(&rest[..i]);
                 let boundary = !before
                     .chars()
@@ -112,8 +112,8 @@ fn french_and_english_are_always_there() {
     );
 }
 
-/// Toute langue ajoutee (`make i18n-new`) doit definir exactement les cles de l'anglais, avec les memes variables : sinon un
-/// message manquerait, ou une variable resterait sans valeur, a l'affichage.
+/// Every added language (`make i18n-new`) must define exactly the English keys, with the same variables: otherwise a
+/// message would be missing, or a variable would stay without a value, at display time.
 #[test]
 fn every_language_defines_the_same_keys_and_variables_as_english() {
     let reference = messages("en");

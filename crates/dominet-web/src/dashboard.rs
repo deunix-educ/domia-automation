@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Page d'accueil : le tableau de bord du compte (R2 lot 4).
+//! Home page: the account's dashboard (R2 lot 4).
 //!
-//! Les tableaux et leurs widgets viennent de `dashboard_page` (HTML deja assaini, adresse d'iframe deja verifiee). Chaque
-//! widget est place par des **classes** (`vc-c-N`, `vc-r-N`, `vc-w-N`, `vc-h-N`) : la CSP interdit l'attribut `style`. Les
-//! widgets d'appareil (`device_widget`) s'abonnent au sujet `device:<id>`, suivent l'etat en direct et envoient leurs commandes
-//! par MQTT. Les cameras sont un emplacement annonce (R6).
+//! The dashboards and their widgets come from `dashboard_page` (HTML already sanitised, iframe address already verified). Each
+//! widget is placed by **classes** (`vc-c-N`, `vc-r-N`, `vc-w-N`, `vc-h-N`): the CSP forbids the `style` attribute. The
+//! device widgets (`device_widget`) subscribe to the `device:<id>` subject, follow the state live and send their commands
+//! over MQTT. Cameras are an announced slot (R6).
 
 use dominet_proto::{
     DashboardPageDto, DashboardSummaryDto, DeviceStateDto, ProblemKind, SaveOutcome, Topic,
@@ -33,7 +33,7 @@ use crate::live::WhepPlayer;
 use crate::realtime::Realtime;
 use crate::server_fns::{create_dashboard, dashboard_page};
 
-/// Page `/` : protegee, affiche le tableau demande par `?d=<id>`, sinon le tableau par defaut.
+/// Page `/`: protected, shows the dashboard requested by `?d=<id>`, otherwise the default dashboard.
 #[component]
 pub fn DashboardPage() -> impl IntoView {
     view! {
@@ -43,14 +43,14 @@ pub fn DashboardPage() -> impl IntoView {
     }
 }
 
-/// Etat partage de l'edition : compteur qui relance le chargement de la page, et dernier refus a montrer.
+/// State shared by editing: counter that restarts the page load, and the last refusal to show.
 #[derive(Clone, Copy)]
 struct DashboardEdit {
     version: RwSignal<u32>,
     notice: RwSignal<Option<&'static str>>,
 }
 
-/// L'utilisateur connecte est-il administrateur ? (reactif)
+/// Is the logged-in user an administrator? (reactive)
 pub(crate) fn is_admin() -> Memo<bool> {
     let layout = expect_context::<LayoutState>();
     Memo::new(move |_| {
@@ -171,7 +171,7 @@ fn picker_item(d: DashboardSummaryDto, active: bool) -> impl IntoView {
     }
 }
 
-/// Ecran sans tableau : invite a en creer un.
+/// Screen without a dashboard: invites to create one.
 #[component]
 fn EmptyDashboard() -> impl IntoView {
     let name = NodeRef::<leptos::html::Input>::new();
@@ -263,7 +263,7 @@ fn is_on(state: &DeviceStateDto) -> bool {
     state.available && state.state.get("state").and_then(Value::as_str) == Some("ON")
 }
 
-/// Un widget : cadre place par classes, en-tete et corps selon le type.
+/// A widget: frame placed by classes, header and body according to the type.
 #[component]
 fn WidgetCard(w: WidgetDto) -> impl IntoView {
     let rt = expect_context::<Realtime>();

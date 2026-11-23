@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Essai a blanc des scripts Rhai (R4 lot 5, ADR 0034) : le script s'execute dans le meme hote sandboxe que les vraies
-//! executions, avec les vrais etats d'appareils, mais **rien n'est publie, active ni enregistre** : on montre ce qu'il aurait fait.
+//! Dry run of Rhai scripts (R4 lot 5, ADR 0034): the script runs in the same sandboxed host as the real
+//! runs, with the real device states, but **nothing is published, enabled or saved**: we show what it would have done.
 
 use dominet_proto::DryRunDto;
 use leptos::prelude::*;
 
-/// Essaie un script avec un topic et un message d'exemple (texte JSON, ou texte simple). Administrateurs seulement.
+/// Tries a script with a topic and a sample message (JSON text, or plain text). Administrators only.
 ///
 /// # Errors
-/// Refus (403) pour un non-administrateur ; erreur interne si les appareils sont illisibles.
+/// Refused (403) for a non-administrator; internal error if the devices are unreadable.
 #[server(name = DryRunScript, prefix = "/sf", endpoint = "scripts/dry-run")]
 pub async fn dry_run_script(
     code: String,

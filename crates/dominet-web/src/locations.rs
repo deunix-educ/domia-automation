@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Administration des emplacements (pieces, zones) : `/admin/locations`.
+//! Administration of locations (rooms, zones): `/admin/locations`.
 
 use dominet_proto::{LocationDto, LocationInput};
 use leptos::prelude::*;

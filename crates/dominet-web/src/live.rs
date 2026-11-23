@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Live d'une camera : lecteur WHEP et page `/surveillance/live/<uuid>` (R6 lot 4, ADR 0046). Le lecteur sert aussi au widget camera du
-//! tableau de bord. Tout compte connecte peut regarder ; le flux vient de MediaMTX, jamais de la camera.
+//! Live view of a camera: WHEP player and `/surveillance/live/<uuid>` page (R6 lot 4, ADR 0046). The player also serves the camera widget of the
+//! dashboard. Any logged-in account may watch; the stream comes from MediaMTX, never from the camera.
 
 use dominet_proto::CameraLiveDto;
 use leptos::prelude::*;
@@ -13,19 +13,19 @@ use crate::guard::RequireAuth;
 use crate::ptz_panel::CameraControls;
 use crate::whep::{Failure, StatsSample, video_id};
 
-/// Ce que le lecteur montre.
+/// What the player shows.
 #[derive(Debug, Clone, PartialEq)]
 pub enum PlayerState {
-    /// Negociation en cours, ou attente de la premiere image.
+    /// Negotiation in progress, or waiting for the first image.
     Connecting,
     Live,
-    /// Session perdue ou figee : nouvelle tentative en cours.
+    /// Session lost or frozen: new attempt in progress.
     Reconnecting,
     Failed(Failure),
 }
 
 impl PlayerState {
-    /// Valeur de `data-live-state` (lue par les tests de bout en bout).
+    /// Value of `data-live-state` (read by the end-to-end tests).
     #[must_use]
     pub fn label(&self) -> &'static str {
         match self {
@@ -60,14 +60,14 @@ fn stats_line(s: &StatsSample) -> String {
     format!("{:.0}×{:.0} · {:.0} i/s{rtt}", s.width, s.height, s.fps)
 }
 
-/// Lecteur d'une camera. `instance` distingue deux affichages de la meme camera dans une page (identifiant du `<video>`).
+/// A camera's player. `instance` tells apart two displays of the same camera in a page (identifier of the `<video>`).
 #[component]
 pub fn WhepPlayer(camera: CameraLiveDto, #[prop(default = 0)] instance: u32) -> impl IntoView {
     let id = video_id(&camera.uuid, instance);
     let state = RwSignal::new(PlayerState::Connecting);
     let metrics = RwSignal::new(None::<StatsSample>);
     let stopped = RwSignal::new(false);
-    // Navigateur sans H.264 : image fixe rafraichie chaque seconde (les images de la camera, voir ADR 0048) ; le numero change l'adresse.
+    // Browser without H.264: still image refreshed every second (the camera's images, see ADR 0048); the number changes the address.
     let tick = RwSignal::new(0u32);
     on_cleanup(move || stopped.set(true));
     let snapshot_url = format!("/surveillance/camera/{}/snapshot/", camera.uuid);
@@ -109,7 +109,7 @@ pub fn WhepPlayer(camera: CameraLiveDto, #[prop(default = 0)] instance: u32) -> 
     }
 }
 
-/// Boucle du lecteur : connexion, surveillance des images decodees, reconnexion avec delai croissant.
+/// Player loop: connection, monitoring of decoded images, reconnection with a growing delay.
 #[cfg(feature = "hydrate")]
 async fn run(
     url: String,
@@ -172,7 +172,7 @@ async fn run(
     }
 }
 
-/// Affichage de repli : une nouvelle image chaque seconde, tant que la page est ouverte.
+/// Fallback display: a new image every second, as long as the page is open.
 #[cfg(feature = "hydrate")]
 async fn refresh_snapshot(tick: RwSignal<u32>, stopped: RwSignal<bool>) {
     while !stopped.get_untracked() {
@@ -233,7 +233,7 @@ fn Live() -> impl IntoView {
     }
 }
 
-/// Bouton « Photographier » (administrateurs) : inscrit la derniere image de la camera dans la galerie.
+/// "Take a photo" button (administrators): records the camera's last image in the gallery.
 #[component]
 fn SnapshotButton(uuid: String) -> impl IntoView {
     let result = RwSignal::new(None::<(bool, String)>);

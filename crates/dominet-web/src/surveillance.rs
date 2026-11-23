@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Page de consultation des cameras : `/surveillance` (R6 lot 2). Tout compte connecte la voit ; le live, les snapshots et les
-//! enregistrements s'y ajoutent aux lots suivants.
+//! Camera viewing page: `/surveillance` (R6 lot 2). Any logged-in account sees it; the live view, snapshots and
+//! recordings are added in the following lots.
 
 use leptos::prelude::*;
 use leptos_fluent::move_tr;
@@ -26,7 +26,7 @@ fn Cameras() -> impl IntoView {
         || (),
         |()| async { list_camera_cards().await.map_err(|_| ()) },
     );
-    // Les vignettes se rafraichissent toutes les 5 s (navigateur seulement).
+    // The thumbnails refresh every 5 s (browser only).
     let tick = RwSignal::new(0u32);
     #[cfg(feature = "hydrate")]
     {
@@ -66,7 +66,7 @@ fn Cameras() -> impl IntoView {
     }
 }
 
-/// Derniere image d'une camera ; un cadre sombre si elle n'en a pas encore.
+/// A camera's last image; a dark frame if it has none yet.
 #[component]
 fn Thumbnail(uuid: String, tick: RwSignal<u32>) -> impl IntoView {
     let missing = RwSignal::new(false);

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Acces au navigateur (stockage local, plein ecran). Sans effet cote serveur : le rendu serveur n'a pas de navigateur.
+//! Browser access (local storage, full screen). No effect on the server side: the server render has no browser.
 
-/// Cle de stockage de l'etat replie de la barre laterale (la meme que l'interface reference).
+/// Storage key of the sidebar's collapsed state (the same as the reference interface).
 const COLLAPSED_KEY: &str = "vc-sidebar-collapsed";
 
 #[cfg(feature = "hydrate")]
@@ -9,7 +9,7 @@ fn storage() -> Option<web_sys::Storage> {
     web_sys::window()?.local_storage().ok()?
 }
 
-/// Etat replie memorise, s'il existe.
+/// Remembered collapsed state, if it exists.
 #[must_use]
 pub fn stored_collapsed() -> Option<bool> {
     #[cfg(feature = "hydrate")]
@@ -23,7 +23,7 @@ pub fn stored_collapsed() -> Option<bool> {
     }
 }
 
-/// Memorise l'etat replie (ignore les erreurs : stockage bloque, navigation privee...).
+/// Remembers the collapsed state (ignores errors: blocked storage, private browsing...).
 pub fn store_collapsed(collapsed: bool) {
     #[cfg(feature = "hydrate")]
     if let Some(s) = storage() {
@@ -33,7 +33,7 @@ pub fn store_collapsed(collapsed: bool) {
     let _ = collapsed;
 }
 
-/// Remonte au debut de la page (ouverture d'un formulaire de modification depuis une longue liste : le formulaire est en haut).
+/// Scrolls back to the top of the page (opening an edit form from a long list: the form is at the top).
 pub fn scroll_to_top() {
     #[cfg(feature = "hydrate")]
     if let Some(w) = web_sys::window() {
@@ -41,7 +41,7 @@ pub fn scroll_to_top() {
     }
 }
 
-/// Charge `path` par une vraie requete au serveur (page hors de l'interface : documentation, Grafana).
+/// Loads `path` with a real request to the server (page outside the interface: documentation, Grafana).
 pub fn load_page(path: &str) {
     #[cfg(feature = "hydrate")]
     if let Some(w) = web_sys::window() {
@@ -51,7 +51,7 @@ pub fn load_page(path: &str) {
     let _ = path;
 }
 
-/// Bascule le plein ecran.
+/// Toggles full screen.
 pub fn toggle_fullscreen() {
     #[cfg(feature = "hydrate")]
     if let Some(doc) = web_sys::window().and_then(|w| w.document()) {
@@ -63,16 +63,16 @@ pub fn toggle_fullscreen() {
     }
 }
 
-/// Contenu REEL d'un champ (vide s'il n'est pas encore monte). A preferer a un signal alimente par `input` pour les
-/// formulaires de connexion : le remplissage automatique et la restauration d'un formulaire par le navigateur posent une
-/// valeur sans evenement `input`.
+/// REAL content of a field (empty if not yet mounted). To be preferred to a signal fed by `input` for the
+/// login forms: autofill and the browser's restoration of a form set
+/// a value without an `input` event.
 #[must_use]
 pub fn input_value(field: leptos::prelude::NodeRef<leptos::html::Input>) -> String {
     use leptos::prelude::GetUntracked;
     field.get_untracked().map(|e| e.value()).unwrap_or_default()
 }
 
-/// Vide un champ (apres un echec, pour ne pas laisser un mot de passe a l'ecran).
+/// Clears a field (after a failure, so as not to leave a password on screen).
 pub fn clear_input(field: leptos::prelude::NodeRef<leptos::html::Input>) {
     use leptos::prelude::GetUntracked;
     if let Some(e) = field.get_untracked() {

@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Administration des reglages applicatifs : `/admin/settings`.
+//! Administration of application settings: `/admin/settings`.
 //!
-//! Les 17 reglages sont fixes (registre du domaine) : pas de creation ni de suppression, donc pas de tableau CRUD.
-//! Une carte par categorie, un editeur adapte au type. La valeur d'un secret n'arrive jamais au navigateur : on
-//! affiche seulement s'il est defini, et on ne l'envoie que lorsqu'on le remplace.
+//! The 17 settings are fixed (domain registry): no creation or deletion, hence no CRUD table.
+//! One card per category, an editor suited to the type. A secret's value never reaches the browser: we
+//! only show whether it is defined, and only send it when it is replaced.
 
 use dominet_proto::{BroadcastOutcome, InjectOutcome, SettingDto, SettingOutcome, Topic};
 use leptos::prelude::*;
@@ -24,7 +24,7 @@ enum Status {
     Failed,
 }
 
-/// Reglages regroupes par categorie, dans l'ordre recu (deja trie par categorie puis cle).
+/// Settings grouped by category, in the order received (already sorted by category then key).
 fn by_category(items: Vec<SettingDto>) -> Vec<(String, Vec<SettingDto>)> {
     let mut out: Vec<(String, Vec<SettingDto>)> = vec![];
     for item in items {
@@ -85,14 +85,14 @@ fn SettingsAdmin() -> impl IntoView {
     }
 }
 
-/// Un reglage : description, etat, editeur et boutons.
+/// A setting: description, state, editor and buttons.
 #[component]
 fn SettingRow(initial: SettingDto) -> impl IntoView {
     let key = initial.key.clone();
     let value_type = initial.value_type.clone();
     let is_secret = initial.is_secret;
     let current = RwSignal::new(initial.clone());
-    // Un secret n'est jamais prerempli ; les autres le sont avec la valeur courante.
+    // A secret is never prefilled; the others are, with the current value.
     let draft = RwSignal::new(if is_secret {
         String::new()
     } else {
@@ -247,7 +247,7 @@ fn SettingRow(initial: SettingDto) -> impl IntoView {
     }
 }
 
-/// Message d'une valeur incompatible avec le type du reglage.
+/// Message for a value incompatible with the setting's type.
 fn invalid_text(value_type: &str) -> String {
     match value_type {
         "int" => tr!("settings-invalid-int"),
@@ -257,7 +257,7 @@ fn invalid_text(value_type: &str) -> String {
     }
 }
 
-/// Diffusion d'un message a tous les utilisateurs connectes : utile et sert a verifier la chaine temps reel.
+/// Broadcast of a message to all the logged-in users: useful and serves to check the real-time chain.
 #[component]
 fn BroadcastCard() -> impl IntoView {
     let text = RwSignal::new(String::new());
@@ -318,7 +318,7 @@ fn BroadcastCard() -> impl IntoView {
     }
 }
 
-/// Resultat d'une injection d'essai, tel qu'affiche.
+/// Result of a test injection, as displayed.
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum Injected {
     Sent(u32),
@@ -327,8 +327,8 @@ enum Injected {
     Failed,
 }
 
-/// Injection d'un etat d'appareil d'essai et affichage, en direct, du dernier etat recu pour ce numero : la chaine
-/// abonnement -> etat retenu -> diffusion se verifie ici avant que MQTT n'existe (R3).
+/// Injection of a test device state and live display of the last state received for this number: the
+/// subscription -> kept state -> broadcast chain is checked here before MQTT exists (R3).
 #[component]
 fn SimulatorCard() -> impl IntoView {
     let rt = expect_context::<Realtime>();
@@ -340,7 +340,7 @@ fn SimulatorCard() -> impl IntoView {
     let ready = use_hydrated();
     let id = move || device.get().trim().parse::<i64>().ok().filter(|n| *n > 0);
 
-    // On suit l'appareil dont le numero est saisi : abonnement pris, change ou abandonne avec le champ.
+    // We follow the device whose number is entered: subscription taken, changed or given up with the field.
     let followed = StoredValue::new(None::<i64>);
     Effect::new(move |_| {
         let current = id();

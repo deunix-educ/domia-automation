@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Administration des automations : `/admin/automations` (R4 lot 3, ADR 0032). Un declencheur, une condition facultative, une
-//! action ; le formulaire n'affiche que les champs du type choisi. Le journal d'execution recent est sous le tableau.
+//! Automations administration: `/admin/automations` (R4 lot 3, ADR 0032). A trigger, an optional condition, an
+//! action; the form only shows the fields of the chosen type. The recent execution log is under the table.
 //!
-//! Les declencheurs `mqtt_message` et `device_state` sont executes par le moteur des ce lot ; `schedule` et `solar` le seront
-//! avec le planificateur (lot 4), les scripts avec le lot 5.
+//! The `mqtt_message` and `device_state` triggers are run by the engine from this lot; `schedule` and `solar` will be
+//! with the scheduler (lot 4), scripts with lot 5.
 
 use dominet_proto::{
     AutomationDto, AutomationFields, AutomationInput, AutomationRunDto, DeleteOutcome, SaveOutcome,
@@ -14,7 +14,7 @@ use leptos_fluent::{I18n, move_tr, tr};
 use crate::crud::{CrudResult, CrudTable, FieldKind, FieldSpec, Labels, Row, Values};
 use crate::guard::RequireAdmin;
 
-// ------------------------------------------------------------------ conversions (serveur)
+// ------------------------------------------------------------------ conversions (server)
 
 #[cfg(feature = "ssr")]
 fn fields_of(a: &dominet_domain::automation::Automation) -> AutomationFields {
@@ -122,7 +122,7 @@ fn dto_of(a: &dominet_domain::automation::Automation, next_run: String) -> Autom
     }
 }
 
-/// Prochain passage de chaque automation planifiee, en heure locale du serveur.
+/// Next run of each scheduled automation, in server local time.
 #[cfg(feature = "ssr")]
 async fn next_runs(
     state: &dominet_server::AppState,
@@ -140,7 +140,7 @@ async fn next_runs(
         .collect())
 }
 
-/// Lit un nombre saisi avec point ou virgule decimale.
+/// Reads a number entered with a decimal point or comma.
 #[cfg(feature = "ssr")]
 fn decimal(text: &str) -> Option<f64> {
     text.trim()
@@ -150,7 +150,7 @@ fn decimal(text: &str) -> Option<f64> {
         .filter(|v| v.is_finite())
 }
 
-/// Brouillon depuis le formulaire, ou les problemes champ par champ.
+/// Draft from the form, or the field-by-field problems.
 #[cfg(feature = "ssr")]
 fn draft_of(
     f: &AutomationFields,
@@ -245,13 +245,13 @@ fn draft_of(
         Ok(_) => Err(problems),
         Err(mut more) => {
             problems.append(&mut more);
-            // Le champ du formulaire pour la condition s'appelle `condition_key`.
+            // The form field for the condition is called `condition_key`.
             for p in &mut problems {
                 if p.0 == "condition" {
                     p.0 = "condition_key";
                 }
             }
-            // Un champ illisible en JSON est signale une fois, pas aussi par la validation de sa valeur de repli.
+            // A field unreadable as JSON is reported once, not also by the validation of its fallback value.
             let mut seen = std::collections::HashSet::new();
             problems.retain(|(field, _)| seen.insert(*field));
             Err(problems)
@@ -259,12 +259,12 @@ fn draft_of(
     }
 }
 
-// ------------------------------------------------------------------ fonctions serveur
+// ------------------------------------------------------------------ server functions
 
-/// Automations, par nom (administrateurs).
+/// Automations, by name (administrators).
 ///
 /// # Errors
-/// Refus (403) pour un non-administrateur ; erreur interne si la base echoue.
+/// Refused (403) for a non-administrator; internal error if the database fails.
 #[server(name = ListAutomations, prefix = "/sf", endpoint = "automations/list")]
 pub async fn list_automations() -> Result<Vec<AutomationDto>, ServerFnError> {
     use dominet_domain::repo::AutomationRepo;
@@ -286,11 +286,11 @@ pub async fn list_automations() -> Result<Vec<AutomationDto>, ServerFnError> {
         .collect())
 }
 
-/// Cree (`id` absent) ou remplace (`id` present) une automation. Les champs invalides sont renvoyes un par un ; le moteur
-/// recharge ses automations et ses abonnements tout de suite.
+/// Creates (`id` absent) or replaces (`id` present) an automation. Invalid fields are returned one by one; the engine
+/// reloads its automations and subscriptions right away.
 ///
 /// # Errors
-/// Refus (403) pour un non-administrateur ; erreur interne si la base echoue.
+/// Refused (403) for a non-administrator; internal error if the database fails.
 #[server(name = SaveAutomation, prefix = "/sf", endpoint = "automations/save", input = server_fn::codec::Json)]
 pub async fn save_automation(
     input: AutomationInput,
@@ -305,8 +305,8 @@ pub async fn save_automation(
         Ok(d) => d,
         Err(problems) => return Ok(SaveOutcome::Invalid(field_problems(problems))),
     };
-    // Le script doit se compiler et la scene visee exister : ces controles, comme le rechargement du moteur, sont dans le service
-    // partage avec le serveur MCP.
+    // The script must compile and the targeted scene must exist: these checks, like the engine reload, are in the service
+    // shared with the MCP server.
     match dominet_server::config_service::save_automation(
         &state,
         input.id.map(AutomationId),
@@ -332,10 +332,10 @@ pub async fn save_automation(
     }
 }
 
-/// Supprime une automation (son journal avec elle).
+/// Deletes an automation (its log with it).
 ///
 /// # Errors
-/// Refus (403) pour un non-administrateur ; erreur interne si la base echoue.
+/// Refused (403) for a non-administrator; internal error if the database fails.
 #[server(name = DeleteAutomation, prefix = "/sf", endpoint = "automations/delete")]
 pub async fn delete_automation(id: i64) -> Result<DeleteOutcome, ServerFnError> {
     use dominet_domain::automation::AutomationId;
@@ -357,10 +357,10 @@ pub async fn delete_automation(id: i64) -> Result<DeleteOutcome, ServerFnError> 
     Ok(outcome)
 }
 
-/// Les 50 dernieres executions, toutes automations confondues, les plus recentes d'abord (administrateurs).
+/// The last 50 executions, all automations together, most recent first (administrators).
 ///
 /// # Errors
-/// Refus (403) pour un non-administrateur ; erreur interne si la base echoue.
+/// Refused (403) for a non-administrator; internal error if the database fails.
 #[server(name = AutomationRuns, prefix = "/sf", endpoint = "automations/runs")]
 pub async fn automation_runs() -> Result<Vec<AutomationRunDto>, ServerFnError> {
     use std::collections::HashMap;
@@ -529,7 +529,7 @@ fn fields() -> Vec<FieldSpec> {
     ]
 }
 
-/// Champs visibles selon le type de declencheur et d'action choisis.
+/// Fields visible according to the chosen trigger and action type.
 fn visible(field: &'static str, v: &Values) -> bool {
     let trigger = v.get("trigger_type").map_or("", String::as_str);
     let action = v.get("action_type").map_or("", String::as_str);
@@ -643,7 +643,7 @@ fn AutomationsAdmin() -> impl IntoView {
     }
 }
 
-/// Journal d'execution recent ; il se recharge avec le bouton, ou quand la liste change.
+/// Recent execution log; it reloads with the button, or when the list changes.
 #[component]
 fn RunsJournal(version: RwSignal<u32>) -> impl IntoView {
     let i18n = expect_context::<I18n>();

@@ -1,21 +1,21 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Politique de securite du contenu (CSP) des pages HTML, avec un nonce different a chaque reponse.
+//! Content security policy (CSP) of the HTML pages, with a different nonce for each response.
 //!
-//! Leptos genere le nonce pendant le rendu et le met sur ses scripts en ligne (hydratation, ressources). L'en-tete est
-//! donc pose **pendant le rendu**, par le meme composant qui connait ce nonce : un en-tete pose par un middleware ne
-//! pourrait pas le connaitre.
+//! Leptos generates the nonce during rendering and puts it on its inline scripts (hydration, resources). The header is
+//! therefore set **during rendering**, by the same component that knows this nonce: a header set by a middleware could not
+//! know it.
 //!
-//! Politique : rien de tiers, aucun script ni style en ligne sans nonce, pas d'`eval` (seule la compilation WebAssembly est
-//! autorisee). Les attributs `style="..."` et `on...=` sont interdits : l'interface n'en produit pas (test dans
-//! `crates/dominet/tests/ui.rs`). Les iframes (Grafana, R2) et les flux medias (R6) ajouteront leurs directives `frame-src` /
-//! `media-src` / `connect-src` le moment venu.
+//! Policy: nothing third-party, no inline script or style without a nonce, no `eval` (only WebAssembly compilation is
+//! allowed). `style="..."` and `on...=` attributes are forbidden: the interface produces none (test in
+//! `crates/dominet/tests/ui.rs`). Iframes (Grafana, R2) and media streams (R6) will add their `frame-src` /
+//! `media-src` / `connect-src` directives when the time comes.
 
 use axum::http::{HeaderValue, header};
 use leptos::nonce::use_nonce;
 use leptos::prelude::use_context;
 use leptos_axum::ResponseOptions;
 
-/// La politique pour un nonce donne.
+/// The policy for a given nonce.
 #[must_use]
 pub fn policy(nonce: &str, frame_origin: Option<&str>, webrtc_origin: Option<&str>) -> String {
     let mut directives = vec![
@@ -24,8 +24,8 @@ pub fn policy(nonce: &str, frame_origin: Option<&str>, webrtc_origin: Option<&st
         "style-src 'self'".to_string(),
         "img-src 'self' data:".to_string(),
         "font-src 'self'".to_string(),
-        // `'self'` couvre aussi le WebSocket de la meme origine (ws:// ou wss://) dans les navigateurs recents.
-        // L'origine de MediaMTX (signalisation WHEP du live) s'y ajoute quand elle n'est pas la meme.
+        // `'self'` also covers the WebSocket of the same origin (ws:// or wss://) in recent browsers.
+        // MediaMTX's origin (WHEP signalling of the live view) is added when it is not the same.
         match webrtc_origin {
             Some(origin) => format!("connect-src 'self' {origin}"),
             None => "connect-src 'self'".to_string(),
@@ -35,14 +35,14 @@ pub fn policy(nonce: &str, frame_origin: Option<&str>, webrtc_origin: Option<&st
         "form-action 'self'".to_string(),
         "frame-ancestors 'none'".to_string(),
     ];
-    // Les iframes ne sont autorisees que vers l'origine de Grafana (reglage `GRAFANA_PUBLIC_URL`).
+    // Iframes are only allowed towards Grafana's origin (`GRAFANA_PUBLIC_URL` setting).
     if let Some(origin) = frame_origin {
         directives.push(format!("frame-src {origin}"));
     }
     directives.join("; ")
 }
 
-/// Origine (schema, hote, port) de MediaMTX pour le navigateur, d'apres les reglages et l'hote de la requete en cours.
+/// MediaMTX origin (scheme, host, port) for the browser, from the settings and the current request's host.
 fn webrtc_origin(state: &dominet_server::AppState) -> Option<String> {
     let host = use_context::<axum::http::request::Parts>().and_then(|p| {
         p.headers
@@ -65,7 +65,7 @@ fn webrtc_origin(state: &dominet_server::AppState) -> Option<String> {
     dominet_domain::widget_view::http_origin(&url)
 }
 
-/// Pose l'en-tete `Content-Security-Policy` de la reponse en cours de rendu.
+/// Sets the `Content-Security-Policy` header of the response being rendered.
 pub fn apply() {
     let (Some(nonce), Some(response)) = (use_nonce(), use_context::<ResponseOptions>()) else {
         tracing::warn!("CSP not set: no nonce or no response context");
@@ -97,7 +97,7 @@ mod tests {
             script,
             "script-src 'self' 'nonce-abc123' 'wasm-unsafe-eval'"
         );
-        // `'wasm-unsafe-eval'` (compilation WebAssembly) est voulu ; l'`eval` de JavaScript ne l'est pas.
+        // `'wasm-unsafe-eval'` (WebAssembly compilation) is intended; JavaScript `eval` is not.
         let without_wasm = p.replace("wasm-unsafe-eval", "");
         for forbidden in ["unsafe-inline", "unsafe-eval", "http:", "https:", "*"] {
             assert!(!without_wasm.contains(forbidden), "{forbidden} dans {p}");

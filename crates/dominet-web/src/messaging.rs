@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Messagerie interne (R5 lot 5, ADR 0041) : composer `/messaging/compose` (administrateurs), messages envoyes `/messaging` (administrateurs),
-//! boite de reception `/messaging/inbox` (tout compte) et detail `/messaging/<id>`. L'envoi est asynchrone : la page de detail
-//! suit le sujet `message:<id>` et recharge les statuts a chaque evenement.
+//! Internal messaging (R5 lot 5, ADR 0041): compose `/messaging/compose` (administrators), sent messages `/messaging` (administrators),
+//! inbox `/messaging/inbox` (any account) and detail `/messaging/<id>`. Sending is asynchronous: the detail page
+//! follows the `message:<id>` subject and reloads the statuses at each event.
 
 use dominet_proto::{
     ComposeFormDto, ComposeInput, ComposeOutcome, DeliveryDto, FieldProblem, MessageDetailDto,
@@ -19,7 +19,7 @@ use crate::guard::{RequireAdmin, RequireAuth};
 use crate::layout::use_hydrated;
 use crate::realtime::Realtime;
 
-// ------------------------------------------------------------------ fonctions serveur
+// ------------------------------------------------------------------ server functions
 
 #[cfg(feature = "ssr")]
 mod ssr {
@@ -33,7 +33,7 @@ mod ssr {
         users.get(&id).map(User::display_name).unwrap_or_default()
     }
 
-    /// Ligne de liste ; `mine` = l'envoi destine au compte connecte (boite de reception).
+    /// List row; `mine` = the sending addressed to the logged-in account (inbox).
     pub fn row(m: &Message, users: &HashMap<i64, User>, mine: Option<&Delivery>) -> MessageRowDto {
         MessageRowDto {
             id: m.id.0,
@@ -61,10 +61,10 @@ mod ssr {
     }
 }
 
-/// Ce qu'il faut pour composer : les comptes et l'etat des canaux.
+/// What is needed to compose: the accounts and the state of the channels.
 ///
 /// # Errors
-/// Refus (403) hors administrateur ; erreur interne si la base echoue.
+/// Refused (403) outside administrators; internal error if the database fails.
 #[server(name = MessagingComposeForm, prefix = "/sf", endpoint = "messaging/form")]
 pub async fn compose_form() -> Result<ComposeFormDto, ServerFnError> {
     use dominet_domain::repo::{AndroidDeviceRepo, UserRepo};
@@ -104,10 +104,10 @@ pub async fn compose_form() -> Result<ComposeFormDto, ServerFnError> {
     })
 }
 
-/// Enregistre le message et lance son envoi (en tache de fond) ; renvoie l'identifiant de la page de detail.
+/// Saves the message and starts its sending (in the background); returns the detail page's identifier.
 ///
 /// # Errors
-/// Refus (403) hors administrateur ; erreur interne si la base echoue.
+/// Refused (403) outside administrators; internal error if the database fails.
 #[server(name = MessagingSend, prefix = "/sf", endpoint = "messaging/send", input = server_fn::codec::Json)]
 pub async fn send_message(input: ComposeInput) -> Result<ComposeOutcome, ServerFnError> {
     use dominet_domain::Problem;
@@ -154,10 +154,10 @@ pub async fn send_message(input: ComposeInput) -> Result<ComposeOutcome, ServerF
     })
 }
 
-/// Les 100 derniers messages envoyes.
+/// The last 100 messages sent.
 ///
 /// # Errors
-/// Refus (403) hors administrateur ; erreur interne si la base echoue.
+/// Refused (403) outside administrators; internal error if the database fails.
 #[server(name = MessagingSent, prefix = "/sf", endpoint = "messaging/sent")]
 pub async fn sent_messages() -> Result<Vec<MessageRowDto>, ServerFnError> {
     use dominet_domain::repo::MessageRepo;
@@ -178,10 +178,10 @@ pub async fn sent_messages() -> Result<Vec<MessageRowDto>, ServerFnError> {
     Ok(list.iter().map(|m| ssr::row(m, &users, None)).collect())
 }
 
-/// Les 100 derniers messages recus par le compte.
+/// The last 100 messages received by the account.
 ///
 /// # Errors
-/// Refus (401) sans session ; erreur interne si la base echoue.
+/// Refused (401) without a session; internal error if the database fails.
 #[server(name = MessagingInbox, prefix = "/sf", endpoint = "messaging/inbox")]
 pub async fn inbox_messages() -> Result<Vec<MessageRowDto>, ServerFnError> {
     use dominet_domain::repo::MessageRepo;
@@ -205,11 +205,11 @@ pub async fn inbox_messages() -> Result<Vec<MessageRowDto>, ServerFnError> {
         .collect())
 }
 
-/// Un message : le tableau complet pour son expediteur et les administrateurs, son seul envoi pour un destinataire ; `None` si le
-/// message n'existe pas ou ne concerne pas ce compte (meme reponse dans les deux cas).
+/// A message: the full table for its sender and administrators, only its own sending for a recipient; `None` if the
+/// message does not exist or does not concern this account (same response in both cases).
 ///
 /// # Errors
-/// Refus (401) sans session ; erreur interne si la base echoue.
+/// Refused (401) without a session; internal error if the database fails.
 #[server(name = MessagingDetail, prefix = "/sf", endpoint = "messaging/detail")]
 pub async fn message_detail(id: i64) -> Result<Option<MessageDetailDto>, ServerFnError> {
     use dominet_domain::messaging::MessageId;
@@ -257,7 +257,7 @@ pub async fn message_detail(id: i64) -> Result<Option<MessageDetailDto>, ServerF
     }))
 }
 
-// ------------------------------------------------------------------ vues
+// ------------------------------------------------------------------ views
 
 fn status_label(status: &str) -> String {
     match status {
@@ -414,7 +414,7 @@ fn MessageTable(rows: Vec<MessageRowDto>, inbox: bool) -> impl IntoView {
     }
 }
 
-// ------------------------------------------------------------------ composer
+// ------------------------------------------------------------------ compose
 
 #[component]
 pub fn MessagingComposePage() -> impl IntoView {
@@ -608,7 +608,7 @@ fn MessagingDetail() -> impl IntoView {
             }
         },
     );
-    // Les statuts changent pendant l'envoi : on suit le sujet du message tant que la page est ouverte.
+    // The statuses change during sending: we follow the message's subject as long as the page is open.
     let held = StoredValue::new(None::<i64>);
     Effect::new(move |_| {
         let now = id();

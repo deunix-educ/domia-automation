@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Administration des stations meteo : `/admin/weather-stations` (R3 lot 6, ADR 0030). Le publisher interroge Open-Meteo pour les
-//! stations activees et publie sur `meteo/<suffixe>` ; creer ou modifier une station le reveille tout de suite.
+//! Weather stations administration: `/admin/weather-stations` (R3 lot 6, ADR 0030). The publisher queries Open-Meteo for the
+//! enabled stations and publishes on `meteo/<suffix>`; creating or modifying a station wakes it up right away.
 
 use dominet_proto::{DeleteOutcome, SaveOutcome, WeatherStationDto, WeatherStationInput};
 use leptos::prelude::*;
@@ -25,10 +25,10 @@ fn dto(s: &dominet_domain::device::WeatherStation) -> WeatherStationDto {
     }
 }
 
-/// Stations meteo, par nom (administrateurs).
+/// Weather stations, by name (administrators).
 ///
 /// # Errors
-/// Refus (403) pour un non-administrateur ; erreur interne si la base echoue.
+/// Refused (403) for a non-administrator; internal error if the database fails.
 #[server(name = ListWeatherStations, prefix = "/sf", endpoint = "weather-stations/list")]
 pub async fn list_weather_stations() -> Result<Vec<WeatherStationDto>, ServerFnError> {
     use dominet_domain::repo::WeatherRepo;
@@ -46,10 +46,10 @@ pub async fn list_weather_stations() -> Result<Vec<WeatherStationDto>, ServerFnE
     Ok(items.iter().map(dto).collect())
 }
 
-/// Cree (`id` absent) ou remplace (`id` present) une station ; le publisher est reveille.
+/// Creates (`id` absent) or replaces (`id` present) a station; the publisher is woken up.
 ///
 /// # Errors
-/// Refus (403) pour un non-administrateur ; erreur interne si la base echoue.
+/// Refused (403) for a non-administrator; internal error if the database fails.
 #[server(name = SaveWeatherStation, prefix = "/sf", endpoint = "weather-stations/save", input = server_fn::codec::Json)]
 pub async fn save_weather_station(
     input: WeatherStationInput,
@@ -81,13 +81,13 @@ pub async fn save_weather_station(
     let longitude = number("longitude", &input.longitude);
     let altitude = number("altitude", &input.altitude);
     let refresh = number("refresh_minutes", &input.refresh_minutes);
-    // Tout est verifie en une fois : un nombre illisible ne cache pas les autres problemes du formulaire.
+    // Everything is checked at once: an unreadable number does not hide the form's other problems.
     let mut draft = WeatherStation::draft(
         input.name.trim(),
         latitude.unwrap_or_default(),
         longitude.unwrap_or_default(),
     );
-    // Entiers : une valeur fractionnaire est arrondie, hors plage elle est saturee puis refusee par le domaine.
+    // Integers: a fractional value is rounded, out of range it is saturated then refused by the domain.
     #[allow(clippy::cast_possible_truncation)]
     {
         draft.altitude = altitude
@@ -137,10 +137,10 @@ pub async fn save_weather_station(
     })
 }
 
-/// Supprime une station meteo (l'appareil qu'elle alimentait reste).
+/// Deletes a weather station (the device it fed stays).
 ///
 /// # Errors
-/// Refus (403) pour un non-administrateur ; erreur interne si la base echoue.
+/// Refused (403) for a non-administrator; internal error if the database fails.
 #[server(name = DeleteWeatherStation, prefix = "/sf", endpoint = "weather-stations/delete")]
 pub async fn delete_weather_station(id: i64) -> Result<DeleteOutcome, ServerFnError> {
     use dominet_domain::device::WeatherStationId;

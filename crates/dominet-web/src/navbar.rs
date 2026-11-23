@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Administration de la navigation (entrees de la barre laterale) : `/admin/navbar`.
+//! Navigation administration (sidebar entries): `/admin/navbar`.
 
 use dominet_proto::{NavbarAdminDto, NavbarInput};
 use leptos::prelude::*;
@@ -181,7 +181,7 @@ fn NavbarAdmin() -> impl IntoView {
                 rows
                 save
                 remove
-                // La barre laterale affiche cette navigation : elle doit suivre les modifications.
+                // The sidebar displays this navigation: it must follow the modifications.
                 on_change=Callback::new(move |()| {
                     version.update(|v| *v += 1);
                     refresh.0.update(|n| *n += 1);

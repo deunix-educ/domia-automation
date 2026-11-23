@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Mise en page : barre laterale (navigation dynamique par role, repli, menu mobile, plein ecran, langue,
-//! deconnexion) et zone de contenu.
+//! Layout: sidebar (role-based dynamic navigation, collapse, mobile menu, full screen, language,
+//! logout) and content area.
 //!
-//! Le decalage du contenu ne depend d'aucune classe posee par du JavaScript : le CSS l'obtient de la fraternite des
-//! elements (`.vc-sidebar + .vc-main-wrap`), donc le HTML rendu par le serveur est deja correct (pas de saut a l'hydratation).
+//! The content offset depends on no class set by JavaScript: the CSS gets it from the sibling relationship of the
+//! elements (`.vc-sidebar + .vc-main-wrap`), so the HTML rendered by the server is already right (no jump at hydration).
 
 use dominet_proto::{LayoutDto, NavItemDto, Topic, UserDto};
 use leptos::prelude::*;
@@ -16,20 +16,20 @@ use crate::realtime::{Realtime, RealtimeState};
 use crate::server_fns::{layout_data, logout};
 use crate::{browser, chrome};
 
-/// Compteur a incrementer pour recharger la navigation (connexion, deconnexion, modification de la navigation).
+/// Counter to increment to reload the navigation (login, logout, navigation modification).
 #[derive(Clone, Copy, Debug)]
 pub struct LayoutRefresh(pub RwSignal<u32>);
 
-/// Navigation et compte courant, partages avec les pages (gardes, page de connexion) pour ne les charger qu'une fois.
-/// Le second champ vaut vrai pendant un depart volontaire (voir [`leave_session`]).
+/// Navigation and current account, shared with the pages (guards, login page) so as to load them only once.
+/// The second field is true during a voluntary departure (see [`leave_session`]).
 #[derive(Clone, Copy, Debug)]
 pub struct LayoutState {
     pub data: Resource<LayoutDto>,
-    /// Vrai pendant un depart volontaire (voir [`leave_session`]).
+    /// True during a voluntary departure (see [`leave_session`]).
     pub leaving: RwSignal<bool>,
 }
 
-/// Ce que les gardes de pages savent du visiteur.
+/// What the page guards know about the visitor.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum AuthStatus {
     Anonymous,
@@ -45,38 +45,38 @@ pub(crate) fn status_of(d: &LayoutDto) -> AuthStatus {
     }
 }
 
-/// Apres la fermeture de toutes les sessions du compte (deconnexion, changement de mot de passe) : va sur `target`
-/// et declare l'etat anonyme **dans la meme foulee**, avant le rechargement reseau.
+/// After all the account's sessions are closed (logout, password change): goes to `target`
+/// and declares the anonymous state **in the same stride**, before the network reload.
 ///
-/// Sans cela, la garde de la page quittee redirigerait vers `/login?next=...` (ce qui ecraserait `target`), et la page
-/// de connexion, voyant encore le compte, renverrait vers l'accueil.
+/// Without this, the guard of the page being left would redirect to `/login?next=...` (which would overwrite `target`), and the login page,
+/// still seeing the account, would send back to the home page.
 ///
-/// Les contextes sont passes en parametres : apres un `await` le proprietaire reactif n'est plus garanti.
+/// The contexts are passed as parameters: after an `await` the reactive owner is no longer guaranteed.
 pub fn leave_session(
     navigate: impl Fn(&str, leptos_router::NavigateOptions),
     target: &str,
     state: LayoutState,
     refresh: LayoutRefresh,
 ) {
-    // Les gardes ne redirigent pas pendant un depart volontaire (la navigation du routeur n'est pas instantanee) ;
-    // la page de connexion remet l'indicateur a zero.
+    // The guards do not redirect during a voluntary departure (the router's navigation is not instantaneous);
+    // the login page resets the flag.
     state.leaving.set(true);
     navigate(target, leptos_router::NavigateOptions::default());
     state.data.set(Some(LayoutDto::default()));
     refresh.0.update(|n| *n += 1);
 }
 
-/// Vrai des que l'interface est hydratee (toujours faux pendant le rendu serveur). Sert a garder inactifs les boutons
-/// d'envoi d'un formulaire tant que le navigateur ne peut pas le traiter : sinon une soumission trop rapide partirait
-/// comme un formulaire HTML ordinaire (page rechargee, saisie perdue).
+/// True as soon as the interface is hydrated (always false during server rendering). Used to keep the form's
+/// submit buttons inactive as long as the browser cannot handle it: otherwise a too-quick submission would go out
+/// as an ordinary HTML form (page reloaded, input lost).
 pub fn use_hydrated() -> ReadSignal<bool> {
     let (ready, set_ready) = signal(false);
-    // Les effets ne s'executent que dans le navigateur, apres l'hydratation.
+    // Effects only run in the browser, after hydration.
     Effect::new(move |_| set_ready.set(true));
     ready
 }
 
-/// Selecteur de langue (francais / anglais), sans rechargement.
+/// Language selector (French / English), without reloading.
 #[component]
 pub fn LanguageSwitcher() -> impl IntoView {
     let i18n = expect_context::<I18n>();
@@ -103,12 +103,12 @@ pub fn LanguageSwitcher() -> impl IntoView {
     }
 }
 
-/// Enveloppe les pages : barre laterale pour un compte connecte, contenu et pied de page pour tous.
+/// Wraps the pages: sidebar for a logged-in account, content and footer for everyone.
 #[component]
 pub fn Layout(children: Children) -> impl IntoView {
     let refresh = expect_context::<LayoutRefresh>();
-    // Ressource *bloquante* : le serveur attend la reponse avant d'envoyer le HTML, donc la barre laterale est dans
-    // la page initiale (pas d'insertion tardive qui decalerait le contenu).
+    // *Blocking* resource: the server waits for the response before sending the HTML, so the sidebar is in
+    // the initial page (no late insertion that would shift the content).
     let data = Resource::new_blocking(
         move || refresh.0.get(),
         |_| async { layout_data().await.unwrap_or_default() },
@@ -119,8 +119,8 @@ pub fn Layout(children: Children) -> impl IntoView {
     });
     let rt = Realtime::new();
     provide_context(rt);
-    // Connexion temps reel : ouverte tant qu'un compte est connecte. L'effet se relance a chaque rechargement des
-    // donnees, d'ou la comparaison avec l'etat courant (aucune action si rien ne change).
+    // Real-time connection: open as long as an account is logged in. The effect restarts at each reload of the
+    // data, hence the comparison with the current state (no action if nothing changes).
     #[cfg(feature = "hydrate")]
     {
         let connection = StoredValue::new_local(None::<crate::realtime::client::Handle>);
@@ -136,7 +136,7 @@ pub fn Layout(children: Children) -> impl IntoView {
                 _ => {}
             });
         });
-        // Les composants demandent ou abandonnent des sujets : on envoie les differences au serveur.
+        // Components request or give up subjects: we send the differences to the server.
         Effect::new(move |_| {
             rt.topics.track();
             connection.with_value(|c| {
@@ -148,7 +148,7 @@ pub fn Layout(children: Children) -> impl IntoView {
     }
     let collapsed = RwSignal::new(false);
     let mobile_open = RwSignal::new(false);
-    // Apres l'hydratation seulement : restaure l'etat replie memorise (aucun effet cote serveur).
+    // After hydration only: restores the remembered collapsed state (no effect on the server side).
     Effect::new(move |_| {
         if let Some(stored) = browser::stored_collapsed() {
             collapsed.set(stored);
@@ -186,12 +186,12 @@ pub fn Layout(children: Children) -> impl IntoView {
     }
 }
 
-/// Une entree de navigation : lien interne (routage cote navigateur) ou externe (nouvel onglet si demande).
+/// A navigation entry: internal link (browser-side routing) or external (new tab if requested).
 fn nav_link(item: NavItemDto) -> impl IntoView {
     let icon = view! { <span class="vc-nav-icon" inner_html=item.icon_svg.clone()></span> };
-    // Un lien interne ouvert dans un nouvel onglet n'est pas une navigation du routeur : lien HTML ordinaire. De meme pour
-    // une page servie hors de l'interface (`/docs/`, `/grafana/`) : le routeur ne la connait pas et afficherait « Page
-    // introuvable » ; `rel="external"` lui dit de laisser le navigateur charger la page.
+    // An internal link opened in a new tab is not a router navigation: ordinary HTML link. Likewise for
+    // a page served outside the interface (`/docs/`, `/grafana/`): the router does not know it and would display "Page
+    // not found"; `rel="external"` tells it to let the browser load the page.
     if item.url.starts_with('/')
         && item.url_target != "_blank"
         && !crate::nav::leaves_app(&item.url)
@@ -214,7 +214,7 @@ fn nav_link(item: NavItemDto) -> impl IntoView {
     }
 }
 
-/// Etat de la connexion temps reel (point colore + libelle).
+/// Real-time connection state (coloured dot + label).
 #[component]
 fn RealtimeIndicator() -> impl IntoView {
     let rt = expect_context::<Realtime>();
@@ -232,7 +232,7 @@ fn RealtimeIndicator() -> impl IntoView {
     }
 }
 
-/// Une jauge : icone, barre et pourcentage. `pct` vaut `None` sans mesure (texte « … », barre vide).
+/// A gauge: icon, bar and percentage. `pct` is `None` without a measurement (text "…", empty bar).
 #[component]
 fn Gauge(
     id: &'static str,
@@ -245,7 +245,7 @@ fn Gauge(
         <div class="vc-stat-row" id=format!("vc-stat-{id}") title=move || tip.get()>
             <span class="vc-stat-icon" inner_html=icon></span>
             <div class="vc-stat-track">
-                // La largeur passe par la CSSOM (autorisee par la CSP), jamais par un attribut `style` rendu.
+                // The width goes through the CSSOM (allowed by the CSP), never through a rendered `style` attribute.
                 <div
                     class=format!("vc-stat-fill vc-stat-fill--{kind}")
                     class:vc-stat-fill--warn=move || pct.get().is_some_and(|p| p >= 90.0)
@@ -260,8 +260,8 @@ fn Gauge(
     }
 }
 
-/// Jauges de la machine (processeur, memoire, disque, temperature), alimentees par le sujet `system`. Tant qu'aucune
-/// mesure n'est arrivee, ou si la connexion est coupee, les valeurs restent a « … » plutot que d'afficher du perime.
+/// Machine gauges (processor, memory, disk, temperature), fed by the `system` subject. As long as no
+/// measurement has arrived, or if the connection is cut, the values stay at "…" rather than showing stale data.
 #[component]
 fn SystemGauges() -> impl IntoView {
     let rt = expect_context::<Realtime>();
@@ -318,7 +318,7 @@ fn SystemGauges() -> impl IntoView {
     }
 }
 
-/// Notifications recues en temps reel, empilees en bas a droite (texte seulement : jamais de HTML).
+/// Notifications received in real time, stacked at the bottom right (text only: never HTML).
 #[component]
 fn Toasts() -> impl IntoView {
     let rt = expect_context::<Realtime>();
@@ -349,7 +349,7 @@ fn level_class(level: dominet_proto::NotificationLevel) -> &'static str {
     }
 }
 
-/// Pages d'administration : (adresse, cle de traduction du libelle, icone). Reservees aux administrateurs.
+/// Administration pages: (address, label translation key, icon). Reserved to administrators.
 const ADMIN_PAGES: [(&str, &str, &str); 20] = [
     ("/admin/locations", tk!("nav-locations"), chrome::MAP_PIN),
     ("/admin/cameras", tk!("nav-cameras"), chrome::VIDEO),
@@ -397,12 +397,12 @@ const ADMIN_PAGES: [(&str, &str, &str); 20] = [
     ("/admin/assistant", tk!("nav-assistant"), chrome::SLIDERS),
 ];
 
-/// Menu d'administration : tiroir masquable a droite (languette sur le bord de l'ecran). Les liens restent dans le HTML meme
-/// ferme (`#vc-nav-admin`), seulement caches : le rendu serveur et les parcours de test les trouvent toujours.
+/// Administration menu: a hideable drawer on the right (tab on the screen edge). The links stay in the HTML even
+/// when closed (`#vc-nav-admin`), only hidden: the server render and the test journeys always find them.
 #[component]
 fn AdminDrawer() -> impl IntoView {
     let open = RwSignal::new(false);
-    // Echap ferme le tiroir (apres l'hydratation seulement : aucun effet cote serveur).
+    // Escape closes the drawer (after hydration only: no effect on the server side).
     Effect::new(move |_| {
         let handle = window_event_listener(leptos::ev::keydown, move |ev| {
             if ev.key() == "Escape" {
@@ -470,7 +470,7 @@ fn admin_links() -> impl IntoView {
     }
 }
 
-/// Lien « Alertes » avec la pastille du nombre d'alertes en cours (sujet `alerts`, mise a jour en direct).
+/// "Alerts" link with the badge of the number of ongoing alerts (`alerts` subject, updated live).
 #[component]
 fn AlertsLink() -> impl IntoView {
     let rt = expect_context::<Realtime>();
@@ -511,8 +511,8 @@ fn Sidebar(
         });
     };
 
-    // Le tiroir d'administration vient AVANT la barre laterale : le style compte sur `.vc-sidebar + .vc-main-wrap` (la marge du contenu),
-    // l'`<aside class="vc-sidebar">` doit donc rester le dernier element avant le contenu.
+    // The administration drawer comes BEFORE the sidebar: the style relies on `.vc-sidebar + .vc-main-wrap` (the content margin),
+    // so the `<aside class="vc-sidebar">` must stay the last element before the content.
     view! {
         {is_admin.then(|| view! { <AdminDrawer/> })}
         <button

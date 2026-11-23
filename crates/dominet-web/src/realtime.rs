@@ -1,34 +1,34 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Temps reel cote navigateur : connexion WebSocket a `/ws/notifications/`, etat de la connexion et notifications a l'ecran.
+//! Real time on the browser side: WebSocket connection to `/ws/notifications/`, connection state and on-screen notifications.
 //!
-//! La connexion s'ouvre quand un compte est connecte et se ferme a la deconnexion. Si elle tombe (reseau, redemarrage du
-//! serveur), elle est retablie avec un delai croissant (1 s, 2 s, 4 s... 30 s au plus, avec un peu d'aleatoire pour que
-//! les onglets ne reviennent pas tous au meme instant). Un code de fermeture `4401` (session terminee) arrete les
-//! tentatives. Le navigateur repond `pong` aux battements du serveur.
+//! The connection opens when an account is logged in and closes at logout. If it drops (network, server restart),
+//! it is re-established with a growing delay (1 s, 2 s, 4 s... 30 s at most, with a little randomness so that
+//! the tabs do not all come back at the same instant). A `4401` close code (session ended) stops the
+//! attempts. The browser answers `pong` to the server's heartbeats.
 //!
-//! **Abonnements** : un composant qui veut suivre un sujet (l'etat d'un appareil) appelle [`Realtime::subscribe`] et
-//! [`Realtime::unsubscribe`] ; les abonnements sont comptes (deux widgets sur le meme appareil = un abonnement). La connexion
-//! envoie les differences au serveur et **renvoie tous les abonnements a chaque (re)connexion** (le serveur n'en garde rien).
+//! **Subscriptions**: a component that wants to follow a subject (a device's state) calls [`Realtime::subscribe`] and
+//! [`Realtime::unsubscribe`]; the subscriptions are counted (two widgets on the same device = one subscription). The connection
+//! sends the differences to the server and **resends all the subscriptions at each (re)connection** (the server keeps none of them).
 
 use std::collections::{HashMap, HashSet};
 
 use dominet_proto::{DeviceStateDto, NotificationLevel, SystemStatsDto, Topic};
 use leptos::prelude::*;
 
-/// Delai (ms) avant la tentative numero `attempt` (0 pour la premiere reconnexion) : 1 s doublant jusqu'a 30 s.
+/// Delay (ms) before attempt number `attempt` (0 for the first reconnection): 1 s doubling up to 30 s.
 #[must_use]
 pub fn backoff_ms(attempt: u32) -> u32 {
     1_000u32.saturating_mul(1 << attempt.min(5)).min(30_000)
 }
 
-/// Delai de reconnexion avec jusqu'a +25 % d'aleatoire (`unit` dans `0.0..=1.0`) pour desynchroniser les onglets.
+/// Reconnection delay with up to +25% randomness (`unit` in `0.0..=1.0`) to desynchronise the tabs.
 #[must_use]
-#[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)] // borne par `clamp` : resultat entre 0 et 7 500
+#[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)] // bounded by `clamp`: result between 0 and 7500
 pub fn with_jitter(base_ms: u32, unit: f64) -> u32 {
     base_ms + (unit.clamp(0.0, 1.0) * f64::from(base_ms) * 0.25) as u32
 }
 
-/// Adresse du WebSocket d'une page (`http` -> `ws`, `https` -> `wss`) : toujours la meme origine que la page.
+/// WebSocket address of a page (`http` -> `ws`, `https` -> `wss`): always the same origin as the page.
 #[must_use]
 pub fn ws_url(page_protocol: &str, host: &str) -> String {
     let scheme = if page_protocol == "https:" {
@@ -57,20 +57,20 @@ impl RealtimeState {
     }
 }
 
-/// Abonnements demandes par les composants, avec leur nombre de demandeurs. Les notifications ne s'y trouvent pas : le
-/// serveur les envoie toujours.
+/// Subscriptions requested by the components, with their number of requesters. Notifications are not there: the
+/// server always sends them.
 #[derive(Debug, Default, Clone, PartialEq, Eq)]
 pub struct TopicCounts(HashMap<Topic, usize>);
 
 impl TopicCounts {
-    /// Ajoute un demandeur ; vrai si c'est le premier (l'abonnement doit alors etre envoye).
+    /// Adds a requester; true if it is the first (the subscription must then be sent).
     pub fn add(&mut self, topic: Topic) -> bool {
         let n = self.0.entry(topic).or_insert(0);
         *n += 1;
         *n == 1
     }
 
-    /// Retire un demandeur ; vrai si c'etait le dernier. Retirer un sujet inconnu ne fait rien.
+    /// Removes a requester; true if it was the last. Removing an unknown subject does nothing.
     pub fn remove(&mut self, topic: &Topic) -> bool {
         match self.0.get_mut(topic) {
             Some(n) if *n > 1 => {
@@ -85,7 +85,7 @@ impl TopicCounts {
         }
     }
 
-    /// Sujets a suivre cote serveur.
+    /// Subjects to follow on the server side.
     #[must_use]
     pub fn wanted(&self) -> HashSet<Topic> {
         self.0
@@ -96,7 +96,7 @@ impl TopicCounts {
     }
 }
 
-/// Differences a envoyer au serveur : (sujets a demander, sujets a abandonner).
+/// Differences to send to the server: (subjects to request, subjects to give up).
 #[must_use]
 pub fn subscription_diff<S: std::hash::BuildHasher>(
     wanted: &HashSet<Topic, S>,
@@ -104,13 +104,13 @@ pub fn subscription_diff<S: std::hash::BuildHasher>(
 ) -> (Vec<Topic>, Vec<Topic>) {
     let mut add: Vec<_> = wanted.difference(subscribed).cloned().collect();
     let mut remove: Vec<_> = subscribed.difference(wanted).cloned().collect();
-    // Ordre stable (tests, journaux).
+    // Stable order (tests, logs).
     add.sort_by_key(ToString::to_string);
     remove.sort_by_key(ToString::to_string);
     (add, remove)
 }
 
-/// Une notification affichee a l'ecran.
+/// A notification displayed on screen.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Toast {
     pub id: u32,
@@ -118,24 +118,24 @@ pub struct Toast {
     pub text: String,
 }
 
-/// Etat temps reel partage (contexte Leptos).
+/// Shared real-time state (Leptos context).
 #[derive(Clone, Copy, Debug)]
 pub struct Realtime {
     pub state: RwSignal<RealtimeState>,
     pub toasts: RwSignal<Vec<Toast>>,
-    /// Sujets demandes par les composants (voir [`Realtime::subscribe`]).
+    /// Subjects requested by the components (see [`Realtime::subscribe`]).
     pub topics: RwSignal<TopicCounts>,
-    /// Dernier etat recu de chaque appareil suivi.
+    /// Last state received for each followed device.
     pub devices: RwSignal<HashMap<i64, DeviceStateDto>>,
-    /// Dernieres ressources de la machine recues (sujet `system`).
+    /// Last machine resources received (`system` subject).
     pub system: RwSignal<Option<SystemStatsDto>>,
-    /// Nombre d'alertes en cours (sujet `alerts`).
+    /// Number of ongoing alerts (`alerts` subject).
     pub alerts: RwSignal<u32>,
-    /// Compteur d'evenements Android recus (sujets `android:<id>`) : les pages Android se rechargent quand il change.
+    /// Counter of received Android events (`android:<id>` subjects): the Android pages reload when it changes.
     pub android: RwSignal<u32>,
-    /// Compteur de progressions d'envoi de messages (sujets `message:<id>`) : les pages de la messagerie se rechargent.
+    /// Counter of message-sending progress events (`message:<id>` subjects): the messaging pages reload.
     pub messaging: RwSignal<u32>,
-    /// Etat de la decouverte ONVIF (sujet `discovery`, administrateurs).
+    /// State of the ONVIF discovery (`discovery` subject, administrators).
     pub discovery: RwSignal<dominet_proto::DiscoveryView>,
 }
 
@@ -155,22 +155,22 @@ impl Realtime {
         }
     }
 
-    /// Demande un sujet (compte les demandeurs). Sans effet tant que la connexion n'est pas ouverte : elle l'enverra a
-    /// l'ouverture.
+    /// Requests a subject (counts the requesters). No effect as long as the connection is not open: it will send it on
+    /// opening.
     pub fn subscribe(&self, topic: Topic) {
         self.topics.update(|t| {
             t.add(topic);
         });
     }
 
-    /// Abandonne un sujet demande par [`Realtime::subscribe`].
+    /// Gives up a subject requested by [`Realtime::subscribe`].
     pub fn unsubscribe(&self, topic: &Topic) {
         self.topics.update(|t| {
             t.remove(topic);
         });
     }
 
-    /// Dernier etat recu de cet appareil (reactif).
+    /// Last state received for this device (reactive).
     #[must_use]
     pub fn device(&self, id: i64) -> Option<DeviceStateDto> {
         self.devices.with(|m| m.get(&id).cloned())
@@ -187,7 +187,7 @@ impl Default for Realtime {
     }
 }
 
-/// Connexion WebSocket du navigateur (feature `hydrate` seulement).
+/// The browser's WebSocket connection (`hydrate` feature only).
 #[cfg(feature = "hydrate")]
 pub mod client {
     use std::cell::RefCell;
@@ -204,26 +204,26 @@ pub mod client {
         Realtime, RealtimeState, Toast, backoff_ms, subscription_diff, with_jitter, ws_url,
     };
 
-    /// Code de fermeture envoye par le serveur quand la session n'est plus valide.
+    /// Close code sent by the server when the session is no longer valid.
     const SESSION_ENDED: u16 = 4401;
-    /// Duree d'affichage d'une notification.
+    /// Display duration of a notification.
     const TOAST_MS: i32 = 8_000;
 
     struct Inner {
         rt: Realtime,
         socket: Option<WebSocket>,
-        /// Fermetures liees au socket courant (elles doivent vivre aussi longtemps que lui).
+        /// Closures tied to the current socket (they must live as long as it does).
         callbacks: Vec<Closure<dyn FnMut(JsValueAlias)>>,
         attempt: u32,
         stopped: bool,
         next_toast: u32,
-        /// Sujets que le serveur connait pour la connexion courante (vide a chaque ouverture et a chaque coupure).
+        /// Subjects the server knows for the current connection (empty at each opening and each drop).
         subscribed: HashSet<Topic>,
     }
 
     type JsValueAlias = wasm_bindgen::JsValue;
 
-    /// Poignee sur la connexion ; `stop` la ferme definitivement.
+    /// Handle on the connection; `stop` closes it for good.
     #[derive(Clone)]
     pub struct Handle(Rc<RefCell<Inner>>);
 
@@ -233,7 +233,7 @@ pub mod client {
         }
     }
 
-    /// Ouvre la connexion (et la maintient jusqu'a `stop`).
+    /// Opens the connection (and maintains it until `stop`).
     #[must_use]
     pub fn start(rt: Realtime) -> Handle {
         let handle = Handle(Rc::new(RefCell::new(Inner {
@@ -262,8 +262,8 @@ pub mod client {
             inner.rt.state.set(RealtimeState::Connecting);
         }
 
-        /// Envoie au serveur les abonnements ajoutes ou retires depuis le dernier envoi (rien si la connexion n'est pas
-        /// ouverte : `Hello` relancera la synchronisation).
+        /// Sends the server the subscriptions added or removed since the last send (nothing if the connection is not
+        /// open: `Hello` will restart the synchronisation).
         pub fn sync(&self) {
             let mut inner = self.0.borrow_mut();
             let Some(ws) = inner.socket.clone() else {
@@ -293,7 +293,7 @@ pub mod client {
         }
     }
 
-    /// Detache les gestionnaires du socket courant puis le ferme (sans declencher de reconnexion).
+    /// Detaches the current socket's handlers then closes it (without triggering a reconnection).
     fn detach(inner: &mut Inner) {
         if let Some(ws) = inner.socket.take() {
             ws.set_onopen(None);
@@ -372,7 +372,7 @@ pub mod client {
                 {
                     let mut inner = handle.0.borrow_mut();
                     inner.attempt = 0;
-                    // Connexion neuve : le serveur ne connait aucun abonnement, on renvoie tout.
+                    // Fresh connection: the server knows no subscription, we resend everything.
                     inner.subscribed.clear();
                     inner.rt.state.set(RealtimeState::Online);
                 }
@@ -386,10 +386,10 @@ pub mod client {
             }
             WsServerMsg::SystemStats(dto) => handle.0.borrow().rt.system.set(Some(dto)),
             WsServerMsg::AlertCount { firing } => handle.0.borrow().rt.alerts.set(firing),
-            // Les accuses et refus ne changent rien pour l'interface (un refus laisse simplement l'etat vide).
-            // Un evenement d'appareil Android (SMS, appel, accuse, presence) : les pages Android rechargent leurs donnees.
+            // Acknowledgements and refusals change nothing for the interface (a refusal simply leaves the state empty).
+            // An Android device event (SMS, call, acknowledgement, presence): the Android pages reload their data.
             WsServerMsg::Android { .. } => handle.0.borrow().rt.android.update(|n| *n += 1),
-            // Un envoi de la messagerie a progresse : la page de detail relit ses statuts.
+            // A messaging send has progressed: the detail page re-reads its statuses.
             WsServerMsg::MessageProgress { .. } => {
                 handle.0.borrow().rt.messaging.update(|n| *n += 1);
             }
@@ -525,7 +525,7 @@ mod tests {
         assert_eq!(add, [Topic::Device(1), Topic::Device(3)]);
         assert_eq!(remove, [Topic::Device(9)]);
         assert_eq!(subscription_diff(&set(&[2]), &set(&[2])), (vec![], vec![]));
-        // Apres une reconnexion `subscribed` est vide : tout est renvoye.
+        // After a reconnection `subscribed` is empty: everything is resent.
         assert_eq!(
             subscription_diff(&set(&[4, 5]), &set(&[])).0,
             [Topic::Device(4), Topic::Device(5)]

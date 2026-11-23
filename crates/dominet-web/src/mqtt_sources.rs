@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Administration des sources MQTT (abonnements hors Zigbee2MQTT) : `/admin/mqtt-sources` (R3, ADR 0028).
+//! Administration of MQTT sources (subscriptions outside Zigbee2MQTT): `/admin/mqtt-sources` (R3, ADR 0028).
 //!
-//! Toute modification recharge a chaud les abonnements du client MQTT. Le code de gestion (`handler_code`, reference dans la
-//! version precedente) est conserve et affiche mais **n'est pas execute** avant R4 (scripts Rhai).
+//! Any modification reloads the MQTT client's subscriptions live. The handling code (`handler_code`, reference in the
+//! previous version) is kept and displayed but **is not run** before R4 (Rhai scripts).
 
 use dominet_proto::{DeleteOutcome, MqttSourceDto, MqttSourceInput, SaveOutcome};
 use leptos::prelude::*;
@@ -32,10 +32,10 @@ fn dto(s: &dominet_domain::device::MqttSource) -> MqttSourceDto {
     }
 }
 
-/// Sources MQTT, par nom (administrateurs).
+/// MQTT sources, by name (administrators).
 ///
 /// # Errors
-/// Refus (403) pour un non-administrateur ; erreur interne si la base echoue.
+/// Refused (403) for a non-administrator; internal error if the database fails.
 #[server(name = ListMqttSources, prefix = "/sf", endpoint = "mqtt-sources/list")]
 pub async fn list_mqtt_sources() -> Result<Vec<MqttSourceDto>, ServerFnError> {
     use dominet_domain::repo::MqttSourceRepo;
@@ -53,10 +53,10 @@ pub async fn list_mqtt_sources() -> Result<Vec<MqttSourceDto>, ServerFnError> {
     Ok(items.iter().map(dto).collect())
 }
 
-/// Cree (`id` absent) ou remplace (`id` present) une source ; les abonnements du client MQTT sont recharges.
+/// Creates (`id` absent) or replaces (`id` present) a source; the MQTT client's subscriptions are reloaded.
 ///
 /// # Errors
-/// Refus (403) pour un non-administrateur ; erreur interne si la base echoue.
+/// Refused (403) for a non-administrator; internal error if the database fails.
 #[server(name = SaveMqttSource, prefix = "/sf", endpoint = "mqtt-sources/save", input = server_fn::codec::Json)]
 pub async fn save_mqtt_source(
     input: MqttSourceInput,
@@ -102,10 +102,10 @@ pub async fn save_mqtt_source(
     })
 }
 
-/// Supprime une source ; les appareils qu'elle avait crees restent.
+/// Deletes a source; the devices it had created stay.
 ///
 /// # Errors
-/// Refus (403) pour un non-administrateur ; erreur interne si la base echoue.
+/// Refused (403) for a non-administrator; internal error if the database fails.
 #[server(name = DeleteMqttSource, prefix = "/sf", endpoint = "mqtt-sources/delete")]
 pub async fn delete_mqtt_source(id: i64) -> Result<DeleteOutcome, ServerFnError> {
     use dominet_domain::device::MqttSourceId;

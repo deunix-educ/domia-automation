@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Service HTTP de l'interface (feature `ssr`) : pages rendues cote serveur, fonctions serveur et fichiers
-//! statiques (`/pkg/...`). Il est monte en `fallback` du routeur principal, donc derriere la session, le
-//! controle d'origine (CSRF) et les en-tetes de securite.
+//! HTTP service of the interface (`ssr` feature): server-rendered pages, server functions and static files
+//! (`/pkg/...`). It is mounted as the main router's `fallback`, hence behind the session, the origin
+//! check (CSRF) and the security headers.
 
 use std::net::SocketAddr;
 
@@ -18,7 +18,7 @@ use tower_http::compression::CompressionLayer;
 
 use crate::app::{App, shell};
 
-/// Construit le service de l'interface. `site_root` est le dossier produit par `cargo leptos build`.
+/// Builds the interface's service. `site_root` is the folder produced by `cargo leptos build`.
 pub fn ui_service(state: AppState, site_root: &str, addr: SocketAddr) -> Router {
     let options = LeptosOptions::builder()
         .output_name("dominet")
@@ -34,26 +34,26 @@ pub fn ui_service(state: AppState, site_root: &str, addr: SocketAddr) -> Router 
         .leptos_routes_with_context(
             &options,
             routes,
-            // L'etat de l'application est disponible dans les fonctions serveur via `expect_context`.
+            // The application state is available in the server functions through `expect_context`.
             move || provide_context(state.clone()),
             move || shell(shell_options.clone()),
         )
-        // La page 404 est rendue par le meme composant `App` (barre laterale comprise) : elle a donc besoin du meme
-        // contexte que les routes, sinon la fonction serveur de la mise en page ne trouve pas l'etat.
+        // The 404 page is rendered by the same `App` component (sidebar included): it therefore needs the same
+        // context as the routes, otherwise the layout's server function does not find the state.
         .fallback(file_and_error_handler_with_context(
             move || provide_context(context_state.clone()),
             shell,
         ))
         .with_state(options)
         .layer(middleware::from_fn(cache_control))
-        // Texte, JS, CSS et WebAssembly sont compresses selon `Accept-Encoding` (le WASM perd ~70 %). Aucun secret n'est
-        // reflete dans les pages (la protection CSRF repose sur `Origin`), donc pas de risque BREACH.
+        // Text, JS, CSS and WebAssembly are compressed according to `Accept-Encoding` (WASM loses ~70%). No secret is
+        // reflected in the pages (CSRF protection relies on `Origin`), hence no BREACH risk.
         .layer(CompressionLayer::new())
 }
 
-/// Cache : les fichiers de `/pkg/` se revalident a chaque chargement (`ETag`, `Last-Modified`, reponse 304) car leurs noms ne
-/// changent pas entre deux versions (un WASM perime avec un JS neuf casserait l'hydratation) ; tout le reste (pages,
-/// fonctions serveur) est prive et n'est jamais mis en cache ni conserve dans l'historique de navigation.
+/// Cache: the files of `/pkg/` are revalidated at each load (`ETag`, `Last-Modified`, 304 response) because their names do not
+/// change between two versions (a stale WASM with a new JS would break hydration); everything else (pages,
+/// server functions) is private and is never cached or kept in the navigation history.
 async fn cache_control(req: Request, next: Next) -> Response {
     let asset = req.uri().path().starts_with("/pkg/");
     let mut resp = next.run(req).await;

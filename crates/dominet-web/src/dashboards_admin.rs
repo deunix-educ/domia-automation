@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Administration des tableaux de bord de tous les comptes : `/admin/dashboards`.
+//! Administration of the dashboards of all the accounts: `/admin/dashboards`.
 
 use dominet_proto::{DashboardAdminDto, DashboardInput};
 use leptos::prelude::*;

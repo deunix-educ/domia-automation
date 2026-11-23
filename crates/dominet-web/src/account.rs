@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Page « Mon compte » : identite et changement de mot de passe.
+//! Page "My account": identity and password change.
 
 use dominet_proto::{ChangePasswordOutcome, PasswordProblem, RoleDto, UserDto};
 use leptos::html;
@@ -31,7 +31,7 @@ pub(crate) fn problem_text(p: PasswordProblem) -> String {
     }
 }
 
-/// `2026-11-01T11:32:05+01:00` (heure locale du serveur) -> `2026-11-01 11:32`.
+/// `2026-11-01T11:32:05+01:00` (server local time) -> `2026-11-01 11:32`.
 pub(crate) fn format_instant(rfc3339: &str) -> String {
     let date = rfc3339.get(..10).unwrap_or(rfc3339);
     match rfc3339.get(11..16) {
@@ -97,7 +97,7 @@ fn PasswordForm() -> impl IntoView {
     let refresh = expect_context::<LayoutRefresh>();
     let state = expect_context::<LayoutState>();
     let navigate = use_navigate();
-    // Champs non controles : voir `login.rs` (remplissage automatique sans evenement `input`).
+    // Uncontrolled fields: see `login.rs` (autofill without an `input` event).
     let current = NodeRef::<html::Input>::new();
     let new = NodeRef::<html::Input>::new();
     let confirm = NodeRef::<html::Input>::new();
@@ -121,7 +121,7 @@ fn PasswordForm() -> impl IntoView {
         spawn_local(async move {
             match change_password(c, n).await {
                 Ok(ChangePasswordOutcome::Changed) => {
-                    // Toutes les sessions du compte sont fermees : on repart de la page de connexion.
+                    // All the account's sessions are closed: we start over from the login page.
                     leave_session(navigate, "/login?notice=password-changed", state, refresh);
                 }
                 Ok(ChangePasswordOutcome::WrongCurrent) => error.set(Some(FormError::WrongCurrent)),

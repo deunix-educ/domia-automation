@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Coque HTML, fournisseur de traductions, routeur et pages.
+//! HTML shell, translations provider, router and pages.
 
 use leptos::prelude::*;
 use leptos_fluent::{leptos_fluent, move_tr};
@@ -43,7 +43,7 @@ use crate::users::UsersPage;
 use crate::weather_admin::WeatherStationsPage;
 use crate::widgets_admin::WidgetsAdminPage;
 
-/// Page HTML complete (rendu serveur) : scripts d'hydratation et feuille de style.
+/// Complete HTML page (server render): hydration scripts and stylesheet.
 pub fn shell(options: LeptosOptions) -> impl IntoView {
     view! {
         <!DOCTYPE html>
@@ -61,8 +61,8 @@ pub fn shell(options: LeptosOptions) -> impl IntoView {
     }
 }
 
-/// Traductions Fluent : anglais par defaut, francais complet. Langue lue dans le cookie `lang`, puis
-/// `Accept-Language` cote serveur ; `<html lang>` est synchronise par `leptos-fluent`.
+/// Fluent translations: English by default, French complete. Language read from the `lang` cookie, then
+/// `Accept-Language` on the server; `<html lang>` is synchronised by `leptos-fluent`.
 #[component]
 fn I18nProvider(children: Children) -> impl IntoView {
     leptos_fluent! {
@@ -77,7 +77,7 @@ fn I18nProvider(children: Children) -> impl IntoView {
         initial_language_from_navigator: true,
         initial_language_from_accept_language_header: true,
         cookie_name: "lang",
-        // Fluent entoure les variables de marques bidi invisibles : on les desactive (ADR 0007).
+        // Fluent wraps variables in invisible bidi marks: we disable them (ADR 0007).
         customise: |b| b.set_use_isolating(false),
         cookie_attrs: "Path=/; Max-Age=31536000; SameSite=Lax",
     }
@@ -86,22 +86,22 @@ fn I18nProvider(children: Children) -> impl IntoView {
 #[component]
 pub fn App() -> impl IntoView {
     provide_meta_context();
-    // En-tete CSP de la reponse (avec le nonce de ce rendu) ; sans effet dans le navigateur.
+    // The response's CSP header (with this render's nonce); no effect in the browser.
     #[cfg(feature = "ssr")]
     crate::csp::apply();
     provide_context(LayoutRefresh(RwSignal::new(0)));
     view! {
         <Stylesheet id="leptos" href="/pkg/dominet.css"/>
-        // Personnalisation locale (couleurs, police...) : apres la feuille principale pour la surcharger ; vide si aucun fichier.
+        // Local customisation (colours, font...): after the main stylesheet to override it; empty if there is no file.
         <Stylesheet id="custom" href="/custom.css"/>
         <I18nProvider>
             <Title text="DomiNet"/>
             <Router>
                 <Layout>
                     <Routes fallback=NotFound>
-                        // `Async` : tout est resolu cote serveur avant l'envoi. La barre laterale est donc dans le HTML,
-                        // a sa place (en streaming hors ordre elle arrivait dans un `<template>` et le contenu glissait), et
-                        // une page protegee repond par une vraie redirection 302 au lieu d'etre envoyee.
+                        // `Async`: everything is resolved on the server before sending. The sidebar is therefore in the HTML,
+                        // in its place (with out-of-order streaming it arrived in a `<template>` and the content slid), and
+                        // a protected page answers with a real 302 redirect instead of being sent.
                         <Route path=path!("/") view=DashboardPage ssr=SsrMode::Async/>
                         <Route path=path!("/automation") view=DevicesPage ssr=SsrMode::Async/>
                         <Route path=path!("/automation/") view=DevicesPage ssr=SsrMode::Async/>
@@ -158,7 +158,7 @@ pub fn App() -> impl IntoView {
 
 #[component]
 fn NotFound() -> impl IntoView {
-    // Le statut HTTP 404 n'existe que cote serveur.
+    // The HTTP 404 status only exists on the server side.
     #[cfg(feature = "ssr")]
     {
         let response = expect_context::<leptos_axum::ResponseOptions>();

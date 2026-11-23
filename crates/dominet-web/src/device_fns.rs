@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Fonctions serveur des appareils : commandes, appairage, informations d'affichage (R3 lot 5, ADR 0029).
+//! Device server functions: commands, pairing, display information (R3 lot 5, ADR 0029).
 
 use dominet_proto::{CommandOutcome, GrafanaOutcome};
 use leptos::prelude::*;
 
-/// Envoie une commande (objet JSON, ex. `{"state":"ON"}`) a un appareil : publiee sur `<appareil>/set`. Tout compte connecte
-/// peut commander (comme en Reference : la famille allume une lampe).
+/// Sends a command (JSON object, e.g. `{"state":"ON"}`) to a device: published on `<device>/set`. Any logged-in account
+/// may command (like in the reference: the family turns a lamp on).
 ///
 /// # Errors
-/// Refus (401) sans session.
+/// Refused (401) without a session.
 #[server(name = SendDeviceCommand, prefix = "/sf", endpoint = "devices/command")]
 pub async fn send_device_command(
     device_id: i64,
@@ -29,10 +29,10 @@ pub async fn send_device_command(
     Ok(outcome)
 }
 
-/// Ouvre ou ferme l'appairage de nouveaux appareils Zigbee2MQTT (administrateurs).
+/// Opens or closes the pairing of new Zigbee2MQTT devices (administrators).
 ///
 /// # Errors
-/// Refus (403) pour un non-administrateur.
+/// Refused (403) for a non-administrator.
 #[server(name = SetPermitJoin, prefix = "/sf", endpoint = "devices/permit-join")]
 pub async fn set_permit_join(enabled: bool) -> Result<CommandOutcome, ServerFnError> {
     use crate::server_fns::require_admin;
@@ -44,10 +44,10 @@ pub async fn set_permit_join(enabled: bool) -> Result<CommandOutcome, ServerFnEr
     Ok(outcome)
 }
 
-/// Etat connu de l'appairage (mis a jour par `bridge/info` et par `set_permit_join`).
+/// Known pairing state (updated by `bridge/info` and by `set_permit_join`).
 ///
 /// # Errors
-/// Refus (401) sans session.
+/// Refused (401) without a session.
 #[server(name = PermitJoinState, prefix = "/sf", endpoint = "devices/permit-join/state")]
 pub async fn permit_join_state() -> Result<bool, ServerFnError> {
     use crate::server_fns::require_user;
@@ -57,11 +57,11 @@ pub async fn permit_join_state() -> Result<bool, ServerFnError> {
     Ok(state.permit_join.load(std::sync::atomic::Ordering::Relaxed))
 }
 
-/// Ecrit le tableau Grafana de l'appareil (un panneau par cle suivie) dans le dossier surveille par Grafana, et coche
-/// « tableau Grafana » sur l'appareil (administrateurs).
+/// Writes the device's Grafana dashboard (one panel per tracked key) into the folder watched by Grafana, and ticks
+/// "Grafana dashboard" on the device (administrators).
 ///
 /// # Errors
-/// Refus (403) pour un non-administrateur ; erreur interne si la base echoue.
+/// Refused (403) for a non-administrator; internal error if the database fails.
 #[server(name = GenerateDeviceDashboard, prefix = "/sf", endpoint = "devices/grafana")]
 pub async fn generate_device_dashboard(device_id: i64) -> Result<GrafanaOutcome, ServerFnError> {
     use dominet_domain::device::{DeviceDraft, DeviceId};

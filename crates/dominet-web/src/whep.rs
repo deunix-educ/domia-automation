@@ -1,44 +1,44 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Live d'une camera : client WHEP (WebRTC-HTTP Egress Protocol) vers MediaMTX, en Rust/WASM (R6 lot 4, ADR 0046).
+//! Live view of a camera: WHEP client (WebRTC-HTTP Egress Protocol) to MediaMTX, in Rust/WASM (R6 lot 4, ADR 0046).
 //!
-//! 1. `RTCPeerConnection` avec un transceiver video en reception seule ;
-//! 2. offre SDP, attente de la fin de la collecte ICE (2 s au plus) ;
-//! 3. `POST application/sdp` vers `<base>/<uuid>/whep` ; la reponse SDP donne la session ;
-//! 4. la piste arrive dans le `<video>` ; `getStats` surveille les images decodees, et **une session figee est relancee** ;
-//! 5. a la fermeture, `DELETE` de la ressource de session (MediaMTX libere la connexion tout de suite).
+//! 1. `RTCPeerConnection` with a receive-only video transceiver;
+//! 2. SDP offer, wait for the end of ICE gathering (2 s at most);
+//! 3. `POST application/sdp` to `<base>/<uuid>/whep`; the SDP response gives the session;
+//! 4. the track arrives in the `<video>`; `getStats` monitors the decoded frames, and **a frozen session is restarted**;
+//! 5. on closing, `DELETE` of the session resource (MediaMTX frees the connection right away).
 //!
-//! La partie pure (quand une session est-elle figee ? que montrer ?) est testee sur la machine ; la partie navigateur
-//! (`web-sys`) n'existe que dans le WASM.
+//! The pure part (when is a session frozen? what to show?) is tested on the machine; the browser part
+//! (`web-sys`) only exists in the WASM.
 
-/// Delai sans nouvelle image decodee, apres lequel la session est relancee.
+/// Delay without a newly decoded image, after which the session is restarted.
 pub const STALL_AFTER_MS: f64 = 8_000.0;
-/// Delai laisse a une session neuve pour decoder sa premiere image (attente d'une image cle de la camera).
+/// Delay given to a new session to decode its first image (waiting for a key frame from the camera).
 pub const STARTUP_GRACE_MS: f64 = 15_000.0;
-/// Intervalle de lecture des statistiques.
+/// Interval for reading the statistics.
 pub const STATS_EVERY_MS: i32 = 2_000;
 
-/// Ce que dit une lecture des statistiques de la reception video.
+/// What a reading of the video reception statistics says.
 #[derive(Debug, Clone, Copy, PartialEq, Default)]
 pub struct StatsSample {
     pub frames_decoded: f64,
     pub fps: f64,
     pub width: f64,
     pub height: f64,
-    /// Aller-retour reseau, en millisecondes.
+    /// Network round trip, in milliseconds.
     pub rtt_ms: Option<f64>,
     pub jitter_ms: f64,
     pub packets_lost: f64,
 }
 
-/// Une session est-elle en bonne sante ?
+/// Is a session healthy?
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Health {
     Healthy,
-    /// Plus d'image decodee depuis trop longtemps : relancer.
+    /// No decoded image for too long: restart.
     Stalled,
 }
 
-/// Surveille le nombre d'images decodees d'une session.
+/// Monitors the number of decoded frames of a session.
 #[derive(Debug, Clone, Copy)]
 pub struct StallDetector {
     started_ms: f64,
@@ -58,7 +58,7 @@ impl StallDetector {
         }
     }
 
-    /// Enregistre une lecture (`frames_decoded` ne decroit jamais dans une session) et rend le verdict.
+    /// Records a reading (`frames_decoded` never decreases within a session) and returns the verdict.
     pub fn observe(&mut self, now_ms: f64, frames_decoded: f64) -> Health {
         if frames_decoded > self.last_frames {
             self.last_frames = frames_decoded;
@@ -66,7 +66,7 @@ impl StallDetector {
             self.seen_a_frame = true;
             return Health::Healthy;
         }
-        // Avant la premiere image : delai de grace (attente de l'image cle) ; ensuite : delai de la video figee.
+        // Before the first image: grace delay (waiting for the key frame); afterwards: the frozen-video delay.
         let limit = if self.seen_a_frame {
             STALL_AFTER_MS
         } else {
@@ -85,32 +85,32 @@ impl StallDetector {
     }
 }
 
-/// Pourquoi une tentative a echoue, en une phrase pour l'utilisateur (la cle de traduction est choisie par l'interface).
+/// Why an attempt failed, in one sentence for the user (the translation key is chosen by the interface).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Failure {
-    /// Le navigateur ne decode pas le H.264 des cameras (WebRTC).
+    /// The browser does not decode the cameras' H.264 (WebRTC).
     NoH264,
-    /// MediaMTX n'a pas (encore) ce flux : camera eteinte, injoignable ou path pas encore cree.
+    /// MediaMTX does not have this stream (yet): camera off, unreachable or path not created yet.
     NoStream,
-    /// MediaMTX a refuse l'offre (codecs incompatibles...) ou repond autre chose.
+    /// MediaMTX refused the offer (incompatible codecs...) or answers something else.
     Http(u16),
-    /// Autre erreur du navigateur (message court, sans secret).
+    /// Other browser error (short message, no secret).
     Browser(String),
 }
 
-/// Traduit le code HTTP d'une reponse WHEP.
+/// Translates the HTTP code of a WHEP response.
 #[must_use]
 pub fn failure_for_status(status: u16, h264_supported: bool) -> Failure {
     match status {
         404 => Failure::NoStream,
-        // MediaMTX repond 400 `codecs not supported by client` a un navigateur sans H.264.
+        // MediaMTX answers 400 `codecs not supported by client` to a browser without H.264.
         400 if !h264_supported => Failure::NoH264,
         other => Failure::Http(other),
     }
 }
 
-/// Un nom d'identifiant de `<video>` sur : l'uuid public ne contient que des hexadecimaux, mais un meme flux peut etre affiche plusieurs
-/// fois (deux widgets) : `suffix` les distingue.
+/// A safe `<video>` identifier name: the public uuid only contains hexadecimal digits, but a same stream may be displayed several
+/// times (two widgets): `suffix` tells them apart.
 #[must_use]
 pub fn video_id(uuid: &str, suffix: u32) -> String {
     let clean: String = uuid.chars().filter(char::is_ascii_alphanumeric).collect();
@@ -147,7 +147,7 @@ mod tests {
         assert_eq!(d.observe(2_000.0, 50.0), Health::Healthy);
         assert_eq!(d.observe(9_999.0, 50.0), Health::Healthy);
         assert_eq!(d.observe(10_000.0, 50.0), Health::Stalled);
-        // Une image de plus : reparti.
+        // One more image: the timer starts over.
         assert_eq!(d.observe(10_500.0, 51.0), Health::Healthy);
         assert_eq!(d.observe(18_499.0, 51.0), Health::Healthy);
         assert_eq!(d.observe(18_500.0, 51.0), Health::Stalled);
@@ -169,7 +169,7 @@ mod tests {
     }
 }
 
-// ------------------------------------------------------------------ navigateur
+// ------------------------------------------------------------------ browser
 
 #[cfg(feature = "hydrate")]
 pub mod browser {
@@ -187,7 +187,7 @@ pub mod browser {
     #[derive(Debug)]
     pub struct Session {
         pc: RtcPeerConnection,
-        /// Adresse de la ressource de session (en-tete `Location` de la reponse WHEP), pour la fermer.
+        /// Address of the session resource (`Location` header of the WHEP response), to close it.
         resource: Option<String>,
     }
 
@@ -215,7 +215,7 @@ pub mod browser {
         let _ = JsFuture::from(promise).await;
     }
 
-    /// Heure monotone du navigateur (ms).
+    /// Browser monotonic time (ms).
     #[must_use]
     pub fn now_ms() -> f64 {
         web_sys::window()
@@ -223,7 +223,7 @@ pub mod browser {
             .map_or(0.0, |p| p.now())
     }
 
-    /// Le navigateur sait-il recevoir du H.264 par WebRTC ? (Firefox ESR de Debian : non.)
+    /// Can the browser receive H.264 over WebRTC? (Debian's Firefox ESR: no.)
     #[must_use]
     pub fn h264_supported() -> bool {
         let Some(caps) = RtcRtpReceiver::get_capabilities("video") else {
@@ -240,7 +240,7 @@ pub mod browser {
         })
     }
 
-    /// Resolue quand la collecte ICE est terminee, ou apres `max_ms`.
+    /// Resolved when ICE gathering is finished, or after `max_ms`.
     async fn ice_gathered(pc: &RtcPeerConnection, max_ms: i32) {
         if pc.ice_gathering_state() == RtcIceGatheringState::Complete {
             return;
@@ -275,10 +275,10 @@ pub mod browser {
         }
     }
 
-    /// Etablit la session WHEP et attache la piste a l'element `<video id=video_id>`.
+    /// Establishes the WHEP session and attaches the track to the `<video id=video_id>` element.
     ///
     /// # Errors
-    /// [`Failure`] : flux absent, offre refusee, erreur du navigateur.
+    /// [`Failure`]: stream missing, offer refused, browser error.
     pub async fn connect(whep_url: &str, video_id: &str) -> Result<Session, Failure> {
         let win = web_sys::window().ok_or_else(|| Failure::Browser("pas de fenetre".into()))?;
         let pc = RtcPeerConnection::new().map_err(|e| browser_failure(&e))?;
@@ -347,7 +347,7 @@ pub mod browser {
     }
 
     impl Session {
-        /// La connexion est-elle perdue (echec ou fermeture) ?
+        /// Is the connection lost (failure or closure)?
         #[must_use]
         pub fn is_down(&self) -> bool {
             matches!(
@@ -356,7 +356,7 @@ pub mod browser {
             )
         }
 
-        /// Statistiques de reception video.
+        /// Video reception statistics.
         pub async fn stats(&self) -> StatsSample {
             let mut out = StatsSample::default();
             let Ok(report) = JsFuture::from(self.pc.get_stats()).await else {
@@ -394,7 +394,7 @@ pub mod browser {
             out
         }
 
-        /// Ferme la session : `DELETE` de la ressource WHEP (MediaMTX libere tout de suite), puis fermeture locale.
+        /// Closes the session: `DELETE` of the WHEP resource (MediaMTX frees it right away), then local closing.
         pub async fn close(self) {
             self.pc.close();
             if let (Some(url), Some(win)) = (self.resource, web_sys::window()) {

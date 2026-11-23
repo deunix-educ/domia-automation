@@ -116,7 +116,7 @@ mod ssr {
 /// State of the server and list of tokens (administrators).
 ///
 /// # Errors
-/// Refus (403) pour un non-administrateur ; erreur interne si la base echoue.
+/// Refused (403) for a non-administrator; internal error if the database fails.
 #[server(name = McpAdminPage, prefix = "/sf", endpoint = "mcp/page")]
 pub async fn mcp_admin_page() -> Result<McpPageDto, ServerFnError> {
     use chrono::Utc;
@@ -145,7 +145,7 @@ pub async fn mcp_admin_page() -> Result<McpPageDto, ServerFnError> {
 /// Creates a token. Its value is in this answer and nowhere else: it cannot be read back.
 ///
 /// # Errors
-/// Refus (403) pour un non-administrateur ; erreur interne si la base echoue.
+/// Refused (403) for a non-administrator; internal error if the database fails.
 #[server(name = CreateMcpToken, prefix = "/sf", endpoint = "mcp/tokens/create", input = server_fn::codec::Json)]
 pub async fn create_mcp_token(
     input: McpTokenInput,
@@ -216,7 +216,7 @@ pub async fn create_mcp_token(
 /// Revokes a token: refused from the very next call. `false` if it was not active.
 ///
 /// # Errors
-/// Refus (403) pour un non-administrateur ; erreur interne si la base echoue.
+/// Refused (403) for a non-administrator; internal error if the database fails.
 #[server(name = RevokeMcpToken, prefix = "/sf", endpoint = "mcp/tokens/revoke")]
 pub async fn revoke_mcp_token(id: i64) -> Result<bool, ServerFnError> {
     use chrono::Utc;
@@ -264,7 +264,7 @@ pub async fn revoke_mcp_token(id: i64) -> Result<bool, ServerFnError> {
 /// Audit trail, newest first (`limit` is capped at 500).
 ///
 /// # Errors
-/// Refus (403) pour un non-administrateur ; erreur interne si la base echoue.
+/// Refused (403) for a non-administrator; internal error if the database fails.
 #[server(name = ListMcpAudit, prefix = "/sf", endpoint = "mcp/audit/list", input = server_fn::codec::Json)]
 pub async fn list_mcp_audit(filter: McpAuditFilter) -> Result<Vec<McpAuditDto>, ServerFnError> {
     use dominet_domain::mcp::AuditKind;
@@ -376,7 +376,7 @@ fn McpAdmin() -> impl IntoView {
 /// Whether the server is on, and its limits.
 #[component]
 fn ServerState(page: McpPageDto) -> impl IntoView {
-    // Les textes sont calcules dans des fermetures : ils suivent le changement de langue sans recharger la page.
+    // The texts are computed in closures: they follow the language change without reloading the page.
     let (rate, days) = (page.rate_limit_per_min, page.retention_days);
     let limits = move || {
         tr!("mcp-limits", {
@@ -559,7 +559,7 @@ fn TokenTable(tokens: Vec<McpTokenDto>, version: RwSignal<u32>) -> impl IntoView
                     {tokens.into_iter().map(|t| {
                         let id = t.id;
                         let active = t.state == "active";
-                        // Fermetures : les mots traduits suivent la langue choisie, sans recharger la liste.
+                        // Closures: the translated words follow the chosen language, without reloading the list.
                         let (scope_names, last_used, state) = (t.scopes.clone(), t.last_used_at.clone(), t.state.clone());
                         let scopes = move || scope_names.iter().map(|s| scope_text(s)).collect::<Vec<_>>().join(", ");
                         let used = move || if last_used.is_empty() { tr!("mcp-never-used") } else { last_used.clone() };

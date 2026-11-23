@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Administration des cameras : `/admin/cameras` (R6 lot 2, ADR 0044).
+//! Cameras administration: `/admin/cameras` (R6 lot 2, ADR 0044).
 //!
-//! Les mots de passe ne sont jamais prerempli ni renvoyes : champ vide = inchange. Un bouton synchronise MediaMTX avec la base.
+//! Passwords are never prefilled or sent back: empty field = unchanged. A button synchronises MediaMTX with the database.
 
 use std::collections::BTreeMap;
 
@@ -32,7 +32,7 @@ const NIGHT_APIS: &[(&str, &str)] = &[
     ("goform", tk!("cameras-night-goform")),
 ];
 
-/// Presence d'un secret, sans le montrer.
+/// Presence of a secret, without showing it.
 fn mark(set: bool) -> &'static str {
     if set { "✔" } else { "✘" }
 }

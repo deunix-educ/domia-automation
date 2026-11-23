@@ -1,17 +1,17 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Deplacement d'un widget a la souris ou au doigt (administrateurs, R2 lot 5).
+//! Moving a widget with the mouse or a finger (administrators, R2 lot 5).
 //!
-//! Evenements de **pointeur** (souris, doigt et stylet de la meme facon, contrairement au glisser-deposer HTML5) avec capture :
-//! le widget suit le pointeur par une transformation posee par la CSSOM (la CSP interdit l'attribut `style`, pas la CSSOM) et un
-//! cadre en pointilles montre la case visee. Au relachement, la page demande le deplacement au serveur, qui a le dernier mot
-//! (grille, chevauchement) ; si le serveur refuse, le widget revient en place.
+//! **Pointer** events (mouse, finger and stylus in the same way, unlike HTML5 drag-and-drop) with capture:
+//! the widget follows the pointer through a transform set by the CSSOM (the CSP forbids the `style` attribute, not the CSSOM) and a
+//! dotted frame shows the targeted cell. On release, the page asks the server for the move, which has the last word
+//! (grid, overlap); if the server refuses, the widget goes back in place.
 //!
-//! Seulement avec la grille complete de 12 colonnes (ecrans larges) : sur les autres tailles les widgets se placent a la suite et leur
-//! position d'ecran n'est plus celle de la grille.
+//! Only with the full 12-column grid (wide screens): on other sizes the widgets are placed one after another and their
+//! on-screen position is no longer the grid's.
 
 use leptos::prelude::*;
 
-/// Ce qu'il faut savoir d'un widget pour le deplacer.
+/// What must be known about a widget to move it.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct DragSpec {
     pub id: i64,
@@ -21,7 +21,7 @@ pub struct DragSpec {
     pub height: i16,
 }
 
-/// Case de grille choisie au relachement, si elle differe de la position d'origine.
+/// Grid cell chosen on release, if it differs from the original position.
 pub type Target = (i16, i16);
 
 #[cfg(feature = "hydrate")]
@@ -31,7 +31,7 @@ mod imp {
 
     use super::{DragSpec, Target};
 
-    /// Largeur minimale de la fenetre pour la grille complete (voir `main.css`).
+    /// Minimum window width for the full grid (see `main.css`).
     const MIN_WIDTH: f64 = 1201.0;
     const ROW_HEIGHT: f64 = 120.0;
     const COLUMNS: i16 = 12;
@@ -58,7 +58,7 @@ mod imp {
             .unwrap_or(0.0)
     }
 
-    /// Pas d'une colonne et d'une ligne, et marges de la grille, lus dans les styles calcules.
+    /// Step of a column and a row, and grid margins, read from the computed styles.
     fn metrics(grid: &HtmlElement) -> Option<(f64, f64, f64, f64, f64)> {
         let window = web_sys::window()?;
         let style = window.get_computed_style(grid).ok()??;
@@ -128,7 +128,7 @@ mod imp {
         let Some((pitch_x, pitch_y, pad_l, pad_t, _)) = metrics(&s.grid) else {
             return;
         };
-        // Le haut-gauche du widget deplace, mesure dans le repere de la grille (qui peut avoir defile).
+        // The moved widget's top-left, measured in the grid's frame (which may have scrolled).
         let grid = s.grid.get_bounding_client_rect();
         let x = s.origin.0 + dx - grid.left() - pad_l;
         let y = s.origin.1 + dy - grid.top() - pad_t;
@@ -159,7 +159,7 @@ mod imp {
         }
     }
 
-    /// Termine le geste : `Some(case)` si le widget doit changer de place.
+    /// Ends the gesture: `Some(cell)` if the widget must change place.
     pub fn up(s: Session, ev: &PointerEvent) -> Option<Target> {
         let mut s = s;
         moved(&mut s, ev);
@@ -180,15 +180,15 @@ mod imp {
 
 pub use imp::Session;
 
-/// Geste en cours (une seule a la fois), propre au widget. Dans le navigateur, les elements du DOM ne sont pas `Send` : stockage
-/// local. **Cote serveur le stockage doit rester ordinaire** : un stockage local cree pendant le rendu serait libere par un autre
-/// fil et paniquerait (`SendWrapper`), ce qui figerait la page.
+/// Gesture in progress (only one at a time), specific to the widget. In the browser, DOM elements are not `Send`: local
+/// storage. **On the server side the storage must stay ordinary**: a local storage created during rendering would be freed by another
+/// thread and would panic (`SendWrapper`), which would freeze the page.
 #[cfg(feature = "hydrate")]
 pub type Handle = StoredValue<Option<Session>, LocalStorage>;
 #[cfg(not(feature = "hydrate"))]
 pub type Handle = StoredValue<Option<Session>>;
 
-/// Cree la poignee d'un widget.
+/// Creates a widget's handle.
 #[must_use]
 pub fn handle() -> Handle {
     #[cfg(feature = "hydrate")]
@@ -197,7 +197,7 @@ pub fn handle() -> Handle {
     StoredValue::new(None)
 }
 
-/// Debut d'un geste sur l'en-tete du widget.
+/// Start of a gesture on the widget's header.
 #[cfg(feature = "hydrate")]
 pub fn down(h: Handle, ev: &web_sys::PointerEvent, spec: DragSpec) {
     if let Some(s) = imp::down(ev, spec) {
@@ -205,7 +205,7 @@ pub fn down(h: Handle, ev: &web_sys::PointerEvent, spec: DragSpec) {
     }
 }
 
-/// Mouvement du pointeur.
+/// Pointer movement.
 #[cfg(feature = "hydrate")]
 pub fn moved(h: Handle, ev: &web_sys::PointerEvent) {
     h.update_value(|s| {
@@ -215,7 +215,7 @@ pub fn moved(h: Handle, ev: &web_sys::PointerEvent) {
     });
 }
 
-/// Fin du geste : la case visee, si elle change.
+/// End of the gesture: the targeted cell, if it changes.
 #[cfg(feature = "hydrate")]
 #[must_use]
 pub fn up(h: Handle, ev: &web_sys::PointerEvent) -> Option<Target> {
@@ -223,7 +223,7 @@ pub fn up(h: Handle, ev: &web_sys::PointerEvent) -> Option<Target> {
     imp::up(s, ev)
 }
 
-/// Geste interrompu (perte de capture, annulation systeme).
+/// Interrupted gesture (loss of capture, system cancellation).
 #[cfg(feature = "hydrate")]
 pub fn cancel(h: Handle) {
     if let Some(s) = h.try_update_value(Option::take).flatten() {

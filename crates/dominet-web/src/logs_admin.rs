@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Consultation du journal de l'application : `/admin/logs` (administrateurs). Les lignes viennent du tampon en memoire du serveur
-//! (`dominet_server::logbuf`) : ce processus, depuis son demarrage, les plus recentes d'abord, avec des filtres (niveau, module, texte, periode).
+//! Application log viewing: `/admin/logs` (administrators). The lines come from the server's in-memory buffer
+//! (`dominet_server::logbuf`): this process, since its start, most recent first, with filters (level, module, text, period).
 
 use std::time::Duration;
 
@@ -10,19 +10,19 @@ use serde::{Deserialize, Serialize};
 
 use crate::guard::RequireAdmin;
 
-/// Filtre saisi dans la page.
+/// Filter entered on the page.
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct LogFilter {
-    /// `error`, `warn`, `info`, `debug` ou `trace` : le niveau minimal de severite.
+    /// `error`, `warn`, `info`, `debug` or `trace`: the minimum severity level.
     pub level: String,
     pub target: String,
     pub text: String,
-    /// Fenetre en minutes (0 : tout ce qui est en memoire).
+    /// Window in minutes (0: everything in memory).
     pub minutes: u32,
     pub limit: u32,
 }
 
-/// Une ligne affichee.
+/// A displayed line.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct LogLineDto {
     pub at: String,
@@ -31,7 +31,7 @@ pub struct LogLineDto {
     pub message: String,
 }
 
-/// Reponse a une consultation.
+/// Response to a viewing request.
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct LogPageDto {
     pub lines: Vec<LogLineDto>,
@@ -41,10 +41,10 @@ pub struct LogPageDto {
     pub targets: Vec<String>,
 }
 
-/// Lignes du journal de l'application (administrateurs), les plus recentes d'abord ; `limit` est borne a 5 000.
+/// Application log lines (administrators), most recent first; `limit` is capped at 5000.
 ///
 /// # Errors
-/// Refus (403) pour un non-administrateur.
+/// Refused (403) for a non-administrator.
 #[server(name = ListLogs, prefix = "/sf", endpoint = "logs/list", input = server_fn::codec::Json)]
 pub async fn list_logs(filter: LogFilter) -> Result<LogPageDto, ServerFnError> {
     use dominet_server::logbuf::{self, LogQuery};
@@ -103,7 +103,7 @@ fn Logs() -> impl IntoView {
     let auto = RwSignal::new(false);
     let tick = RwSignal::new(0u32);
 
-    // Rafraichissement automatique toutes les 5 s (apres l'hydratation seulement : un `Effect` ne tourne pas cote serveur).
+    // Automatic refresh every 5 s (after hydration only: an `Effect` does not run on the server side).
     Effect::new(move |_| {
         if auto.get()
             && let Ok(handle) = set_interval_with_handle(

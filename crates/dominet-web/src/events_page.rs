@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Evenements des cameras : `/surveillance/events` (R6 lot 8, ADR 0050) — mouvements et detections d'objets recents, avec l'image annotee
-//! quand elle existe. Tout compte connecte regarde ; les administrateurs reglent le detecteur (active ou coupe, garde les images).
+//! Camera events: `/surveillance/events` (R6 lot 8, ADR 0050) — recent motions and object detections, with the annotated image
+//! when it exists. Any logged-in account views; administrators set the detector (on or off, keeps the images).
 
 use leptos::prelude::*;
 use leptos_fluent::{move_tr, tr};
@@ -73,7 +73,7 @@ fn Events() -> impl IntoView {
         || (),
         |()| async { list_camera_cards().await.unwrap_or_default() },
     );
-    // Les evenements arrivent sans action de l'utilisateur : la liste se rafraichit toute seule (navigateur seulement).
+    // The events arrive without user action: the list refreshes by itself (browser only).
     let tick = RwSignal::new(0u32);
     #[cfg(feature = "hydrate")]
     {

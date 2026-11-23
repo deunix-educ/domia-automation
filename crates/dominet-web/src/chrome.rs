@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Icones fixes de l'interface (marque, repli du menu, plein ecran...), identiques cote serveur et navigateur.
+//! Fixed interface icons (brand, menu collapse, full screen...), identical on the server and in the browser.
 //!
-//! Extraites de Lucide v1.21.0 (licence ISC, voir `data/LUCIDE-LICENSE.txt`). Les icones de la navigation, elles,
-//! viennent de la base et sont rendues cote serveur (`icons.rs`).
+//! Extracted from Lucide v1.21.0 (ISC licence, see `data/LUCIDE-LICENSE.txt`). The navigation icons,
+//! for their part, come from the database and are rendered on the server side (`icons.rs`).
 
 macro_rules! svg {
     ($size:literal, $inner:literal) => {

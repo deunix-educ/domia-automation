@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Galerie des snapshots : `/surveillance/snapshots` (R6 lot 6, ADR 0048). Tout compte connecte regarde ; les administrateurs suppriment.
+//! Snapshots gallery: `/surveillance/snapshots` (R6 lot 6, ADR 0048). Any logged-in account views; administrators delete.
 
 use leptos::prelude::*;
 use leptos_fluent::move_tr;

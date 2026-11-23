@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Fonctions serveur d'edition des tableaux de bord (R2 lot 5) : administration des tableaux et des widgets, deplacement
-//! d'un widget. **Administrateurs seulement** (comme `is_staff` en reference) : un compte ordinaire voit ses tableaux mais ne
-//! les modifie pas ; un administrateur edite ceux de tous les comptes depuis l'administration.
+//! Server functions for editing dashboards (R2 lot 5): administration of dashboards and widgets, moving
+//! a widget. **Administrators only** (like `is_staff` in the reference): an ordinary account sees its dashboards but does not
+//! modify them; an administrator edits those of all the accounts from the administration.
 
 use dominet_proto::{
     DashboardAdminDto, DashboardInput, DeleteOutcome, MoveOutcome, SaveOutcome, WidgetAdminDto,
@@ -32,10 +32,10 @@ fn widget_admin_dto(w: &dominet_domain::dashboard::Widget) -> WidgetAdminDto {
     }
 }
 
-/// Tous les tableaux, avec le nom de leur proprietaire.
+/// All the dashboards, with their owner's name.
 ///
 /// # Errors
-/// Refus (403) pour un non-administrateur ; erreur interne si la base echoue.
+/// Refused (403) for a non-administrator; internal error if the database fails.
 #[server(name = ListDashboardsAdmin, prefix = "/sf", endpoint = "dashboards/list")]
 pub async fn list_dashboards_admin() -> Result<Vec<DashboardAdminDto>, ServerFnError> {
     use std::collections::HashMap;
@@ -69,11 +69,11 @@ pub async fn list_dashboards_admin() -> Result<Vec<DashboardAdminDto>, ServerFnE
         .collect())
 }
 
-/// Cree (`id` absent) ou renomme un tableau. Le proprietaire se designe par son nom d'utilisateur et ne change plus ensuite ;
-/// le statut « par defaut » ne peut qu'etre active.
+/// Creates (`id` absent) or renames a dashboard. The owner is designated by their username and does not change afterwards;
+/// the "default" status can only be enabled.
 ///
 /// # Errors
-/// Refus (403) pour un non-administrateur ; erreur interne si la base echoue.
+/// Refused (403) for a non-administrator; internal error if the database fails.
 #[server(name = SaveDashboard, prefix = "/sf", endpoint = "dashboards/save", input = server_fn::codec::Json)]
 pub async fn save_dashboard(
     input: DashboardInput,
@@ -153,10 +153,10 @@ pub async fn save_dashboard(
     }))
 }
 
-/// Supprime un tableau et ses widgets.
+/// Deletes a dashboard and its widgets.
 ///
 /// # Errors
-/// Refus (403) pour un non-administrateur ; erreur interne si la base echoue.
+/// Refused (403) for a non-administrator; internal error if the database fails.
 #[server(name = DeleteDashboard, prefix = "/sf", endpoint = "dashboards/delete")]
 pub async fn delete_dashboard(id: i64) -> Result<DeleteOutcome, ServerFnError> {
     use dominet_domain::dashboard::DashboardId;
@@ -176,10 +176,10 @@ pub async fn delete_dashboard(id: i64) -> Result<DeleteOutcome, ServerFnError> {
     Ok(out)
 }
 
-/// Widgets d'un tableau (n'importe lequel : administration).
+/// Widgets of a dashboard (any one: administration).
 ///
 /// # Errors
-/// Refus (403) pour un non-administrateur ; erreur interne si la base echoue.
+/// Refused (403) for a non-administrator; internal error if the database fails.
 #[server(name = ListWidgets, prefix = "/sf", endpoint = "widgets/list")]
 pub async fn list_widgets(dashboard_id: i64) -> Result<Vec<WidgetAdminDto>, ServerFnError> {
     use dominet_domain::dashboard::DashboardId;
@@ -195,11 +195,11 @@ pub async fn list_widgets(dashboard_id: i64) -> Result<Vec<WidgetAdminDto>, Serv
     Ok(widgets.iter().map(widget_admin_dto).collect())
 }
 
-/// Page d'administration des widgets : le tableau `requested` s'il existe, sinon le premier, et ses widgets. Un seul appel
-/// donne le choix et la liste, sans dependance entre deux chargements cote navigateur.
+/// Widgets administration page: the `requested` dashboard if it exists, otherwise the first, and its widgets. A single call
+/// gives the choice and the list, with no dependency between two loads on the browser side.
 ///
 /// # Errors
-/// Refus (403) pour un non-administrateur ; erreur interne si la base echoue.
+/// Refused (403) for a non-administrator; internal error if the database fails.
 #[server(name = WidgetsPage, prefix = "/sf", endpoint = "widgets/page")]
 pub async fn widgets_page(requested: Option<i64>) -> Result<WidgetsPageDto, ServerFnError> {
     use dominet_domain::dashboard::DashboardId;
@@ -230,7 +230,7 @@ pub async fn widgets_page(requested: Option<i64>) -> Result<WidgetsPageDto, Serv
     })
 }
 
-/// Convertit la saisie en brouillon valide ; les problemes sont rendus champ par champ.
+/// Converts the input into a valid draft; the problems are returned field by field.
 #[cfg(feature = "ssr")]
 fn parse_widget(
     input: &WidgetInput,
@@ -295,7 +295,7 @@ fn parse_widget(
         width: number("width", &input.width, GridRect::DEFAULT.width),
         height: number("height", &input.height, GridRect::DEFAULT.height),
     };
-    // Le contenu d'un widget `text` est assaini des l'enregistrement ; pour les autres types il doit rester vide.
+    // The content of a `text` widget is sanitised as soon as it is saved; for the other types it must stay empty.
     let content = if widget_type == WidgetType::Text {
         dominet_server::html::sanitize_widget_html(&input.content)
     } else {
@@ -313,16 +313,16 @@ fn parse_widget(
         rect,
     };
     let mut problems = draft.problems();
-    // Un champ deja signale comme illisible ne doit pas l'etre une seconde fois.
+    // A field already reported as unreadable must not be reported a second time.
     problems.retain(|(f, _)| bad.iter().all(|(b, _)| b != f));
     bad.extend(problems);
     if bad.is_empty() { Ok(draft) } else { Err(bad) }
 }
 
-/// Cree (`id` absent) ou remplace (`id` present) un widget. Un chevauchement est signale sur le champ `col`.
+/// Creates (`id` absent) or replaces (`id` present) a widget. An overlap is reported on the `col` field.
 ///
 /// # Errors
-/// Refus (403) pour un non-administrateur ; erreur interne si la base echoue.
+/// Refused (403) for a non-administrator; internal error if the database fails.
 #[server(name = SaveWidget, prefix = "/sf", endpoint = "widgets/save", input = server_fn::codec::Json)]
 pub async fn save_widget(input: WidgetInput) -> Result<SaveOutcome<WidgetAdminDto>, ServerFnError> {
     use dominet_domain::dashboard::{DashboardId, WidgetId};
@@ -357,10 +357,10 @@ pub async fn save_widget(input: WidgetInput) -> Result<SaveOutcome<WidgetAdminDt
     })
 }
 
-/// Supprime un widget.
+/// Deletes a widget.
 ///
 /// # Errors
-/// Refus (403) pour un non-administrateur ; erreur interne si la base echoue.
+/// Refused (403) for a non-administrator; internal error if the database fails.
 #[server(name = DeleteWidget, prefix = "/sf", endpoint = "widgets/delete")]
 pub async fn delete_widget(id: i64) -> Result<DeleteOutcome, ServerFnError> {
     use dominet_domain::dashboard::WidgetId;
@@ -376,10 +376,10 @@ pub async fn delete_widget(id: i64) -> Result<DeleteOutcome, ServerFnError> {
     Ok(out)
 }
 
-/// Deplace un widget (position seulement). Refuse hors de la grille ou sur un autre widget : il reste alors ou il etait.
+/// Moves a widget (position only). Refused outside the grid or onto another widget: it then stays where it was.
 ///
 /// # Errors
-/// Refus (403) pour un non-administrateur ; erreur interne si la base echoue.
+/// Refused (403) for a non-administrator; internal error if the database fails.
 #[server(name = MoveWidget, prefix = "/sf", endpoint = "widgets/move")]
 pub async fn move_widget(id: i64, col: i16, row: i16) -> Result<MoveOutcome, ServerFnError> {
     use dominet_domain::RepoError;

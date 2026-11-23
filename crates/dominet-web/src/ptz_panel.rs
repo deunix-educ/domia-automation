@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Commandes d'une camera sur la page live : pilotage PTZ (croix, zoom, vitesses, presets) et bascule jour / nuit (R6 lot 5, ADR 0047).
-//! Reserve aux administrateurs (D9).
+//! Controls of a camera on the live page: PTZ control (cross, zoom, speeds, presets) and day / night toggle (R6 lot 5, ADR 0047).
+//! Reserved to administrators (D9).
 //!
-//! Le pilotage parle au WebSocket `/ws/surveillance/ptz/<uuid>/` (protocole de l'implementation de reference). Une direction **maintenue** renvoie
-//! son ordre toutes les 250 ms et envoie `stop` au relachement, a la sortie du bouton et si le pointeur est interrompu ; le serveur
-//! arrete de toute facon un mouvement non rafraichi (`PTZ_DEAD_MAN_SECS`).
+//! The control talks to the `/ws/surveillance/ptz/<uuid>/` WebSocket (protocol of the reference implementation). A **held** direction sends
+//! its order again every 250 ms and sends `stop` on release, on leaving the button and if the pointer is interrupted; the server
+//! stops an unrefreshed movement anyway (`PTZ_DEAD_MAN_SECS`).
 
 use dominet_proto::{CameraLiveDto, NightOutcomeDto};
 use leptos::prelude::*;
@@ -12,14 +12,14 @@ use leptos_fluent::{move_tr, tr};
 
 use crate::camera_fns::camera_night;
 
-/// Un preset, tel que le serveur le liste.
+/// A preset, as the server lists it.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PresetView {
     pub id: i64,
     pub name: String,
 }
 
-/// Lit `{"type":"presets","presets":[{id,name,...}]}`.
+/// Reads `{"type":"presets","presets":[{id,name,...}]}`.
 #[must_use]
 pub fn parse_presets(v: &serde_json::Value) -> Vec<PresetView> {
     v["presets"]
@@ -37,14 +37,14 @@ pub fn parse_presets(v: &serde_json::Value) -> Vec<PresetView> {
         .unwrap_or_default()
 }
 
-/// Etat du lien avec la camera.
+/// State of the link with the camera.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum LinkState {
     Connecting,
     Ready,
-    /// Le serveur a repondu une erreur (message deja lisible).
+    /// The server answered with an error (message already readable).
     Failed(String),
-    /// Connexion fermee (camera injoignable, session finie...) : nouvelle tentative en cours.
+    /// Connection closed (camera unreachable, session over...): new attempt in progress.
     Closed,
 }
 
@@ -60,7 +60,7 @@ impl LinkState {
     }
 }
 
-// ------------------------------------------------------------------ navigateur
+// ------------------------------------------------------------------ browser
 
 #[cfg(feature = "hydrate")]
 mod browser {
@@ -111,14 +111,14 @@ mod browser {
     }
 
     pub fn hold_stop() {
-        // Seulement si un ordre etait maintenu : un `pointerleave` sans appui n'envoie rien.
+        // Only if an order was held: a `pointerleave` without a press sends nothing.
         if HOLD.with(|h| h.get().is_some()) {
             hold_stop_timer();
             send(r#"{"action":"stop"}"#);
         }
     }
 
-    /// Ouvre le WebSocket de pilotage ; se rouvre apres une fermeture tant que `stopped` est faux.
+    /// Opens the control WebSocket; reopens after a closure as long as `stopped` is false.
     pub fn connect(
         uuid: String,
         link: RwSignal<LinkState>,
@@ -201,7 +201,7 @@ mod browser {
     }
 }
 
-/// Envoie un ordre au WebSocket de pilotage (sans effet hors navigateur).
+/// Sends an order to the control WebSocket (no effect outside the browser).
 fn ptz_send(message: &str) {
     #[cfg(feature = "hydrate")]
     browser::send(message);
@@ -221,9 +221,9 @@ fn hold_stop() {
     browser::hold_stop();
 }
 
-// ------------------------------------------------------------------ vues
+// ------------------------------------------------------------------ views
 
-/// Une direction maintenue : ordre repete tant que le bouton est enfonce.
+/// A held direction: order repeated while the button is pressed.
 fn hold_button(
     id: &'static str,
     label_key: &'static str,
@@ -247,7 +247,7 @@ fn hold_button(
     }
 }
 
-/// Pilotage PTZ d'une camera.
+/// PTZ control of a camera.
 #[component]
 fn PtzPad(uuid: String) -> impl IntoView {
     let link = RwSignal::new(LinkState::Connecting);
@@ -369,7 +369,7 @@ fn PtzPad(uuid: String) -> impl IntoView {
 fn night_message(outcome: &NightOutcomeDto) -> (bool, String) {
     match outcome {
         NightOutcomeDto::Done { action, details } => {
-            // `details` est le JSON de la reference : on montre ce qui a change (mode, valeur, luminosite...).
+            // `details` is the reference's JSON: we show what changed (mode, value, brightness...).
             let v: serde_json::Value = serde_json::from_str(details).unwrap_or_default();
             let shown = ["mode", "value", "brightness", "control"]
                 .iter()
@@ -392,7 +392,7 @@ fn night_message(outcome: &NightOutcomeDto) -> (bool, String) {
     }
 }
 
-/// Boutons jour / nuit, IR-cut et lumiere.
+/// Day / night, IR-cut and light buttons.
 #[component]
 fn NightPad(uuid: String) -> impl IntoView {
     let feedback = RwSignal::new(None::<(bool, String)>);
@@ -429,7 +429,7 @@ fn NightPad(uuid: String) -> impl IntoView {
     }
 }
 
-/// Les commandes d'une camera (administrateurs) : PTZ si elle en a, jour / nuit si une methode est configuree.
+/// A camera's controls (administrators): PTZ if it has any, day / night if a method is configured.
 #[component]
 pub fn CameraControls(camera: CameraLiveDto) -> impl IntoView {
     view! {

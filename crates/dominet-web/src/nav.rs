@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Adresses internes : cible de retour apres connexion (filtree contre les redirections ouvertes).
+//! Internal addresses: return target after login (filtered against open redirects).
 
-/// Ne garde la cible `next` que si c'est un chemin interne sur ce site ; sinon `/`.
+/// Only keeps the `next` target if it is an internal path on this site; otherwise `/`.
 ///
-/// Refuse tout ce qui pourrait mener hors du site : URL absolue (`https://...`), adresse sans schema (`//hote`),
-/// barre oblique inverse (certains navigateurs la traitent comme `/`), caracteres de controle.
+/// Refuses anything that could lead outside the site: absolute URL (`https://...`), address without a scheme (`//host`),
+/// backslash (some browsers treat it as `/`), control characters.
 #[must_use]
 pub fn safe_next(next: &str) -> String {
     let ok = next.starts_with('/')
@@ -19,8 +19,8 @@ pub fn safe_next(next: &str) -> String {
     }
 }
 
-/// Vrai si `path` est servi par le serveur HORS de l'interface (documentation, Grafana) : le routeur du navigateur ne le
-/// connait pas et afficherait « Page introuvable » ; il faut un vrai chargement de page.
+/// True if `path` is served by the server OUTSIDE the interface (documentation, Grafana): the browser's router does not
+/// know it and would display "Page not found"; a real page load is needed.
 #[must_use]
 pub fn leaves_app(path: &str) -> bool {
     let path = path.split(['?', '#']).next().unwrap_or(path);
@@ -32,7 +32,7 @@ pub fn leaves_app(path: &str) -> bool {
     })
 }
 
-/// Adresse de la page de connexion qui ramenera ensuite vers `target` (rien si c'est l'accueil).
+/// Address of the login page that will then lead back to `target` (nothing if it is the home page).
 #[must_use]
 pub fn login_url(target: &str) -> String {
     let target = safe_next(target);
@@ -43,7 +43,7 @@ pub fn login_url(target: &str) -> String {
     }
 }
 
-/// Encodage pourcent des octets hors alphabet non reserve (suffisant pour une valeur de parametre).
+/// Percent-encoding of the bytes outside the unreserved alphabet (enough for a parameter value).
 fn encode(s: &str) -> String {
     use std::fmt::Write;
     let mut out = String::with_capacity(s.len());

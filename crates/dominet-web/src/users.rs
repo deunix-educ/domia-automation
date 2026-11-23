@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Administration des comptes : `/admin/users`.
+//! Accounts administration: `/admin/users`.
 //!
-//! Regles (appliquees cote serveur, l'interface ne fait que les afficher) : il doit toujours rester un administrateur
-//! actif ; un administrateur ne peut pas se supprimer, se desactiver, se retrograder ni changer ici son propre mot de
-//! passe (`Mon compte` sert a cela) ; reinitialiser le mot de passe d'un compte ferme toutes ses sessions.
+//! Rules (applied on the server side, the interface only displays them): there must always remain an active administrator;
+//! an administrator cannot delete, deactivate or demote themselves, nor change their own password here (`My account` is for that);
+//! resetting an account's password closes all its sessions.
 
 use dominet_proto::{RoleDto, UserAdminDto, UserInput};
 use leptos::prelude::*;
@@ -52,7 +52,7 @@ fn row(u: &UserAdminDto) -> Row {
     }
 }
 
-/// Champ de texte de base ; les cas particuliers modifient la structure obtenue.
+/// Basic text field; special cases modify the resulting structure.
 fn field(name: &'static str, label: &'static str, kind: FieldKind) -> FieldSpec {
     FieldSpec {
         name,

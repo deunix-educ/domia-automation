@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Alertes (R4 lot 6, ADR 0035) : la page `/alerts` (tout compte connecte : consulter, acquitter une alerte, tout acquitter) et la
-//! pastille de la barre laterale. L'administration des regles est dans `alert_rules_admin`.
+//! Alerts (R4 lot 6, ADR 0035): the `/alerts` page (any logged-in account: view, acknowledge an alert, acknowledge all) and the
+//! sidebar badge. The rules administration is in `alert_rules_admin`.
 
 use dominet_proto::{AckOutcome, AlertsPageDto, Topic};
 use leptos::prelude::*;
@@ -12,10 +12,10 @@ use crate::guard::RequireAuth;
 use crate::layout::use_hydrated;
 use crate::realtime::Realtime;
 
-/// Filtres admis de la page, dans l'ordre d'affichage.
+/// Filters allowed on the page, in display order.
 const STATUSES: [&str; 4] = ["firing", "resolved", "acknowledged", "all"];
 
-/// Ce que la page sait de Prometheus et de Grafana (dernier instantane lu en fond).
+/// What the page knows about Prometheus and Grafana (last snapshot read in the background).
 #[cfg(feature = "ssr")]
 fn platform_dto(
     external: &dominet_server::external_alerts::ExternalAlerts,
@@ -49,11 +49,11 @@ fn platform_dto(
     }
 }
 
-/// Les alertes (200 au plus, les plus recentes d'abord) filtrees par statut (`firing` par defaut ; tout autre texte = `firing`),
-/// avec le nombre d'alertes en cours. Tout compte connecte.
+/// The alerts (200 at most, most recent first) filtered by status (`firing` by default; any other text = `firing`),
+/// with the number of ongoing alerts. Any logged-in account.
 ///
 /// # Errors
-/// Refus (401) sans session ; erreur interne si la base echoue.
+/// Refused (401) without a session; internal error if the database fails.
 #[server(name = AlertsPage, prefix = "/sf", endpoint = "alerts/page")]
 pub async fn alerts_page(status: String) -> Result<AlertsPageDto, ServerFnError> {
     use std::collections::HashMap;
@@ -141,10 +141,10 @@ pub async fn alerts_page(status: String) -> Result<AlertsPageDto, ServerFnError>
     })
 }
 
-/// Acquitte une alerte en cours (tout compte connecte, comme en reference).
+/// Acknowledges an ongoing alert (any logged-in account, like the reference).
 ///
 /// # Errors
-/// Refus (401) sans session ; erreur interne si la base echoue.
+/// Refused (401) without a session; internal error if the database fails.
 #[server(name = AcknowledgeAlert, prefix = "/sf", endpoint = "alerts/acknowledge")]
 pub async fn acknowledge_alert(id: i64) -> Result<AckOutcome, ServerFnError> {
     use dominet_domain::alert::AlertId;
@@ -168,10 +168,10 @@ pub async fn acknowledge_alert(id: i64) -> Result<AckOutcome, ServerFnError> {
     Ok(AckOutcome::Acknowledged)
 }
 
-/// Acquitte toutes les alertes en cours ; renvoie leur nombre.
+/// Acknowledges all the ongoing alerts; returns their number.
 ///
 /// # Errors
-/// Refus (401) sans session ; erreur interne si la base echoue.
+/// Refused (401) without a session; internal error if the database fails.
 #[server(name = AcknowledgeAllAlerts, prefix = "/sf", endpoint = "alerts/acknowledge-all")]
 pub async fn acknowledge_all_alerts() -> Result<u32, ServerFnError> {
     use dominet_domain::repo::AlertRepo;
@@ -202,8 +202,8 @@ pub fn AlertsPage() -> impl IntoView {
     }
 }
 
-/// La section « Plateforme » : alertes de Prometheus et de Grafana, en lecture seule. Rien si aucune des deux sources n'est
-/// surveillee ; une source injoignable est dite, jamais confondue avec « aucune alerte ».
+/// The "Platform" section: alerts from Prometheus and Grafana, read-only. Nothing if neither source is
+/// monitored; an unreachable source is stated, never confused with "no alert".
 fn platform_section(platform: &dominet_proto::PlatformAlertsDto) -> Option<AnyView> {
     if platform.prometheus == "off" && platform.grafana == "off" {
         return None;
@@ -307,7 +307,7 @@ fn AlertsContent() -> impl IntoView {
     let query = use_query_map();
     let status = move || query.with(|q| q.get("status").unwrap_or_else(|| "firing".to_string()));
     let version = RwSignal::new(0u32);
-    // Le nombre d'alertes en cours change (declenchement, resolution, acquittement ailleurs) : la liste se recharge.
+    // The number of ongoing alerts changes (raised, resolved, acknowledged elsewhere): the list reloads.
     let list = Resource::new(
         move || (status(), version.get(), rt.alerts.get()),
         |(s, _, _)| async move { alerts_page(s).await.map_err(|_| ()) },

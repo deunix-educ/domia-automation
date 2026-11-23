@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Page de connexion.
+//! Login page.
 
 use dominet_proto::LoginOutcome;
 use leptos::html;
@@ -22,7 +22,7 @@ enum LoginError {
     Generic,
 }
 
-/// Message d'echec de connexion, traduit a chaud.
+/// Login failure message, translated live.
 #[component]
 fn ErrorAlert(error: RwSignal<Option<LoginError>>) -> impl IntoView {
     move || {
@@ -42,8 +42,8 @@ fn ErrorAlert(error: RwSignal<Option<LoginError>>) -> impl IntoView {
     }
 }
 
-/// Cible servie hors de l'interface (documentation, Grafana) : vrai chargement de page, et `true`. Le routeur du
-/// navigateur ne connait pas ces adresses et afficherait « Page introuvable ».
+/// Target served outside the interface (documentation, Grafana): a real page load, and `true`. The browser's router
+/// does not know these addresses and would display "Page not found".
 fn left_the_app(target: &str) -> bool {
     let leaves = leaves_app(target);
     if leaves {
@@ -52,14 +52,14 @@ fn left_the_app(target: &str) -> bool {
     leaves
 }
 
-/// Apres une connexion reussie : vers la cible, par le routeur ou par un vrai chargement selon le cas.
+/// After a successful login: to the target, through the router or a real load as the case may be.
 fn go_to(target: &str, navigate: &impl Fn(&str, NavigateOptions)) {
     if !left_the_app(target) {
         navigate(target, NavigateOptions::default());
     }
 }
 
-/// Visiteur deja connecte sur la page de connexion : renvoi vers la cible.
+/// Visitor already logged in on the login page: sent on to the target.
 fn already_signed_in(signed_in: bool, target: String) -> Option<impl IntoView> {
     if !signed_in || left_the_app(&target) {
         None
@@ -77,19 +77,19 @@ pub fn LoginPage() -> impl IntoView {
     let next = move || safe_next(&query.read().get("next").unwrap_or_default());
     let notice = move || query.read().get("notice").as_deref() == Some("password-changed");
 
-    // Champs « non controles » : on lit leur contenu REEL a la soumission. Le remplissage automatique et la restauration
-    // d'un formulaire par le navigateur posent une valeur sans evenement `input` ; un signal alimente par `input` serait
-    // alors vide alors que le champ est visiblement rempli (« identifiant incorrect » sans raison).
+    // "Uncontrolled" fields: we read their REAL content on submission. Autofill and the browser's restoration
+    // of a form set a value without an `input` event; a signal fed by `input` would then be
+    // empty while the field is visibly filled ("wrong identifier" for no reason).
     let username = NodeRef::<html::Input>::new();
     let password = NodeRef::<html::Input>::new();
     let error = RwSignal::new(None::<LoginError>);
     let pending = RwSignal::new(false);
     let ready = use_hydrated();
-    // Arrivee sur la page de connexion : tout depart volontaire (deconnexion...) est termine.
+    // Arrival on the login page: any voluntary departure (logout...) is over.
     Effect::new(move |_| state.leaving.set(false));
 
     let on_submit = move |ev: leptos::ev::SubmitEvent| {
-        // Sans cela le navigateur enverrait le formulaire lui-meme (page rechargee).
+        // Without this the browser would submit the form itself (page reloaded).
         ev.prevent_default();
         if pending.get_untracked() {
             return;
@@ -137,8 +137,8 @@ pub fn LoginPage() -> impl IntoView {
                         {move_tr!("login-notice-password-changed")}
                     </div>
                 </Show>
-                // `method="post"` : si le formulaire etait soumis avant l'hydratation, le mot de passe ne
-                // finirait pas dans l'adresse (la page repond alors 405 au lieu de l'afficher).
+                // `method="post"`: if the form were submitted before hydration, the password would not
+                // end up in the address (the page then answers 405 instead of displaying it).
                 <form method="post" on:submit=on_submit>
                     <ErrorAlert error/>
                     <div class="vc-form-group">

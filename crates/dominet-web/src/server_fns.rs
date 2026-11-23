@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Fonctions serveur : declarees ici pour que le navigateur dispose du stub client, executees cote serveur
-//! avec l'etat de l'application (fourni par le contexte Leptos) et la session de la requete.
+//! Server functions: declared here so that the browser has the client stub, run on the server side
+//! with the application state (provided by the Leptos context) and the request's session.
 
 use dominet_proto::{
     BroadcastOutcome, ChangePasswordOutcome, DashboardPageDto, DashboardSummaryDto, DeleteOutcome,
@@ -9,8 +9,8 @@ use dominet_proto::{
 };
 use leptos::prelude::*;
 
-/// Administrateur connecte, ou refus (403). Chaque fonction d'administration commence par la : les gardes de pages
-/// ne servent qu'a l'affichage.
+/// Logged-in administrator, or refusal (403). Every administration function starts there: the page guards
+/// are only for display.
 #[cfg(feature = "ssr")]
 pub(crate) async fn require_admin(
     state: &dominet_server::AppState,
@@ -27,7 +27,7 @@ pub(crate) async fn require_admin(
     }
 }
 
-/// Compte connecte (n'importe quel role), ou refus (401).
+/// Logged-in account (any role), or refusal (401).
 #[cfg(feature = "ssr")]
 pub(crate) async fn require_user(
     state: &dominet_server::AppState,
@@ -44,17 +44,17 @@ pub(crate) async fn require_user(
     }
 }
 
-/// Erreur interne : le detail est journalise, jamais renvoye au navigateur.
+/// Internal error: the detail is logged, never sent back to the browser.
 #[cfg(feature = "ssr")]
 pub(crate) fn internal(context: &str, err: &dyn std::fmt::Display) -> ServerFnError {
     tracing::error!(%err, "{context}");
     ServerFnError::new("internal error")
 }
 
-/// Compte connecte, ou `None` si la session est absente, expiree ou le compte desactive.
+/// Logged-in account, or `None` if the session is absent, expired or the account deactivated.
 ///
 /// # Errors
-/// Jamais cote serveur (un refus d'authentification vaut `None`) ; erreur de transport cote navigateur.
+/// Never on the server side (an authentication refusal is `None`); transport error on the browser side.
 #[server(name = Whoami, prefix = "/sf", endpoint = "whoami")]
 pub async fn whoami() -> Result<Option<UserDto>, ServerFnError> {
     use dominet_server::AppState;
@@ -69,10 +69,10 @@ pub async fn whoami() -> Result<Option<UserDto>, ServerFnError> {
     )
 }
 
-/// Compte connecte et navigation visible pour son role (vide pour un visiteur anonyme).
+/// Logged-in account and navigation visible for its role (empty for an anonymous visitor).
 ///
 /// # Errors
-/// Erreur si la base de donnees est injoignable.
+/// Error if the database is unreachable.
 #[server(name = LayoutData, prefix = "/sf", endpoint = "layout")]
 pub async fn layout_data() -> Result<LayoutDto, ServerFnError> {
     use dominet_domain::navbar::{NavPosition, NavbarItem};
@@ -108,10 +108,10 @@ pub async fn layout_data() -> Result<LayoutDto, ServerFnError> {
     })
 }
 
-/// Ferme la session courante (idempotent : sans session, ne fait rien).
+/// Closes the current session (idempotent: without a session, does nothing).
 ///
 /// # Errors
-/// Erreur si le store de sessions echoue.
+/// Error if the session store fails.
 #[server(name = Logout, prefix = "/sf", endpoint = "logout")]
 pub async fn logout() -> Result<(), ServerFnError> {
     let session: tower_sessions::Session = leptos_axum::extract().await?;
@@ -120,11 +120,11 @@ pub async fn logout() -> Result<(), ServerFnError> {
         .map_err(|e| internal("signing out", &e))
 }
 
-/// Tentative de connexion. Les refus attendus (identifiants faux, compte bloque) sont des valeurs du resultat ;
-/// seule une panne (base, store de sessions) est une erreur.
+/// Login attempt. The expected refusals (wrong credentials, locked account) are values of the result;
+/// only an outage (database, session store) is an error.
 ///
 /// # Errors
-/// Erreur interne si la base ou le store de sessions echoue.
+/// Internal error if the database or the session store fails.
 #[server(name = Login, prefix = "/sf", endpoint = "login")]
 pub async fn login(username: String, password: String) -> Result<LoginOutcome, ServerFnError> {
     use dominet_server::AppState;
@@ -150,11 +150,11 @@ pub async fn login(username: String, password: String) -> Result<LoginOutcome, S
     }
 }
 
-/// Change le mot de passe du compte connecte. En cas de succes, **toutes** ses sessions sont fermees (y compris
-/// celle-ci) : l'interface renvoie vers la page de connexion.
+/// Changes the logged-in account's password. On success, **all** its sessions are closed (including
+/// this one): the interface sends back to the login page.
 ///
 /// # Errors
-/// Refus d'authentification si personne n'est connecte ; erreur interne si la base echoue.
+/// Authentication refusal if nobody is logged in; internal error if the database fails.
 #[server(name = ChangePassword, prefix = "/sf", endpoint = "password")]
 pub async fn change_password(
     current_password: String,
@@ -197,7 +197,7 @@ pub async fn change_password(
     }
 }
 
-/// Motif de refus d'un mot de passe par la politique, ou `None` s'il est accepte.
+/// Reason a password is refused by the policy, or `None` if it is accepted.
 #[cfg(feature = "ssr")]
 fn password_problem(password: &str, username: &str) -> Option<dominet_proto::PasswordProblem> {
     use dominet_domain::auth::{PasswordPolicy, PasswordViolation};
@@ -214,7 +214,7 @@ fn password_problem(password: &str, username: &str) -> Option<dominet_proto::Pas
     })
 }
 
-/// Problemes du domaine -> problemes de formulaire (champ par champ).
+/// Domain problems -> form problems (field by field).
 #[cfg(feature = "ssr")]
 pub(crate) fn field_problems(
     problems: Vec<(&'static str, dominet_domain::Problem)>,
@@ -247,10 +247,10 @@ fn location_dto(l: &dominet_domain::location::Location) -> LocationDto {
     }
 }
 
-/// Emplacements, tries par nom (administrateurs).
+/// Locations, sorted by name (administrators).
 ///
 /// # Errors
-/// Refus (403) pour un non-administrateur ; erreur interne si la base echoue.
+/// Refused (403) for a non-administrator; internal error if the database fails.
 #[server(name = ListLocations, prefix = "/sf", endpoint = "locations/list")]
 pub async fn list_locations() -> Result<Vec<LocationDto>, ServerFnError> {
     use dominet_domain::repo::LocationRepo;
@@ -266,10 +266,10 @@ pub async fn list_locations() -> Result<Vec<LocationDto>, ServerFnError> {
     Ok(items.iter().map(location_dto).collect())
 }
 
-/// Cree (`id` absent) ou remplace (`id` present) un emplacement. Les champs invalides sont renvoyes un par un.
+/// Creates (`id` absent) or replaces (`id` present) a location. Invalid fields are returned one by one.
 ///
 /// # Errors
-/// Refus (403) pour un non-administrateur ; erreur interne si la base echoue.
+/// Refused (403) for a non-administrator; internal error if the database fails.
 #[server(name = SaveLocation, prefix = "/sf", endpoint = "locations/save", input = server_fn::codec::Json)]
 pub async fn save_location(
     input: LocationInput,
@@ -301,10 +301,10 @@ pub async fn save_location(
     }
 }
 
-/// Supprime un emplacement.
+/// Deletes a location.
 ///
 /// # Errors
-/// Refus (403) pour un non-administrateur ; erreur interne si la base echoue.
+/// Refused (403) for a non-administrator; internal error if the database fails.
 #[server(name = DeleteLocation, prefix = "/sf", endpoint = "locations/delete")]
 pub async fn delete_location(id: i64) -> Result<DeleteOutcome, ServerFnError> {
     use dominet_domain::location::LocationId;
@@ -334,10 +334,10 @@ fn navbar_admin_dto(i: &dominet_domain::navbar::NavbarItem) -> NavbarAdminDto {
     }
 }
 
-/// Entrees de navigation, dans l'ordre d'affichage : haut puis bas (administrateurs).
+/// Navigation entries, in display order: top then bottom (administrators).
 ///
 /// # Errors
-/// Refus (403) pour un non-administrateur ; erreur interne si la base echoue.
+/// Refused (403) for a non-administrator; internal error if the database fails.
 #[server(name = ListNavbar, prefix = "/sf", endpoint = "navbar/list")]
 pub async fn list_navbar() -> Result<Vec<NavbarAdminDto>, ServerFnError> {
     use dominet_domain::repo::NavbarRepo;
@@ -353,11 +353,11 @@ pub async fn list_navbar() -> Result<Vec<NavbarAdminDto>, ServerFnError> {
     Ok(items.iter().map(navbar_admin_dto).collect())
 }
 
-/// Cree (`id` absent) ou remplace (`id` present) une entree de navigation. Les champs invalides sont renvoyes un
-/// par un ; un nom d'icone inexistant dans Lucide est refuse (sinon l'entree afficherait une icone de repli).
+/// Creates (`id` absent) or replaces (`id` present) a navigation entry. Invalid fields are returned one
+/// by one; an icon name that does not exist in Lucide is refused (otherwise the entry would show a fallback icon).
 ///
 /// # Errors
-/// Refus (403) pour un non-administrateur ; erreur interne si la base echoue.
+/// Refused (403) for a non-administrator; internal error if the database fails.
 #[server(name = SaveNavbar, prefix = "/sf", endpoint = "navbar/save", input = server_fn::codec::Json)]
 pub async fn save_navbar(input: NavbarInput) -> Result<SaveOutcome<NavbarAdminDto>, ServerFnError> {
     use std::str::FromStr;
@@ -421,10 +421,10 @@ pub async fn save_navbar(input: NavbarInput) -> Result<SaveOutcome<NavbarAdminDt
     }
 }
 
-/// Supprime une entree de navigation.
+/// Deletes a navigation entry.
 ///
 /// # Errors
-/// Refus (403) pour un non-administrateur ; erreur interne si la base echoue.
+/// Refused (403) for a non-administrator; internal error if the database fails.
 #[server(name = DeleteNavbar, prefix = "/sf", endpoint = "navbar/delete")]
 pub async fn delete_navbar(id: i64) -> Result<DeleteOutcome, ServerFnError> {
     use dominet_domain::navbar::NavbarItemId;
@@ -458,10 +458,10 @@ fn setting_dto(v: dominet_server::settings::SettingView) -> SettingDto {
     }
 }
 
-/// Les 17 reglages applicatifs, tries par categorie ; la valeur d'un secret n'est jamais renvoyee (administrateurs).
+/// The 17 application settings, sorted by category; a secret's value is never sent back (administrators).
 ///
 /// # Errors
-/// Refus (403) pour un non-administrateur ; erreur interne si la base echoue.
+/// Refused (403) for a non-administrator; internal error if the database fails.
 #[server(name = ListSettings, prefix = "/sf", endpoint = "settings/list")]
 pub async fn list_settings() -> Result<Vec<SettingDto>, ServerFnError> {
     let state = expect_context::<dominet_server::AppState>();
@@ -474,10 +474,10 @@ pub async fn list_settings() -> Result<Vec<SettingDto>, ServerFnError> {
     Ok(views.into_iter().map(setting_dto).collect())
 }
 
-/// Modifie un reglage (valide selon son type, chiffre s'il est secret). La valeur n'est jamais journalisee.
+/// Modifies a setting (validated according to its type, encrypted if it is a secret). The value is never logged.
 ///
 /// # Errors
-/// Refus (403) pour un non-administrateur ; erreur interne si la base echoue.
+/// Refused (403) for a non-administrator; internal error if the database fails.
 #[server(name = SaveSetting, prefix = "/sf", endpoint = "settings/save")]
 pub async fn save_setting(key: String, value: String) -> Result<SettingOutcome, ServerFnError> {
     use dominet_server::settings::SettingsError;
@@ -515,8 +515,8 @@ fn user_admin_dto(u: &dominet_domain::user::User) -> UserAdminDto {
     }
 }
 
-/// Valide les champs d'un compte saisi dans l'administration : role reconnu, identifiant (creation seulement), champs
-/// facultatifs, mot de passe (obligatoire a la creation, sinon seulement s'il est fourni). Renvoie aussi le role lu.
+/// Validates the fields of an account entered in the administration: recognised role, identifier (creation only), optional fields,
+/// password (mandatory at creation, otherwise only if supplied). Also returns the role read.
 #[cfg(feature = "ssr")]
 fn user_input_problems(
     input: &UserInput,
@@ -561,10 +561,10 @@ fn user_input_problems(
     (role, problems)
 }
 
-/// Comptes, tries par identifiant (administrateurs). Jamais de condensat ni de mot de passe.
+/// Accounts, sorted by identifier (administrators). Never a hash or a password.
 ///
 /// # Errors
-/// Refus (403) pour un non-administrateur ; erreur interne si la base echoue.
+/// Refused (403) for a non-administrator; internal error if the database fails.
 #[server(name = ListUsers, prefix = "/sf", endpoint = "users/list")]
 pub async fn list_users() -> Result<Vec<UserAdminDto>, ServerFnError> {
     use dominet_domain::repo::UserRepo;
@@ -581,12 +581,12 @@ pub async fn list_users() -> Result<Vec<UserAdminDto>, ServerFnError> {
     Ok(users.iter().map(user_admin_dto).collect())
 }
 
-/// Cree (`id` absent) ou modifie un compte. Une modification peut reinitialiser le mot de passe (ce qui ferme toutes les
-/// sessions du compte). Refus : retirer le dernier administrateur actif ; pour soi-meme, se desactiver, se retrograder
-/// ou changer son mot de passe ici.
+/// Creates (`id` absent) or modifies an account. A modification may reset the password (which closes all the
+/// account's sessions). Refused: removing the last active administrator; for oneself, deactivating, demoting
+/// or changing one's own password here.
 ///
 /// # Errors
-/// Refus (403) pour un non-administrateur ; erreur interne si la base echoue.
+/// Refused (403) for a non-administrator; internal error if the database fails.
 #[server(name = SaveUser, prefix = "/sf", endpoint = "users/save", input = server_fn::codec::Json)]
 pub async fn save_user(input: UserInput) -> Result<SaveOutcome<UserAdminDto>, ServerFnError> {
     use dominet_domain::RepoError;
@@ -599,7 +599,7 @@ pub async fn save_user(input: UserInput) -> Result<SaveOutcome<UserAdminDto>, Se
     let admin = require_admin(&state).await?;
     let users = state.store.users();
 
-    // Compte vise (modification) : l'identifiant est immuable, on garde celui de la base.
+    // Targeted account (modification): the identifier is immutable, we keep the database's.
     let existing = match input.id {
         Some(id) => match users.find_by_id(UserId(id)).await {
             Ok(Some(u)) => Some(u),
@@ -618,7 +618,7 @@ pub async fn save_user(input: UserInput) -> Result<SaveOutcome<UserAdminDto>, Se
         return Ok(SaveOutcome::Invalid(problems));
     }
 
-    // Garde-fous sur son propre compte (la session serait coupee en pleine page).
+    // Safeguards on one's own account (the session would be cut in the middle of the page).
     if let Some(target) = &existing
         && target.id == admin.id
     {
@@ -663,7 +663,7 @@ pub async fn save_user(input: UserInput) -> Result<SaveOutcome<UserAdminDto>, Se
     };
     match saved {
         Ok(user) => {
-            // Jamais le mot de passe : seulement qui a fait quoi.
+            // Never the password: only who did what.
             tracing::info!(
                 admin_id = admin.id.0,
                 user_id = user.id.0,
@@ -685,10 +685,10 @@ pub async fn save_user(input: UserInput) -> Result<SaveOutcome<UserAdminDto>, Se
     }
 }
 
-/// Supprime un compte et toutes ses sessions. Refus : soi-meme, le dernier administrateur actif.
+/// Deletes an account and all its sessions. Refused: oneself, the last active administrator.
 ///
 /// # Errors
-/// Refus (403) pour un non-administrateur ; erreur interne si la base echoue.
+/// Refused (403) for a non-administrator; internal error if the database fails.
 #[server(name = DeleteUser, prefix = "/sf", endpoint = "users/delete")]
 pub async fn delete_user(id: i64) -> Result<DeleteOutcome, ServerFnError> {
     use dominet_domain::RepoError;
@@ -713,11 +713,11 @@ pub async fn delete_user(id: i64) -> Result<DeleteOutcome, ServerFnError> {
     }
 }
 
-/// Diffuse un message a toutes les connexions temps reel ouvertes (administrateurs). Sert aussi a verifier que la
-/// chaine WebSocket fonctionne de bout en bout.
+/// Broadcasts a message to all the open real-time connections (administrators). Also serves to check that the
+/// WebSocket chain works end to end.
 ///
 /// # Errors
-/// Refus (403) pour un non-administrateur.
+/// Refused (403) for a non-administrator.
 #[server(name = BroadcastNotification, prefix = "/sf", endpoint = "notify")]
 pub async fn broadcast_notification(text: String) -> Result<BroadcastOutcome, ServerFnError> {
     use dominet_proto::{NotificationLevel, Topic, WsServerMsg};
@@ -744,12 +744,12 @@ pub async fn broadcast_notification(text: String) -> Result<BroadcastOutcome, Se
     })
 }
 
-/// Injecte un etat d'appareil d'essai (administrateurs) : il est retenu comme dernier etat de `device:<id>` et diffuse aux
-/// abonnes, exactement comme le fait le flux MQTT. Sert a verifier le temps reel de bout en bout et a presenter les
-/// widgets d'appareil sans attendre un vrai message ; n'agit que sur un appareil existant et n'ecrit rien en base.
+/// Injects a test device state (administrators): it is kept as the last state of `device:<id>` and broadcast to the
+/// subscribers, exactly as the MQTT feed does. Serves to check real time end to end and to present the
+/// device widgets without waiting for a real message; only acts on an existing device and writes nothing to the database.
 ///
 /// # Errors
-/// Refus (403) pour un non-administrateur.
+/// Refused (403) for a non-administrator.
 #[server(name = InjectDeviceState, prefix = "/sf", endpoint = "devices/inject")]
 pub async fn inject_device_state(
     device_id: i64,
@@ -762,7 +762,7 @@ pub async fn inject_device_state(
 
     let app = expect_context::<dominet_server::AppState>();
     let admin = require_admin(&app).await?;
-    // Le simulateur n'agit que sur un appareil qui existe (la cle etrangere des widgets l'exige) : nom reel, rien en base.
+    // The simulator only acts on a device that exists (the widgets' foreign key requires it): real name, nothing in the database.
     let Some(device) = app
         .store
         .devices()
@@ -794,8 +794,8 @@ pub async fn inject_device_state(
     })
 }
 
-/// Informations d'affichage (type, libelles, cles masquees, commandes possibles) des appareils visés par les widgets.
-/// HTML assaini d'un widget `text` (vide pour les autres types).
+/// Display information (type, labels, hidden keys, possible commands) of the devices targeted by the widgets.
+/// Sanitised HTML of a `text` widget (empty for the other types).
 #[cfg(feature = "ssr")]
 fn text_widget_html(w: &dominet_domain::dashboard::Widget) -> String {
     use dominet_domain::dashboard::WidgetType;
@@ -804,7 +804,7 @@ fn text_widget_html(w: &dominet_domain::dashboard::Widget) -> String {
         return String::new();
     }
     if w.content.is_empty() {
-        // Repli de l'implementation de reference : texte brut de la configuration, retours a la ligne conserves.
+        // Reference implementation's fallback: raw text of the configuration, line breaks kept.
         let plain = w.config.get("text").and_then(|v| v.as_str()).unwrap_or("");
         dominet_server::html::plain_text_to_html(plain)
     } else {
@@ -812,7 +812,7 @@ fn text_widget_html(w: &dominet_domain::dashboard::Widget) -> String {
     }
 }
 
-/// Scenes visees par les widgets `scene` du tableau (rien a lire s'il n'y en a pas), par numero.
+/// Scenes targeted by the dashboard's `scene` widgets (nothing to read if there are none), by number.
 #[cfg(feature = "ssr")]
 async fn scene_briefs(
     state: &dominet_server::AppState,
@@ -847,7 +847,7 @@ async fn scene_briefs(
         .collect())
 }
 
-/// Cameras visees par les widgets `camera` du tableau (rien a lire s'il n'y en a pas), par identifiant : seules les cameras actives.
+/// Cameras targeted by the dashboard's `camera` widgets (nothing to read if there are none), by identifier: only the active cameras.
 #[cfg(feature = "ssr")]
 async fn camera_lives(
     state: &dominet_server::AppState,
@@ -922,12 +922,12 @@ async fn device_metas(
     Ok(metas)
 }
 
-/// Les tableaux du compte connecte et celui qu'on ouvre : `requested` s'il lui appartient, sinon son tableau par defaut, sinon
-/// le premier par nom. Un tableau d'un autre compte n'est **jamais** renvoye (l'identifiant demande est ignore).
-/// Les widgets sont prepares pour l'affichage : HTML assaini, adresse d'iframe verifiee, dernier etat des appareils.
+/// The logged-in account's dashboards and the one being opened: `requested` if it belongs to them, otherwise their default dashboard, otherwise
+/// the first by name. Another account's dashboard is **never** returned (the requested identifier is ignored).
+/// The widgets are prepared for display: sanitised HTML, verified iframe address, last state of the devices.
 ///
 /// # Errors
-/// Erreur interne si la base echoue. Un visiteur anonyme recoit une reponse vide.
+/// Internal error if the database fails. An anonymous visitor receives an empty response.
 #[server(name = DashboardPage, prefix = "/sf", endpoint = "dashboard")]
 pub async fn dashboard_page(requested: Option<i64>) -> Result<DashboardPageDto, ServerFnError> {
     use dominet_domain::dashboard::{Widget, WidgetType};
@@ -1030,10 +1030,10 @@ pub async fn dashboard_page(requested: Option<i64>) -> Result<DashboardPageDto, 
     })
 }
 
-/// Cree un tableau pour le compte connecte (le premier devient son tableau par defaut).
+/// Creates a dashboard for the logged-in account (the first becomes its default dashboard).
 ///
 /// # Errors
-/// Refus (401) sans session ; erreur interne si la base echoue.
+/// Refused (401) without a session; internal error if the database fails.
 #[server(name = CreateDashboard, prefix = "/sf", endpoint = "dashboard/create")]
 pub async fn create_dashboard(
     name: String,

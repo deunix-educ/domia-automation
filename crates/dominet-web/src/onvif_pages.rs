@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Decouverte ONVIF, ajout par adresse IP et synchronisation ONVIF : `/surveillance/discovery` (R6 lot 3, ADR 0045). Administrateurs.
+//! ONVIF discovery, adding by IP address and ONVIF synchronisation: `/surveillance/discovery` (R6 lot 3, ADR 0045). Administrators.
 
 use dominet_proto::{AddByIpOutcome, AddCameraByIp, OnvifSyncOutcome, Topic};
 use leptos::prelude::*;
@@ -10,7 +10,7 @@ use crate::camera_fns::{add_camera_by_ip, list_cameras, start_discovery, sync_ca
 use crate::guard::RequireAdmin;
 use crate::realtime::Realtime;
 
-/// Compteur partage : une camera vient d'etre ajoutee, la liste des cameras ONVIF se relit.
+/// Shared counter: a camera has just been added, the list of ONVIF cameras is re-read.
 #[derive(Clone, Copy)]
 struct Refresh(RwSignal<u32>);
 
@@ -59,7 +59,7 @@ fn Discovery() -> impl IntoView {
     rt.subscribe(Topic::Discovery);
     on_cleanup(move || rt.unsubscribe(&Topic::Discovery));
     let view = rt.discovery;
-    // Demande envoyee, rien recu au bout de quelques secondes : probablement aucun role `discovery`.
+    // Request sent, nothing received after a few seconds: probably no `discovery` role.
     let waiting = RwSignal::new(false);
     let silent = RwSignal::new(false);
     let start = Action::new(move |(): &()| async move {

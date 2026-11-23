@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Administration des regles d'alerte : `/admin/alert-rules` (R4 lot 6, ADR 0035). Une regle surveille une cle d'etat d'un appareil
-//! et declenche une alerte quand la condition est vraie (cooldown, trois canaux d'envoi dont seul le bandeau est servi avant R5).
+//! Alert rules administration: `/admin/alert-rules` (R4 lot 6, ADR 0035). A rule watches a device's state key
+//! and raises an alert when the condition is true (cooldown, three sending channels of which only the banner is served before R5).
 
 use dominet_proto::{AlertRuleDto, AlertRuleInput, DeleteOutcome, SaveOutcome};
 use leptos::prelude::*;
@@ -9,7 +9,7 @@ use leptos_fluent::move_tr;
 use crate::crud::{CrudResult, CrudTable, FieldKind, FieldSpec, Labels, Row, Values};
 use crate::guard::RequireAdmin;
 
-/// Lit un nombre saisi avec point ou virgule decimale ; vide = absent.
+/// Reads a number entered with a decimal point or comma; empty = absent.
 #[cfg(feature = "ssr")]
 fn decimal(text: &str) -> Result<Option<f64>, ()> {
     let t = text.trim();
@@ -24,10 +24,10 @@ fn decimal(text: &str) -> Result<Option<f64>, ()> {
         .ok_or(())
 }
 
-/// Regles d'alerte avec le nombre d'alertes en cours de chacune (administrateurs).
+/// Alert rules with the number of ongoing alerts of each (administrators).
 ///
 /// # Errors
-/// Refus (403) pour un non-administrateur ; erreur interne si la base echoue.
+/// Refused (403) for a non-administrator; internal error if the database fails.
 #[server(name = ListAlertRules, prefix = "/sf", endpoint = "alert-rules/list")]
 pub async fn list_alert_rules() -> Result<Vec<AlertRuleDto>, ServerFnError> {
     use std::collections::HashMap;
@@ -92,11 +92,11 @@ pub async fn list_alert_rules() -> Result<Vec<AlertRuleDto>, ServerFnError> {
         .collect())
 }
 
-/// Cree (`id` absent) ou remplace (`id` present) une regle. Les champs invalides sont renvoyes un par un ; l'evaluation relit
-/// les regles tout de suite.
+/// Creates (`id` absent) or replaces (`id` present) a rule. Invalid fields are returned one by one; the evaluation re-reads
+/// the rules right away.
 ///
 /// # Errors
-/// Refus (403) pour un non-administrateur ; erreur interne si la base echoue.
+/// Refused (403) for a non-administrator; internal error if the database fails.
 #[server(name = SaveAlertRule, prefix = "/sf", endpoint = "alert-rules/save", input = server_fn::codec::Json)]
 pub async fn save_alert_rule(
     input: AlertRuleInput,
@@ -181,10 +181,10 @@ async fn list_alert_rules_inner(
     list_alert_rules().await
 }
 
-/// Supprime une regle ; les alertes deja creees restent (sans regle).
+/// Deletes a rule; the alerts already created stay (without a rule).
 ///
 /// # Errors
-/// Refus (403) pour un non-administrateur ; erreur interne si la base echoue.
+/// Refused (403) for a non-administrator; internal error if the database fails.
 #[server(name = DeleteAlertRule, prefix = "/sf", endpoint = "alert-rules/delete")]
 pub async fn delete_alert_rule(id: i64) -> Result<DeleteOutcome, ServerFnError> {
     use dominet_domain::alert::AlertRuleId;

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Enregistrements d'une camera : `/surveillance/recordings/<uuid>` (R6 lot 7, ADR 0049). Tout compte connecte regarde ; les
-//! administrateurs suppriment et pilotent l'enregistrement manuel. La lecture est progressive : un `<video>` sur le flux
-//! `/surveillance/recordings/<uuid>/<id>/stream/` (requetes `Range`).
+//! A camera's recordings: `/surveillance/recordings/<uuid>` (R6 lot 7, ADR 0049). Any logged-in account views;
+//! administrators delete and control manual recording. Playback is progressive: a `<video>` on the
+//! `/surveillance/recordings/<uuid>/<id>/stream/` stream (`Range` requests).
 
 use dominet_proto::{DeleteOutcome, ManualRecordOutcome, RecordingDto};
 use leptos::prelude::*;
@@ -40,7 +40,7 @@ fn duration_text(ms: Option<i64>) -> String {
 
 fn size_text(bytes: Option<i64>) -> String {
     match bytes {
-        // Affichage seulement : la perte de precision de la conversion n'a pas d'importance.
+        // Display only: the loss of precision of the conversion does not matter.
         #[allow(clippy::cast_precision_loss, reason = "affichage en Mio")]
         Some(b) if b >= 0 => format!("{:.1} Mo", b as f64 / 1_048_576.0),
         _ => String::new(),
@@ -73,7 +73,7 @@ fn Recordings() -> impl IntoView {
     let version = RwSignal::new(0u32);
     let playing = RwSignal::new(None::<i64>);
     let feedback = RwSignal::new(None::<String>);
-    // Les segments se terminent tout seuls : la liste se rafraichit (navigateur seulement).
+    // The segments finish by themselves: the list refreshes (browser only).
     let tick = RwSignal::new(0u32);
     #[cfg(feature = "hydrate")]
     {
@@ -120,15 +120,15 @@ fn Recordings() -> impl IntoView {
     });
     let shift = move |delta: i64| {
         move |_| {
-            // Jour precedent / suivant a partir de la date choisie (ou du jour affiche) : calcul sur les chiffres, sans fuseau.
+            // Previous / next day from the chosen date (or the displayed day): computed on the digits, without a time zone.
             let current = day.get_untracked();
             if let Some(next) = shift_day(&current, delta) {
                 day.set(next);
             }
         }
     };
-    // La liste se recharge toute seule : le lecteur et le selecteur de jour restent HORS de ce qui est recree, sinon la video
-    // repartirait du debut a chaque rechargement.
+    // The list reloads by itself: the player and the day selector stay OUTSIDE what is recreated, otherwise the video
+    // would restart from the beginning at each reload.
     view! {
         <Transition fallback=|| ()>
             {move || match list.get() {
@@ -234,7 +234,7 @@ fn row(
     }
 }
 
-/// Le jour `AAAA-MM-JJ` decale de `delta` jours ; sans date valide, on part d'aujourd'hui cote serveur (jour vide) : pas de decalage.
+/// The day `YYYY-MM-DD` shifted by `delta` days; without a valid date, we start from today on the server side (empty day): no shift.
 fn shift_day(day: &str, delta: i64) -> Option<String> {
     let mut parts = day.split('-').map(str::parse::<i64>);
     let (y, m, d) = (
@@ -247,7 +247,7 @@ fn shift_day(day: &str, delta: i64) -> Option<String> {
     Some(format!("{y:04}-{m:02}-{d:02}"))
 }
 
-// Algorithmes de H. Hinnant (calendrier gregorien proleptique), sans dependance.
+// H. Hinnant's algorithms (proleptic Gregorian calendar), without dependencies.
 fn days_from_civil(y: i64, m: i64, d: i64) -> i64 {
     let y = if m <= 2 { y - 1 } else { y };
     let era = y.div_euclid(400);

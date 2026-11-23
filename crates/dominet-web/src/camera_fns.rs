@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Fonctions serveur des cameras (R6 lot 2, ADR 0043 et 0044) : consultation pour tout compte connecte, gestion pour les
-//! administrateurs. Aucun secret ne quitte le serveur : l'interface sait seulement s'il est renseigne.
+//! Camera server functions (R6 lot 2, ADR 0043 and 0044): viewing for any logged-in account, management for
+//! administrators. No secret leaves the server: the interface only knows whether it is set.
 
 use dominet_proto::{
     CameraCardDto, CameraDto, CameraInput, DeleteOutcome, MediaMtxSyncDto, SaveOutcome,
@@ -58,10 +58,10 @@ fn pct(confidence: f64) -> i32 {
     (confidence * 100.0).round().clamp(0.0, 100.0) as i32
 }
 
-/// Cameras avec leur configuration, sans secret (administrateurs).
+/// Cameras with their configuration, without secrets (administrators).
 ///
 /// # Errors
-/// Refus (403) pour un non-administrateur ; erreur interne si la base echoue.
+/// Refused (403) for a non-administrator; internal error if the database fails.
 #[server(name = ListCameras, prefix = "/sf", endpoint = "cameras/list")]
 pub async fn list_cameras() -> Result<Vec<CameraDto>, ServerFnError> {
     use crate::server_fns::{internal, require_admin};
@@ -76,10 +76,10 @@ pub async fn list_cameras() -> Result<Vec<CameraDto>, ServerFnError> {
     Ok(cameras.iter().map(camera_dto).collect())
 }
 
-/// Cameras actives pour la page de consultation (tout compte connecte) : nom, emplacement, mode d'enregistrement.
+/// Active cameras for the viewing page (any logged-in account): name, location, recording mode.
 ///
 /// # Errors
-/// Refus (401) sans session ; erreur interne si la base echoue.
+/// Refused (401) without a session; internal error if the database fails.
 #[server(name = ListCameraCards, prefix = "/sf", endpoint = "cameras/cards")]
 pub async fn list_camera_cards() -> Result<Vec<CameraCardDto>, ServerFnError> {
     use dominet_domain::repo::LocationRepo;
@@ -118,10 +118,10 @@ pub async fn list_camera_cards() -> Result<Vec<CameraCardDto>, ServerFnError> {
         .collect())
 }
 
-/// Cree (`id` absent) ou remplace (`id` present) une camera. Un secret laisse vide reste inchange ; MediaMTX est mis a jour.
+/// Creates (`id` absent) or replaces (`id` present) a camera. A secret left empty stays unchanged; MediaMTX is updated.
 ///
 /// # Errors
-/// Refus (403) pour un non-administrateur ; erreur interne si la base ou le chiffrement echoue.
+/// Refused (403) for a non-administrator; internal error if the database or the encryption fails.
 #[server(name = SaveCamera, prefix = "/sf", endpoint = "cameras/save", input = server_fn::codec::Json)]
 pub async fn save_camera(input: CameraInput) -> Result<SaveOutcome<CameraDto>, ServerFnError> {
     use dominet_domain::Problem;
@@ -184,7 +184,7 @@ pub async fn save_camera(input: CameraInput) -> Result<SaveOutcome<CameraDto>, S
         .unwrap_or_default()
         .trim()
         .to_string();
-    // Les champs mal formes sont renvoyes avec les autres problemes, dans l'ordre du formulaire.
+    // Malformed fields are returned with the other problems, in form order.
     let mut problems = draft.problems();
     problems.extend(bad);
     if !problems.is_empty() {
@@ -230,10 +230,10 @@ fn sync_label(s: &dominet_server::cameras::SyncStatus) -> &'static str {
     }
 }
 
-/// Supprime une camera, ses enregistrements, snapshots et evenements, puis son path MediaMTX.
+/// Deletes a camera, its recordings, snapshots and events, then its MediaMTX path.
 ///
 /// # Errors
-/// Refus (403) pour un non-administrateur ; erreur interne si la base echoue.
+/// Refused (403) for a non-administrator; internal error if the database fails.
 #[server(name = DeleteCamera, prefix = "/sf", endpoint = "cameras/delete")]
 pub async fn delete_camera(id: i64) -> Result<DeleteOutcome, ServerFnError> {
     use dominet_domain::camera::CameraId;
@@ -253,10 +253,10 @@ pub async fn delete_camera(id: i64) -> Result<DeleteOutcome, ServerFnError> {
     }
 }
 
-/// Synchronise tous les paths de MediaMTX avec les cameras actives (administrateurs).
+/// Synchronises all the MediaMTX paths with the active cameras (administrators).
 ///
 /// # Errors
-/// Refus (403) pour un non-administrateur ; erreur interne si la base echoue.
+/// Refused (403) for a non-administrator; internal error if the database fails.
 #[server(name = SyncCameras, prefix = "/sf", endpoint = "cameras/sync")]
 pub async fn sync_cameras() -> Result<MediaMtxSyncDto, ServerFnError> {
     use dominet_server::cameras::SyncError;
@@ -286,10 +286,10 @@ pub async fn sync_cameras() -> Result<MediaMtxSyncDto, ServerFnError> {
     }
 }
 
-/// Synchronise une camera avec ce que dit ONVIF : fabricant, modele, micrologiciel, profil principal, PTZ (administrateurs).
+/// Synchronises a camera with what ONVIF says: manufacturer, model, firmware, main profile, PTZ (administrators).
 ///
 /// # Errors
-/// Refus (403) pour un non-administrateur ; erreur interne si la base echoue.
+/// Refused (403) for a non-administrator; internal error if the database fails.
 #[server(name = SyncCameraOnvif, prefix = "/sf", endpoint = "cameras/onvif-sync")]
 pub async fn sync_camera_onvif(id: i64) -> Result<dominet_proto::OnvifSyncOutcome, ServerFnError> {
     use dominet_domain::camera::CameraId;
@@ -324,10 +324,10 @@ pub async fn sync_camera_onvif(id: i64) -> Result<dominet_proto::OnvifSyncOutcom
     }
 }
 
-/// Ajoute une camera par son adresse IP, ou renvoie celle qui a deja cette adresse (administrateurs).
+/// Adds a camera by its IP address, or returns the one that already has this address (administrators).
 ///
 /// # Errors
-/// Refus (403) pour un non-administrateur ; erreur interne si la base echoue.
+/// Refused (403) for a non-administrator; internal error if the database fails.
 #[server(name = AddCameraByIp, prefix = "/sf", endpoint = "cameras/add-by-ip", input = server_fn::codec::Json)]
 pub async fn add_camera_by_ip(
     input: dominet_proto::AddCameraByIp,
@@ -359,10 +359,10 @@ pub async fn add_camera_by_ip(
     }
 }
 
-/// Demande une decouverte ONVIF au role `discovery` ; les resultats arrivent par le sujet `discovery` (administrateurs).
+/// Requests an ONVIF discovery from the `discovery` role; the results arrive through the `discovery` subject (administrators).
 ///
 /// # Errors
-/// Refus (403) pour un non-administrateur ; erreur interne si la base echoue.
+/// Refused (403) for a non-administrator; internal error if the database fails.
 #[server(name = StartDiscovery, prefix = "/sf", endpoint = "cameras/discovery")]
 pub async fn start_discovery() -> Result<(), ServerFnError> {
     use crate::server_fns::{internal, require_admin};
@@ -376,7 +376,7 @@ pub async fn start_discovery() -> Result<(), ServerFnError> {
     Ok(())
 }
 
-/// Host de la requete en cours (en-tete `Host`).
+/// Host of the current request (`Host` header).
 #[cfg(feature = "ssr")]
 pub(crate) async fn request_host() -> Option<String> {
     let headers: axum::http::HeaderMap = leptos_axum::extract().await.ok()?;
@@ -386,10 +386,10 @@ pub(crate) async fn request_host() -> Option<String> {
         .map(str::to_string)
 }
 
-/// Ce qu'il faut pour afficher le live d'une camera (tout compte connecte) : `None` si elle n'existe pas ou n'est pas active.
+/// What is needed to display a camera's live view (any logged-in account): `None` if it does not exist or is not active.
 ///
 /// # Errors
-/// Refus (401) sans session ; erreur interne si la base echoue.
+/// Refused (401) without a session; internal error if the database fails.
 #[server(name = CameraLive, prefix = "/sf", endpoint = "cameras/live")]
 pub async fn camera_live(
     uuid: String,
@@ -418,7 +418,7 @@ pub async fn camera_live(
     })
 }
 
-/// Le live d'une camera, tel qu'envoye au navigateur.
+/// A camera's live view, as sent to the browser.
 #[cfg(feature = "ssr")]
 pub(crate) async fn live_dto(
     state: &dominet_server::AppState,
@@ -435,11 +435,11 @@ pub(crate) async fn live_dto(
     }
 }
 
-/// Bascule jour / nuit, filtre IR-cut ou lumiere d'une camera, par la methode configuree (administrateurs). `action` : `daynight`,
-/// `ircut` ou `light`.
+/// Day / night toggle, IR-cut filter or light of a camera, through the configured method (administrators). `action`: `daynight`,
+/// `ircut` or `light`.
 ///
 /// # Errors
-/// Refus (403) pour un non-administrateur ; erreur interne si la base echoue.
+/// Refused (403) for a non-administrator; internal error if the database fails.
 #[server(name = CameraNight, prefix = "/sf", endpoint = "cameras/night")]
 pub async fn camera_night(
     uuid: String,
@@ -503,10 +503,10 @@ fn snapshot_dto(
     }
 }
 
-/// Prend un snapshot et l'inscrit dans la galerie (administrateurs) : la derniere image de la camera, ou une image fraiche.
+/// Takes a snapshot and records it in the gallery (administrators): the camera's last image, or a fresh one.
 ///
 /// # Errors
-/// Refus (403) pour un non-administrateur ; erreur interne si la base ou le disque echoue.
+/// Refused (403) for a non-administrator; internal error if the database or the disk fails.
 #[server(name = CaptureSnapshot, prefix = "/sf", endpoint = "snapshots/capture")]
 pub async fn capture_snapshot(
     uuid: String,
@@ -545,11 +545,11 @@ pub async fn capture_snapshot(
     }
 }
 
-/// Snapshots indexes (tout compte connecte) : `camera` est l'identifiant public d'une camera (vide : toutes), `day` un jour `AAAA-MM-JJ`
-/// (vide : tous), lu dans le fuseau du serveur ; 200 au plus, les plus recents d'abord.
+/// Indexed snapshots (any logged-in account): `camera` is a camera's public identifier (empty: all), `day` a day `YYYY-MM-DD`
+/// (empty: all), read in the server's time zone; 200 at most, most recent first.
 ///
 /// # Errors
-/// Refus (401) sans session ; erreur interne si la base echoue.
+/// Refused (401) without a session; internal error if the database fails.
 #[server(name = ListSnapshots, prefix = "/sf", endpoint = "snapshots/list")]
 pub async fn list_snapshots(
     camera: String,
@@ -575,7 +575,7 @@ pub async fn list_snapshots(
             .and_then(|u| cameras.iter().find(|c| c.uuid == u))
         {
             Some(c) => Some(c.id),
-            // Une camera inconnue : liste vide (pas toutes les cameras).
+            // An unknown camera: empty list (not all the cameras).
             None => return Ok(vec![]),
         }
     };
@@ -591,10 +591,10 @@ pub async fn list_snapshots(
         .collect())
 }
 
-/// Supprime un snapshot (administrateurs) : la ligne et le fichier.
+/// Deletes a snapshot (administrators): the row and the file.
 ///
 /// # Errors
-/// Refus (403) pour un non-administrateur ; erreur interne si la base echoue.
+/// Refused (403) for a non-administrator; internal error if the database fails.
 #[server(name = DeleteSnapshot, prefix = "/sf", endpoint = "snapshots/delete")]
 pub async fn delete_snapshot(id: i64) -> Result<DeleteOutcome, ServerFnError> {
     use dominet_domain::RepoError;
@@ -615,13 +615,13 @@ pub async fn delete_snapshot(id: i64) -> Result<DeleteOutcome, ServerFnError> {
     }
 }
 
-// ------------------------------------------------------------------ enregistrements (R6 lot 7)
+// ------------------------------------------------------------------ recordings (R6 lot 7)
 
-/// Les enregistrements d'une camera pour une journee `AAAA-MM-JJ` (vide : aujourd'hui, dans le fuseau du serveur), du plus ancien au plus
-/// recent. Tout compte connecte ; `None` si la camera n'existe pas.
+/// A camera's recordings for one day `YYYY-MM-DD` (empty: today, in the server's time zone), from oldest to
+/// most recent. Any logged-in account; `None` if the camera does not exist.
 ///
 /// # Errors
-/// Refus (401) sans session ; erreur interne si la base echoue.
+/// Refused (401) without a session; internal error if the database fails.
 #[server(name = ListRecordings, prefix = "/sf", endpoint = "recordings/list")]
 pub async fn list_recordings(
     uuid: String,
@@ -693,10 +693,10 @@ pub async fn list_recordings(
     }))
 }
 
-/// Supprime un enregistrement (administrateurs) : le fichier local, l'archive ReductStore et la ligne.
+/// Deletes a recording (administrators): the local file, the ReductStore archive and the row.
 ///
 /// # Errors
-/// Refus (403) pour un non-administrateur ; erreur interne si la base ou ReductStore echoue.
+/// Refused (403) for a non-administrator; internal error if the database or ReductStore fails.
 #[server(name = DeleteRecording, prefix = "/sf", endpoint = "recordings/delete")]
 pub async fn delete_recording(uuid: String, id: i64) -> Result<DeleteOutcome, ServerFnError> {
     use dominet_domain::camera::{CameraUuid, RecordingId};
@@ -737,10 +737,10 @@ pub async fn delete_recording(uuid: String, id: i64) -> Result<DeleteOutcome, Se
     Ok(DeleteOutcome::Deleted)
 }
 
-/// Demarre ou arrete l'enregistrement d'une camera en mode manuel (administrateurs).
+/// Starts or stops the recording of a camera in manual mode (administrators).
 ///
 /// # Errors
-/// Refus (403) pour un non-administrateur ; erreur interne si la base echoue.
+/// Refused (403) for a non-administrator; internal error if the database fails.
 #[server(name = SetManualRecord, prefix = "/sf", endpoint = "recordings/manual")]
 pub async fn set_manual_record(
     uuid: String,
@@ -776,13 +776,13 @@ pub async fn set_manual_record(
     })
 }
 
-// ------------------------------------------------------------------ evenements et detecteur (R6 lot 8)
+// ------------------------------------------------------------------ events and detector (R6 lot 8)
 
-/// Mouvements et detections recents (tout compte connecte) : `camera` est l'identifiant public d'une camera (vide : toutes), les plus
-/// recents d'abord, 100 au plus.
+/// Recent motions and detections (any logged-in account): `camera` is a camera's public identifier (empty: all), most
+/// recent first, 100 at most.
 ///
 /// # Errors
-/// Refus (401) sans session ; erreur interne si la base echoue.
+/// Refused (401) without a session; internal error if the database fails.
 #[server(name = ListCameraEvents, prefix = "/sf", endpoint = "events/list")]
 pub async fn list_camera_events(
     camera: String,
@@ -857,10 +857,10 @@ pub async fn list_camera_events(
     Ok(out.into_iter().take(100).map(|(_, e)| e).collect())
 }
 
-/// Reglage global du detecteur (administrateurs).
+/// Global setting of the detector (administrators).
 ///
 /// # Errors
-/// Refus (403) pour un non-administrateur ; erreur interne si la base echoue.
+/// Refused (403) for a non-administrator; internal error if the database fails.
 #[server(name = GetDetector, prefix = "/sf", endpoint = "detector/get")]
 pub async fn get_detector() -> Result<dominet_proto::DetectorDto, ServerFnError> {
     use dominet_domain::repo::DetectorConfigRepo;
@@ -881,10 +881,10 @@ pub async fn get_detector() -> Result<dominet_proto::DetectorDto, ServerFnError>
     })
 }
 
-/// Active ou coupe le detecteur d'objets et l'enregistrement des images annotees (administrateurs).
+/// Enables or disables the object detector and the saving of annotated images (administrators).
 ///
 /// # Errors
-/// Refus (403) pour un non-administrateur ; erreur interne si la base echoue.
+/// Refused (403) for a non-administrator; internal error if the database fails.
 #[server(name = SetDetector, prefix = "/sf", endpoint = "detector/set")]
 pub async fn set_detector(enabled: bool, save_frames: bool) -> Result<(), ServerFnError> {
     use crate::server_fns::{internal, require_admin};

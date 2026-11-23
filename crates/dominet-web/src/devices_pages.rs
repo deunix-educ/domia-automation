@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Pages des appareils (R3 lot 5, ADR 0029) : la liste filtree `/automation/` (cartes d'etat en direct, commandes) et la page
-//! d'un appareil `/automation/devices/<id>` (identite, topics, historique des cles suivies sur 24 h).
+//! Device pages (R3 lot 5, ADR 0029): the filtered list `/automation/` (live state cards, commands) and the page
+//! of a device `/automation/devices/<id>` (identity, topics, history of the tracked keys over 24 h).
 
 use dominet_proto::{
     DeviceCardDto, DeviceDetailDto, DevicesPageDto, GrafanaOutcome, Topic, WidgetDto,
@@ -15,7 +15,7 @@ use crate::device_widget::device_body;
 use crate::guard::RequireAuth;
 use crate::realtime::Realtime;
 
-// ------------------------------------------------------------------ fonctions serveur
+// ------------------------------------------------------------------ server functions
 
 #[cfg(feature = "ssr")]
 async fn cards(
@@ -66,7 +66,7 @@ async fn cards(
     Ok(devices
         .into_iter()
         .map(|d| {
-            // Seuls les libelles des cles presentes dans l'etat voyagent avec la carte.
+            // Only the labels of the keys present in the state travel with the card.
             let labels = labels
                 .iter()
                 .filter(|l| d.state.get(&l.key).is_some())
@@ -111,10 +111,10 @@ async fn cards(
         .collect())
 }
 
-/// Les appareils actifs, filtres par groupe, emplacement et type ; de quoi remplir les filtres.
+/// The active devices, filtered by group, location and type; what is needed to fill the filters.
 ///
 /// # Errors
-/// Refus (401) sans session ; erreur interne si la base echoue.
+/// Refused (401) without a session; internal error if the database fails.
 #[server(name = DevicesPage, prefix = "/sf", endpoint = "devices/page")]
 pub async fn devices_page(
     group: Option<i64>,
@@ -175,10 +175,10 @@ pub async fn devices_page(
     })
 }
 
-/// Un appareil, son historique des 24 dernieres heures (cles suivies numeriques) ; `None` s'il n'existe pas.
+/// A device, its history of the last 24 hours (numeric tracked keys); `None` if it does not exist.
 ///
 /// # Errors
-/// Refus (401) sans session ; erreur interne si la base echoue.
+/// Refused (401) without a session; internal error if the database fails.
 #[server(name = DeviceDetail, prefix = "/sf", endpoint = "devices/detail")]
 pub async fn device_detail(id: i64) -> Result<Option<DeviceDetailDto>, ServerFnError> {
     use dominet_domain::device::DeviceId;
@@ -250,16 +250,16 @@ pub async fn device_detail(id: i64) -> Result<Option<DeviceDetailDto>, ServerFnE
     Ok(Some(detail))
 }
 
-// ------------------------------------------------------------------ affichage
+// ------------------------------------------------------------------ display
 
-/// Points d'une polyligne (`x,y x,y ...`) dans un cadre `largeur` x `hauteur`, l'axe du temps allant du premier au dernier
-/// point et celui des valeurs du minimum au maximum (une serie constante est tracee au milieu).
+/// Points of a polyline (`x,y x,y ...`) in a `width` x `height` frame, the time axis going from the first to the last
+/// point and the values axis from the minimum to the maximum (a constant series is drawn in the middle).
 #[must_use]
 pub fn sparkline_points(points: &[(i64, f64)], width: f64, height: f64) -> String {
     let (Some(first), Some(last)) = (points.first(), points.last()) else {
         return String::new();
     };
-    // Secondes depuis le premier point (une serie de 24 h tient largement dans un i32).
+    // Seconds since the first point (a 24 h series fits comfortably in an i32).
     let secs = |t: i64| f64::from(i32::try_from(t - first.0).unwrap_or(i32::MAX));
     let span = secs(last.0);
     let (lo, hi) = points
@@ -308,13 +308,13 @@ fn card_as_widget(c: &DeviceCardDto) -> WidgetDto {
     }
 }
 
-/// Etat en direct de l'appareil (abonnement au sujet `device:<id>`, dernier etat de la page au depart).
+/// Live state of the device (subscription to the `device:<id>` subject, the page's last state at the start).
 fn live_state(c: &DeviceCardDto) -> Signal<Option<dominet_proto::DeviceStateDto>> {
     let rt = expect_context::<Realtime>();
     let id = c.id;
     Effect::new(move |_| rt.subscribe(Topic::Device(id)));
     on_cleanup(move || rt.unsubscribe(&Topic::Device(id)));
-    // Un appareil qui n'a jamais rien publie (etat vide) attend son premier message.
+    // A device that has never published anything (empty state) waits for its first message.
     let initial =
         (c.state.state.as_object().is_some_and(|o| !o.is_empty())).then(|| c.state.clone());
     Signal::derive(move || rt.device(id).or_else(|| initial.clone()))
@@ -363,7 +363,7 @@ fn parse_id(raw: Option<String>) -> Option<i64> {
     raw.and_then(|v| v.parse::<i64>().ok()).filter(|n| *n > 0)
 }
 
-/// Page `/automation/` : les appareils actifs, avec filtres (groupe, emplacement, type) en GET.
+/// `/automation/` page: the active devices, with filters (group, location, type) in GET.
 #[component]
 pub fn DevicesPage() -> impl IntoView {
     view! {
@@ -484,7 +484,7 @@ fn DevicesContent(page: DevicesPageDto) -> impl IntoView {
     }
 }
 
-/// Libelle traduit d'un type d'appareil.
+/// Translated label of a device type.
 fn type_label(kind: &str) -> impl Fn() -> String + 'static {
     let i18n = expect_context::<I18n>();
     let key = match kind {

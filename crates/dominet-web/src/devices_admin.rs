@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Administration des appareils, groupes d'appareils et libelles de cles d'etat (R3 lot 5, ADR 0029) :
-//! `/admin/devices`, `/admin/device-groups`, `/admin/device-labels`. Le CRUD generique (ADR 0014) ; les listes deroulantes
-//! (groupe, emplacement) viennent de la base par le contexte [`Choices`].
+//! Administration of devices, device groups and state-key labels (R3 lot 5, ADR 0029):
+//! `/admin/devices`, `/admin/device-groups`, `/admin/device-labels`. The generic CRUD (ADR 0014); the drop-down lists
+//! (group, location) come from the database through the [`Choices`] context.
 
 use std::collections::BTreeMap;
 
@@ -15,7 +15,7 @@ use leptos_fluent::move_tr;
 use crate::crud::{Choices, CrudResult, CrudTable, FieldKind, FieldSpec, Labels, Row, Values};
 use crate::guard::RequireAdmin;
 
-// ------------------------------------------------------------------ fonctions serveur
+// ------------------------------------------------------------------ server functions
 
 #[cfg(feature = "ssr")]
 mod ssr {
@@ -44,7 +44,7 @@ mod ssr {
         }
     }
 
-    /// Liste de cles separees par des virgules (espaces et vides ignores).
+    /// List of keys separated by commas (spaces and empty ones ignored).
     pub fn keys(raw: &str) -> Vec<String> {
         raw.split(',')
             .map(str::trim)
@@ -53,7 +53,7 @@ mod ssr {
             .collect()
     }
 
-    /// Numero facultatif d'une liste deroulante : vide = aucun ; autre chose qu'un entier positif = champ invalide.
+    /// Optional number from a drop-down list: empty = none; anything other than a positive integer = invalid field.
     pub fn optional_id(raw: &str, field: &str) -> Result<Option<i64>, FieldProblem> {
         let raw = raw.trim();
         if raw.is_empty() {
@@ -78,10 +78,10 @@ mod ssr {
     }
 }
 
-/// Appareils, par nom (administrateurs).
+/// Devices, by name (administrators).
 ///
 /// # Errors
-/// Refus (403) pour un non-administrateur ; erreur interne si la base echoue.
+/// Refused (403) for a non-administrator; internal error if the database fails.
 #[server(name = ListDevicesAdmin, prefix = "/sf", endpoint = "devices-admin/list")]
 pub async fn list_devices_admin() -> Result<Vec<DeviceAdminDto>, ServerFnError> {
     use dominet_domain::repo::{DeviceFilter, DeviceRepo};
@@ -99,10 +99,10 @@ pub async fn list_devices_admin() -> Result<Vec<DeviceAdminDto>, ServerFnError> 
     Ok(items.iter().map(ssr::device_dto).collect())
 }
 
-/// Cree (`id` absent) ou modifie un appareil. L'etat, la disponibilite et ce que Zigbee2MQTT decouvre ne changent pas.
+/// Creates (`id` absent) or modifies a device. The state, the availability and what Zigbee2MQTT discovers do not change.
 ///
 /// # Errors
-/// Refus (403) pour un non-administrateur ; erreur interne si la base echoue.
+/// Refused (403) for a non-administrator; internal error if the database fails.
 #[server(name = SaveDeviceAdmin, prefix = "/sf", endpoint = "devices-admin/save", input = server_fn::codec::Json)]
 pub async fn save_device_admin(
     input: DeviceInput,
@@ -165,10 +165,10 @@ pub async fn save_device_admin(
     }
 }
 
-/// Supprime un appareil (ses widgets restent, sans appareil ; son historique est supprime avec lui).
+/// Deletes a device (its widgets stay, without a device; its history is deleted with it).
 ///
 /// # Errors
-/// Refus (403) pour un non-administrateur ; erreur interne si la base echoue.
+/// Refused (403) for a non-administrator; internal error if the database fails.
 #[server(name = DeleteDeviceAdmin, prefix = "/sf", endpoint = "devices-admin/delete")]
 pub async fn delete_device_admin(id: i64) -> Result<DeleteOutcome, ServerFnError> {
     use dominet_domain::device::DeviceId;
@@ -188,10 +188,10 @@ pub async fn delete_device_admin(id: i64) -> Result<DeleteOutcome, ServerFnError
     }
 }
 
-/// Groupes, emplacements et appareils pour les listes deroulantes.
+/// Groups, locations and devices for the drop-down lists.
 ///
 /// # Errors
-/// Refus (403) pour un non-administrateur ; erreur interne si la base echoue.
+/// Refused (403) for a non-administrator; internal error if the database fails.
 #[server(name = DeviceChoices, prefix = "/sf", endpoint = "devices-admin/choices")]
 pub async fn device_choices() -> Result<DeviceChoicesDto, ServerFnError> {
     use dominet_domain::repo::{
@@ -241,10 +241,10 @@ pub async fn device_choices() -> Result<DeviceChoicesDto, ServerFnError> {
     })
 }
 
-/// Groupes d'appareils, par nom (administrateurs).
+/// Device groups, by name (administrators).
 ///
 /// # Errors
-/// Refus (403) pour un non-administrateur ; erreur interne si la base echoue.
+/// Refused (403) for a non-administrator; internal error if the database fails.
 #[server(name = ListDeviceGroups, prefix = "/sf", endpoint = "device-groups/list")]
 pub async fn list_device_groups() -> Result<Vec<DeviceGroupDto>, ServerFnError> {
     use dominet_domain::repo::DeviceGroupRepo;
@@ -271,10 +271,10 @@ pub async fn list_device_groups() -> Result<Vec<DeviceGroupDto>, ServerFnError> 
         .collect())
 }
 
-/// Cree ou modifie un groupe d'appareils.
+/// Creates or modifies a device group.
 ///
 /// # Errors
-/// Refus (403) pour un non-administrateur ; erreur interne si la base echoue.
+/// Refused (403) for a non-administrator; internal error if the database fails.
 #[server(name = SaveDeviceGroup, prefix = "/sf", endpoint = "device-groups/save", input = server_fn::codec::Json)]
 pub async fn save_device_group(
     input: DeviceGroupInput,
@@ -324,10 +324,10 @@ pub async fn save_device_group(
     })
 }
 
-/// Supprime un groupe : ses appareils restent, sans groupe.
+/// Deletes a group: its devices stay, without a group.
 ///
 /// # Errors
-/// Refus (403) pour un non-administrateur ; erreur interne si la base echoue.
+/// Refused (403) for a non-administrator; internal error if the database fails.
 #[server(name = DeleteDeviceGroup, prefix = "/sf", endpoint = "device-groups/delete")]
 pub async fn delete_device_group(id: i64) -> Result<DeleteOutcome, ServerFnError> {
     use dominet_domain::device::DeviceGroupId;
@@ -345,10 +345,10 @@ pub async fn delete_device_group(id: i64) -> Result<DeleteOutcome, ServerFnError
     Ok(out)
 }
 
-/// Libelles de cles d'etat, par cle (administrateurs).
+/// State-key labels, by key (administrators).
 ///
 /// # Errors
-/// Refus (403) pour un non-administrateur ; erreur interne si la base echoue.
+/// Refused (403) for a non-administrator; internal error if the database fails.
 #[server(name = ListDeviceLabels, prefix = "/sf", endpoint = "device-labels/list")]
 pub async fn list_device_labels() -> Result<Vec<DeviceLabelDto>, ServerFnError> {
     use dominet_domain::repo::DeviceLabelRepo;
@@ -375,10 +375,10 @@ pub async fn list_device_labels() -> Result<Vec<DeviceLabelDto>, ServerFnError> 
         .collect())
 }
 
-/// Cree ou modifie le libelle d'une cle d'etat.
+/// Creates or modifies a state key's label.
 ///
 /// # Errors
-/// Refus (403) pour un non-administrateur ; erreur interne si la base echoue.
+/// Refused (403) for a non-administrator; internal error if the database fails.
 #[server(name = SaveDeviceLabel, prefix = "/sf", endpoint = "device-labels/save", input = server_fn::codec::Json)]
 pub async fn save_device_label(
     input: DeviceLabelInput,
@@ -424,10 +424,10 @@ pub async fn save_device_label(
     })
 }
 
-/// Supprime un libelle de cle.
+/// Deletes a key's label.
 ///
 /// # Errors
-/// Refus (403) pour un non-administrateur ; erreur interne si la base echoue.
+/// Refused (403) for a non-administrator; internal error if the database fails.
 #[server(name = DeleteDeviceLabel, prefix = "/sf", endpoint = "device-labels/delete")]
 pub async fn delete_device_label(id: i64) -> Result<DeleteOutcome, ServerFnError> {
     use dominet_domain::device::DeviceLabelId;
@@ -466,7 +466,7 @@ fn flag(v: &Values, key: &str) -> bool {
     v.get(key).is_some_and(|a| a == "true")
 }
 
-/// Choix des listes deroulantes, charges une fois par page.
+/// Drop-down list choices, loaded once per page.
 pub(crate) fn provide_choices(wanted: &'static [&'static str]) {
     let loaded = Resource::new(
         || (),

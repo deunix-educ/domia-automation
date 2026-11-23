@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Administration des scenes : `/admin/scenes` (R4 lot 2, ADR 0031). Une scene a un nom, une icone, un emplacement et une
-//! liste ordonnee de commandes (appareil + objet JSON), publiees dans l'ordre a l'activation.
+//! Scenes administration: `/admin/scenes` (R4 lot 2, ADR 0031). A scene has a name, an icon, a location and an
+//! ordered list of commands (device + JSON object), published in order on activation.
 
 use dominet_proto::{DeleteOutcome, SaveOutcome, SceneDto, SceneInput};
 use leptos::prelude::*;
@@ -9,10 +9,10 @@ use leptos_fluent::move_tr;
 use crate::crud::{CrudResult, CrudTable, FieldKind, FieldSpec, Labels, Row, Values};
 use crate::guard::RequireAdmin;
 
-/// Scenes (actives ou non), par nom (administrateurs).
+/// Scenes (active or not), by name (administrators).
 ///
 /// # Errors
-/// Refus (403) pour un non-administrateur ; erreur interne si la base echoue.
+/// Refused (403) for a non-administrator; internal error if the database fails.
 #[server(name = ListScenesAdmin, prefix = "/sf", endpoint = "scenes-admin/list")]
 pub async fn list_scenes_admin() -> Result<Vec<SceneDto>, ServerFnError> {
     use crate::scenes::scene_dtos;
@@ -23,11 +23,11 @@ pub async fn list_scenes_admin() -> Result<Vec<SceneDto>, ServerFnError> {
     scene_dtos(&state, false).await
 }
 
-/// Cree (`id` absent) ou remplace (`id` present) une scene et ses commandes, en une transaction. Les champs invalides sont
-/// renvoyes un par un.
+/// Creates (`id` absent) or replaces (`id` present) a scene and its commands, in one transaction. Invalid fields are
+/// returned one by one.
 ///
 /// # Errors
-/// Refus (403) pour un non-administrateur ; erreur interne si la base echoue.
+/// Refused (403) for a non-administrator; internal error if the database fails.
 #[server(name = SaveScene, prefix = "/sf", endpoint = "scenes-admin/save", input = server_fn::codec::Json)]
 pub async fn save_scene(input: SceneInput) -> Result<SaveOutcome<SceneDto>, ServerFnError> {
     use dominet_domain::command::parse_command;
@@ -64,7 +64,7 @@ pub async fn save_scene(input: SceneInput) -> Result<SaveOutcome<SceneDto>, Serv
     if !actions_ok {
         problems.push(("actions", dominet_domain::Problem::Invalid));
     }
-    // Les problemes du domaine ne sont consultes que si la saisie a pu etre lue (sinon `actions` serait compte deux fois).
+    // The domain's problems are only consulted if the input could be read (otherwise `actions` would be counted twice).
     for p in draft.problems() {
         if !problems.iter().any(|(f, _)| *f == p.0) {
             problems.push(p);
@@ -73,7 +73,7 @@ pub async fn save_scene(input: SceneInput) -> Result<SaveOutcome<SceneDto>, Serv
     if !problems.is_empty() {
         return Ok(SaveOutcome::Invalid(field_problems(problems)));
     }
-    // Les conflits (nom pris, emplacement ou appareil inconnu) sont traduits en champs par le service partage avec le serveur MCP.
+    // Conflicts (name taken, unknown location or device) are translated into fields by the service shared with the MCP server.
     match dominet_server::config_service::save_scene(&state, input.id.map(SceneId), &draft)
         .await
         .map_err(|e| internal("saving a scene", &e))?
@@ -98,10 +98,10 @@ pub async fn save_scene(input: SceneInput) -> Result<SaveOutcome<SceneDto>, Serv
     }
 }
 
-/// Supprime une scene ; les widgets qui la visaient perdent leur scene, les automations qui l'activent echouent (journal).
+/// Deletes a scene; the widgets that targeted it lose their scene, the automations that activate it fail (log).
 ///
 /// # Errors
-/// Refus (403) pour un non-administrateur ; erreur interne si la base echoue.
+/// Refused (403) for a non-administrator; internal error if the database fails.
 #[server(name = DeleteScene, prefix = "/sf", endpoint = "scenes-admin/delete")]
 pub async fn delete_scene(id: i64) -> Result<DeleteOutcome, ServerFnError> {
     use dominet_domain::scene::SceneId;

@@ -57,7 +57,7 @@ pub struct AssistantChangeDto {
 /// The changes made through the assistant that stand (newest first).
 ///
 /// # Errors
-/// Refus (403) pour un non-administrateur.
+/// Refused (403) for a non-administrator.
 #[server(name = AssistantChanges, prefix = "/sf", endpoint = "agent/changes", input = server_fn::codec::Json)]
 pub async fn assistant_changes() -> Result<Vec<AssistantChangeDto>, ServerFnError> {
     use crate::server_fns::require_admin;
@@ -83,7 +83,7 @@ pub async fn assistant_changes() -> Result<Vec<AssistantChangeDto>, ServerFnErro
 /// Takes a change back (the administrator clicked "Undo"). Returns the reason in words if refused.
 ///
 /// # Errors
-/// Refus (403) pour un non-administrateur.
+/// Refused (403) for a non-administrator.
 #[server(name = AssistantUndo, prefix = "/sf", endpoint = "agent/undo", input = server_fn::codec::Json)]
 pub async fn assistant_undo(id: i64) -> Result<Option<String>, ServerFnError> {
     use crate::server_fns::require_admin;
@@ -99,7 +99,7 @@ pub async fn assistant_undo(id: i64) -> Result<Option<String>, ServerFnError> {
 /// The new events of the conversation, from `since`.
 ///
 /// # Errors
-/// Refus (403) pour un non-administrateur.
+/// Refused (403) for a non-administrator.
 #[server(name = AssistantPoll, prefix = "/sf", endpoint = "agent/poll", input = server_fn::codec::Json)]
 pub async fn assistant_poll(since: usize) -> Result<AssistantPollDto, ServerFnError> {
     use dominet_agent::{AgentHub, Event};
@@ -160,7 +160,7 @@ pub async fn assistant_poll(since: usize) -> Result<AssistantPollDto, ServerFnEr
 /// Sends a message. `regime` is `daily` or `config`. Returns the reason in words if the request is refused, `None` if it started.
 ///
 /// # Errors
-/// Refus (403) pour un non-administrateur.
+/// Refused (403) for a non-administrator.
 #[server(name = AssistantSend, prefix = "/sf", endpoint = "agent/send", input = server_fn::codec::Json)]
 pub async fn assistant_send(text: String, regime: String) -> Result<Option<String>, ServerFnError> {
     use dominet_agent::Regime;
@@ -184,7 +184,7 @@ pub async fn assistant_send(text: String, regime: String) -> Result<Option<Strin
 /// The administrator clicked "Confirm" on a card: the only way anything is done. Returns the reason in words if refused.
 ///
 /// # Errors
-/// Refus (403) pour un non-administrateur.
+/// Refused (403) for a non-administrator.
 #[server(name = AssistantConfirm, prefix = "/sf", endpoint = "agent/confirm", input = server_fn::codec::Json)]
 pub async fn assistant_confirm(id: u64) -> Result<Option<String>, ServerFnError> {
     use crate::server_fns::require_admin;
@@ -200,7 +200,7 @@ pub async fn assistant_confirm(id: u64) -> Result<Option<String>, ServerFnError>
 /// The administrator turned a card down.
 ///
 /// # Errors
-/// Refus (403) pour un non-administrateur.
+/// Refused (403) for a non-administrator.
 #[server(name = AssistantCancel, prefix = "/sf", endpoint = "agent/cancel", input = server_fn::codec::Json)]
 pub async fn assistant_cancel(id: u64) -> Result<Option<String>, ServerFnError> {
     use crate::server_fns::require_admin;
@@ -217,7 +217,7 @@ pub async fn assistant_cancel(id: u64) -> Result<Option<String>, ServerFnError> 
 /// Starts a new conversation.
 ///
 /// # Errors
-/// Refus (403) pour un non-administrateur.
+/// Refused (403) for a non-administrator.
 #[server(name = AssistantReset, prefix = "/sf", endpoint = "agent/reset", input = server_fn::codec::Json)]
 pub async fn assistant_reset() -> Result<(), ServerFnError> {
     use crate::server_fns::require_admin;
@@ -231,7 +231,7 @@ pub async fn assistant_reset() -> Result<(), ServerFnError> {
 /// Tests the model server set in `AGENT_LLM_URL`: the models it offers, or why it does not answer.
 ///
 /// # Errors
-/// Refus (403) pour un non-administrateur.
+/// Refused (403) for a non-administrator.
 #[server(name = AssistantTest, prefix = "/sf", endpoint = "agent/test", input = server_fn::codec::Json)]
 pub async fn assistant_test() -> Result<String, ServerFnError> {
     use crate::server_fns::require_admin;

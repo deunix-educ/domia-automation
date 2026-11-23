@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Page d'energie `/automation/energy` (R4 lot 7, ADR 0036) : etat en direct (production solaire, consommation Linky, PAC, bilan net),
-//! histogramme du bilan journalier (SVG calcule cote serveur, aucune bibliotheque JavaScript) et tableau des jours.
-//! La meme donnee en JSON : `GET /api/energy/?days=N`.
+//! Energy page `/automation/energy` (R4 lot 7, ADR 0036): live state (solar production, Linky consumption, heat pump, net balance),
+//! histogram of the daily summary (SVG computed on the server side, no JavaScript library) and table of days.
+//! The same data as JSON: `GET /api/energy/?days=N`.
 
 use dominet_proto::{EnergyLiveDto, EnergyPageDto, Topic};
 use leptos::prelude::*;
@@ -13,13 +13,13 @@ use serde_json::Value;
 use crate::guard::RequireAuth;
 use crate::realtime::Realtime;
 
-/// Durees proposees (jours).
+/// Proposed durations (days).
 const RANGES: [u32; 4] = [7, 14, 30, 90];
 
-/// Les `days` derniers bilans (30 par defaut, 365 au plus), le graphique et les trois appareils du bilan avec leur dernier etat.
+/// The last `days` summaries (30 by default, 365 at most), the chart and the summary's three devices with their last state.
 ///
 /// # Errors
-/// Refus (401) sans session ; erreur interne si la base echoue.
+/// Refused (401) without a session; internal error if the database fails.
 #[server(name = EnergyPage, prefix = "/sf", endpoint = "energy/page")]
 pub async fn energy_page(days: String) -> Result<EnergyPageDto, ServerFnError> {
     use dominet_domain::energy::chart_svg;
@@ -84,12 +84,12 @@ pub fn EnergyPage() -> impl IntoView {
     }
 }
 
-/// Nombre lu dans l'etat d'un appareil (`None` si absent ou non numerique).
+/// Number read from a device's state (`None` if absent or non-numeric).
 fn number(state: &Value, key: &str) -> Option<f64> {
     state.get(key).and_then(Value::as_f64)
 }
 
-/// Etat courant d'un appareil : le temps reel s'il est arrive, sinon celui de la page.
+/// A device's current state: the real-time one if it has arrived, otherwise the page's.
 fn live_state(rt: Realtime, initial: Option<EnergyLiveDto>) -> Signal<Value> {
     let id = initial.as_ref().map(|d| d.id);
     if let Some(id) = id {
@@ -154,7 +154,7 @@ fn EnergyBody(page: EnergyPageDto) -> impl IntoView {
     let linky = live_state(rt, page.linky.clone());
     let pac = live_state(rt, page.pac.clone());
     let watts = |v: Option<f64>| v.map_or_else(|| "—".to_string(), |w| format!("{w:.0}"));
-    // Bilan net en direct : production - consommation - PAC (comme la page de l'implementation de reference).
+    // Live net balance: production - consumption - heat pump (like the reference implementation's page).
     let net = Signal::derive(move || {
         number(&solar.get(), "pac").unwrap_or(0.0)
             - number(&linky.get(), "PAPP").unwrap_or(0.0)

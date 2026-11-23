@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Pages Android (R5 lot 4, ADR 0040) : tableau de bord `/android`, appareils `/android/devices`, SMS `/android/sms` et journal
-//! d'appels `/android/calls`. Tout compte voit ses appareils, un administrateur voit tous les appareils (comme la reference). Les pages
-//! se mettent a jour en direct par les sujets `android:<id>` du WebSocket.
+//! Android pages (R5 lot 4, ADR 0040): `/android` dashboard, `/android/devices` devices, `/android/sms` SMS and the call log
+//! `/android/calls`. Every account sees its devices, an administrator sees all the devices (like the reference). The pages
+//! update live through the WebSocket `android:<id>` subjects.
 
 use dominet_proto::{
     AndroidCallsPageDto, AndroidDeviceDto, AndroidDeviceInput, AndroidOverviewDto,
@@ -19,7 +19,7 @@ use crate::guard::RequireAuth;
 use crate::layout::use_hydrated;
 use crate::realtime::Realtime;
 
-// ------------------------------------------------------------------ fonctions serveur
+// ------------------------------------------------------------------ server functions
 
 #[cfg(feature = "ssr")]
 mod ssr {
@@ -36,7 +36,7 @@ mod ssr {
         dominet_server::timefmt::rfc3339(t)
     }
 
-    /// Ce que ce compte voit : ses appareils, ou tous pour un administrateur (`None`).
+    /// What this account sees: its devices, or all of them for an administrator (`None`).
     pub fn scope(user: &User) -> Option<UserId> {
         (!user.role.is_admin()).then_some(user.id)
     }
@@ -53,7 +53,7 @@ mod ssr {
             .map_err(|e| internal("Android devices", &e))
     }
 
-    /// L'appareil, seulement s'il est a ce compte (ou si c'est un administrateur) : sinon, comme s'il n'existait pas.
+    /// The device, only if it belongs to this account (or if it is an administrator): otherwise, as if it did not exist.
     pub async fn device(
         state: &dominet_server::AppState,
         user: &User,
@@ -95,7 +95,7 @@ mod ssr {
             .collect())
     }
 
-    /// SMS avec l'etat d'envoi de ceux qui partent du navigateur.
+    /// SMS with the sending state of those that leave from the browser.
     pub async fn sms_dtos(
         state: &dominet_server::AppState,
         sms: &[dominet_domain::android::SmsMessage],
@@ -120,10 +120,10 @@ mod ssr {
     }
 }
 
-/// Tableau de bord : appareils, 10 derniers SMS et appels, SMS non lus.
+/// Dashboard: devices, last 10 SMS and calls, unread SMS.
 ///
 /// # Errors
-/// Refus (401) sans session ; erreur interne si la base echoue.
+/// Refused (401) without a session; internal error if the database fails.
 #[server(name = AndroidOverview, prefix = "/sf", endpoint = "android/overview")]
 pub async fn android_overview() -> Result<AndroidOverviewDto, ServerFnError> {
     use dominet_domain::repo::{CallRepo, SmsRepo};
@@ -163,10 +163,10 @@ pub async fn android_overview() -> Result<AndroidOverviewDto, ServerFnError> {
     })
 }
 
-/// Les appareils du compte (tous pour un administrateur).
+/// The account's devices (all of them for an administrator).
 ///
 /// # Errors
-/// Refus (401) sans session ; erreur interne si la base echoue.
+/// Refused (401) without a session; internal error if the database fails.
 #[server(name = AndroidDevices, prefix = "/sf", endpoint = "android/devices")]
 pub async fn android_devices() -> Result<Vec<AndroidDeviceDto>, ServerFnError> {
     use crate::server_fns::require_user;
@@ -177,10 +177,10 @@ pub async fn android_devices() -> Result<Vec<AndroidDeviceDto>, ServerFnError> {
     ssr::dtos(&state, &devices).await
 }
 
-/// Enregistre un appareil au compte connecte ; son jeton n'est rendu **que dans cette reponse**.
+/// Registers a device to the logged-in account; its token is returned **only in this response**.
 ///
 /// # Errors
-/// Refus (401) sans session ; erreur interne si la base echoue.
+/// Refused (401) without a session; internal error if the database fails.
 #[server(name = AddAndroidDevice, prefix = "/sf", endpoint = "android/devices/add", input = server_fn::codec::Json)]
 pub async fn add_android_device(
     input: AndroidDeviceInput,
@@ -218,10 +218,10 @@ pub async fn add_android_device(
     }))
 }
 
-/// Supprime un appareil et ses donnees (SMS, appels).
+/// Deletes a device and its data (SMS, calls).
 ///
 /// # Errors
-/// Refus (401) sans session ; erreur interne si la base echoue.
+/// Refused (401) without a session; internal error if the database fails.
 #[server(name = DeleteAndroidDevice, prefix = "/sf", endpoint = "android/devices/delete")]
 pub async fn delete_android_device(id: i64) -> Result<DeleteOutcome, ServerFnError> {
     use dominet_domain::repo::AndroidDeviceRepo;
@@ -243,10 +243,10 @@ pub async fn delete_android_device(id: i64) -> Result<DeleteOutcome, ServerFnErr
     }
 }
 
-/// Nouveau jeton d'un appareil (l'ancien cesse de fonctionner) ; `None` si l'appareil n'existe pas ou n'est pas au compte.
+/// New token of a device (the old one stops working); `None` if the device does not exist or is not the account's.
 ///
 /// # Errors
-/// Refus (401) sans session ; erreur interne si la base echoue.
+/// Refused (401) without a session; internal error if the database fails.
 #[server(name = RegenerateAndroidToken, prefix = "/sf", endpoint = "android/devices/token")]
 pub async fn regenerate_android_token(id: i64) -> Result<Option<String>, ServerFnError> {
     use dominet_domain::repo::AndroidDeviceRepo;
@@ -272,11 +272,11 @@ pub async fn regenerate_android_token(id: i64) -> Result<Option<String>, ServerF
     Ok(Some(token))
 }
 
-/// Les 100 derniers SMS d'un appareil (le premier appareil si `device` est absent) ; les SMS recus sont marques lus a l'affichage,
-/// comme en reference. `None` : appareil inconnu ou qui n'est pas au compte.
+/// The last 100 SMS of a device (the first device if `device` is absent); received SMS are marked read on display,
+/// like the reference. `None`: unknown device or not the account's.
 ///
 /// # Errors
-/// Refus (401) sans session ; erreur interne si la base echoue.
+/// Refused (401) without a session; internal error if the database fails.
 #[server(name = AndroidSmsPage, prefix = "/sf", endpoint = "android/sms")]
 pub async fn android_sms_page(
     device: Option<i64>,
@@ -325,10 +325,10 @@ pub async fn android_sms_page(
     }))
 }
 
-/// Les 100 derniers appels d'un appareil. `None` : appareil inconnu ou qui n'est pas au compte.
+/// The last 100 calls of a device. `None`: unknown device or not the account's.
 ///
 /// # Errors
-/// Refus (401) sans session ; erreur interne si la base echoue.
+/// Refused (401) without a session; internal error if the database fails.
 #[server(name = AndroidCallsPage, prefix = "/sf", endpoint = "android/calls")]
 pub async fn android_calls_page(
     device: Option<i64>,
@@ -373,10 +373,10 @@ pub async fn android_calls_page(
     }))
 }
 
-/// Envoie un SMS par un appareil : enregistre le SMS sortant puis le confie a l'appareil, qui doit etre connecte.
+/// Sends an SMS through a device: records the outgoing SMS then hands it to the device, which must be connected.
 ///
 /// # Errors
-/// Refus (401) sans session ; erreur interne si la base echoue.
+/// Refused (401) without a session; internal error if the database fails.
 #[server(name = SendAndroidSms, prefix = "/sf", endpoint = "android/sms/send")]
 pub async fn send_android_sms(
     device: i64,
@@ -450,9 +450,9 @@ pub async fn send_android_sms(
     }
 }
 
-// ------------------------------------------------------------------ vues
+// ------------------------------------------------------------------ views
 
-/// Suit en direct les appareils donnes : les evenements incrementent `Realtime::android`, qui recharge les pages.
+/// Follows the given devices live: the events increment `Realtime::android`, which reloads the pages.
 fn follow(ids: Signal<Vec<i64>>) {
     let rt = expect_context::<Realtime>();
     let held = StoredValue::new(Vec::<i64>::new());
@@ -474,7 +474,7 @@ fn follow(ids: Signal<Vec<i64>>) {
     });
 }
 
-/// Date RFC 3339 en heure locale du serveur -> `2026-11-03 09:35:00` (le decalage est retire).
+/// RFC 3339 date in server local time -> `2026-11-03 09:35:00` (the offset is removed).
 pub(crate) fn shown(time: &str) -> String {
     time.get(..19).unwrap_or(time).replace('T', " ")
 }
@@ -515,7 +515,7 @@ fn Presence(online: bool) -> impl IntoView {
     }
 }
 
-/// Onglets de choix de l'appareil d'une page (`base` = `/android/sms` ou `/android/calls`).
+/// Tabs for choosing a page's device (`base` = `/android/sms` or `/android/calls`).
 #[component]
 fn DeviceTabs(devices: Vec<AndroidDeviceDto>, current: i64, base: &'static str) -> impl IntoView {
     view! {
@@ -554,7 +554,7 @@ fn NoDevice() -> impl IntoView {
     }
 }
 
-// ------------------------------------------------------------------ tableau de bord
+// ------------------------------------------------------------------ dashboard
 
 #[component]
 pub fn AndroidDashboardPage() -> impl IntoView {
@@ -680,7 +680,7 @@ fn AndroidDashboard() -> impl IntoView {
     }
 }
 
-// ------------------------------------------------------------------ appareils
+// ------------------------------------------------------------------ devices
 
 #[component]
 pub fn AndroidDevicesPage() -> impl IntoView {
@@ -709,7 +709,7 @@ fn AndroidDevices() -> impl IntoView {
     let name = NodeRef::<leptos::html::Input>::new();
     let phone = NodeRef::<leptos::html::Input>::new();
     let problems = RwSignal::new(Vec::<FieldProblem>::new());
-    // Le jeton n'est montre qu'ici, apres la creation ou la regeneration, jusqu'a ce qu'on le masque.
+    // The token is only shown here, after creation or regeneration, until it is hidden.
     let token = RwSignal::new(None::<(String, String)>);
     let confirm = RwSignal::new(None::<i64>);
     let add = Action::new(|input: &AndroidDeviceInput| {
@@ -1054,7 +1054,7 @@ fn AndroidSms() -> impl IntoView {
     }
 }
 
-// ------------------------------------------------------------------ journal d'appels
+// ------------------------------------------------------------------ call log
 
 #[component]
 pub fn AndroidCallsPage() -> impl IntoView {

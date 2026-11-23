@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Administration des regles d'alerte de Prometheus (`/admin/prometheus-rules`) et de Grafana (`/admin/grafana-rules`) (R7 lot 2,
-//! ADR 0052). Chaque modification reecrit le fichier de provisionnement et invite le service a le relire ; un bouton refait les
-//! deux a la demande et dit ce qui s'est passe.
+//! Administration of the Prometheus (`/admin/prometheus-rules`) and Grafana (`/admin/grafana-rules`) alert rules (R7 lot 2,
+//! ADR 0052). Each modification rewrites the provisioning file and prompts the service to re-read it; a button redoes
+//! both on demand and says what happened.
 
 use dominet_proto::{
     DeleteOutcome, GrafanaRuleDto, GrafanaRuleInput, PrometheusRuleDto, PrometheusRuleInput,
@@ -13,7 +13,7 @@ use leptos_fluent::move_tr;
 use crate::crud::{CrudResult, CrudTable, FieldKind, FieldSpec, Labels, Row, Values};
 use crate::guard::RequireAdmin;
 
-// ----------------------------------------------------------------------------------------------------------- serveur
+// ----------------------------------------------------------------------------------------------------------- server
 
 #[cfg(feature = "ssr")]
 fn sync_dto(s: &dominet_server::rules::SyncStatus) -> RuleSyncDto {
@@ -78,10 +78,10 @@ fn graf_dto(r: &dominet_domain::observability::GrafanaRule) -> GrafanaRuleDto {
     }
 }
 
-/// Regles Prometheus, par groupe puis nom (administrateurs).
+/// Prometheus rules, by group then name (administrators).
 ///
 /// # Errors
-/// Refus (403) pour un non-administrateur ; erreur interne si la base echoue.
+/// Refused (403) for a non-administrator; internal error if the database fails.
 #[server(name = ListPrometheusRules, prefix = "/sf", endpoint = "prometheus-rules/list")]
 pub async fn list_prometheus_rules() -> Result<Vec<PrometheusRuleDto>, ServerFnError> {
     use dominet_domain::repo::PrometheusRuleRepo;
@@ -99,10 +99,10 @@ pub async fn list_prometheus_rules() -> Result<Vec<PrometheusRuleDto>, ServerFnE
     Ok(rules.iter().map(prom_dto).collect())
 }
 
-/// Cree (`id` absent) ou remplace (`id` present) une regle Prometheus, puis reecrit `rules.yml` et recharge Prometheus.
+/// Creates (`id` absent) or replaces (`id` present) a Prometheus rule, then rewrites `rules.yml` and reloads Prometheus.
 ///
 /// # Errors
-/// Refus (403) pour un non-administrateur ; erreur interne si la base echoue.
+/// Refused (403) for a non-administrator; internal error if the database fails.
 #[server(name = SavePrometheusRule, prefix = "/sf", endpoint = "prometheus-rules/save", input = server_fn::codec::Json)]
 pub async fn save_prometheus_rule(
     input: PrometheusRuleInput,
@@ -158,10 +158,10 @@ pub async fn save_prometheus_rule(
     })
 }
 
-/// Supprime une regle Prometheus, puis reecrit `rules.yml` et recharge Prometheus.
+/// Deletes a Prometheus rule, then rewrites `rules.yml` and reloads Prometheus.
 ///
 /// # Errors
-/// Refus (403) pour un non-administrateur ; erreur interne si la base echoue.
+/// Refused (403) for a non-administrator; internal error if the database fails.
 #[server(name = DeletePrometheusRule, prefix = "/sf", endpoint = "prometheus-rules/delete")]
 pub async fn delete_prometheus_rule(id: i64) -> Result<DeleteOutcome, ServerFnError> {
     use dominet_domain::observability::PrometheusRuleId;
@@ -183,10 +183,10 @@ pub async fn delete_prometheus_rule(id: i64) -> Result<DeleteOutcome, ServerFnEr
     Ok(out)
 }
 
-/// Regles Grafana, par dossier, groupe puis titre (administrateurs).
+/// Grafana rules, by folder, group then title (administrators).
 ///
 /// # Errors
-/// Refus (403) pour un non-administrateur ; erreur interne si la base echoue.
+/// Refused (403) for a non-administrator; internal error if the database fails.
 #[server(name = ListGrafanaRules, prefix = "/sf", endpoint = "grafana-rules/list")]
 pub async fn list_grafana_rules() -> Result<Vec<GrafanaRuleDto>, ServerFnError> {
     use dominet_domain::repo::GrafanaRuleRepo;
@@ -204,10 +204,10 @@ pub async fn list_grafana_rules() -> Result<Vec<GrafanaRuleDto>, ServerFnError> 
     Ok(rules.iter().map(graf_dto).collect())
 }
 
-/// Cree (`id` absent) ou remplace (`id` present) une regle Grafana, puis reecrit `rules.yaml` et recharge Grafana.
+/// Creates (`id` absent) or replaces (`id` present) a Grafana rule, then rewrites `rules.yaml` and reloads Grafana.
 ///
 /// # Errors
-/// Refus (403) pour un non-administrateur ; erreur interne si la base echoue.
+/// Refused (403) for a non-administrator; internal error if the database fails.
 #[server(name = SaveGrafanaRule, prefix = "/sf", endpoint = "grafana-rules/save", input = server_fn::codec::Json)]
 pub async fn save_grafana_rule(
     input: GrafanaRuleInput,
@@ -269,10 +269,10 @@ pub async fn save_grafana_rule(
     })
 }
 
-/// Supprime une regle Grafana, puis reecrit `rules.yaml` et recharge Grafana.
+/// Deletes a Grafana rule, then rewrites `rules.yaml` and reloads Grafana.
 ///
 /// # Errors
-/// Refus (403) pour un non-administrateur ; erreur interne si la base echoue.
+/// Refused (403) for a non-administrator; internal error if the database fails.
 #[server(name = DeleteGrafanaRule, prefix = "/sf", endpoint = "grafana-rules/delete")]
 pub async fn delete_grafana_rule(id: i64) -> Result<DeleteOutcome, ServerFnError> {
     use dominet_domain::observability::GrafanaRuleId;
@@ -290,10 +290,10 @@ pub async fn delete_grafana_rule(id: i64) -> Result<DeleteOutcome, ServerFnError
     Ok(out)
 }
 
-/// Reecrit le fichier de regles de `service` (`prometheus` ou `grafana`) et recharge le service ; dit ce qui s'est passe.
+/// Rewrites the rules file of `service` (`prometheus` or `grafana`) and reloads the service; says what happened.
 ///
 /// # Errors
-/// Refus (403) pour un non-administrateur ; erreur interne pour un service inconnu.
+/// Refused (403) for a non-administrator; internal error for an unknown service.
 #[server(name = SyncRules, prefix = "/sf", endpoint = "rules/sync")]
 pub async fn sync_rules(service: String) -> Result<RuleSyncDto, ServerFnError> {
     use crate::server_fns::require_admin;
@@ -475,7 +475,7 @@ fn graf_fields() -> Vec<FieldSpec> {
     ]
 }
 
-/// Bouton « Ecrire les fichiers et recharger » et resultat, sous le tableau.
+/// "Write the files and reload" button and result, under the table.
 #[component]
 fn SyncCard(service: &'static str) -> impl IntoView {
     let result = RwSignal::new(None::<Result<RuleSyncDto, ()>>);

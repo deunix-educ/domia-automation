@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Scenes (R4 lot 2, ADR 0031) : fonctions serveur, page `/automation/scenes` et bouton d'activation (partage avec le widget
-//! scene du tableau de bord).
+//! Scenes (R4 lot 2, ADR 0031): server functions, `/automation/scenes` page and activation button (shared with the dashboard's
+//! scene widget).
 //!
-//! Tout compte connecte active une scene (comme en Reference : la famille lance « Fermeture du soir ») ; seuls les
-//! administrateurs les modifient (`scenes_admin`).
+//! Any logged-in account activates a scene (like in the reference: the family runs "Evening closing"); only
+//! administrators modify them (`scenes_admin`).
 
 use dominet_proto::{CommandOutcome, SceneDto, SceneOutcome};
 use leptos::prelude::*;
@@ -76,10 +76,10 @@ pub(crate) async fn scene_dtos(
         .collect())
 }
 
-/// Scenes actives, par nom (tout compte connecte).
+/// Active scenes, by name (any logged-in account).
 ///
 /// # Errors
-/// Refus (401) sans session ; erreur interne si la base echoue.
+/// Refused (401) without a session; internal error if the database fails.
 #[server(name = ListScenes, prefix = "/sf", endpoint = "scenes/list")]
 pub async fn list_scenes() -> Result<Vec<SceneDto>, ServerFnError> {
     use crate::server_fns::require_user;
@@ -89,10 +89,10 @@ pub async fn list_scenes() -> Result<Vec<SceneDto>, ServerFnError> {
     scene_dtos(&state, true).await
 }
 
-/// Active une scene : ses commandes sont publiees dans l'ordre ; une commande en echec n'arrete pas les suivantes.
+/// Activates a scene: its commands are published in order; a failing command does not stop the following ones.
 ///
 /// # Errors
-/// Refus (401) sans session.
+/// Refused (401) without a session.
 #[server(name = ActivateScene, prefix = "/sf", endpoint = "scenes/activate")]
 pub async fn activate_scene(id: i64) -> Result<SceneOutcome, ServerFnError> {
     use dominet_domain::scene::SceneId;
@@ -110,7 +110,7 @@ pub async fn activate_scene(id: i64) -> Result<SceneOutcome, ServerFnError> {
     Ok(outcome)
 }
 
-/// Texte de l'issue d'une activation (vide si tout est parti).
+/// Text of the outcome of an activation (empty if everything went out).
 fn failure_text(outcome: CommandOutcome) -> String {
     match outcome {
         CommandOutcome::Sent => String::new(),
@@ -120,12 +120,12 @@ fn failure_text(outcome: CommandOutcome) -> String {
     }
 }
 
-/// Bouton d'activation et retour (✓ / ✗ avec les commandes en echec). `uid` rend les identifiants uniques sur la page.
+/// Activation button and feedback (✓ / ✗ with the failed commands). `uid` makes the identifiers unique on the page.
 #[component]
 pub fn SceneButton(
     id: i64,
     #[prop(into)] uid: String,
-    /// Texte du bouton.
+    /// Button text.
     #[prop(into)]
     label: Signal<String>,
 ) -> impl IntoView {
@@ -183,7 +183,7 @@ pub fn SceneButton(
     }
 }
 
-/// Corps d'un widget scene du tableau de bord.
+/// Body of a dashboard scene widget.
 pub(crate) fn scene_body(w: &dominet_proto::WidgetDto) -> AnyView {
     let uid = format!("w{}", w.id);
     match &w.scene {
