@@ -1965,7 +1965,7 @@
 <tr>
 <td>Raspberry Pi 5, 8 Go, SSD NVMe</td>
 <td><strong>s'installe et tourne</strong> (2026-11-23)</td>
-<td>Image arm64 construite et démarrée sur la machine, puis publiée ; le nombre de caméras n'est pas encore mesuré ; voir ci-dessous</td>
+<td>Image arm64 construite et démarrée sur la machine, puis publiée ; 6 caméras en 1080p mesurées à 40 % de la machine (décodage logiciel) ; voir ci-dessous</td>
 </tr>
 <tr>
 <td>Autre Linux arm64 ou amd64 avec Docker</td>
@@ -1975,12 +1975,12 @@
 </tbody>
 </table>
 <h2 id="raspberry-pi-5-ce-quon-peut-attendre-ce-quon-ignore">Raspberry Pi 5 : ce qu'on peut attendre, ce qu'on ignore<a class="headerlink" href="#raspberry-pi-5-ce-quon-peut-attendre-ce-quon-ignore" title="Permanent link">&para;</a></h2>
-<p>Ce qui a été vérifié sur un Raspberry Pi 5 (8 Go, SSD NVMe, Debian 13 arm64, Docker 29) : l'image se construit en natif en environ 67 minutes (sans problème de mémoire avec 2 Go d'échange), toute la pile démarre, le schéma de base est appliqué, un compte administrateur est créé, et l'interface répond en 10 ms environ (médiane) au repos, à 55 °C et sans jamais avoir été bridée. La pile au repos utilise environ 1 Go de mémoire. Non mesuré : nombre de caméras, charge de la détection.</p>
+<p>Ce qui a été vérifié sur un Raspberry Pi 5 (8 Go, SSD NVMe, Debian 13 arm64, Docker 29) : l'image se construit en natif en environ 67 minutes (sans problème de mémoire avec 2 Go d'échange), toute la pile démarre, le schéma de base est appliqué, un compte administrateur est créé, et l'interface répond en 10 ms environ (médiane) au repos, à 55 °C et sans jamais avoir été bridée. Les dix services au repos tiennent environ 310 Mio, la machine entière 1,1 Go de ses 8 Go, et un démarrage à froid prend environ 22 s. Caméras : 6 en 1080p occupent 40 % des quatre cœurs en mode complet (<a href="../measures/">Mesures</a>, section 2) ; rien au-delà de 6 n'a été mesuré.</p>
 <p>Connu par la conception (pas par des mesures) :</p>
 <ul>
 <li><strong>Système</strong> : Raspberry Pi OS 64 bits (basé sur Debian 13) ou Debian 13 arm64 ; Docker avec le plugin Compose 2.24 ou plus récent. Un système 32 bits ne peut pas lancer les images.</li>
 <li><strong>Stockage</strong> : utilisez un <strong>SSD</strong> (USB 3 ou NVMe), pas une carte SD. La base et les enregistrements vidéo écrivent en continu ; une carte SD s'use. L'installateur avertit quand <code>/</code> est sur une carte SD.</li>
-<li><strong>Décodage vidéo</strong> : le décodeur matériel Intel (VAAPI) n'existe pas en arm64 ; la vidéo est décodée par le processeur, donc le nombre de caméras tenues est inférieur à celui de la machine de référence. Le chiffre est inconnu tant qu'il n'est pas mesuré.</li>
+<li><strong>Décodage vidéo</strong> : le décodeur matériel Intel (VAAPI) n'existe pas en arm64 ; la vidéo est décodée par le processeur, donc il tient moins de caméras que la machine de référence : environ 0,25 cœur par caméra en logiciel, contre 0,12 avec VAAPI.</li>
 <li><strong>Détection d'objets</strong> (YOLO sur CPU) : non mesurée en arm64. Laissez-la désactivée au début, puis activez-la sur une caméra en surveillant la charge.</li>
 <li><strong>Première installation</strong> : l'image publiée existe maintenant pour l'arm64, l'installateur la télécharge au lieu de construire (une construction locale a pris environ 67 minutes sur un Pi 5 ; elle reste la solution de repli, <a href="../adr/0062-published-images-with-local-build-fallback/">ADR 0062</a>).</li>
 <li><strong>Chiffres de mémoire</strong> : pour que <code>docker stats</code> affiche la mémoire des conteneurs, le noyau doit activer le contrôleur de mémoire : ajoutez <code>cgroup_enable=memory cgroup_memory=1</code> à la ligne de <code>/boot/firmware/cmdline.txt</code> puis redémarrez. Sans cela, la fiche machine affiche <code>0B</code> pour chaque service.</li>

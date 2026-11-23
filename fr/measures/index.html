@@ -1553,6 +1553,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="2. Charge vidéo (phase R6)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#raspberry-pi-5-2026-11-23" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Raspberry Pi 5 (2026-11-23)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -1944,6 +1961,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="2. Charge vidéo (phase R6)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#raspberry-pi-5-2026-11-23" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Raspberry Pi 5 (2026-11-23)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -2142,6 +2176,86 @@ python3 tools/bench-video.py --bin target/release/dominet --site target/site --m
   --bus crates/dominet-surveillance/fixtures/yolo/bus.jpg --workdir /tmp/bench --counts 1,4,8,12 --seconds 60
 </code></pre>
 <p>Utiliser <code>--nice 19</code> sur une machine partagée et <code>FFMPEG_HWACCEL=off</code> pour la série logicielle.</p>
+<h3 id="raspberry-pi-5-2026-11-23">Raspberry Pi 5 (2026-11-23)<a class="headerlink" href="#raspberry-pi-5-2026-11-23" title="Permanent link">&para;</a></h3>
+<p>Même outil et même protocole, sur un Raspberry Pi 5 (8 Go, SSD NVMe, Debian 13 arm64, 4 cœurs), image 1.0.2, <strong>décodage logiciel uniquement</strong> (<code>FFMPEG_HWACCEL=off</code> : le Pi n'a pas de décodeur matériel utilisable), 60 s mesurées par point, <code>--nice 10</code>, la pile installée au repos à côté du test. « Machine » est la part des quatre cœurs utilisée.</p>
+<table>
+<thead>
+<tr>
+<th>Scénario</th>
+<th>Caméras</th>
+<th>Cœurs</th>
+<th>Mémoire (Mo)</th>
+<th>Machine occupée</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Décodage seul</td>
+<td>1</td>
+<td>0,23</td>
+<td>311</td>
+<td>8 %</td>
+</tr>
+<tr>
+<td>Décodage seul</td>
+<td>2</td>
+<td>0,44</td>
+<td>434</td>
+<td>14 %</td>
+</tr>
+<tr>
+<td>Décodage seul</td>
+<td>4</td>
+<td>0,84</td>
+<td>683</td>
+<td>25 %</td>
+</tr>
+<tr>
+<td>Décodage seul</td>
+<td>6</td>
+<td>1,30</td>
+<td>943</td>
+<td>36 %</td>
+</tr>
+<tr>
+<td>Complet</td>
+<td>1</td>
+<td>0,26</td>
+<td>434</td>
+<td>9 %</td>
+</tr>
+<tr>
+<td>Complet</td>
+<td>2</td>
+<td>0,50</td>
+<td>578</td>
+<td>17 %</td>
+</tr>
+<tr>
+<td>Complet</td>
+<td>4</td>
+<td>1,00</td>
+<td>846</td>
+<td>27 %</td>
+</tr>
+<tr>
+<td>Complet</td>
+<td>6</td>
+<td>1,48</td>
+<td>1 146</td>
+<td>40 %</td>
+</tr>
+</tbody>
+</table>
+<p>Ce que ça dit :</p>
+<ul>
+<li>Une caméra coûte environ <strong>0,22 cœur</strong> en décodage seul et <strong>0,25 cœur</strong> en mode complet (enregistrement, indexation, mouvement, YOLO), presque tout dans le <code>ffmpeg</code> de décodage ; l'application elle-même reste à 0,17 cœur avec 6 caméras. Le coût est linéaire sur la plage mesurée, et aucune image n'a été perdue (aucun repli dans aucune série).</li>
+<li><strong>6 caméras en 1080p occupent 40 % de la machine</strong> en mode complet, pour environ 1,1 Go de mémoire (environ 140 Mo par caméra plus 0,3 Go de base).</li>
+<li>En prolongeant la droite, environ 10 caméras laisseraient au Pi une marge d'environ 30 %. <strong>C'est une extrapolation</strong> : rien au-delà de 6 caméras n'a été mesuré, et les flux synthétiques sont plus légers que de vrais flux (voir les limites ci-dessus). Ne comptez pas sur plus de 6 à 8 caméras avant d'avoir mesuré avec les vôtres.</li>
+</ul>
+<p><strong>Pile au repos</strong> (fiche machine, après quelques minutes sans activité, dix services) : environ 310 Mio pour les conteneurs (zigbee2mqtt 87, PostgreSQL 70, Grafana 58, Prometheus 31, l'application 28, MediaMTX 15, nginx 8, ReductStore 7, discovery 7, Mosquitto 3) et moins de 2 % d'un cœur au total ; la machine entière utilise 1,1 Go de ses 8 Go, à 48 °C. L'interface répond en 9 à 10 ms (médiane) et 11 ms (95e centile). Une sauvegarde de la base presque vide dure moins d'une seconde : elle ne dit rien d'une base qui tourne depuis des mois.</p>
+<p><strong>Démarrage à froid</strong> : <code>make prod-down</code> prend environ 14 s et <code>make prod-up</code> de 22 à 24 s jusqu'à ce que tous les services soient sains (images déjà présentes).</p>
+<p>Non mesuré sur le Pi : le scénario <em>stress</em> (YOLO six fois plus souvent), les spectateurs en direct (WebRTC), les autres services sous charge, une sauvegarde d'une base de taille réaliste.</p>
 <h2 id="3-charge-mqtt-et-websocket-phase-r8">3. Charge MQTT et WebSocket (phase R8)<a class="headerlink" href="#3-charge-mqtt-et-websocket-phase-r8" title="Permanent link">&para;</a></h2>
 <p>Mesurée sur le poste de développement, jamais sur la production.</p>
 <ul>
