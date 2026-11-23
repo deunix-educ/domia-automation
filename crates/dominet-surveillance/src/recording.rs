@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Segments enregistres par MediaMTX (R6 lot 7, ADR 0049) : `<dossier>/<uuid>/<AAAA-MM-JJ_HH-MM-SS-ffffff>.mp4`.
+//! Segments recorded by MediaMTX (R6 lot 7, ADR 0049): `<folder>/<uuid>/<YYYY-MM-DD_HH-MM-SS-ffffff>.mp4`.
 //!
-//! MediaMTX ecrit un segment fMP4 en continu (une partie par seconde environ) : tant que le fichier grossit, sa date de modification
-//! avance. Un segment est **termine** quand elle n'a plus bouge depuis `grace` (15 s comme la reference). Ecart voulu avec reference, qui
-//! ignorait toujours le dernier fichier : ici le dernier segment d'une camera dont l'enregistrement s'est arrete est aussi pris.
+//! MediaMTX writes an fMP4 segment continuously (about one part per second): as long as the file grows, its modification date
+//! advances. A segment is **finished** when it has not moved for `grace` (15 s like the reference). Intended difference with the reference, which
+//! always ignored the last file: here the last segment of a camera whose recording has stopped is taken too.
 
 use std::path::{Path, PathBuf};
 use std::time::{Duration, SystemTime};
@@ -11,23 +11,23 @@ use std::time::{Duration, SystemTime};
 use chrono::{DateTime, NaiveDateTime, Utc};
 use dominet_domain::camera::CameraUuid;
 
-/// Un segment termine, pret a etre indexe puis archive.
+/// A finished segment, ready to be indexed then archived.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Segment {
     pub camera: CameraUuid,
     pub path: PathBuf,
     pub started_at: DateTime<Utc>,
     pub size_bytes: u64,
-    /// Duree reelle (derniere ecriture - debut), `None` si la date de modification precede le debut (horloge).
+    /// Real duration (last write - start), `None` if the modification date precedes the start (clock).
     pub duration: Option<Duration>,
 }
 
-/// Date de debut d'un segment d'apres son nom (`2026-11-08_12-00-00-123456.mp4`, avec ou sans fraction), en UTC comme MediaMTX
-/// dans son conteneur et comme la reference.
+/// Start date of a segment from its name (`2026-11-08_12-00-00-123456.mp4`, with or without a fraction), in UTC like MediaMTX
+/// in its container and like the reference.
 #[must_use]
 pub fn parse_segment_time(file_name: &str) -> Option<DateTime<Utc>> {
     let stem = Path::new(file_name).file_stem()?.to_str()?;
-    // `%f` de MediaMTX = microsecondes (jusqu'a 6 chiffres) ; chrono lirait des nanosecondes, on les lit donc a part.
+    // MediaMTX's `%f` = microseconds (up to 6 digits); chrono would read nanoseconds, so we read them separately.
     let (whole, micros) = match stem.split_once('-').and(stem.get(19..)) {
         Some(rest) if stem.len() > 19 => {
             let digits = rest.strip_prefix('-')?;
@@ -46,11 +46,11 @@ pub fn parse_segment_time(file_name: &str) -> Option<DateTime<Utc>> {
     Some(naive.and_utc() + chrono::Duration::microseconds(i64::from(micros)))
 }
 
-/// Les segments termines de toutes les cameras (dossiers nommes d'un uuid), du plus ancien au plus recent.
-/// Un fichier au nom illisible prend la date de sa derniere modification (comme la reference).
+/// The finished segments of all the cameras (folders named with a uuid), from oldest to most recent.
+/// A file with an unreadable name takes the date of its last modification (like the reference).
 ///
 /// # Errors
-/// Le dossier racine est illisible (un dossier de camera illisible est ignore).
+/// The root folder is unreadable (an unreadable camera folder is ignored).
 pub fn finished_segments(
     root: &Path,
     now: SystemTime,
@@ -79,7 +79,7 @@ pub fn finished_segments(
                 continue;
             };
             if now.duration_since(modified).unwrap_or_default() < grace {
-                continue; // encore en ecriture
+                continue; // still being written
             }
             let started_at = path
                 .file_name()
@@ -111,7 +111,7 @@ mod tests {
 
     const CAM: &str = "5ca0e51964bd43c3bfebec36be21afc3";
 
-    /// Dossier jetable (supprime a la fin du test).
+    /// Throw-away folder (deleted at the end of the test).
     struct Tmp(PathBuf);
 
     impl Tmp {
@@ -168,9 +168,9 @@ mod tests {
         let old = now - Duration::from_secs(120);
         make(tmp.path(), CAM, "2026-11-08_12-01-00-000000.mp4", old, 20);
         make(tmp.path(), CAM, "2026-11-08_12-00-00-000000.mp4", old, 10);
-        // Encore en ecriture : ignore.
+        // Still being written: ignored.
         make(tmp.path(), CAM, "2026-11-08_12-02-00-000000.mp4", now, 5);
-        // Pas un mp4, pas une camera.
+        // Not an mp4, not a camera.
         make(tmp.path(), CAM, "notes.txt", old, 1);
         make(
             tmp.path(),

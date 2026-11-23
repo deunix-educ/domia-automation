@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! PTZ ONVIF (R6 lot 5, ADR 0047) : `ContinuousMove` / `Stop` (les seuls mouvements de l'interface), positions, presets, `AbsoluteMove`.
+//! ONVIF PTZ (R6 lot 5, ADR 0047): `ContinuousMove` / `Stop` (the only movements of the interface), positions, presets, `AbsoluteMove`.
 //!
-//! Une [`PtzControl`] tient l'adresse du service PTZ et le jeton du profil : elles sont lues une fois (`GetCapabilities`, `GetProfiles`)
-//! puis reutilisees pendant toute une session de pilotage.
+//! A [`PtzControl`] holds the address of the PTZ service and the profile token: they are read once (`GetCapabilities`, `GetProfiles`)
+//! then reused throughout a control session.
 
 use std::fmt::Write;
 use std::time::Duration;
@@ -11,35 +11,35 @@ use roxmltree::Node;
 
 use super::{OnvifClient, OnvifError, find, parse, text, xml_escape};
 
-/// Vitesse minimale acceptee (comme la reference : en dessous, plusieurs cameras ne bougent pas).
+/// Minimum accepted speed (like the reference: below it, several cameras do not move).
 pub const MIN_SPEED: f64 = 0.05;
 
-/// Une position PTZ, dans l'espace que la camera annonce (`space` : adresse de l'espace de coordonnees, si connue).
+/// A PTZ position, in the space the camera announces (`space`: address of the coordinate space, if known).
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct PtzPosition {
     pub pan: f64,
     pub tilt: f64,
     pub zoom: f64,
-    /// Espace des coordonnees pan/tilt (Thingino : degres, `SphericalPositionSpace`).
+    /// Pan/tilt coordinate space (Thingino: degrees, `SphericalPositionSpace`).
     pub space: Option<String>,
 }
 
-/// Une position PTZ enregistree dans la camera.
+/// A PTZ position stored in the camera.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CameraPreset {
     pub token: String,
     pub name: String,
 }
 
-/// La camera est-elle au repos ?
+/// Is the camera at rest?
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct PtzStatus {
     pub position: Option<PtzPosition>,
-    /// `true` si `MoveStatus` annonce `IDLE` (ou si la camera ne le dit pas).
+    /// `true` if `MoveStatus` announces `IDLE` (or if the camera does not say).
     pub idle: bool,
 }
 
-/// Ramene une vitesse dans `MIN_SPEED..=1.0` (une valeur illisible donne le milieu).
+/// Brings a speed back into `MIN_SPEED..=1.0` (an unreadable value gives the middle).
 #[must_use]
 pub fn clamp_speed(speed: f64) -> f64 {
     if speed.is_nan() {
@@ -49,7 +49,7 @@ pub fn clamp_speed(speed: f64) -> f64 {
     }
 }
 
-/// Une composante de vitesse dans `-1.0..=1.0` (une valeur illisible vaut zero : on n'ordonne pas un mouvement incertain).
+/// A speed component in `-1.0..=1.0` (an unreadable value is zero: we do not order an uncertain movement).
 #[must_use]
 pub fn clamp_axis(v: f64) -> f64 {
     if v.is_nan() { 0.0 } else { v.clamp(-1.0, 1.0) }
@@ -63,10 +63,10 @@ pub struct PtzControl<'a> {
 }
 
 impl OnvifClient {
-    /// Prepare le pilotage PTZ : adresse du service PTZ et premier profil qui porte une configuration PTZ.
+    /// Prepares PTZ control: address of the PTZ service and first profile that carries a PTZ configuration.
     ///
     /// # Errors
-    /// `NoService("PTZ")` si la camera n'a pas de PTZ ; erreurs habituelles des appels ONVIF.
+    /// `NoService("PTZ")` if the camera has no PTZ; usual errors of the ONVIF calls.
     pub async fn ptz(&self) -> Result<PtzControl<'_>, OnvifError> {
         let services = self.services().await?;
         let url = services.ptz.ok_or(OnvifError::NoService("PTZ"))?;
@@ -101,14 +101,14 @@ impl PtzControl<'_> {
         xml_escape(&self.profile)
     }
 
-    /// Mouvement continu : `pan` et `tilt` dans `-1..=1`, `zoom` dans `-1..=1` (0 = pas de mouvement sur cet axe).
+    /// Continuous movement: `pan` and `tilt` in `-1..=1`, `zoom` in `-1..=1` (0 = no movement on that axis).
     ///
     /// # Errors
-    /// Erreurs des appels ONVIF.
+    /// Errors of the ONVIF calls.
     pub async fn continuous_move(&self, pan: f64, tilt: f64, zoom: f64) -> Result<(), OnvifError> {
         let (pan, tilt, zoom) = (clamp_axis(pan), clamp_axis(tilt), clamp_axis(zoom));
         let mut velocity = String::new();
-        // Comme la reference : seuls les axes en mouvement sont envoyes.
+        // Like the reference: only the moving axes are sent.
         if pan != 0.0 || tilt != 0.0 {
             let _ = write!(velocity, r#"<tt:PanTilt x="{pan}" y="{tilt}"/>"#);
         }
@@ -126,10 +126,10 @@ impl PtzControl<'_> {
         .map(|_| ())
     }
 
-    /// Arrete tout mouvement (pan / tilt et zoom).
+    /// Stops all movement (pan / tilt and zoom).
     ///
     /// # Errors
-    /// Erreurs des appels ONVIF.
+    /// Errors of the ONVIF calls.
     pub async fn stop(&self) -> Result<(), OnvifError> {
         self.call(&format!(
             "<tptz:Stop><tptz:ProfileToken>{}</tptz:ProfileToken><tptz:PanTilt>true</tptz:PanTilt><tptz:Zoom>true</tptz:Zoom></tptz:Stop>",
@@ -139,10 +139,10 @@ impl PtzControl<'_> {
         .map(|_| ())
     }
 
-    /// Position et etat de mouvement (`None` pour la position si la camera ne la donne pas : la NVT renvoie toujours 0, 0).
+    /// Position and movement state (`None` for the position if the camera does not give it: the NVT always returns 0, 0).
     ///
     /// # Errors
-    /// Erreurs des appels ONVIF.
+    /// Errors of the ONVIF calls.
     pub async fn status(&self) -> Result<PtzStatus, OnvifError> {
         let xml = self
             .call(&format!(
@@ -169,7 +169,7 @@ impl PtzControl<'_> {
         Ok(PtzStatus { position, idle })
     }
 
-    /// Attend la fin d'un mouvement (au plus `timeout`), comme la reference apres `GotoPreset` / `AbsoluteMove`.
+    /// Waits for a movement to end (at most `timeout`), like the reference after `GotoPreset` / `AbsoluteMove`.
     pub async fn wait_idle(&self, timeout: Duration) {
         let start = tokio::time::Instant::now();
         while start.elapsed() < timeout {
@@ -180,10 +180,10 @@ impl PtzControl<'_> {
         }
     }
 
-    /// Presets enregistres dans la camera.
+    /// Presets stored in the camera.
     ///
     /// # Errors
-    /// Erreurs des appels ONVIF.
+    /// Errors of the ONVIF calls.
     pub async fn presets(&self) -> Result<Vec<CameraPreset>, OnvifError> {
         let xml = self
             .call(&format!(
@@ -205,18 +205,18 @@ impl PtzControl<'_> {
             .collect())
     }
 
-    /// Enregistre la position actuelle sous ce nom ; retourne le jeton donne par la camera (vide si elle ne le dit pas).
+    /// Saves the current position under this name; returns the token given by the camera (empty if it does not say).
     ///
     /// # Errors
-    /// Erreurs des appels ONVIF.
+    /// Errors of the ONVIF calls.
     pub async fn set_preset(&self, name: &str) -> Result<String, OnvifError> {
         self.set_preset_at(name, None).await
     }
 
-    /// Comme [`Self::set_preset`], mais ecrase l'emplacement `token` s'il est donne (au lieu d'en prendre un libre).
+    /// Like [`Self::set_preset`], but overwrites the `token` slot if given (instead of taking a free one).
     ///
     /// # Errors
-    /// Erreurs des appels ONVIF.
+    /// Errors of the ONVIF calls.
     pub async fn set_preset_at(
         &self,
         name: &str,
@@ -237,7 +237,7 @@ impl PtzControl<'_> {
     }
 
     /// # Errors
-    /// Erreurs des appels ONVIF.
+    /// Errors of the ONVIF calls.
     pub async fn remove_preset(&self, token: &str) -> Result<(), OnvifError> {
         self.call(&format!(
             "<tptz:RemovePreset><tptz:ProfileToken>{}</tptz:ProfileToken><tptz:PresetToken>{}</tptz:PresetToken></tptz:RemovePreset>",
@@ -248,10 +248,10 @@ impl PtzControl<'_> {
         .map(|_| ())
     }
 
-    /// Va a un preset de la camera, a mi-vitesse (comme la reference), puis attend la fin du mouvement.
+    /// Goes to a camera preset, at half speed (like the reference), then waits for the movement to end.
     ///
     /// # Errors
-    /// Erreurs des appels ONVIF.
+    /// Errors of the ONVIF calls.
     pub async fn goto_preset(&self, token: &str) -> Result<(), OnvifError> {
         self.call(&format!(
             r#"<tptz:GotoPreset><tptz:ProfileToken>{}</tptz:ProfileToken><tptz:PresetToken>{}</tptz:PresetToken><tptz:Speed><tt:PanTilt x="0.5" y="0.5"/><tt:Zoom x="0.5"/></tptz:Speed></tptz:GotoPreset>"#,
@@ -263,11 +263,11 @@ impl PtzControl<'_> {
         Ok(())
     }
 
-    /// Ce que le noeud PTZ annonce (`GetNodes`), en une ligne pour le journal : origine, nombre de presets, espaces de coordonnees.
-    /// Sert a comprendre une camera qui accepte des ordres sans les executer.
+    /// What the PTZ node announces (`GetNodes`), in one line for the log: origin, number of presets, coordinate spaces.
+    /// Used to understand a camera that accepts orders without carrying them out.
     ///
     /// # Errors
-    /// Erreurs des appels ONVIF.
+    /// Errors of the ONVIF calls.
     pub async fn capabilities(&self) -> Result<String, OnvifError> {
         let xml = self.call("<tptz:GetNodes/>").await?;
         let doc = parse(&xml)?;
@@ -295,10 +295,10 @@ impl PtzControl<'_> {
         ))
     }
 
-    /// Retourne a la position d'origine de la camera (`GotoHomePosition`), puis attend la fin du mouvement.
+    /// Returns to the camera's home position (`GotoHomePosition`), then waits for the movement to end.
     ///
     /// # Errors
-    /// Erreurs des appels ONVIF (beaucoup de cameras n'ont pas de position d'origine definie).
+    /// Errors of the ONVIF calls (many cameras have no home position defined).
     pub async fn go_home(&self) -> Result<(), OnvifError> {
         self.call(&format!(
             r#"<tptz:GotoHomePosition><tptz:ProfileToken>{}</tptz:ProfileToken><tptz:Speed><tt:PanTilt x="0.5" y="0.5"/><tt:Zoom x="0.5"/></tptz:Speed></tptz:GotoHomePosition>"#,
@@ -309,11 +309,11 @@ impl PtzControl<'_> {
         Ok(())
     }
 
-    /// Va a une position enregistree en base (camera sans preset ONVIF) : `AbsoluteMove` dans l'espace que la camera utilise
-    /// (Thingino : degres ; le defaut serait `[-1, 1]`), puis attend la fin du mouvement.
+    /// Goes to a position stored in the database (camera without an ONVIF preset): `AbsoluteMove` in the space the camera uses
+    /// (Thingino: degrees; the default would be `[-1, 1]`), then waits for the movement to end.
     ///
     /// # Errors
-    /// Erreurs des appels ONVIF.
+    /// Errors of the ONVIF calls.
     pub async fn absolute_move(&self, position: &PtzPosition) -> Result<(), OnvifError> {
         let space = position
             .space

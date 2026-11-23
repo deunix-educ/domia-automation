@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Le client contre le **vrai MediaMTX de la stack de dev** (`make dev-up`, API sur 127.0.0.1:19997). Ignore par defaut : la CI
-//! reste autonome. A lancer a la main : `cargo test -p dominet-surveillance --test real_mediamtx -- --ignored`.
-//! Un path de test (nom hexadecimal fixe) est cree puis supprime ; la source pointe vers un port ferme, aucun flux n'est lu.
+//! The client against the **real MediaMTX of the dev stack** (`make dev-up`, API on 127.0.0.1:19997). Ignored by default: CI
+//! stays self-contained. To be run by hand: `cargo test -p dominet-surveillance --test real_mediamtx -- --ignored`.
+//! A test path (fixed hexadecimal name) is created then deleted; the source points to a closed port, no stream is read.
 
 use std::collections::BTreeMap;
 

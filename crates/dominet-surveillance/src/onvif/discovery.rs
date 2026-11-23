@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! WS-Discovery (multicast `239.255.255.250:3702`) : trouve les cameras ONVIF du reseau local (ADR 0008 et 0045).
+//! WS-Discovery (multicast `239.255.255.250:3702`): finds the ONVIF cameras of the local network (ADR 0008 and 0045).
 //!
-//! Trois sondes espacees d'une seconde et six secondes d'ecoute (le multicast UDP se perd de temps en temps sur Wi-Fi). Certaines
-//! cameras ne repondent jamais au multicast (la Q3R) : l'ajout par adresse IP reste necessaire.
+//! Three probes one second apart and six seconds of listening (UDP multicast gets lost from time to time on Wi-Fi). Some
+//! cameras never answer the multicast (the Q3R): adding by IP address remains necessary.
 
 use std::collections::HashSet;
 use std::fmt::Write;
@@ -19,19 +19,19 @@ pub const MULTICAST: SocketAddr =
 pub const LISTEN: Duration = Duration::from_secs(6);
 pub const PROBES: u32 = 3;
 
-/// Un appareil qui a repondu.
+/// A device that answered.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Discovered {
-    /// Adresse d'ou vient la reponse (celle qui est joignable).
+    /// Address the answer comes from (the reachable one).
     pub ip: IpAddr,
-    /// Port du service ONVIF annonce.
+    /// Announced ONVIF service port.
     pub port: u16,
     pub xaddr: String,
     pub name: String,
     pub hardware: String,
 }
 
-/// Le message `Probe` (type `NetworkVideoTransmitter`).
+/// The `Probe` message (type `NetworkVideoTransmitter`).
 #[must_use]
 pub fn probe_message() -> String {
     let mut id = [0u8; 16];
@@ -45,7 +45,7 @@ pub fn probe_message() -> String {
     )
 }
 
-/// Lit une reponse `ProbeMatches`. `None` si ce n'en est pas une ou si elle n'annonce aucune adresse `http://` utilisable.
+/// Reads a `ProbeMatches` response. `None` if it is not one or if it announces no usable `http://` address.
 #[must_use]
 pub fn parse_response(data: &str, from: IpAddr) -> Option<Discovered> {
     let doc = Document::parse(data).ok()?;
@@ -56,7 +56,7 @@ pub fn parse_response(data: &str, from: IpAddr) -> Option<Discovered> {
             .map(|t| t.trim().to_string())
     };
     let xaddrs = text("XAddrs")?;
-    // La premiere adresse IPv4 en `http://` ; les adresses IPv6 locales de lien ne sont pas joignables telles quelles.
+    // The first IPv4 `http://` address; link-local IPv6 addresses are not reachable as they are.
     let xaddr = xaddrs
         .split_whitespace()
         .find(|x| x.starts_with("http://") && !x.starts_with("http://["))?;
@@ -82,7 +82,7 @@ pub fn parse_response(data: &str, from: IpAddr) -> Option<Discovered> {
     })
 }
 
-/// Interface sortante par la route par defaut (celle qui mene au multicast).
+/// Outgoing interface through the default route (the one that leads to the multicast).
 #[must_use]
 pub fn local_ipv4() -> Ipv4Addr {
     StdUdp::bind("0.0.0.0:0")
@@ -96,18 +96,18 @@ pub fn local_ipv4() -> Ipv4Addr {
         .unwrap_or(Ipv4Addr::UNSPECIFIED)
 }
 
-/// Sonde le reseau local ; `on_found` est appele pour chaque appareil, une seule fois par adresse.
+/// Probes the local network; `on_found` is called for each device, once per address.
 ///
 /// # Errors
-/// Le socket ne peut pas etre ouvert.
+/// The socket cannot be opened.
 pub async fn discover(on_found: impl FnMut(Discovered)) -> io::Result<()> {
     discover_at(MULTICAST, Some(local_ipv4()), PROBES, LISTEN, on_found).await
 }
 
-/// Comme [`discover`], vers une cible quelconque (les tests visent un faux repondeur sur la boucle locale).
+/// Like [`discover`], towards any target (the tests aim at a fake responder on the loopback).
 ///
 /// # Errors
-/// Le socket ne peut pas etre ouvert.
+/// The socket cannot be opened.
 pub async fn discover_at(
     target: SocketAddr,
     interface: Option<Ipv4Addr>,
@@ -129,7 +129,7 @@ pub async fn discover_at(
     let mut seen = HashSet::new();
     let mut buf = vec![0u8; 16 * 1024];
     while start.elapsed() < listen {
-        // Une sonde par seconde, la premiere tout de suite.
+        // One probe per second, the first right away.
         if sent < probes && start.elapsed() >= Duration::from_secs(u64::from(sent)) {
             socket.send_to(probe.as_bytes(), target).await?;
             sent += 1;

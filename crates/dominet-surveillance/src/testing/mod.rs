@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Faux MediaMTX pour les tests et la demonstration : l'API de configuration des paths, en memoire. Aucun flux, aucun contact reseau
-//! au-dela de `127.0.0.1`.
+//! Fake MediaMTX for the tests and the demonstration: the paths configuration API, in memory. No stream, no network contact
+//! beyond `127.0.0.1`.
 
 pub mod discovery;
 pub mod night;
@@ -19,7 +19,7 @@ use serde_json::{Value, json};
 #[derive(Default)]
 struct Inner {
     paths: BTreeMap<String, Value>,
-    /// Si present, toutes les requetes recoivent ce statut (panne simulee).
+    /// If present, every request receives this status (simulated outage).
     fail_with: Option<u16>,
     requests: Vec<String>,
 }
@@ -50,7 +50,7 @@ fn err(status: u16, msg: &str) -> Reply {
     )
 }
 
-/// Enregistre la requete ; renvoie la panne simulee, s'il y en a une.
+/// Records the request; returns the simulated outage, if there is one.
 fn enter(s: &Shared, line: String) -> Option<Reply> {
     let mut g = s.lock().unwrap();
     g.requests.push(line);
@@ -60,7 +60,7 @@ fn enter(s: &Shared, line: String) -> Option<Reply> {
 impl FakeMediaMtx {
     pub async fn start() -> Self {
         let inner: Shared = Shared::default();
-        // Comme la configuration de dev : un path joker deja la, qui n'est pas une camera.
+        // Like the dev configuration: a wildcard path already there, which is not a camera.
         inner
             .lock()
             .unwrap()
@@ -85,7 +85,7 @@ impl FakeMediaMtx {
         format!("http://{}", self.addr)
     }
 
-    /// Configuration actuelle d'un path.
+    /// Current configuration of a path.
     #[must_use]
     pub fn path(&self, name: &str) -> Option<Value> {
         self.inner.lock().unwrap().paths.get(name).cloned()
@@ -96,7 +96,7 @@ impl FakeMediaMtx {
         self.inner.lock().unwrap().paths.keys().cloned().collect()
     }
 
-    /// Ajoute un path comme si un autre outil l'avait cree.
+    /// Adds a path as if another tool had created it.
     pub fn insert(&self, name: &str, conf: Value) {
         self.inner
             .lock()
@@ -105,12 +105,12 @@ impl FakeMediaMtx {
             .insert(name.into(), with_name(name, conf));
     }
 
-    /// `Some(code)` : toute requete recoit ce code ; `None` : retour a la normale.
+    /// `Some(code)`: every request receives this code; `None`: back to normal.
     pub fn fail_with(&self, code: Option<u16>) {
         self.inner.lock().unwrap().fail_with = code;
     }
 
-    /// Requetes recues (`METHODE chemin`), dans l'ordre.
+    /// Requests received (`METHOD path`), in order.
     #[must_use]
     pub fn requests(&self) -> Vec<String> {
         self.inner.lock().unwrap().requests.clone()
@@ -174,7 +174,7 @@ async fn replace(
         return r;
     }
     let mut g = s.lock().unwrap();
-    // Comme le vrai MediaMTX : `replace` cree le path s'il manque.
+    // Like the real MediaMTX: `replace` creates the path if it is missing.
     g.paths.insert(name.clone(), with_name(&name, conf));
     ok()
 }

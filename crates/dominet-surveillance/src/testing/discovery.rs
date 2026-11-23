@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Faux repondeur WS-Discovery : repond en unicast a toute sonde recue (la CI ne fait jamais de multicast).
+//! Fake WS-Discovery responder: answers every received probe in unicast (CI never does multicast).
 
 use std::net::SocketAddr;
 
@@ -11,7 +11,7 @@ pub struct FakeResponders {
 }
 
 impl FakeResponders {
-    /// Ecoute sur la boucle locale et repond a chaque sonde avec chacune des `matches` (`(nom, materiel, xaddr)`).
+    /// Listens on the loopback interface and answers each probe with each of the `matches` (`(name, hardware, xaddr)`).
     pub async fn start(matches: Vec<(String, String, String)>) -> Self {
         let socket = UdpSocket::bind("127.0.0.1:0").await.unwrap();
         let addr = socket.local_addr().unwrap();

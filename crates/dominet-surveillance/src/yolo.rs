@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Detection d'objets (R6 lot 8, ADR 0009 et 0050) : `YOLOv8n` via ONNX Runtime (`ort`), meme contrat que `OnnxBackend` de la reference.
+//! Object detection (R6 lot 8, ADR 0009 and 0050): `YOLOv8n` through ONNX Runtime (`ort`), same contract as the reference's `OnnxBackend`.
 //!
-//! Entree 640 x 640 NCHW `float32` RGB / 255 (redimensionnement direct, sans conserver le rapport d'aspect), sortie `[1, 84, 8400]`
-//! (`cx, cy, w, h` puis 80 scores de classes), score >= 0,10 avant la suppression des non-maxima (`IoU` 0,45, sans distinction de classe).
-//! Le seuil de confiance de l'utilisateur et le filtre de classes sont appliques par l'appelant, comme dans la reference.
+//! Input 640 x 640 NCHW `float32` RGB / 255 (direct resizing, without keeping the aspect ratio), output `[1, 84, 8400]`
+//! (`cx, cy, w, h` then 80 class scores), score >= 0.10 before non-maximum suppression (`IoU` 0.45, regardless of class).
+//! The user's confidence threshold and the class filter are applied by the caller, as in the reference.
 //!
-//! Un **pool de sessions a un seul fil de calcul chacune** (ADR 0009 : le plus efficace par coeur) ; `detect_*` bloque, on l'appelle depuis
+//! A **pool of sessions with a single compute thread each** (ADR 0009: the most efficient per core); `detect_*` blocks, call it from
 //! `spawn_blocking`.
 
 use std::path::Path;
@@ -19,12 +19,12 @@ use ort::value::TensorRef;
 
 const SIZE: usize = 640;
 const SIZE_PX: u32 = 640;
-/// Score minimal avant la suppression des non-maxima.
+/// Minimum score before non-maximum suppression.
 pub const SCORE_THRESHOLD: f32 = 0.10;
-/// `IoU` au-dela duquel une boite est supprimee.
+/// `IoU` beyond which a box is suppressed.
 pub const NMS_IOU: f32 = 0.45;
 
-/// Les 80 classes COCO, dans l'ordre de l'entrainement de `YOLOv8n`.
+/// The 80 COCO classes, in `YOLOv8n`'s training order.
 pub const COCO_CLASSES: [&str; 80] = [
     "person",
     "bicycle",
@@ -118,7 +118,7 @@ pub enum YoloError {
     Inference(String),
 }
 
-/// Un objet reconnu : classe COCO, score, boite `[x1, y1, x2, y2]` en pixels de l'image d'origine.
+/// A recognised object: COCO class, score, box `[x1, y1, x2, y2]` in pixels of the original image.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Det {
     pub class: &'static str,
@@ -126,8 +126,8 @@ pub struct Det {
     pub bbox: [f32; 4],
 }
 
-/// Redimensionnement bilineaire a centres de pixels (l'`INTER_LINEAR` d'`OpenCV`, sans lissage anticrenelage) directement vers un tenseur
-/// NCHW normalise.
+/// Bilinear resizing with pixel centres (`OpenCV`'s `INTER_LINEAR`, without anti-aliasing) directly into a normalised
+/// NCHW tensor.
 #[must_use]
 #[allow(
     clippy::cast_precision_loss,
@@ -163,7 +163,7 @@ pub fn preprocess(img: &RgbImage) -> Array4<f32> {
     out
 }
 
-/// Intersection sur union de deux boites `[x1, y1, x2, y2]`.
+/// Intersection over union of two boxes `[x1, y1, x2, y2]`.
 #[must_use]
 pub fn iou(a: &[f32; 4], b: &[f32; 4]) -> f32 {
     let (ix1, iy1, ix2, iy2) = (
@@ -177,7 +177,7 @@ pub fn iou(a: &[f32; 4], b: &[f32; 4]) -> f32 {
     inter / (aa + ab - inter).max(1e-9)
 }
 
-/// Sortie du reseau `[1, 84, 8400]` -> detections (score >= 0,10, `NMS` `IoU` 0,45), boites ramenees a l'image `orig_w` x `orig_h`.
+/// Network output `[1, 84, 8400]` -> detections (score >= 0.10, `NMS` `IoU` 0.45), boxes scaled back to the `orig_w` x `orig_h` image.
 #[must_use]
 #[allow(clippy::cast_precision_loss, reason = "dimensions d'image << 2^24")]
 pub fn postprocess(out: &ndarray::ArrayViewD<'_, f32>, orig_w: u32, orig_h: u32) -> Vec<Det> {
@@ -226,11 +226,11 @@ pub fn postprocess(out: &ndarray::ArrayViewD<'_, f32>, orig_w: u32, orig_h: u32)
     kept
 }
 
-/// Dessine les boites sur une copie du JPEG (traits verts de 2 points, comme la reference ; **sans texte** : aucune police embarquee) et
-/// renvoie un nouveau JPEG.
+/// Draws the boxes on a copy of the JPEG (green 2-point lines, like the reference; **without text**: no embedded font) and
+/// returns a new JPEG.
 ///
 /// # Errors
-/// JPEG illisible.
+/// Unreadable JPEG.
 pub fn annotate(jpeg: &[u8], detections: &[Det]) -> Result<Vec<u8>, YoloError> {
     let mut img = image::load_from_memory_with_format(jpeg, image::ImageFormat::Jpeg)
         .map_err(|e| YoloError::Image(e.to_string()))?
@@ -266,7 +266,7 @@ pub fn annotate(jpeg: &[u8], detections: &[Det]) -> Result<Vec<u8>, YoloError> {
     Ok(out)
 }
 
-/// Pool de sessions ONNX Runtime a un fil de calcul chacune.
+/// Pool of ONNX Runtime sessions with one compute thread each.
 pub struct YoloDetector {
     sessions: Vec<Mutex<Session>>,
     input_name: String,
@@ -281,15 +281,15 @@ impl std::fmt::Debug for YoloDetector {
     }
 }
 
-/// ONNX Runtime n'admet qu'un environnement par processus : le premier chargement le cree, les suivants (autres detecteurs, tests en
-/// parallele) le reutilisent. Sans cela deux chargements simultanes echouaient (« Only one instance of `LoggingManager` »).
+/// ONNX Runtime admits one environment per process: the first load creates it, the following ones (other detectors, parallel tests)
+/// reuse it. Without this, two simultaneous loads failed ("Only one instance of `LoggingManager`").
 static ENVIRONMENT: OnceLock<Result<ort::environment::Environment, String>> = OnceLock::new();
 
 impl YoloDetector {
-    /// Charge le modele dans `workers` sessions (au moins une) et les echauffe d'une passe a vide.
+    /// Loads the model into `workers` sessions (at least one) and warms them up with an empty pass.
     ///
     /// # Errors
-    /// Modele absent ou invalide.
+    /// Model missing or invalid.
     pub fn load(model: &Path, workers: usize) -> Result<Self, YoloError> {
         let fail = |e: &dyn std::fmt::Display| YoloError::Model {
             path: model.display().to_string(),
@@ -327,16 +327,16 @@ impl YoloDetector {
         Ok(detector)
     }
 
-    /// Nombre de sessions.
+    /// Number of sessions.
     #[must_use]
     pub fn workers(&self) -> usize {
         self.sessions.len()
     }
 
-    /// Detecte sur un JPEG.
+    /// Detects on a JPEG.
     ///
     /// # Errors
-    /// JPEG illisible ou echec de l'inference.
+    /// Unreadable JPEG or inference failure.
     pub fn detect_jpeg(&self, jpeg: &[u8]) -> Result<Vec<Det>, YoloError> {
         let img = image::load_from_memory_with_format(jpeg, image::ImageFormat::Jpeg)
             .map_err(|e| YoloError::Image(e.to_string()))?
@@ -344,13 +344,13 @@ impl YoloDetector {
         self.detect_rgb(&img)
     }
 
-    /// Detecte sur une image RGB.
+    /// Detects on an RGB image.
     ///
     /// # Errors
-    /// Echec de l'inference.
+    /// Inference failure.
     pub fn detect_rgb(&self, img: &RgbImage) -> Result<Vec<Det>, YoloError> {
         let input = preprocess(img);
-        // Une session libre si possible, sinon on attend la suivante a tour de role.
+        // A free session if possible, otherwise we wait for the next one in turn.
         let start = self.next.fetch_add(1, Ordering::Relaxed);
         let n = self.sessions.len();
         let mut guard = (0..n)
@@ -401,7 +401,7 @@ mod tests {
         let found = postprocess(&out.view().into_dyn(), 1280, 360);
         assert_eq!(found.len(), 1);
         assert_eq!(found[0].class, "person");
-        // x : 640 -> 1280 (x2), y : 640 -> 360 (x0,5625).
+        // x: 640 -> 1280 (x2), y: 640 -> 360 (x0.5625).
         let b = found[0].bbox;
         assert!((b[0] - 540.0).abs() < 0.01, "{b:?}");
         assert!(

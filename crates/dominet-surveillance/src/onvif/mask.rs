@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Masquage des secrets dans les URL et messages qui viennent d'une camera.
+//! Masking of secrets in the URLs and messages that come from a camera.
 
-/// Cache : le mot de passe d'une URL `schema://utilisateur:motdepasse@hote`, la valeur de tout `password=`/`pass=`/`pwd=`
-/// (jusqu'a `&`, `_`, `/`, un espace ou la fin), et chaque occurrence des secrets connus de `known`.
+/// Hides: the password of a `scheme://user:password@host` URL, the value of any `password=`/`pass=`/`pwd=`
+/// (up to `&`, `_`, `/`, a space or the end), and every occurrence of the secrets known from `known`.
 #[must_use]
 pub fn mask_secrets(text: &str, known: &[&str]) -> String {
     let mut out = text.to_string();
@@ -24,7 +24,7 @@ fn mask_userinfo(s: &str) -> String {
     let rest = &s[after..];
     let end = rest.find(['/', '?', ' ']).unwrap_or(rest.len());
     let authority = &rest[..end];
-    // Le dernier `@` separe l'identifiant de l'hote (un mot de passe peut contenir `@` non echappe).
+    // The last `@` separates the identifier from the host (a password may contain an unescaped `@`).
     let Some(at) = authority.rfind('@') else {
         return s.to_string();
     };
@@ -83,14 +83,14 @@ mod tests {
 
     #[test]
     fn known_secrets_are_hidden_even_when_they_contain_separators() {
-        // Un mot de passe qui contient `_` : le masquage par motif s'arreterait trop tot, le secret connu couvre le reste.
+        // A password that contains `_`: pattern masking would stop too early, the known secret covers the rest.
         let masked = mask_secrets(
             "rtsp://h/user=a_password=my_secret_x_channel=1",
             &["my_secret_x"],
         );
         assert!(!masked.contains("secret"), "{masked}");
         assert!(masked.contains("channel=1"));
-        // Un `@` dans le mot de passe d'une URL.
+        // An `@` in a URL's password.
         assert_eq!(
             mask_secrets("rtsp://u:p@ss@host/a", &[]),
             "rtsp://u:***@host/a"

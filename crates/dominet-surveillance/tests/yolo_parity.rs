@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Parite YOLO avec reference (R6 lot 8, ADR 0050) : les detections de `OnnxBackend` (ONNX Runtime + `OpenCV`) sur des
-//! images de reference sont retrouvees par `YoloDetector` (meme classe, `IoU` des boites > 0,9, ecart de score < 0,02 : criteres du spike 5).
+//! YOLO parity with the reference (R6 lot 8, ADR 0050): the detections of `OnnxBackend` (ONNX Runtime + `OpenCV`) on
+//! reference images are found again by `YoloDetector` (same class, box `IoU` > 0.9, score difference < 0.02: criteria of spike 5).
 //!
-//! Le modele n'est pas dans le depot : `make fetch-model`. Sans lui, ces tests le disent et ne verifient rien.
+//! The model is not in the repository: `make fetch-model`. Without it, these tests say so and check nothing.
 
 #![allow(
     clippy::cast_possible_truncation,
@@ -72,7 +72,7 @@ fn every_reference_detection_is_found_and_nothing_else_above_the_threshold() {
             expected.len(),
             got.len()
         );
-        // Rien en trop, a quelques detections limites pres (score proche du seuil de 0,10).
+        // Nothing extra, give or take a few borderline detections (score close to the 0.10 threshold).
         assert!(
             got.len() <= expected.len() + 1,
             "{name} : {} detections de plus que reference",
@@ -91,7 +91,7 @@ fn an_image_without_objects_gives_nothing_and_workers_share_the_load() {
     let empty = std::fs::read(fixtures().join("empty.jpg")).unwrap();
     let bus = std::fs::read(fixtures().join("bus.jpg")).unwrap();
     assert_eq!(detector.detect_jpeg(&empty).unwrap().len(), 0);
-    // Plusieurs appels simultanes : tous aboutissent, avec le meme resultat.
+    // Several simultaneous calls: all succeed, with the same result.
     let handles: Vec<_> = (0..6)
         .map(|_| {
             let (d, b) = (detector.clone(), bus.clone());

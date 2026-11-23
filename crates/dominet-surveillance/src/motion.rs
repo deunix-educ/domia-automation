@@ -1,22 +1,22 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Detection de mouvement (R6 lot 8, ADR 0050) : **le meme algorithme que reference** (`detect_motion_camera`, `OpenCV`) en Rust pur.
+//! Motion detection (R6 lot 8, ADR 0050): **the same algorithm as the reference** (`detect_motion_camera`, `OpenCV`) in pure Rust.
 //!
-//! Deux images (la premiere et la derniere d'une fenetre) sont passees en niveaux de gris, floutees (noyau gaussien 21 x 21, ecart type
-//! derive de la taille comme `GaussianBlur(sigma = 0)`), soustraites en valeur absolue, seuillees (> 25), **ouvertes** (erosion puis
-//! dilatation par un carre de 5 x 5), et le rapport de pixels restants au total est compare a `MOTION_THRESHOLD`. Les details d'`OpenCV`
-//! sont reproduits : conversion en gris en entiers (`0,299 R + 0,587 G + 0,114 B` a 14 bits), bords du flou en reflexion
-//! (`BORDER_REFLECT_101`), bords de l'ouverture neutres. Le flou d'`OpenCV` sur images 8 bits utilise un calcul en virgule fixe que l'on
-//! ne reproduit pas bit a bit : l'ecart au rapport d'`OpenCV` est mesure par un test de parite (tolerance dans l'ADR).
+//! Two images (the first and the last of a window) are converted to greyscale, blurred (21 x 21 Gaussian kernel, standard deviation
+//! derived from the size like `GaussianBlur(sigma = 0)`), subtracted in absolute value, thresholded (> 25), **opened** (erosion then
+//! dilation by a 5 x 5 square), and the ratio of remaining pixels to the total is compared with `MOTION_THRESHOLD`. The `OpenCV` details
+//! are reproduced: integer greyscale conversion (`0.299 R + 0.587 G + 0.114 B` at 14 bits), blur borders by reflection
+//! (`BORDER_REFLECT_101`), neutral borders for the opening. `OpenCV`'s blur on 8-bit images uses a fixed-point computation that we
+//! do not reproduce bit for bit: the difference with `OpenCV`'s ratio is measured by a parity test (tolerance in the ADR).
 
 use std::sync::Arc;
 
 use image::GenericImageView;
 
-/// Taille du noyau de flou (Reference : `(21, 21)`).
+/// Size of the blur kernel (Reference: `(21, 21)`).
 pub const BLUR_KERNEL: usize = 21;
-/// Seuil de difference de niveau de gris (Reference : 25).
+/// Grey-level difference threshold (Reference: 25).
 pub const DIFF_THRESHOLD: u8 = 25;
-/// Cote du carre d'ouverture (Reference : `np.ones((5, 5))`).
+/// Side of the opening square (Reference: `np.ones((5, 5))`).
 pub const OPEN_KERNEL: usize = 5;
 
 #[derive(Debug, thiserror::Error)]
@@ -27,7 +27,7 @@ pub enum MotionError {
     SizeMismatch,
 }
 
-/// Image en niveaux de gris, une ligne apres l'autre.
+/// Greyscale image, one row after another.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Gray {
     pub width: usize,
@@ -35,10 +35,10 @@ pub struct Gray {
     pub data: Vec<u8>,
 }
 
-/// Decode un JPEG et le passe en niveaux de gris comme `cv2.cvtColor(..., COLOR_BGR2GRAY)`.
+/// Decodes a JPEG and converts it to greyscale like `cv2.cvtColor(..., COLOR_BGR2GRAY)`.
 ///
 /// # Errors
-/// JPEG invalide.
+/// Invalid JPEG.
 pub fn decode_gray(jpeg: &[u8]) -> Result<Gray, MotionError> {
     let img = image::load_from_memory_with_format(jpeg, image::ImageFormat::Jpeg)
         .map_err(|e| MotionError::Decode(e.to_string()))?;
@@ -51,7 +51,7 @@ pub fn decode_gray(jpeg: &[u8]) -> Result<Gray, MotionError> {
     ))
 }
 
-/// Gris entier d'`OpenCV` : `(R * 4899 + G * 9617 + B * 1868 + 8192) >> 14`.
+/// `OpenCV` integer grey: `(R * 4899 + G * 9617 + B * 1868 + 8192) >> 14`.
 #[must_use]
 pub fn gray_from_rgb(rgb: &[u8], width: usize, height: usize) -> Gray {
     let data = rgb
@@ -71,7 +71,7 @@ pub fn gray_from_rgb(rgb: &[u8], width: usize, height: usize) -> Gray {
     }
 }
 
-/// Noyau gaussien normalise de `ksize` points, ecart type de `GaussianBlur(sigma = 0)` : `0,3 * ((k - 1) / 2 - 1) + 0,8`.
+/// Normalised Gaussian kernel of `ksize` points, standard deviation of `GaussianBlur(sigma = 0)`: `0.3 * ((k - 1) / 2 - 1) + 0.8`.
 #[must_use]
 pub fn gaussian_kernel(ksize: usize) -> Vec<f32> {
     #[allow(clippy::cast_precision_loss, reason = "ksize <= 21")]
@@ -94,7 +94,7 @@ pub fn gaussian_kernel(ksize: usize) -> Vec<f32> {
     kernel
 }
 
-/// Reflexion sans repetition du bord (`BORDER_REFLECT_101`) : `-1 -> 1`, `n -> n - 2`.
+/// Reflection without repeating the edge (`BORDER_REFLECT_101`): `-1 -> 1`, `n -> n - 2`.
 fn reflect101(i: isize, n: usize) -> usize {
     if n == 1 {
         return 0;
@@ -108,7 +108,7 @@ fn reflect101(i: isize, n: usize) -> usize {
     usize::try_from(i).unwrap_or(0)
 }
 
-/// Flou gaussien separable, bords en reflexion, arrondi a l'entier.
+/// Separable Gaussian blur, edges by reflection, rounded to the integer.
 #[must_use]
 pub fn gaussian_blur(src: &Gray, ksize: usize) -> Gray {
     let (w, h) = (src.width, src.height);
@@ -158,8 +158,8 @@ pub fn gaussian_blur(src: &Gray, ksize: usize) -> Gray {
     }
 }
 
-/// Erosion (`min`) ou dilatation (`max`) par un carre de `side` points, separable ; les points hors de l'image sont ignores
-/// (valeur par defaut d'`OpenCV` pour la morphologie).
+/// Erosion (`min`) or dilation (`max`) by a square of `side` points, separable; points outside the image are ignored
+/// (`OpenCV`'s default value for morphology).
 fn morph(src: &[u8], w: usize, h: usize, side: usize, erode: bool) -> Vec<u8> {
     let half = side / 2;
     let pick = |a: u8, b: u8| if erode { a.min(b) } else { a.max(b) };
@@ -185,10 +185,10 @@ fn morph(src: &[u8], w: usize, h: usize, side: usize, erode: bool) -> Vec<u8> {
     out
 }
 
-/// Rapport de pixels en mouvement entre deux images deja floutees : seuil, ouverture, comptage.
+/// Ratio of moving pixels between two already blurred images: threshold, opening, counting.
 ///
 /// # Errors
-/// Les deux images n'ont pas la meme taille.
+/// The two images do not have the same size.
 pub fn motion_ratio_of_blurred(a: &Gray, b: &Gray) -> Result<f64, MotionError> {
     if (a.width, a.height) != (b.width, b.height) {
         return Err(MotionError::SizeMismatch);
@@ -216,17 +216,17 @@ pub fn motion_ratio_of_blurred(a: &Gray, b: &Gray) -> Result<f64, MotionError> {
     Ok(moving as f64 / opened.len() as f64)
 }
 
-/// Le rapport de mouvement entre deux JPEG (premiere et derniere image d'une fenetre), comme `detect_motion_camera`.
+/// The motion ratio between two JPEGs (first and last image of a window), like `detect_motion_camera`.
 ///
 /// # Errors
-/// JPEG illisible ou de tailles differentes.
+/// Unreadable JPEG or different sizes.
 pub fn motion_ratio(first: &[u8], last: &[u8]) -> Result<f64, MotionError> {
     let a = gaussian_blur(&decode_gray(first)?, BLUR_KERNEL);
     let b = gaussian_blur(&decode_gray(last)?, BLUR_KERNEL);
     motion_ratio_of_blurred(&a, &b)
 }
 
-/// Une image decodee partageable entre taches (la fenetre de la camera garde des JPEG, pas des images brutes).
+/// A decoded image shareable between tasks (the camera's window keeps JPEGs, not raw images).
 pub type SharedJpeg = Arc<Vec<u8>>;
 
 #[cfg(test)]
@@ -252,7 +252,7 @@ mod tests {
         let k = gaussian_kernel(21);
         assert!((k.iter().sum::<f32>() - 1.0).abs() < 1e-5);
         assert!((k[0] - k[20]).abs() < 1e-7 && k[10] > k[9]);
-        // sigma = 3,5 : le centre vaut 1 / (sigma * sqrt(2 pi)) ~ 0,114.
+        // sigma = 3.5: the centre is 1 / (sigma * sqrt(2 pi)) ~ 0.114.
         assert!((k[10] - 0.1140).abs() < 0.001, "{}", k[10]);
     }
 
@@ -271,7 +271,7 @@ mod tests {
         let mut spike = flat(41, 41, 0);
         spike.data[20 * 41 + 20] = 255;
         let blurred = gaussian_blur(&spike, 21);
-        // 255 * 0,114 * 0,114 ~ 3,3.
+        // 255 * 0.114 * 0.114 ~ 3.3.
         assert!((2..=4).contains(&blurred.data[20 * 41 + 20]));
         assert_eq!(blurred.data[0], 0);
     }
@@ -294,13 +294,13 @@ mod tests {
     fn the_opening_removes_specks_smaller_than_the_kernel() {
         let a = flat(40, 40, 0);
         let mut b = flat(40, 40, 0);
-        // Un point isole et une ligne fine : disparaissent a l'ouverture 5 x 5.
+        // An isolated point and a thin line: disappear on the 5 x 5 opening.
         b.data[10 * 40 + 10] = 255;
         for x in 0..40 {
             b.data[30 * 40 + x] = 255;
         }
         assert!(motion_ratio_of_blurred(&a, &b).unwrap().abs() < f64::EPSILON);
-        // Un carre de 6 x 6 survit entierement.
+        // A 6 x 6 square survives entirely.
         for y in 5..11 {
             for x in 20..26 {
                 b.data[y * 40 + x] = 255;

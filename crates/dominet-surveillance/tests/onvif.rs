@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Client ONVIF contre le faux serveur qui rejoue les reponses des quatre familles de cameras (R6 lot 3) et verifie le digest
-//! WS-Security comme une vraie camera. Aucun contact reseau hors boucle locale.
+//! ONVIF client against the fake server that replays the responses of the four camera families (R6 lot 3) and checks the
+//! WS-Security digest like a real camera. No network contact outside the loopback.
 
 use std::net::{IpAddr, Ipv4Addr};
 use std::time::Duration;
@@ -103,15 +103,15 @@ async fn profiles_carry_resolution_codec_and_ptz() {
 
 #[tokio::test]
 async fn the_clock_of_the_camera_is_corrected_for_the_digest() {
-    // Horloge de la camera en avance d'une heure : une `Created` a notre heure serait refusee.
+    // Camera clock one hour ahead: a `Created` at our time would be refused.
     let (fake, c) = client(Family::Thingino).await;
     fake.set_clock_offset(3600);
     c.inspect().await.expect("la correction d'horloge suffit");
-    // Camera en retard.
+    // Camera behind.
     let (fake, c) = client(Family::Vatilon).await;
     fake.set_clock_offset(-7200);
     c.inspect().await.unwrap();
-    // Le digest n'est verifie qu'apres lecture de l'heure : la premiere requete est sans authentification.
+    // The digest is only checked after reading the time: the first request is without authentication.
     assert_eq!(fake.calls()[0], "GetSystemDateAndTime");
 }
 
@@ -133,7 +133,7 @@ async fn a_wrong_password_is_reported_as_not_authorized_in_both_refusal_styles()
         anonymous.device_information().await,
         Err(OnvifError::NotAuthorized)
     ));
-    // La bonne reponse passe.
+    // The right response goes through.
     let good = OnvifClient::new("127.0.0.1", fake.port(), Some(creds(PASS))).unwrap();
     assert!(good.device_information().await.is_ok());
 }
@@ -166,7 +166,7 @@ async fn services_always_use_the_registered_host_even_if_the_camera_announces_an
         media.starts_with(&format!("http://127.0.0.1:{}/", fake.port())),
         "{media}"
     );
-    // Et l'appel suivant aboutit : on n'a pas ete envoye vers 10.99.99.99.
+    // And the next call succeeds: we were not sent to 10.99.99.99.
     assert!(c.profiles(&media).await.is_ok());
 }
 
@@ -182,13 +182,13 @@ async fn an_unreachable_camera_is_an_error_not_a_hang() {
 #[tokio::test]
 async fn the_onvif_port_is_found_among_the_candidates() {
     let fake = FakeOnvif::start(Family::Nvt, USER, PASS).await;
-    // Les ports fermes sont ignores ; seul celui qui parle ONVIF est retenu.
+    // Closed ports are ignored; only the one that speaks ONVIF is kept.
     assert_eq!(
         probe_port("127.0.0.1", &[1, 2, fake.port(), 3]).await,
         Some(fake.port())
     );
     assert_eq!(probe_port("127.0.0.1", &[1, 2]).await, None);
-    // Un port ouvert qui ne parle pas ONVIF ne suffit pas.
+    // An open port that does not speak ONVIF is not enough.
     let silent = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
     let port = silent.local_addr().unwrap().port();
     tokio::spawn(async move {
@@ -249,7 +249,7 @@ async fn discovery_without_any_answer_ends_empty_after_the_listening_time() {
     );
 }
 
-// ------------------------------------------------------------------ PTZ et imagerie (R6 lot 5)
+// ------------------------------------------------------------------ PTZ and imaging (R6 lot 5)
 
 use dominet_surveillance::onvif::imaging::IrCut;
 use dominet_surveillance::onvif::ptz::PtzPosition;
@@ -269,7 +269,7 @@ async fn continuous_moves_and_stop_reach_the_camera_with_only_the_axes_in_motion
         assert_eq!(fake.ptz_state().velocity, None);
         ptz.continuous_move(0.0, 0.0, 1.0).await.unwrap();
         assert_eq!(fake.ptz_state().velocity, Some((0.0, 0.0, 1.0)));
-        // Des valeurs hors limites sont ramenees dans -1..1 ; rien d'ordonne = un arret.
+        // Out-of-range values are brought back into -1..1; nothing ordered = a stop.
         ptz.continuous_move(9.0, -9.0, 0.0).await.unwrap();
         assert_eq!(fake.ptz_state().velocity, Some((1.0, -1.0, 0.0)));
         ptz.continuous_move(0.0, 0.0, 0.0).await.unwrap();
@@ -306,7 +306,7 @@ async fn presets_are_set_listed_gone_to_and_removed() {
         "le nom est echappe puis relu tel quel"
     );
 
-    // GotoPreset attend la fin du mouvement (la camera repond MOVING deux fois).
+    // GotoPreset waits for the movement to end (the camera answers MOVING twice).
     let before = fake.calls().iter().filter(|c| *c == "GetStatus").count();
     ptz.goto_preset("preset_1").await.unwrap();
     let polls = fake.calls().iter().filter(|c| *c == "GetStatus").count() - before;
@@ -390,7 +390,7 @@ async fn the_ir_cut_toggles_like_reference_and_keeps_every_other_imaging_setting
 #[tokio::test]
 async fn the_light_toggles_the_brightness_between_zero_and_eighty_like_reference() {
     let (fake, c) = client(Family::Vatilon).await;
-    // 35 (< 40) -> 80 ; puis 80 -> 0 ; puis 0 (lu comme 50 par reference) -> 0.
+    // 35 (< 40) -> 80; then 80 -> 0; then 0 (read as 50 by the reference) -> 0.
     assert!((c.toggle_light_brightness().await.unwrap() - 80.0).abs() < f64::EPSILON);
     assert_eq!(fake.imaging_value("Brightness").as_deref(), Some("80"));
     assert!(c.toggle_light_brightness().await.unwrap().abs() < f64::EPSILON);

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! `FrameSource` avec un vrai `ffmpeg` et des sources `lavfi` (aucun reseau, aucune camera) : cadence, largeur, supervision, repli. Les tests
-//! sont ignores (avec un message) sur une machine sans `ffmpeg`.
+//! `FrameSource` with a real `ffmpeg` and `lavfi` sources (no network, no camera): rate, width, supervision, fallback. The tests
+//! are ignored (with a message) on a machine without `ffmpeg`.
 
 use std::time::Duration;
 
@@ -70,7 +70,7 @@ async fn frames_come_at_the_asked_rate_and_width_as_whole_jpegs() {
         frames.windows(2).all(|w| w[1].seq > w[0].seq),
         "numeros croissants"
     );
-    // Cadence : 5 images par seconde, a une demi-seconde pres sur 6 images.
+    // Rate: 5 images per second, to within half a second over 6 images.
     let span = (frames[5].at - frames[0].at)
         .to_std()
         .unwrap()
@@ -105,7 +105,7 @@ async fn next_after_waits_for_a_fresher_frame_and_gives_up_after_the_timeout() {
         .await
         .unwrap();
     assert!(next.seq > first.seq);
-    // Une source qui ne donne rien : l'attente se termine.
+    // A source that gives nothing: the wait ends.
     let mut dead = fast(vec!["-i".into(), "/nonexistent.mp4".into()]);
     dead.stall_after = Duration::from_secs(5);
     let silent = FfmpegFrameSource::spawn(dead);
@@ -122,7 +122,7 @@ async fn a_source_that_ends_is_restarted_and_the_numbering_goes_on() {
     if !have_ffmpeg() {
         return;
     }
-    // La source s'arrete apres une seconde : le superviseur la relance.
+    // The source stops after one second: the supervisor restarts it.
     let source = FfmpegFrameSource::spawn(fast(lavfi("320x180", 10, &["-t", "1"])));
     let first = source.next_after(0, Duration::from_secs(15)).await.unwrap();
     let mut later = first.seq;
@@ -148,7 +148,7 @@ async fn a_source_that_ends_is_restarted_and_the_numbering_goes_on() {
 
 #[tokio::test]
 async fn a_failing_input_is_retried_with_a_reason_and_a_missing_binary_is_explained() {
-    // Entree introuvable : ffmpeg s'arrete, la cause est gardee, les tentatives continuent.
+    // Input not found: ffmpeg stops, the cause is kept, the attempts continue.
     let mut cfg = fast(vec!["-i".into(), "/nonexistent.mp4".into()]);
     cfg.ffmpeg = "ffmpeg".into();
     if have_ffmpeg() {
@@ -159,7 +159,7 @@ async fn a_failing_input_is_retried_with_a_reason_and_a_missing_binary_is_explai
         assert!(!st.last_error.is_empty(), "{st:?}");
         assert!(source.latest().is_none());
     }
-    // Pas de binaire du tout.
+    // No binary at all.
     let mut missing = fast(vec!["-i".into(), "x".into()]);
     missing.ffmpeg = "/nonexistent/ffmpeg".into();
     let source = FfmpegFrameSource::spawn(missing);
@@ -189,7 +189,7 @@ async fn dropping_the_source_stops_ffmpeg() {
     panic!("ffmpeg tourne encore");
 }
 
-/// Nombre de processus `ffmpeg` qui portent une source `lavfi testsrc` (un format que seul ce test emploie : les autres tests tournent en meme temps).
+/// Number of `ffmpeg` processes that carry a `lavfi testsrc` source (a format that only this test uses: the other tests run at the same time).
 fn ffmpeg_count() -> usize {
     let out = std::process::Command::new("pgrep")
         .args(["-fc", "ffmpeg.*322x182"])

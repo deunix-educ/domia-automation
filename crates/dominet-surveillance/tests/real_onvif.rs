@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Le client contre les **vraies cameras de test** du reseau local (lecture seule : identite, capacites, profils, URL de flux masquee).
-//! Ignore par defaut : demande `deploy/.env.cameras` (git-ignore, jamais affiche). Les mots de passe ne sont ni imprimes ni journalises.
-//! A lancer a la main : `cargo test -p dominet-surveillance --test real_onvif -- --ignored --nocapture`.
+//! The client against the **real test cameras** of the local network (read-only: identity, capabilities, profiles, masked stream URL).
+//! Ignored by default: needs `deploy/.env.cameras` (git-ignored, never displayed). Passwords are neither printed nor logged.
+//! To be run by hand: `cargo test -p dominet-surveillance --test real_onvif -- --ignored --nocapture`.
 
 use dominet_surveillance::onvif::{Credentials, ONVIF_PORTS, OnvifClient, probe_port};
 
-/// `CAM_<NOM>_HOST` + identifiants lus dans `CAM_<NOM>_HTTP` / `_RTSP` (`schema://utilisateur:motdepasse@hote`).
-/// (nom, hote, couples identifiant / mot de passe)
+/// `CAM_<NAME>_HOST` + credentials read from `CAM_<NAME>_HTTP` / `_RTSP` (`scheme://user:password@host`).
+/// (name, host, identifier / password pairs)
 type Camera = (String, String, Vec<(String, String)>);
 
 fn cameras() -> Vec<Camera> {

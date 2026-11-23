@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Faux serveur ONVIF : rejoue les reponses de `fixtures/onvif/<famille>/` et **verifie l'authentification WS-Security** comme une
-//! vraie camera (digest, utilisateur, `Created` proche de l'horloge de la camera). Aucun contact reseau au-dela de `127.0.0.1`.
+//! Fake ONVIF server: replays the responses of `fixtures/onvif/<family>/` and **checks the WS-Security authentication** like a
+//! real camera (digest, user, `Created` close to the camera's clock). No network contact beyond `127.0.0.1`.
 
 use std::fmt::Write;
 use std::net::SocketAddr;
@@ -16,16 +16,16 @@ use base64::engine::general_purpose::STANDARD as B64;
 use chrono::{DateTime, Datelike, Timelike, Utc};
 use sha1::{Digest, Sha1};
 
-/// Famille de camera dont on rejoue les reponses.
+/// Camera family whose responses are replayed.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Family {
-    /// Jooan Q3R / A2R : Device, Media, PTZ, Imaging.
+    /// Jooan Q3R / A2R: Device, Media, PTZ, Imaging.
     Thingino,
-    /// Ascam / Vatilon : chemins `/onvif/Media`.
+    /// Ascam / Vatilon: `/onvif/Media` paths.
     Vatilon,
-    /// Xiaomi sous Thingino : Device et Media seulement.
+    /// Xiaomi under Thingino: Device and Media only.
     Xiaomi,
-    /// « NVT IPC » : URL de flux avec le mot de passe en clair.
+    /// "NVT IPC": stream URL with the password in clear.
     Nvt,
 }
 
@@ -51,11 +51,11 @@ struct Inner {
     family: Family,
     user: String,
     password: String,
-    /// Avance (ou retard) de l'horloge de la camera, en secondes.
+    /// Advance (or delay) of the camera's clock, in seconds.
     clock_offset_s: i64,
-    /// Hote annonce dans les adresses de services (camera derriere une translation d'adresse).
+    /// Host announced in the service addresses (camera behind an address translation).
     announce_host: Option<String>,
-    /// Reponse d'authentification refusee : `true` = HTTP 401, `false` = `Fault` SOAP (HTTP 400, comme Thingino).
+    /// Response to a refused authentication: `true` = HTTP 401, `false` = SOAP `Fault` (HTTP 400, like Thingino).
     http_401: bool,
     calls: Vec<String>,
     port: u16,
@@ -63,17 +63,17 @@ struct Inner {
     imaging: Vec<(String, String)>,
 }
 
-/// Etat PTZ de la camera simulee.
+/// PTZ state of the simulated camera.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct PtzState {
     pub position: (f64, f64, f64),
-    /// Derniere vitesse ordonnee (`ContinuousMove`) : `None` apres un `Stop` ou au repos.
+    /// Last speed ordered (`ContinuousMove`): `None` after a `Stop` or at rest.
     pub velocity: Option<(f64, f64, f64)>,
-    /// `(jeton, nom, position)`.
+    /// `(token, name, position)`.
     pub presets: Vec<(String, String, (f64, f64, f64))>,
-    /// Nombre de `GetStatus` qui repondront encore `MOVING` (apres un `GotoPreset` ou un `AbsoluteMove`).
+    /// Number of `GetStatus` that will still answer `MOVING` (after a `GotoPreset` or an `AbsoluteMove`).
     pub moving_polls: u32,
-    /// Journal lisible des ordres recus (`ContinuousMove 0.5 0 0`, `Stop`, `GotoPreset preset_1`...).
+    /// Readable log of the orders received (`ContinuousMove 0.5 0 0`, `Stop`, `GotoPreset preset_1`...).
     pub log: Vec<String>,
     next_preset: u32,
 }
@@ -121,7 +121,7 @@ impl FakeOnvif {
         self.addr.port()
     }
 
-    /// L'horloge de la camera avance de `seconds` (negatif : retard).
+    /// The camera's clock advances by `seconds` (negative: delay).
     pub fn set_clock_offset(&self, seconds: i64) {
         self.inner.lock().unwrap().clock_offset_s = seconds;
     }
@@ -134,19 +134,19 @@ impl FakeOnvif {
         self.inner.lock().unwrap().http_401 = true;
     }
 
-    /// Etat PTZ actuel de la camera simulee.
+    /// Current PTZ state of the simulated camera.
     #[must_use]
     pub fn ptz_state(&self) -> PtzState {
         self.inner.lock().unwrap().ptz.clone()
     }
 
-    /// Reglages d'image actuels (`chemin`, `valeur`), dans l'ordre.
+    /// Current image settings (`path`, `value`), in order.
     #[must_use]
     pub fn imaging(&self) -> Vec<(String, String)> {
         self.inner.lock().unwrap().imaging.clone()
     }
 
-    /// Valeur d'un reglage d'image (`IrCutFilter`, `Brightness`...).
+    /// Value of an image setting (`IrCutFilter`, `Brightness`...).
     #[must_use]
     pub fn imaging_value(&self, name: &str) -> Option<String> {
         self.imaging()
@@ -155,7 +155,7 @@ impl FakeOnvif {
             .map(|(_, v)| v)
     }
 
-    /// Appels recus, dans l'ordre : `Operation` (ou `Operation!` si l'authentification a ete refusee).
+    /// Calls received, in order: `Operation` (or `Operation!` if the authentication was refused).
     #[must_use]
     pub fn calls(&self) -> Vec<String> {
         self.inner.lock().unwrap().calls.clone()
@@ -187,7 +187,7 @@ fn element_text(doc: &roxmltree::Document, local: &str) -> Option<String> {
         .map(|t| t.trim().to_string())
 }
 
-/// Le digest WS-Security est-il valide pour cette camera ?
+/// Is the WS-Security digest valid for this camera?
 fn authenticated(doc: &roxmltree::Document, inner: &Inner, now: DateTime<Utc>) -> bool {
     let (Some(user), Some(digest), Some(nonce), Some(created)) = (
         element_text(doc, "Username"),
@@ -261,7 +261,7 @@ async fn handle(
     soap(StatusCode::OK, out)
 }
 
-// ------------------------------------------------------------------ PTZ et imagerie (etat en memoire)
+// ------------------------------------------------------------------ PTZ and imaging (in-memory state)
 
 fn envelope(family: Family, body: &str) -> String {
     let p = if family == Family::Nvt {
@@ -303,7 +303,7 @@ fn axes(doc: &roxmltree::Document, parent: &str) -> (f64, f64, f64) {
     )
 }
 
-/// Les operations PTZ et d'imagerie, qui dependent de l'etat de la camera.
+/// The PTZ and imaging operations, which depend on the camera's state.
 #[allow(clippy::too_many_lines, reason = "une operation ONVIF par branche")]
 fn dynamic(g: &mut Inner, op: &str, doc: &roxmltree::Document) -> Option<String> {
     let family = g.family;
@@ -324,7 +324,7 @@ fn dynamic(g: &mut Inner, op: &str, doc: &roxmltree::Document) -> Option<String>
         "GetStatus" => {
             let moving = g.ptz.moving_polls > 0 || g.ptz.velocity.is_some();
             g.ptz.moving_polls = g.ptz.moving_polls.saturating_sub(1);
-            // La camera NVT repond toujours 0, 0 (aucune position lisible, ADR 0008).
+            // The NVT camera always answers 0, 0 (no readable position, ADR 0008).
             let (pan, tilt, zoom) = if family == Family::Nvt {
                 (0.0, 0.0, 0.0)
             } else {
@@ -353,7 +353,7 @@ fn dynamic(g: &mut Inner, op: &str, doc: &roxmltree::Document) -> Option<String>
             let name = child_text(doc, "SetPreset", "PresetName").unwrap_or_default();
             let at = g.ptz.position;
             let token = if let Some(t) = child_text(doc, "SetPreset", "PresetToken") {
-                // Emplacement donne : il est ecrase.
+                // Given slot: it is overwritten.
                 g.ptz.presets.retain(|(p, _, _)| *p != t);
                 t
             } else {
@@ -425,7 +425,7 @@ fn dynamic(g: &mut Inner, op: &str, doc: &roxmltree::Document) -> Option<String>
             )
         }
         "SetImagingSettings" => {
-            // On ne garde que ce que le client a renvoye : un objet partiel remettrait les autres reglages a zero, et le test le voit.
+            // We only keep what the client sent back: a partial object would reset the other settings to zero, and the test sees it.
             let settings = doc
                 .descendants()
                 .find(|d| d.is_element() && d.tag_name().name() == "ImagingSettings")?;

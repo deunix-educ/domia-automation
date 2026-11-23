@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Parite du mouvement avec `OpenCV` (R6 lot 8, ADR 0050) : les rapports de mouvement de paires d'images synthetiques, calcules par
-//! la detection de mouvement de reference (`OpenCV` 5), sont retrouves par l'implementation en Rust pur.
+//! Motion parity with `OpenCV` (R6 lot 8, ADR 0050): the motion ratios of pairs of synthetic images, computed by
+//! the reference motion detection (`OpenCV` 5), are found again by the pure-Rust implementation.
 
 use std::path::PathBuf;
 
 use dominet_surveillance::motion::motion_ratio;
 
-/// Ecart absolu tolere sur le rapport (mesure : 0,0002 au plus) (fraction de l'image). Les JPEG sont decodes par deux decodeurs differents et le flou 8 bits
-/// d'`OpenCV` est en virgule fixe : quelques pixels de bord de zone peuvent basculer.
+/// Absolute difference tolerated on the ratio (measured: 0.0002 at most) (fraction of the image). The JPEGs are decoded by two different decoders and `OpenCV`'s 8-bit blur
+/// is fixed-point: a few region-edge pixels may flip.
 const TOLERANCE: f64 = 0.0005;
 
 fn dir() -> PathBuf {
@@ -36,7 +36,7 @@ fn rust_ratios_match_the_opencv_reference() {
 
 #[test]
 fn the_decision_against_the_reference_default_threshold_is_the_same() {
-    // Meme decision que reference avec MOTION_THRESHOLD = 0,01 pour chaque cas.
+    // Same decision as the reference with MOTION_THRESHOLD = 0.01 for each case.
     let reference: serde_json::Value =
         serde_json::from_str(&std::fs::read_to_string(dir().join("reference.json")).unwrap())
             .unwrap();

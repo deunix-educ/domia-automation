@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Bascule jour / nuit, filtre IR-cut et lumiere (R6 lot 5, ADR 0047) : quatre methodes derriere un meme trait, comme
-//! de la reference.
+//! Day / night toggle, IR-cut filter and light (R6 lot 5, ADR 0047): four methods behind the same trait, like
+//! the reference.
 //!
-//! | `night_mode_api` | Appel |
+//! | `night_mode_api` | Call |
 //! |---|---|
-//! | `openipc` | `GET http://<ip>/night/<toggle\|light>` (authentification basique si un identifiant web existe) |
-//! | `thingino` | `POST http://<ip>:<port web>/x/json-imp.cgi` en JSON, `X-API-Key` ; la bascule se souvient de l'etat (24 h) |
-//! | `onvif` | service d'imagerie : `IrCutFilter` (`DAY` / `NIGHT` / `AUTO`) ou luminosite |
-//! | `goform` | `POST /goform/frm*`, JSON `{Type: 1, Data: ...}`, authentification `X-Digest` (Longse / OEM) |
+//! | `openipc` | `GET http://<ip>/night/<toggle\|light>` (basic authentication if a web identifier exists) |
+//! | `thingino` | `POST http://<ip>:<web port>/x/json-imp.cgi` in JSON, `X-API-Key`; the toggle remembers the state (24 h) |
+//! | `onvif` | imaging service: `IrCutFilter` (`DAY` / `NIGHT` / `AUTO`) or brightness |
+//! | `goform` | `POST /goform/frm*`, JSON `{Type: 1, Data: ...}`, `X-Digest` authentication (Longse / OEM) |
 //!
-//! Aucun secret dans les erreurs ni dans `Debug`.
+//! No secret in the errors or in `Debug`.
 
 use std::collections::HashMap;
 use std::fmt;
@@ -25,7 +25,7 @@ use serde_json::{Value, json};
 use crate::onvif::{Credentials, OnvifClient, OnvifError};
 
 const TIMEOUT: Duration = Duration::from_secs(5);
-/// Duree pendant laquelle une bascule Thingino se souvient de son dernier etat (comme le cache de la reference).
+/// How long a Thingino toggle remembers its last state (like the reference's cache).
 const STATE_TTL: Duration = Duration::from_hours(24);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -75,7 +75,7 @@ pub enum NightError {
     Onvif(#[from] OnvifError),
 }
 
-/// Ce que la camera a fait : l'action et, comme la reference, les valeurs utiles (`mode`, `was`, `value`, `control`, `brightness`, `body`).
+/// What the camera did: the action and, like the reference, the useful values (`mode`, `was`, `value`, `control`, `brightness`, `body`).
 #[derive(Debug, Clone, PartialEq)]
 pub struct NightOutcome {
     pub action: NightAction,
@@ -93,7 +93,7 @@ impl NightOutcome {
         }
     }
 
-    /// La forme de la reference : `{"ok": true, "action": ..., ...}`.
+    /// The reference's shape: `{"ok": true, "action": ..., ...}`.
     #[must_use]
     pub fn to_json(&self) -> Value {
         let mut m = serde_json::Map::new();
@@ -105,17 +105,17 @@ impl NightOutcome {
 }
 
 pub trait NightControl {
-    /// Execute l'action (une bascule) sur la camera.
+    /// Executes the action (a toggle) on the camera.
     fn run(
         &self,
         action: NightAction,
     ) -> impl Future<Output = Result<NightOutcome, NightError>> + Send;
 }
 
-/// Ce qu'il faut savoir d'une camera pour la commander. Les secrets sont **en clair** (ils viennent d'etre dechiffres) : `Debug` les cache.
+/// What must be known about a camera to command it. The secrets are **in clear** (they have just been decrypted): `Debug` hides them.
 #[derive(Clone)]
 pub struct NightTarget {
-    /// Identifiant public de la camera (cle de l'etat memorise de la bascule Thingino).
+    /// Public identifier of the camera (key of the Thingino toggle's remembered state).
     pub id: String,
     pub host: String,
     pub web_port: u16,
@@ -137,11 +137,11 @@ impl fmt::Debug for NightTarget {
     }
 }
 
-/// Dernier etat envoye a chaque bascule Thingino (la camera ne le relit pas) : memoire partagee, 24 h.
+/// Last state sent to each Thingino toggle (the camera does not read it back): shared memory, 24 h.
 #[derive(Debug, Clone, Default)]
 pub struct NightState(Arc<Mutex<StateMap>>);
 
-/// Derniere valeur envoyee et son heure, par (camera, action).
+/// Last value sent and its time, per (camera, action).
 type StateMap = HashMap<(String, NightAction), (Value, Instant)>;
 
 impl NightState {
@@ -201,7 +201,7 @@ fn host_port(host: &str, port: u16) -> String {
 // ------------------------------------------------------------------ OpenIPC
 
 async fn openipc(t: &NightTarget, action: NightAction) -> Result<NightOutcome, NightError> {
-    // `/night/ircut` n'active pas la broche du moteur sur les cartes GK7205V200 : reference l'envoie a `toggle`, qui fait la bonne suite.
+    // `/night/ircut` does not activate the motor pin on GK7205V200 boards: the reference sends it to `toggle`, which does the right sequence.
     let path = match action {
         NightAction::DayNight | NightAction::IrCut => "toggle",
         NightAction::Light => "light",
@@ -235,7 +235,7 @@ async fn thingino(
     state: &NightState,
     action: NightAction,
 ) -> Result<NightOutcome, NightError> {
-    // (commande, bascule, valeur par defaut) : comme `_THINGINO_CMD` de la reference.
+    // (command, toggle, default value): like the reference's `_THINGINO_CMD`.
     let (cmd, current, next) = match action {
         NightAction::DayNight => {
             let now = state
@@ -326,7 +326,7 @@ fn md5_hex(s: &str) -> String {
         })
 }
 
-/// Valeur d'un parametre `nom="valeur"` de l'en-tete `WWW-Authenticate`.
+/// Value of a `name="value"` parameter of the `WWW-Authenticate` header.
 fn challenge_param(header: &str, name: &str) -> Option<String> {
     let key = format!("{name}=\"");
     let start = header.find(&key)? + key.len();
@@ -334,7 +334,7 @@ fn challenge_param(header: &str, name: &str) -> Option<String> {
     Some(header[start..start + end].to_string())
 }
 
-/// L'en-tete `Authorization: X-Digest ...` repondant a un defi (meme calcul que Reference : MD5, `qop=auth`, `nc` et `cnonce` fixes).
+/// The `Authorization: X-Digest ...` header answering a challenge (same computation as the reference: MD5, `qop=auth`, fixed `nc` and `cnonce`).
 #[must_use]
 pub fn x_digest(
     user: &str,
@@ -354,7 +354,7 @@ pub fn x_digest(
     )
 }
 
-/// Une requete Goform : defi, puis reponse. Retourne le JSON de la camera (objet vide si elle ne repond rien).
+/// A Goform request: challenge, then response. Returns the camera's JSON (empty object if it answers nothing).
 async fn goform_request(
     t: &NightTarget,
     method: &str,
@@ -370,7 +370,7 @@ async fn goform_request(
     let client = http()?;
     let m = reqwest::Method::from_bytes(method.as_bytes())
         .map_err(|_| NightError::BadResponse("method"))?;
-    // 1. Sans authentification : la camera repond 401 et donne son defi. Pas de corps ici (rien ne doit s'executer sans identifiants).
+    // 1. Without authentication: the camera answers 401 and gives its challenge. No body here (nothing must run without credentials).
     let challenge = client
         .request(m.clone(), &url)
         .send()
@@ -389,7 +389,7 @@ async fn goform_request(
         return Err(NightError::BadResponse("no authentication challenge"));
     };
     let opaque = challenge_param(&header, "opaque").unwrap_or_default();
-    // 2. Avec la reponse au defi.
+    // 2. With the answer to the challenge.
     let mut req = client.request(m, &url).header(
         AUTHORIZATION,
         x_digest(user, pass, method, path, &realm, &nonce, &opaque),
@@ -414,7 +414,7 @@ async fn goform_request(
 async fn goform(t: &NightTarget, action: NightAction) -> Result<NightOutcome, NightError> {
     match action {
         NightAction::DayNight | NightAction::IrCut => {
-            // Lire l'etat complet, ne modifier que `DayNightMode` : 0 / 1 (jour / auto) -> 2 (nuit), 2 -> 1 (auto).
+            // Read the whole state, only modify `DayNightMode`: 0 / 1 (day / auto) -> 2 (night), 2 -> 1 (auto).
             let path = "/goform/frmVideoParaEx";
             let got = goform_request(t, "GET", path, None).await?;
             let mut data = got.get("Data").cloned().unwrap_or_else(|| json!({}));
@@ -428,7 +428,7 @@ async fn goform(t: &NightTarget, action: NightAction) -> Result<NightOutcome, Ni
             ))
         }
         NightAction::Light => {
-            // `Control` : 1 (allume) -> 2 (auto), autre -> 1 (allume) ; `ModeSupportList` n'est pas renvoye.
+            // `Control`: 1 (on) -> 2 (auto), other -> 1 (on); `ModeSupportList` is not sent back.
             let path = "/goform/frmIotLightCfg";
             let got = goform_request(t, "GET", path, None).await?;
             let mut data = got.get("Data").cloned().unwrap_or_else(|| json!({}));
@@ -486,7 +486,7 @@ mod tests {
 
     #[test]
     fn the_digest_matches_a_value_computed_independently_with_reference() {
-        // Valeur de reference calculee separement.
+        // Reference value computed separately.
         let header = x_digest(
             "admin",
             "mot-de-passe",

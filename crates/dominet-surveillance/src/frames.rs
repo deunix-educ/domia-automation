@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! `FrameSource` (R6 lot 6, ADR 0003 et 0048) : des images decodees d'un flux video, a faible cadence, pour les snapshots, le mouvement
-//! et la detection d'objets.
+//! `FrameSource` (R6 lot 6, ADR 0003 and 0048): decoded images of a video stream, at a low rate, for snapshots, motion
+//! and object detection.
 //!
-//! Implementation : **un `ffmpeg` de longue duree par camera**, qui lit le **re-stream de MediaMTX** (jamais la camera directe), decode,
-//! ramene la cadence a `fps` et la largeur a `max_width`, et ecrit des **JPEG** sur sa sortie standard. Un JPEG porte ses dimensions
-//! (on n'a pas a les deviner d'apres ONVIF, qui se trompe parfois) et sert tel quel de snapshot ; le mouvement et YOLO le decodent.
+//! Implementation: **one long-running `ffmpeg` per camera**, which reads the **MediaMTX re-stream** (never the camera directly), decodes,
+//! brings the rate down to `fps` and the width to `max_width`, and writes **JPEGs** on its standard output. A JPEG carries its dimensions
+//! (no need to guess them from ONVIF, which is sometimes wrong) and serves as a snapshot as is; motion and YOLO decode it.
 //!
-//! Le processus est **supervise** : redemarrage avec delai croissant, redemarrage d'un flux qui ne donne plus rien, et repli sur le
-//! decodage logiciel si le decodage materiel (VAAPI) echoue.
+//! The process is **supervised**: restart with a growing delay, restart of a stream that no longer gives anything, and fallback to
+//! software decoding if hardware decoding (VAAPI) fails.
 
 use std::path::Path;
 use std::process::Stdio;
@@ -22,7 +22,7 @@ use tokio::sync::{broadcast, watch};
 use tokio::task::JoinHandle;
 use tokio::time::Instant;
 
-/// Une image : un JPEG complet, ses dimensions, son numero d'ordre (croissant dans une source) et l'heure de reception.
+/// An image: a complete JPEG, its dimensions, its sequence number (increasing within a source) and the reception time.
 #[derive(Debug, Clone)]
 pub struct Frame {
     pub jpeg: Arc<Vec<u8>>,
@@ -32,43 +32,43 @@ pub struct Frame {
     pub at: DateTime<Utc>,
 }
 
-/// Ce que consomment le mouvement, YOLO et les snapshots.
+/// What motion, YOLO and snapshots consume.
 pub trait FrameSource {
-    /// Derniere image recue (`None` tant que le flux n'a rien donne).
+    /// Last image received (`None` as long as the stream has given nothing).
     fn latest(&self) -> Option<Frame>;
-    /// Toutes les images a venir.
+    /// All the images to come.
     fn subscribe(&self) -> broadcast::Receiver<Frame>;
 }
 
-/// Decodage materiel.
+/// Hardware decoding.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Hwaccel {
-    /// VAAPI si `/dev/dri/renderD128` existe et n'a pas deja echoue, sinon logiciel.
+    /// VAAPI if `/dev/dri/renderD128` exists and has not already failed, otherwise software.
     Auto,
     Off,
 }
 
 #[derive(Debug, Clone)]
 pub struct FrameConfig {
-    /// Arguments d'entree de `ffmpeg`, `-i` compris (ex. `["-rtsp_transport", "tcp", "-i", url]`) ; les tests y mettent une source `lavfi`.
+    /// `ffmpeg` input arguments, `-i` included (e.g. `["-rtsp_transport", "tcp", "-i", url]`); the tests put a `lavfi` source there.
     pub input: Vec<String>,
-    /// Images par seconde en sortie.
+    /// Frames per second at output.
     pub fps: f64,
-    /// Largeur maximale (jamais agrandie) ; la hauteur suit, en nombre pair.
+    /// Maximum width (never enlarged); the height follows, as an even number.
     pub max_width: u32,
-    /// Qualite JPEG de `ffmpeg` (`-q:v`, 2 = meilleur, 31 = pire).
+    /// `ffmpeg` JPEG quality (`-q:v`, 2 = best, 31 = worst).
     pub quality: u8,
     pub hwaccel: Hwaccel,
     pub ffmpeg: String,
-    /// Delai avant la premiere nouvelle tentative, puis doublant jusqu'a `backoff_max`.
+    /// Delay before the first new attempt, then doubling up to `backoff_max`.
     pub backoff_min: Duration,
     pub backoff_max: Duration,
-    /// Un flux qui ne donne plus d'image pendant ce temps est redemarre.
+    /// A stream that gives no image for this long is restarted.
     pub stall_after: Duration,
 }
 
 impl FrameConfig {
-    /// Parametres de D7 : 2 images par seconde, 1280 de large.
+    /// D7 parameters: 2 images per second, 1280 wide.
     #[must_use]
     pub fn new(input: Vec<String>) -> Self {
         Self {
@@ -84,7 +84,7 @@ impl FrameConfig {
         }
     }
 
-    /// Entree pour un flux RTSP lu en TCP.
+    /// Input for an RTSP stream read over TCP.
     #[must_use]
     pub fn rtsp_input(url: &str) -> Vec<String> {
         ["-rtsp_transport", "tcp", "-i", url]
@@ -95,8 +95,8 @@ impl FrameConfig {
 
 const VAAPI_DEVICE: &str = "/dev/dri/renderD128";
 
-/// Les arguments complets de `ffmpeg`. `vaapi` : decodage materiel (`hwdownload` puis echelle logicielle : `scale_vaapi` ne marche pas
-/// sur cet hote, voir ADR 0003).
+/// The complete `ffmpeg` arguments. `vaapi`: hardware decoding (`hwdownload` then software scaling: `scale_vaapi` does not work
+/// on this host, see ADR 0003).
 #[must_use]
 pub fn ffmpeg_args(cfg: &FrameConfig, vaapi: bool) -> Vec<String> {
     let mut a: Vec<String> = ["-hide_banner", "-loglevel", "error", "-nostdin"]
@@ -115,11 +115,11 @@ pub fn ffmpeg_args(cfg: &FrameConfig, vaapi: bool) -> Vec<String> {
             .map(String::from),
         );
     } else {
-        // Un seul fil de decodage : le budget CPU est le goulot, pas le debit (ADR 0003).
+        // A single decoding thread: the CPU budget is the bottleneck, not the throughput (ADR 0003).
         a.extend(["-threads", "1"].map(String::from));
     }
     a.extend(cfg.input.iter().cloned());
-    // `fps` avant `hwdownload` : c'est lui qui rend la copie GPU -> CPU rentable.
+    // `fps` before `hwdownload`: it is what makes the GPU -> CPU copy worthwhile.
     let hw = if vaapi { "hwdownload,format=nv12," } else { "" };
     let filter = format!(
         "fps={},{hw}scale='min({},iw)':-2,format=yuvj420p",
@@ -143,24 +143,24 @@ pub fn ffmpeg_args(cfg: &FrameConfig, vaapi: bool) -> Vec<String> {
     a
 }
 
-// ------------------------------------------------------------------ decoupage des JPEG
+// ------------------------------------------------------------------ JPEG splitting
 
-/// Decoupe un flux d'octets en JPEG complets (`FF D8` ... `FF D9`). Dans un JPEG, un octet `FF` du contenu est toujours suivi de `00` ou
-/// d'un marqueur : un `FF D9` ne se trouve donc qu'a la fin d'une image.
+/// Splits a byte stream into complete JPEGs (`FF D8` ... `FF D9`). In a JPEG, a content `FF` byte is always followed by `00` or
+/// a marker: an `FF D9` is therefore only found at the end of an image.
 #[derive(Debug, Default)]
 pub struct JpegSplitter {
     buf: Vec<u8>,
 }
 
 impl JpegSplitter {
-    /// Ajoute des octets ; rend les images terminees (dans l'ordre).
+    /// Adds bytes; returns the finished images (in order).
     pub fn push(&mut self, bytes: &[u8]) -> Vec<Vec<u8>> {
         self.buf.extend_from_slice(bytes);
         let mut out = vec![];
         loop {
-            // Debut de l'image : on jette ce qui precede (flux coupe en plein milieu d'une image).
+            // Start of the image: we throw away what precedes (stream cut in the middle of an image).
             let Some(start) = find(&self.buf, [0xFF, 0xD8], 0) else {
-                // Garder le dernier octet : il peut etre le `FF` d'un `FF D8` a venir.
+                // Keep the last byte: it may be the `FF` of an `FF D8` to come.
                 let keep = usize::from(self.buf.last() == Some(&0xFF));
                 self.buf.drain(..self.buf.len() - keep);
                 break;
@@ -172,7 +172,7 @@ impl JpegSplitter {
             out.push(self.buf[start..end + 2].to_vec());
             self.buf.drain(..end + 2);
         }
-        // Garde-fou : un flux qui ne finit jamais une image ne doit pas remplir la memoire.
+        // Safeguard: a stream that never finishes an image must not fill the memory.
         if self.buf.len() > 32 * 1024 * 1024 {
             self.buf.clear();
         }
@@ -187,7 +187,7 @@ fn find(hay: &[u8], needle: [u8; 2], from: usize) -> Option<usize> {
         .map(|p| p + from)
 }
 
-/// Largeur et hauteur d'un JPEG (marqueur `SOFn`), sans le decoder.
+/// Width and height of a JPEG (`SOFn` marker), without decoding it.
 #[must_use]
 pub fn jpeg_size(data: &[u8]) -> Option<(u32, u32)> {
     let mut i = 2;
@@ -196,13 +196,13 @@ pub fn jpeg_size(data: &[u8]) -> Option<(u32, u32)> {
             return None;
         }
         let marker = data[i + 1];
-        // Marqueurs sans longueur.
+        // Markers without a length.
         if matches!(marker, 0x01 | 0xD0..=0xD8) {
             i += 2;
             continue;
         }
         let len = usize::from(u16::from_be_bytes([data[i + 2], data[i + 3]]));
-        // SOF0..SOF15 sauf DHT (C4), JPG (C8) et DAC (CC).
+        // SOF0..SOF15 except DHT (C4), JPG (C8) and DAC (CC).
         if (0xC0..=0xCF).contains(&marker) && !matches!(marker, 0xC4 | 0xC8 | 0xCC) {
             let height = u32::from(u16::from_be_bytes([data[i + 5], data[i + 6]]));
             let width = u32::from(u16::from_be_bytes([data[i + 7], data[i + 8]]));
@@ -213,22 +213,22 @@ pub fn jpeg_size(data: &[u8]) -> Option<(u32, u32)> {
     None
 }
 
-// ------------------------------------------------------------------ source ffmpeg
+// ------------------------------------------------------------------ ffmpeg source
 
-/// Etat d'une source, pour l'administration et les tests.
+/// State of a source, for the administration and the tests.
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct SourceStatus {
-    /// Un `ffmpeg` tourne.
+    /// An `ffmpeg` is running.
     pub running: bool,
-    /// Nombre de demarrages de `ffmpeg` (le premier compte).
+    /// Number of `ffmpeg` starts (the first one counts).
     pub starts: u32,
-    /// Le decodage materiel est (ou a ete) utilise.
+    /// Hardware decoding is (or was) used.
     pub vaapi: bool,
-    /// Derniere cause d'arret (sans secret).
+    /// Last cause of stop (without a secret).
     pub last_error: String,
 }
 
-/// Un `ffmpeg` supervise qui produit des [`Frame`]. Arrete a la destruction.
+/// A supervised `ffmpeg` that produces [`Frame`]s. Stopped on drop.
 #[derive(Debug)]
 pub struct FfmpegFrameSource {
     latest: watch::Receiver<Option<Frame>>,
@@ -254,7 +254,7 @@ impl FrameSource for FfmpegFrameSource {
 }
 
 impl FfmpegFrameSource {
-    /// Demarre la supervision (le premier `ffmpeg` part tout de suite).
+    /// Starts the supervision (the first `ffmpeg` starts right away).
     #[must_use]
     pub fn spawn(cfg: FrameConfig) -> Self {
         let (latest_tx, latest) = watch::channel(None);
@@ -274,7 +274,7 @@ impl FfmpegFrameSource {
         self.status.borrow().clone()
     }
 
-    /// La premiere image **posterieure** a `after` (numero d'ordre), ou `None` apres `timeout` : « une image fraiche ».
+    /// The first image **later than** `after` (sequence number), or `None` after `timeout`: "a fresh image".
     pub async fn next_after(&self, after: u64, timeout: Duration) -> Option<Frame> {
         let mut rx = self.latest.clone();
         tokio::time::timeout(timeout, async move {
@@ -303,7 +303,7 @@ async fn supervise(
 ) {
     let seq = AtomicU64::new(0);
     let mut delay = cfg.backoff_min;
-    // Le materiel a-t-il deja echoue ? Alors logiciel pour toujours (une camera ne change pas de codec en route).
+    // Has the hardware already failed? Then software forever (a camera does not change codec on the way).
     let mut vaapi_failed = cfg.hwaccel == Hwaccel::Off || !Path::new(VAAPI_DEVICE).exists();
     let mut vaapi_strikes = 0u32;
     tracing::info!(
@@ -339,8 +339,8 @@ async fn supervise(
                 HardwareVerdict::NotHardware => false,
             };
         if condemned {
-            // Le materiel lui-meme est en cause : logiciel pour de bon, sans attendre. Une camera hors ligne, un flux pas encore publie ou
-            // un reseau en panne ne prouvent rien contre VAAPI (mesure sur l'EliteDesk : une camera absente au demarrage coupait le VAAPI).
+            // The hardware itself is at fault: software for good, without waiting. An offline camera, a stream not yet published or
+            // a network outage prove nothing against VAAPI (measured on the EliteDesk: a camera absent at start-up cut VAAPI).
             vaapi_failed = true;
             tracing::info!(
                 cause = %outcome.stderr.replace('\n', " | "),
@@ -348,7 +348,7 @@ async fn supervise(
             );
             continue;
         }
-        // Une source qui a tenu un moment repart vite ; une source qui echoue en boucle espace ses tentatives.
+        // A source that held for a while restarts quickly; a source that fails in a loop spaces out its attempts.
         delay = if produced && started.elapsed() > Duration::from_secs(10) {
             cfg.backoff_min
         } else {
@@ -361,26 +361,26 @@ async fn supervise(
 struct Outcome {
     frames: u64,
     error: String,
-    /// Tout ce que `ffmpeg` a ecrit sur sa sortie d'erreur (pour distinguer une panne materielle d'une panne de flux).
+    /// Everything `ffmpeg` wrote on its error output (to tell a hardware failure from a stream failure).
     stderr: String,
 }
 
-/// Ce que dit la sortie d'erreur de `ffmpeg` apres un decodage materiel sans image.
+/// What `ffmpeg`'s error output says after a hardware decoding without an image.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum HardwareVerdict {
-    /// Le materiel est inutilisable (pas de peripherique, pilote absent, format non gere) : logiciel pour de bon, tout de suite.
+    /// The hardware is unusable (no device, driver absent, unsupported format): software for good, right away.
     Unusable,
-    /// Le decodeur materiel a echoue sur ce flux (images de reference manquantes quand on rejoint un flux en cours de route, par
-    /// exemple) : cela peut passer au flux suivant ; on ne condamne le materiel qu'apres plusieurs echecs d'affilee.
+    /// The hardware decoder failed on this stream (missing reference images when joining a stream midway, for
+    /// example): it may pass on the next stream; the hardware is only condemned after several failures in a row.
     DecodeFailed,
-    /// Rien n'accuse le materiel (camera hors ligne, flux pas encore publie, reseau).
+    /// Nothing incriminates the hardware (camera offline, stream not yet published, network).
     NotHardware,
 }
 
-/// Echecs de decodage materiel d'affilee, sans aucune image, au-dela desquels on passe au logiciel.
+/// Hardware decoding failures in a row, without any image, beyond which we switch to software.
 const VAAPI_STRIKES: u32 = 3;
 
-/// Classe la sortie d'erreur de `ffmpeg`.
+/// Classifies `ffmpeg`'s error output.
 #[must_use]
 pub fn hardware_verdict(stderr: &str) -> HardwareVerdict {
     const UNUSABLE: [&str; 6] = [
@@ -433,7 +433,7 @@ async fn run_once(
             stderr: String::new(),
         };
     };
-    // Dernieres lignes d'erreur de ffmpeg, pour dire pourquoi il s'arrete.
+    // Last error lines of ffmpeg, to say why it stops.
     let stderr_task = tokio::spawn(async move {
         let mut text = String::new();
         let _ = stderr.read_to_string(&mut text).await;
@@ -499,7 +499,7 @@ mod tests {
     use super::*;
 
     fn jpeg(width: u16, height: u16, payload: &[u8]) -> Vec<u8> {
-        // SOI, SOF0 (precision 8, hauteur, largeur, 1 composante), donnees (avec un FF 00 echappe), EOI.
+        // SOI, SOF0 (precision 8, height, width, 1 component), data (with an escaped FF 00), EOI.
         let mut v = vec![0xFF, 0xD8, 0xFF, 0xC0, 0x00, 0x0B, 0x08];
         v.extend(height.to_be_bytes());
         v.extend(width.to_be_bytes());
@@ -527,7 +527,7 @@ mod tests {
             hardware_verdict("Failed to initialise VAAPI connection: -1"),
             Unusable
         );
-        // Flux rejoint en cours de route : le decodeur materiel n'a pas ses images de reference.
+        // Stream joined midway: the hardware decoder does not have its reference images.
         assert_eq!(
             hardware_verdict(
                 "co located POCs unavailable\nFailed to sync surface 0x4: 23 (internal decoding error).\nFailed to download frame: -5."
@@ -564,7 +564,7 @@ mod tests {
     fn a_stream_cut_in_the_middle_of_an_image_resumes_at_the_next_one() {
         let a = jpeg(100, 50, b"zz");
         let mut s = JpegSplitter::default();
-        // Fin d'une image dont on a rate le debut, puis une image entiere.
+        // End of an image whose start was missed, then a whole image.
         let mut data = a[10..].to_vec();
         data.extend(a.clone());
         assert_eq!(s.push(&data), [a]);

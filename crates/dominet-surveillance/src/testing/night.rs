@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Faux serveurs web des methodes jour / nuit hors ONVIF : `OpenIPC`, Thingino, Goform (Digest). Aucun contact reseau hors boucle locale.
+//! Fake web servers of the non-ONVIF day / night methods: `OpenIPC`, Thingino, Goform (Digest). No network contact outside the loopback.
 
 #![allow(
     clippy::items_after_statements,
@@ -51,7 +51,7 @@ impl std::fmt::Debug for FakeOpenIpc {
 }
 
 impl FakeOpenIpc {
-    /// `credentials` : exiger l'authentification basique avec ce couple.
+    /// `credentials`: require basic authentication with this pair.
     pub async fn start(credentials: Option<(&str, &str)>) -> Self {
         let inner = Arc::new(Mutex::new(OpenIpcInner {
             credentials: credentials.map(|(u, p)| (u.into(), p.into())),
@@ -85,7 +85,7 @@ impl FakeOpenIpc {
         self.addr.port()
     }
 
-    /// Chemins demandes sous `/night/` (`toggle`, `light`).
+    /// Paths requested under `/night/` (`toggle`, `light`).
     #[must_use]
     pub fn paths(&self) -> Vec<String> {
         self.inner.lock().unwrap().paths.clone()
@@ -152,7 +152,7 @@ impl FakeThingino {
         self.addr.port()
     }
 
-    /// Corps JSON recus (`{"cmd": ..., "val": ...}`), dans l'ordre.
+    /// JSON bodies received (`{"cmd": ..., "val": ...}`), in order.
     #[must_use]
     pub fn bodies(&self) -> Vec<Value> {
         self.inner.lock().unwrap().bodies.clone()
@@ -166,9 +166,9 @@ struct GoformInner {
     password: String,
     day_night: i64,
     light: i64,
-    /// Corps recus avec une authentification valide, par chemin.
+    /// Bodies received with a valid authentication, per path.
     posts: Vec<(String, Value)>,
-    /// Requetes recues sans authentification valide (le defi, puis les refus).
+    /// Requests received without a valid authentication (the challenge, then the refusals).
     refused: u32,
 }
 
@@ -277,13 +277,13 @@ impl FakeGoform {
         self.inner.lock().unwrap().light
     }
 
-    /// Corps recus par `POST` (authentifies), avec leur chemin.
+    /// Bodies received by `POST` (authenticated), with their path.
     #[must_use]
     pub fn posts(&self) -> Vec<(String, Value)> {
         self.inner.lock().unwrap().posts.clone()
     }
 
-    /// Nombre de requetes refusees (le defi sans authentification compte).
+    /// Number of refused requests (the challenge without authentication counts).
     #[must_use]
     pub fn refused(&self) -> u32 {
         self.inner.lock().unwrap().refused

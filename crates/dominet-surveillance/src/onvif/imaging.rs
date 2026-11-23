@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Imaging ONVIF (R6 lot 5, ADR 0047) : filtre IR-cut (jour / nuit) et luminosite.
+//! ONVIF imaging (R6 lot 5, ADR 0047): IR-cut filter (day / night) and brightness.
 //!
-//! Comme la reference (et pour la meme raison) : `GetImagingSettings`, on modifie **un seul champ**, on renvoie **l'objet complet** par
-//! `SetImagingSettings`. Envoyer un objet partiel remet tous les autres reglages a zero sur la plupart des cameras.
+//! Like the reference (and for the same reason): `GetImagingSettings`, we modify **a single field**, we send back the **complete object** through
+//! `SetImagingSettings`. Sending a partial object resets all the other settings to zero on most cameras.
 
 use std::fmt::Write;
 
@@ -10,7 +10,7 @@ use roxmltree::{Document, Node};
 
 use super::{OnvifClient, OnvifError, find, parse, text, xml_escape};
 
-/// Valeur du filtre IR-cut selon ONVIF.
+/// IR-cut filter value according to ONVIF.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum IrCut {
     Day,
@@ -28,7 +28,7 @@ impl IrCut {
         }
     }
 
-    /// Lit la valeur envoyee par la camera (`ON` / `OFF` des anciennes cameras : ON = filtre en place = jour).
+    /// Reads the value sent by the camera (`ON` / `OFF` of older cameras: ON = filter in place = day).
     #[must_use]
     pub fn parse(s: &str) -> Option<Self> {
         match s.trim().to_ascii_uppercase().as_str() {
@@ -39,7 +39,7 @@ impl IrCut {
         }
     }
 
-    /// La bascule de la reference : `AUTO` et `DAY` vont a `NIGHT`, `NIGHT` revient a `DAY`.
+    /// The reference's toggle: `AUTO` and `DAY` go to `NIGHT`, `NIGHT` goes back to `DAY`.
     #[must_use]
     pub fn toggled(self) -> Self {
         match self {
@@ -49,21 +49,21 @@ impl IrCut {
     }
 }
 
-/// Reglages d'image lus dans la camera, gardes sous leur forme brute pour etre renvoyes en entier.
+/// Image settings read from the camera, kept in raw form to be sent back whole.
 #[derive(Debug, Clone)]
 pub struct ImagingSettings {
-    /// Elements fils de `ImagingSettings`, reecrits dans l'espace de noms `tt:` (un par element, sans declaration de prefixe).
+    /// Child elements of `ImagingSettings`, rewritten in the `tt:` namespace (one per element, without a prefix declaration).
     children_xml: String,
     pub ir_cut: Option<IrCut>,
     pub brightness: Option<f64>,
 }
 
-/// Recopie un element et ses descendants dans l'espace `tt:` (les prefixes de la camera ne sont pas declares dans notre enveloppe).
+/// Copies an element and its descendants into the `tt:` space (the camera's prefixes are not declared in our envelope).
 fn rewrite(node: Node, out: &mut String) {
     let name = node.tag_name().name();
     let _ = write!(out, "<tt:{name}");
     for a in node.attributes() {
-        // Les declarations de prefixes sont des attributs d'espace de noms, que roxmltree ne liste pas ; le reste est conserve.
+        // Prefix declarations are namespace attributes, which roxmltree does not list; the rest is kept.
         let _ = write!(out, " {}=\"{}\"", a.name(), xml_escape(a.value()));
     }
     out.push('>');
@@ -92,7 +92,7 @@ impl ImagingSettings {
         })
     }
 
-    /// Les reglages avec `IrCutFilter` remplace (ajoute s'il manquait).
+    /// The settings with `IrCutFilter` replaced (added if it was missing).
     fn with_element(&self, name: &str, value: &str) -> String {
         let open = format!("<tt:{name}>");
         let close = format!("</tt:{name}>");
@@ -112,7 +112,7 @@ impl ImagingSettings {
 }
 
 impl OnvifClient {
-    /// Adresse du service d'imagerie et jeton de la source video du profil principal.
+    /// Address of the imaging service and token of the main profile's video source.
     async fn imaging_target(&self) -> Result<(String, String), OnvifError> {
         let services = self.services().await?;
         let url = services.imaging.ok_or(OnvifError::NoService("Imaging"))?;
@@ -156,14 +156,14 @@ impl OnvifClient {
         .map(|_| ())
     }
 
-    /// Bascule le filtre IR-cut (`AUTO`, `DAY` -> `NIGHT`, `NIGHT` -> `DAY`) ; retourne (avant, apres).
+    /// Toggles the IR-cut filter (`AUTO`, `DAY` -> `NIGHT`, `NIGHT` -> `DAY`); returns (before, after).
     ///
     /// # Errors
-    /// `NoService("Imaging")` sans service d'imagerie, erreurs des appels ONVIF.
+    /// `NoService("Imaging")` without an imaging service, errors of the ONVIF calls.
     pub async fn toggle_ir_cut(&self) -> Result<(IrCut, IrCut), OnvifError> {
         let (url, source) = self.imaging_target().await?;
         let current = self.read_imaging(&url, &source).await?;
-        // Reference : absent -> `DAY`.
+        // Reference: absent -> `DAY`.
         let before = current.ir_cut.unwrap_or(IrCut::Day);
         let after = before.toggled();
         self.write_imaging(
@@ -175,15 +175,15 @@ impl OnvifClient {
         Ok((before, after))
     }
 
-    /// Bascule la « lumiere » comme la reference (ONVIF ne standardise pas la LED infrarouge) : luminosite a 80 si elle est sous 40, sinon 0.
-    /// Retourne la nouvelle luminosite.
+    /// Toggles the "light" like the reference (ONVIF does not standardise the infrared LED): brightness to 80 if it is below 40, otherwise 0.
+    /// Returns the new brightness.
     ///
     /// # Errors
-    /// `NoService("Imaging")` sans service d'imagerie, erreurs des appels ONVIF.
+    /// `NoService("Imaging")` without an imaging service, errors of the ONVIF calls.
     pub async fn toggle_light_brightness(&self) -> Result<f64, OnvifError> {
         let (url, source) = self.imaging_target().await?;
         let current = self.read_imaging(&url, &source).await?;
-        // Reference : absent ou nul -> 50 (donc 0 apres bascule).
+        // Reference: absent or zero -> 50 (so 0 after the toggle).
         let now = current.brightness.filter(|b| *b != 0.0).unwrap_or(50.0);
         let next = if now < 40.0 { 80.0 } else { 0.0 };
         self.write_imaging(
@@ -222,7 +222,7 @@ mod tests {
             out,
             "<tt:BacklightCompensation><tt:Mode>OFF</tt:Mode></tt:BacklightCompensation><tt:Brightness>35</tt:Brightness><tt:IrCutFilter>NIGHT</tt:IrCutFilter><tt:Sharpness>50</tt:Sharpness>"
         );
-        // Un champ absent est ajoute a la fin.
+        // An absent field is added at the end.
         let bare = ImagingSettings::from_doc(
             &Document::parse(&RESPONSE.replace("<x:IrCutFilter>AUTO</x:IrCutFilter>", "")).unwrap(),
         )

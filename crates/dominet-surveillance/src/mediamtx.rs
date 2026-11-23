@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Client de l'API REST de MediaMTX (`/v3/config/paths/...`, ADR 0044).
+//! Client of the MediaMTX REST API (`/v3/config/paths/...`, ADR 0044).
 //!
-//! Un *path* par camera active, nomme par l'identifiant public de la camera (32 hexadecimaux). On ne touche **jamais** aux autres
-//! paths (le `~.*` de la configuration, ceux d'un autre usage) : seuls les noms de 32 hexadecimaux sont consideres comme les notres.
+//! One *path* per active camera, named by the camera's public identifier (32 hexadecimal digits). We **never** touch the other
+//! paths (the `~.*` of the configuration, those of another use): only the 32-hexadecimal names are considered ours.
 //!
-//! La source du path contient le mot de passe de la camera : elle n'apparait ni dans `Debug`, ni dans les erreurs, ni dans les journaux.
+//! The path's source contains the camera's password: it appears neither in `Debug`, nor in the errors, nor in the logs.
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt;
@@ -25,24 +25,24 @@ pub enum MediaMtxError {
 }
 
 impl MediaMtxError {
-    /// Le path n'existe pas.
+    /// The path does not exist.
     #[must_use]
     pub fn is_not_found(&self) -> bool {
         matches!(self, Self::Status { status: 404, .. })
     }
 }
 
-/// Configuration d'un path, dans les noms de l'API de MediaMTX. Les options absentes reprennent la valeur par defaut
-/// (on utilise `replace`, donc une option retiree d'une camera est bien retiree du path).
+/// Configuration of a path, in the names of the MediaMTX API. Absent options take the default value
+/// (we use `replace`, so an option removed from a camera is indeed removed from the path).
 #[derive(Clone, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PathConf {
-    /// URL du flux de la camera, **mot de passe compris**.
+    /// Camera stream URL, **password included**.
     pub source: String,
     pub source_on_demand: bool,
     #[serde(skip_serializing_if = "is_false")]
     pub rtsp_any_port: bool,
-    /// `tcp` pour forcer le transport TCP.
+    /// `tcp` to force the TCP transport.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub source_protocol: Option<String>,
     #[serde(skip_serializing_if = "is_false")]
@@ -70,8 +70,8 @@ impl fmt::Debug for PathConf {
 }
 
 impl PathConf {
-    /// Ce que reference envoie : source RTSP toujours ouverte, `rtspAnyPort` et TCP selon les options,
-    /// enregistrement pour les modes continu et mouvement. `password` est le mot de passe RTSP **dechiffre**.
+    /// What the reference sends: always-open RTSP source, `rtspAnyPort` and TCP according to the options,
+    /// recording for the continuous and motion modes. `password` is the **decrypted** RTSP password.
     #[must_use]
     pub fn for_camera(camera: &CameraDraft, password: &str) -> Self {
         Self {
@@ -87,19 +87,19 @@ impl PathConf {
     }
 }
 
-/// Un nom de path que DomiNet gere : 32 hexadecimaux en minuscules.
+/// A path name that DomiNet manages: 32 lowercase hexadecimal digits.
 #[must_use]
 pub fn is_camera_path(name: &str) -> bool {
     name.len() == 32 && name.bytes().all(|b| matches!(b, b'0'..=b'9' | b'a'..=b'f'))
 }
 
-/// Bilan d'une synchronisation complete.
+/// Outcome of a complete synchronisation.
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct SyncReport {
     pub added: Vec<String>,
     pub replaced: Vec<String>,
     pub removed: Vec<String>,
-    /// (path, message) : un echec n'arrete pas les autres.
+    /// (path, message): a failure does not stop the others.
     pub failed: Vec<(String, String)>,
 }
 
@@ -119,7 +119,7 @@ pub struct MediaMtx {
 
 impl MediaMtx {
     /// # Errors
-    /// Le client HTTP ne peut pas etre construit.
+    /// The HTTP client cannot be built.
     pub fn new(base_url: &str) -> Result<Self, MediaMtxError> {
         let http = reqwest::Client::builder()
             .timeout(Duration::from_secs(5))
@@ -132,7 +132,7 @@ impl MediaMtx {
         })
     }
 
-    /// Taille des pages de la liste des paths (500 par defaut ; reduite pour tester la pagination).
+    /// Page size of the paths list (500 by default; reduced to test pagination).
     #[must_use]
     pub fn with_page_size(mut self, n: u32) -> Self {
         self.page_size = n.max(1);
@@ -143,7 +143,7 @@ impl MediaMtx {
         format!("{}/v3/config/paths/{action}/{name}", self.base)
     }
 
-    /// Reponse d'erreur de MediaMTX, sans jamais y laisser la source (qui porte le mot de passe).
+    /// MediaMTX error response, without ever leaving the source in it (which carries the password).
     async fn error(resp: reqwest::Response, secret: Option<&str>) -> MediaMtxError {
         let status = resp.status().as_u16();
         let body = resp.text().await.unwrap_or_default();
@@ -158,14 +158,14 @@ impl MediaMtx {
     }
 
     fn unreachable(e: &reqwest::Error) -> MediaMtxError {
-        // `without_url` : l'adresse de MediaMTX n'est pas un secret, mais le texte reste court.
+        // `without_url`: MediaMTX's address is not a secret, but the text stays short.
         MediaMtxError::Unreachable(e.to_string())
     }
 
-    /// Noms de tous les paths configures.
+    /// Names of all the configured paths.
     ///
     /// # Errors
-    /// MediaMTX injoignable ou reponse inattendue.
+    /// MediaMTX unreachable or unexpected response.
     pub async fn list_names(&self) -> Result<Vec<String>, MediaMtxError> {
         let mut names = vec![];
         let mut page = 0u32;
@@ -196,10 +196,10 @@ impl MediaMtx {
         }
     }
 
-    /// Configuration d'un path (`None` s'il n'existe pas).
+    /// Configuration of a path (`None` if it does not exist).
     ///
     /// # Errors
-    /// MediaMTX injoignable ou reponse inattendue.
+    /// MediaMTX unreachable or unexpected response.
     pub async fn get(&self, name: &str) -> Result<Option<Value>, MediaMtxError> {
         let resp = self
             .http
@@ -240,23 +240,23 @@ impl MediaMtx {
     }
 
     /// # Errors
-    /// Le path existe deja, MediaMTX refuse la source ou est injoignable.
+    /// The path already exists, MediaMTX refuses the source or is unreachable.
     pub async fn add(&self, name: &str, conf: &PathConf) -> Result<(), MediaMtxError> {
         self.send_conf("add", name, conf).await
     }
 
-    /// Remplace entierement la configuration d'un path ; MediaMTX le **cree** s'il n'existe pas (verifie sur la version 1.21.3).
+    /// Entirely replaces the configuration of a path; MediaMTX **creates** it if it does not exist (checked on version 1.21.3).
     ///
     /// # Errors
-    /// MediaMTX refuse la configuration ou est injoignable.
+    /// MediaMTX refuses the configuration or is unreachable.
     pub async fn replace(&self, name: &str, conf: &PathConf) -> Result<(), MediaMtxError> {
         self.send_conf("replace", name, conf).await
     }
 
-    /// Allume ou eteint l'enregistrement d'un path sans toucher au reste de sa configuration (`PATCH`) : enregistrement manuel.
+    /// Turns the recording of a path on or off without touching the rest of its configuration (`PATCH`): manual recording.
     ///
     /// # Errors
-    /// Path inconnu (`is_not_found`), MediaMTX injoignable ou refus.
+    /// Unknown path (`is_not_found`), MediaMTX unreachable or refusal.
     pub async fn set_record(&self, name: &str, record: bool) -> Result<(), MediaMtxError> {
         let resp = self
             .http
@@ -272,10 +272,10 @@ impl MediaMtx {
         }
     }
 
-    /// Supprime un path ; un path deja absent n'est pas une erreur.
+    /// Deletes a path; an already absent path is not an error.
     ///
     /// # Errors
-    /// MediaMTX injoignable ou refus.
+    /// MediaMTX unreachable or refusal.
     pub async fn remove(&self, name: &str) -> Result<(), MediaMtxError> {
         let resp = self
             .http
@@ -290,11 +290,11 @@ impl MediaMtx {
         }
     }
 
-    /// Met MediaMTX d'aplomb avec la liste voulue : cree ou remplace chaque path voulu, supprime les paths de camera (32
-    /// hexadecimaux) qui ne sont plus voulus, ne touche a aucun autre.
+    /// Brings MediaMTX in line with the wanted list: creates or replaces each wanted path, deletes the camera paths (32
+    /// hexadecimal digits) that are no longer wanted, touches no other.
     ///
     /// # Errors
-    /// Seulement si la liste des paths ne peut pas etre lue ; les echecs par path sont dans le bilan.
+    /// Only if the paths list cannot be read; per-path failures are in the outcome.
     pub async fn sync(
         &self,
         wanted: &BTreeMap<String, PathConf>,
@@ -302,10 +302,10 @@ impl MediaMtx {
         self.sync_keeping(wanted, &[]).await
     }
 
-    /// Comme [`Self::sync`], sans toucher aux paths de `keep` (cameras dont on n'a pas pu calculer la configuration).
+    /// Like [`Self::sync`], without touching the paths of `keep` (cameras whose configuration could not be computed).
     ///
     /// # Errors
-    /// Seulement si la liste des paths ne peut pas etre lue.
+    /// Only if the paths list cannot be read.
     pub async fn sync_keeping(
         &self,
         wanted: &BTreeMap<String, PathConf>,

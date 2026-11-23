@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Client MediaMTX contre le faux MediaMTX (R6 lot 2) : aucun contact avec un vrai serveur.
+//! MediaMTX client against the fake MediaMTX (R6 lot 2): no contact with a real server.
 
 use std::collections::BTreeMap;
 
@@ -86,7 +86,7 @@ async fn errors_and_debug_never_carry_the_camera_password() {
     let fake = FakeMediaMtx::start().await;
     let api = MediaMtx::new(&fake.url()).unwrap();
     api.add(A, &conf("10.0.0.1", false)).await.unwrap();
-    // Un second `add` echoue ; le message ne doit pas contenir le mot de passe, meme si le serveur l'avait repete.
+    // A second `add` fails; the message must not contain the password, even if the server had repeated it.
     let err = api.add(A, &conf("10.0.0.1", false)).await.unwrap_err();
     assert!(!err.to_string().contains("mot-de-passe-secret"), "{err}");
     assert!(!format!("{:?}", conf("10.0.0.1", false)).contains("mot-de-passe-secret"));

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Les quatre methodes jour / nuit contre des faux serveurs (R6 lot 5) : aucun contact reseau hors boucle locale.
+//! The four day / night methods against fake servers (R6 lot 5): no network contact outside the loopback.
 
 use dominet_surveillance::night::{
     NightAction, NightBackend, NightControl, NightError, NightState, NightTarget,
@@ -26,7 +26,7 @@ fn target(port: u16) -> NightTarget {
 async fn openipc_maps_daynight_and_ircut_to_toggle_and_authenticates_when_it_has_a_user() {
     let fake = FakeOpenIpc::start(Some(("web", "secret"))).await;
     let mut t = target(fake.port());
-    // Sans identifiant : refuse.
+    // Without an identifier: refused.
     let backend = NightBackend::OpenIpc(t.clone());
     assert!(matches!(
         backend.run(NightAction::Light).await,
@@ -45,7 +45,7 @@ async fn openipc_maps_daynight_and_ircut_to_toggle_and_authenticates_when_it_has
         assert_eq!(out.to_json()["action"], action.as_str());
         assert_eq!(out.to_json()["body"], "ok");
     }
-    // /night/ircut ne bouge pas le moteur sur ces cartes : tout ce qui n'est pas la lumiere passe par `toggle`.
+    // /night/ircut does not move the motor on these boards: everything that is not the light goes through `toggle`.
     assert_eq!(fake.paths(), ["toggle", "toggle", "light"]);
 }
 
@@ -55,7 +55,7 @@ async fn thingino_toggles_from_the_remembered_state_with_the_api_key() {
     let mut t = target(fake.port());
     t.web_api_key = "cle-api".into();
     let backend = NightBackend::Thingino(t.clone(), NightState::default());
-    // Etats par defaut de la reference : daynight « day », ircut 1, lumiere 0 ; chaque bascule envoie l'inverse.
+    // The reference's default states: daynight "day", ircut 1, light 0; each toggle sends the opposite.
     assert_eq!(
         backend.run(NightAction::DayNight).await.unwrap().to_json()["value"],
         "night"
@@ -86,7 +86,7 @@ async fn thingino_toggles_from_the_remembered_state_with_the_api_key() {
             json!({"cmd": "white", "val": 0}),
         ]
     );
-    // Une mauvaise cle est refusee, et l'etat memorise n'avance pas.
+    // A wrong key is refused, and the remembered state does not advance.
     let state = NightState::default();
     let mut bad = t;
     bad.web_api_key = "autre".into();
@@ -123,7 +123,7 @@ async fn onvif_toggles_the_ir_cut_and_the_brightness_through_the_imaging_service
     );
     let out = backend.run(NightAction::Light).await.unwrap().to_json();
     assert_eq!(out["brightness"], 80.0);
-    // Mauvais identifiants : refuses, rien ne change.
+    // Wrong credentials: refused, nothing changes.
     let mut bad = target(fake.port());
     bad.onvif_pass = "faux".into();
     assert!(matches!(
@@ -141,7 +141,7 @@ async fn goform_answers_the_digest_challenge_and_changes_only_the_field_it_means
     t.web_pass = "mot-de-passe".into();
     let backend = NightBackend::Goform(t.clone());
 
-    // Jour / nuit : 1 (auto) -> 2 (nuit) -> 1 (auto).
+    // Day / night: 1 (auto) -> 2 (night) -> 1 (auto).
     let out = backend.run(NightAction::DayNight).await.unwrap().to_json();
     assert_eq!(
         (out["mode"].as_i64(), out["was"].as_i64()),
@@ -153,14 +153,14 @@ async fn goform_answers_the_digest_challenge_and_changes_only_the_field_it_means
         (out["mode"].as_i64(), out["was"].as_i64()),
         (Some(1), Some(2))
     );
-    // Le reste de l'objet est renvoye tel quel.
+    // The rest of the object is sent back as is.
     let (path, body) = &fake.posts()[0];
     assert_eq!(path, "/goform/frmVideoParaEx");
     assert_eq!(body["Type"], 1);
     assert_eq!(body["Data"]["DayNightMode"]["Sensitivity"], 3);
     assert_eq!(body["Data"]["Mirror"], 0);
 
-    // Lumiere : 2 (auto) -> 1 (allumee) -> 2 ; `ModeSupportList` n'est pas renvoye.
+    // Light: 2 (auto) -> 1 (on) -> 2; `ModeSupportList` is not sent back.
     assert_eq!(
         backend.run(NightAction::Light).await.unwrap().to_json()["control"],
         1
@@ -179,10 +179,10 @@ async fn goform_answers_the_digest_challenge_and_changes_only_the_field_it_means
         .1;
     assert!(light_body["Data"].get("ModeSupportList").is_none());
     assert_eq!(light_body["Data"]["Brightness"], 60);
-    // Chaque requete utile a ete precedee d'un defi.
+    // Every useful request was preceded by a challenge.
     assert!(fake.refused() >= 8, "{}", fake.refused());
 
-    // Un mauvais mot de passe : refus (le defi se rejoue, la reponse reste fausse), rien ne change.
+    // A wrong password: refused (the challenge is replayed, the response stays wrong), nothing changes.
     t.web_pass = "faux".into();
     let before = fake.day_night();
     assert!(matches!(

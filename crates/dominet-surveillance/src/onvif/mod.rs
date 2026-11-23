@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Client ONVIF minimal (ADR 0008 et 0045) : SOAP ecrit a la main, reponses lues avec `roxmltree` (sans tenir compte des prefixes
-//! de noms), authentification WS-Security `PasswordDigest` avec correction de l'horloge de la camera.
+//! Minimal ONVIF client (ADR 0008 and 0045): hand-written SOAP, responses read with `roxmltree` (ignoring namespace prefixes),
+//! WS-Security `PasswordDigest` authentication with correction of the camera's clock.
 //!
-//! Regles : aucune reutilisation de connexion (le serveur ONVIF de Thingino ferme apres chaque reponse) ; les adresses des services
-//! viennent de `GetCapabilities`, **mais l'hote est toujours celui de la camera enregistree** (une camera derriere une
-//! translation d'adresse annonce parfois la sienne, et une reponse ne doit pas pouvoir nous envoyer ailleurs) ; aucun mot de
-//! passe, ni dans les erreurs, ni dans les journaux, ni dans `Debug`.
+//! Rules: no connection reuse (Thingino's ONVIF server closes after each response); the service addresses
+//! come from `GetCapabilities`, **but the host is always that of the registered camera** (a camera behind an
+//! address translation sometimes announces its own, and a response must not be able to send us elsewhere); no
+//! password, neither in the errors, nor in the logs, nor in `Debug`.
 
 pub mod discovery;
 pub mod imaging;
@@ -35,7 +35,7 @@ const CALL_TIMEOUT: Duration = Duration::from_secs(6);
 pub enum OnvifError {
     #[error("camera injoignable : {0}")]
     Unreachable(String),
-    /// Identifiants refusés (HTTP 401, ou `NotAuthorized` dans le `Fault`).
+    /// Credentials refused (HTTP 401, or `NotAuthorized` in the `Fault`).
     #[error("identifiants ONVIF refuses")]
     NotAuthorized,
     #[error("la camera a repondu HTTP {0}")]
@@ -48,7 +48,7 @@ pub enum OnvifError {
     NoService(&'static str),
 }
 
-/// Identifiant et mot de passe ONVIF ; `Debug` ne montre pas le mot de passe.
+/// ONVIF identifier and password; `Debug` does not show the password.
 #[derive(Clone)]
 pub struct Credentials {
     pub user: String,
@@ -72,7 +72,7 @@ pub struct DeviceInfo {
     pub serial: String,
 }
 
-/// Adresses des services (celles de `GetCapabilities`, avec l'hote de la camera enregistree).
+/// Service addresses (those of `GetCapabilities`, with the host of the registered camera).
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct Services {
     pub media: Option<String>,
@@ -88,12 +88,12 @@ pub struct MediaProfile {
     pub encoding: String,
     pub width: u32,
     pub height: u32,
-    /// Jeton de la source video (utile a l'imaging).
+    /// Token of the video source (useful for imaging).
     pub source_token: Option<String>,
 }
 
-/// URL de flux annoncee par la camera. Elle peut contenir un mot de passe en clair (camera NVT) : `Debug` et [`Self::masked`] le
-/// cachent, [`Self::expose`] est reserve a l'usage reseau.
+/// Stream URL announced by the camera. It may contain a clear-text password (NVT camera): `Debug` and [`Self::masked`] hide
+/// it, [`Self::expose`] is reserved for network use.
 #[derive(Clone, PartialEq, Eq)]
 pub struct StreamUri {
     raw: String,
@@ -106,7 +106,7 @@ impl StreamUri {
         mask_secrets(&self.raw, &[&self.password])
     }
 
-    /// L'URL telle que la camera l'a donnee. Ne jamais journaliser ni afficher.
+    /// The URL as the camera gave it. Never log or display.
     #[must_use]
     pub fn expose(&self) -> &str {
         &self.raw
@@ -119,15 +119,15 @@ impl fmt::Debug for StreamUri {
     }
 }
 
-/// Ce que la synchronisation ONVIF apprend d'une camera.
+/// What the ONVIF synchronisation learns about a camera.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Inspection {
     pub info: DeviceInfo,
-    /// Premier profil (comme la reference : `profiles[0]`).
+    /// First profile (like the reference: `profiles[0]`).
     pub main_token: String,
     pub ptz: bool,
     pub profiles: Vec<MediaProfile>,
-    /// URL du flux du profil principal, **masquee**.
+    /// Stream URL of the main profile, **masked**.
     pub stream_uri: String,
 }
 
@@ -148,7 +148,7 @@ fn parse(xml: &str) -> Result<Document<'_>, OnvifError> {
     Document::parse(xml).map_err(|_| OnvifError::BadResponse("invalid XML"))
 }
 
-/// Hote et port de l'adresse de la camera, avec crochets pour IPv6.
+/// Host and port of the camera's address, with brackets for IPv6.
 fn authority(host: &str, port: u16) -> String {
     if host.contains(':') && !host.starts_with('[') {
         format!("[{host}]:{port}")
@@ -157,7 +157,7 @@ fn authority(host: &str, port: u16) -> String {
     }
 }
 
-/// Chemin et port d'une adresse de service annoncee ; l'hote est remplace par celui de la camera.
+/// Path and port of an announced service address; the host is replaced by the camera's.
 fn rebase(xaddr: &str, host: &str, default_port: u16) -> Option<String> {
     let rest = xaddr.strip_prefix("http://")?;
     let (auth, path) = rest.split_once('/').map_or((rest, ""), |(a, p)| (a, p));
@@ -177,17 +177,17 @@ pub struct OnvifClient {
     host: String,
     port: u16,
     creds: Option<Credentials>,
-    /// Decalage (secondes) de l'horloge de la camera par rapport a la notre.
+    /// Offset (seconds) of the camera's clock relative to ours.
     offset_s: AtomicI64,
     clock_known: std::sync::atomic::AtomicBool,
 }
 
 impl OnvifClient {
     /// # Errors
-    /// Le client HTTP ne peut pas etre construit.
+    /// The HTTP client cannot be built.
     pub fn new(host: &str, port: u16, creds: Option<Credentials>) -> Result<Self, OnvifError> {
         let http = reqwest::Client::builder()
-            // Thingino ferme la connexion apres chaque reponse.
+            // Thingino closes the connection after each response.
             .pool_max_idle_per_host(0)
             .timeout(CALL_TIMEOUT)
             .build()
@@ -232,7 +232,7 @@ impl OnvifClient {
         )
     }
 
-    /// Un appel SOAP ; retourne le corps de la reponse. `authenticated` : joindre l'en-tete WS-Security.
+    /// A SOAP call; returns the response body. `authenticated`: attach the WS-Security header.
     async fn call(&self, url: &str, authenticated: bool, body: &str) -> Result<String, OnvifError> {
         let header = if authenticated {
             self.security_header()
@@ -274,10 +274,10 @@ impl OnvifClient {
         }
     }
 
-    /// Heure UTC de la camera (sans authentification) ; regle aussi le decalage utilise pour `Created`.
+    /// UTC time of the camera (without authentication); also sets the offset used for `Created`.
     ///
     /// # Errors
-    /// Camera injoignable ou reponse illisible.
+    /// Camera unreachable or unreadable response.
     pub async fn sync_clock(&self) -> Result<DateTime<Utc>, OnvifError> {
         let xml = self
             .call(&self.device_url(), false, "<tds:GetSystemDateAndTime/>")
@@ -304,7 +304,7 @@ impl OnvifClient {
 
     async fn ensure_clock(&self) {
         if !self.clock_known.load(Ordering::Relaxed) {
-            // Une camera sans horloge lisible est tentee quand meme avec la notre.
+            // A camera without a readable clock is tried anyway with ours.
             let _ = self.sync_clock().await;
         }
     }
@@ -315,7 +315,7 @@ impl OnvifClient {
     }
 
     /// # Errors
-    /// Identifiants refuses, camera injoignable ou reponse illisible.
+    /// Credentials refused, camera unreachable or unreadable response.
     pub async fn device_information(&self) -> Result<DeviceInfo, OnvifError> {
         let xml = self
             .authed(&self.device_url(), "<tds:GetDeviceInformation/>")
@@ -331,7 +331,7 @@ impl OnvifClient {
     }
 
     /// # Errors
-    /// Identifiants refuses, camera injoignable ou reponse illisible.
+    /// Credentials refused, camera unreachable or unreadable response.
     pub async fn services(&self) -> Result<Services, OnvifError> {
         let xml = self
             .authed(
@@ -353,7 +353,7 @@ impl OnvifClient {
     }
 
     /// # Errors
-    /// Pas de service media, identifiants refuses, camera injoignable ou reponse illisible.
+    /// No media service, credentials refused, camera unreachable or unreadable response.
     pub async fn profiles(&self, media_url: &str) -> Result<Vec<MediaProfile>, OnvifError> {
         let xml = self.authed(media_url, "<trt:GetProfiles/>").await?;
         let doc = parse(&xml)?;
@@ -378,7 +378,7 @@ impl OnvifClient {
     }
 
     /// # Errors
-    /// Identifiants refuses, camera injoignable ou reponse illisible.
+    /// Credentials refused, camera unreachable or unreadable response.
     pub async fn stream_uri(
         &self,
         media_url: &str,
@@ -401,10 +401,10 @@ impl OnvifClient {
         })
     }
 
-    /// Ce que la synchronisation ONVIF apprend : identite, premier profil, PTZ, URL de flux masquee.
+    /// What the ONVIF synchronisation learns: identity, first profile, PTZ, masked stream URL.
     ///
     /// # Errors
-    /// Identifiants refuses, camera sans service media, injoignable ou reponse illisible.
+    /// Credentials refused, camera without a media service, unreachable or unreadable response.
     pub async fn inspect(&self) -> Result<Inspection, OnvifError> {
         let info = self.device_information().await?;
         let services = self.services().await?;
@@ -434,11 +434,11 @@ fn xml_escape(s: &str) -> String {
         .replace('"', "&quot;")
 }
 
-/// Ports sur lesquels on cherche un service ONVIF (ceux de la reference, plus 8899 de la camera NVT et 2020 de TP-Link).
+/// Ports on which an ONVIF service is searched (those of the reference, plus the NVT camera's 8899 and TP-Link's 2020).
 pub const ONVIF_PORTS: [u16; 5] = [80, 8080, 8899, 2020, 8000];
 
-/// Cherche le service ONVIF d'une camera : le premier port de `ports` qui repond a `GetSystemDateAndTime` (sans authentification).
-/// Contrairement a reference, un simple port ouvert ne suffit pas.
+/// Looks for a camera's ONVIF service: the first port of `ports` that answers `GetSystemDateAndTime` (without authentication).
+/// Unlike the reference, a simple open port is not enough.
 pub async fn probe_port(host: &str, ports: &[u16]) -> Option<u16> {
     for &port in ports {
         if let Ok(client) = OnvifClient::new(host, port, None)
