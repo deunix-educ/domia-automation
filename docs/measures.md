@@ -51,6 +51,31 @@ python3 tools/bench-video.py --bin target/release/dominet --site target/site --m
 ```
 Use `--nice 19` on a shared machine and `FFMPEG_HWACCEL=off` for the software series.
 
+### Raspberry Pi 5 (2026-11-23)
+
+Same tool and protocol, on a Raspberry Pi 5 (8 GB, NVMe SSD, Debian 13 arm64, 4 cores), image 1.0.2, **software decoding only** (`FFMPEG_HWACCEL=off`: the Pi has no usable hardware decoder), 60 s measured per point, `--nice 10`, the installed stack idle next to the test. "Machine" is the share of the four cores in use.
+
+| Scenario | Cameras | Cores | Memory (MB) | Machine busy |
+|---|---|---|---|---|
+| Decode only | 1 | 0.23 | 311 | 8 % |
+| Decode only | 2 | 0.44 | 434 | 14 % |
+| Decode only | 4 | 0.84 | 683 | 25 % |
+| Decode only | 6 | 1.30 | 943 | 36 % |
+| Full | 1 | 0.26 | 434 | 9 % |
+| Full | 2 | 0.50 | 578 | 17 % |
+| Full | 4 | 1.00 | 846 | 27 % |
+| Full | 6 | 1.48 | 1 146 | 40 % |
+
+What it says:
+
+- A camera costs about **0.22 core** decoding only and **0.25 core** in full mode (recording, indexing, motion, YOLO), almost all of it the decoding `ffmpeg`; the application itself stays at 0.17 core with 6 cameras. The cost is linear over the measured range, and no frame was dropped (no fallback in any run).
+- **6 cameras in 1080p fill 40 % of the machine** in full mode, using about 1.1 GB of memory (about 140 MB per camera plus 0.3 GB of base).
+- Extending the line suggests that around 10 cameras would leave the Pi a margin of about 30 %. **This is an extrapolation**: nothing above 6 cameras was measured, and the synthetic streams are lighter than real ones (see the limits above). Do not plan on more than 6 to 8 cameras before measuring with yours.
+
+**Start from cold**: `make prod-up` after `make prod-down` takes about 24 s until every service reports healthy (images already present).
+
+Not measured on the Pi: the *stress* scenario (YOLO six times as often), live viewers (WebRTC), the other services under load, a backup.
+
 ## 3. MQTT and WebSocket load (phase R8)
 
 Measured on the development machine, never on production.

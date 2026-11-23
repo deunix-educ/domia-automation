@@ -51,6 +51,31 @@ python3 tools/bench-video.py --bin target/release/dominet --site target/site --m
 ```
 Utiliser `--nice 19` sur une machine partagée et `FFMPEG_HWACCEL=off` pour la série logicielle.
 
+### Raspberry Pi 5 (2026-11-23)
+
+Même outil et même protocole, sur un Raspberry Pi 5 (8 Go, SSD NVMe, Debian 13 arm64, 4 cœurs), image 1.0.2, **décodage logiciel uniquement** (`FFMPEG_HWACCEL=off` : le Pi n'a pas de décodeur matériel utilisable), 60 s mesurées par point, `--nice 10`, la pile installée au repos à côté du test. « Machine » est la part des quatre cœurs utilisée.
+
+| Scénario | Caméras | Cœurs | Mémoire (Mo) | Machine occupée |
+|---|---|---|---|---|
+| Décodage seul | 1 | 0,23 | 311 | 8 % |
+| Décodage seul | 2 | 0,44 | 434 | 14 % |
+| Décodage seul | 4 | 0,84 | 683 | 25 % |
+| Décodage seul | 6 | 1,30 | 943 | 36 % |
+| Complet | 1 | 0,26 | 434 | 9 % |
+| Complet | 2 | 0,50 | 578 | 17 % |
+| Complet | 4 | 1,00 | 846 | 27 % |
+| Complet | 6 | 1,48 | 1 146 | 40 % |
+
+Ce que ça dit :
+
+- Une caméra coûte environ **0,22 cœur** en décodage seul et **0,25 cœur** en mode complet (enregistrement, indexation, mouvement, YOLO), presque tout dans le `ffmpeg` de décodage ; l'application elle-même reste à 0,17 cœur avec 6 caméras. Le coût est linéaire sur la plage mesurée, et aucune image n'a été perdue (aucun repli dans aucune série).
+- **6 caméras en 1080p occupent 40 % de la machine** en mode complet, pour environ 1,1 Go de mémoire (environ 140 Mo par caméra plus 0,3 Go de base).
+- En prolongeant la droite, environ 10 caméras laisseraient au Pi une marge d'environ 30 %. **C'est une extrapolation** : rien au-delà de 6 caméras n'a été mesuré, et les flux synthétiques sont plus légers que de vrais flux (voir les limites ci-dessus). Ne comptez pas sur plus de 6 à 8 caméras avant d'avoir mesuré avec les vôtres.
+
+**Démarrage à froid** : `make prod-up` après `make prod-down` prend environ 24 s jusqu'à ce que tous les services soient sains (images déjà présentes).
+
+Non mesuré sur le Pi : le scénario *stress* (YOLO six fois plus souvent), les spectateurs en direct (WebRTC), les autres services sous charge, une sauvegarde.
+
 ## 3. Charge MQTT et WebSocket (phase R8)
 
 Mesurée sur le poste de développement, jamais sur la production.

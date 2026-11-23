@@ -6,18 +6,18 @@ What was tested, what was not, and how to add your own measurements. Nothing her
 |---|---|---|
 | Intel Core i5-6500 mini PC, 8 GB (reference) | **tested and measured** | 12 cameras in 1080p with hardware decoding (VAAPI): see [Measurements](measures.md) |
 | amd64 mini PC, 16 GB (for example a one-amd8 class machine) | **not tested yet** | Same image as the reference. Expected to do at least as well; hardware decoding needs an Intel GPU with VAAPI |
-| Raspberry Pi 5, 8 GB, NVMe SSD | **installs and runs** (2026-11-23) | arm64 image built and started on the machine, then published; the number of cameras is not measured yet; see below |
+| Raspberry Pi 5, 8 GB, NVMe SSD | **installs and runs** (2026-11-23) | arm64 image built and started on the machine, then published; 6 cameras in 1080p measured at 40 % of the machine (software decoding); see below |
 | Other arm64 or amd64 Linux with Docker | untested | The installer does not refuse them; it warns on arm64 |
 
 ## Raspberry Pi 5: what to expect, what is unknown
 
-What was verified on a Raspberry Pi 5 (8 GB, NVMe SSD, Debian 13 arm64, Docker 29): the image builds natively in about 67 minutes (no swap problem with 2 GB of swap), the whole stack starts, the database schema is applied, an administrator account is created, and the interface answers in about 10 ms (median) with the stack idle, at 55 °C and never throttled. The stack at rest uses about 1 GB of memory. Not measured: number of cameras, detection load.
+What was verified on a Raspberry Pi 5 (8 GB, NVMe SSD, Debian 13 arm64, Docker 29): the image builds natively in about 67 minutes (no swap problem with 2 GB of swap), the whole stack starts, the database schema is applied, an administrator account is created, and the interface answers in about 10 ms (median) with the stack idle, at 55 °C and never throttled. The stack at rest uses about 1 GB of memory. Cameras: 6 in 1080p occupy 40 % of the four cores in full mode ([Measurements](measures.md), section 2); nothing above 6 was measured.
 
 Known from the design (not from measurements):
 
 - **Operating system**: 64-bit Raspberry Pi OS (Debian 13 based) or Debian 13 arm64; Docker with the Compose plugin 2.24 or newer. A 32-bit system cannot run the images.
 - **Storage**: use an **SSD** (USB 3 or NVMe), not an SD card. The database and the video recordings write continuously; an SD card wears out. The installer warns when `/` is on an SD card.
-- **Video decoding**: the Intel hardware decoder (VAAPI) is not available on arm64; video is decoded by the processor, so the number of cameras it holds is lower than on the reference machine. The figure is unknown until measured.
+- **Video decoding**: the Intel hardware decoder (VAAPI) is not available on arm64; video is decoded by the processor, so it holds fewer cameras than the reference machine: about 0.25 core per camera in software, against 0.12 with VAAPI.
 - **Object detection** (YOLO on CPU): not measured on arm64. Keep it off at first, then enable it on one camera and watch the load.
 - **First installation**: the published image now exists for arm64, so the installer downloads it instead of building (a local build took about 67 minutes on a Pi 5; it remains the fallback, [ADR 0062](adr/0062-published-images-with-local-build-fallback.md)).
 - **Memory figures**: for `docker stats` to show the memory of the containers, the kernel needs the memory cgroup: add `cgroup_enable=memory cgroup_memory=1` to the line of `/boot/firmware/cmdline.txt` and reboot. Without it the machine card shows `0B` for every service.
