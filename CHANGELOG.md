@@ -4,6 +4,8 @@ All notable changes are listed here. Format based on [Keep a Changelog](https://
 
 ## [Unreleased]
 
+## [1.0.2] - 2026-11-23
+
 ### Added
 - The published image is now multi-architecture (amd64 and arm64): a Raspberry Pi 5 downloads it instead of building for about 67 minutes. Tested on a Pi 5 (8 GB, NVMe): installs, starts and answers; camera count not measured. `docs/machines.md` says how to enable the memory cgroup so the machine card shows memory.
 - The installer and `make prod-up` warn when a Zigbee dongle is plugged in but the Zigbee2MQTT folder is empty (a new network would replace the one on the dongle), and `make prod-doctor` reports a failed network creation and says to stop the retries first.
