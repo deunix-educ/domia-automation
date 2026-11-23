@@ -1,14 +1,14 @@
 #!/bin/sh
 # SPDX-License-Identifier: AGPL-3.0-or-later
-# Comptes MQTT de Mosquitto (prod et demo, R8 lot 2, ADR 0057). Un seul listener (1883, mot de passe obligatoire, jamais anonyme).
-#  - le compte interne (MQTT_USER / MQTT_PASSWORD : DomiNet et Zigbee2MQTT) lit et ecrit tout ;
-#  - chaque client externe (Linky, SolarMax...) a son compte nominatif et un droit limite a un sujet : volume mosquitto-accounts.
+# Mosquitto MQTT accounts (prod and demo, R8 lot 2, ADR 0057). A single listener (1883, mandatory password, never anonymous).
+#  - the internal account (MQTT_USER / MQTT_PASSWORD: DomiNet and Zigbee2MQTT) reads and writes everything;
+#  - each external client (Linky, SolarMax...) has its own named account and a right limited to one subject: mosquitto-accounts volume.
 #
-#   mqtt-accounts regen                                   regenere config/passwd et config/acl (demarrage)
-#   mqtt-accounts add NOM MOT_DE_PASSE [SUJET] [ACCES]    cree ou remplace ; SUJET (defaut NOM/#), ACCES read|write|readwrite (defaut readwrite)
-#   mqtt-accounts del NOM
+#   mqtt-accounts regen                                   regenerates config/passwd and config/acl (start-up)
+#   mqtt-accounts add NAME PASSWORD [TOPIC] [ACCESS]      creates or replaces; TOPIC (default NAME/#), ACCESS read|write|readwrite (default readwrite)
+#   mqtt-accounts del NAME
 #   mqtt-accounts list
-# `add` et `del` demandent a Mosquitto de relire ses fichiers (SIGHUP) : aucun redemarrage, les clients connectes ne sont pas coupes.
+# `add` and `del` ask Mosquitto to re-read its files (SIGHUP): no restart, connected clients are not cut.
 set -eu
 ACC=/mosquitto/accounts
 CFG=/mosquitto/config

@@ -46,7 +46,7 @@ opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(jar))
 login = urllib.request.Request(base + "/api/auth/login", json.dumps({"username": "root", "password": password}).encode(),
                                {"Content-Type": "application/json", "Origin": base})
 opener.open(login, timeout=10)
-cookie = "; ".join(f"{c.name}={c.value}" for c in jar)  # les sessions sont en base : elles survivent aux redemarrages
+cookie = "; ".join(f"{c.name}={c.value}" for c in jar)  # the sessions are in the database: they survive the restarts
 
 
 def hit(_):
@@ -74,7 +74,7 @@ for i in range(n):
         anomalies += 1
         print(f"demarrage {i} : {results}", flush=True)
     elif any(elapsed > 3 for _, elapsed in results):
-        slow += 1  # reponse correcte mais tardive : un rendu a ete relance par le garde-fou
+        slow += 1  # correct but late response: a render was retried by the safeguard
 print(f"{n} demarrages a froid ({par} requetes sur {page}) : {anomalies} anomalies, {slow} reponses tardives")
 PY
 LOG="$(docker logs "$NAME" 2>&1 | sed 's/\x1b\[[0-9;]*m//g')"

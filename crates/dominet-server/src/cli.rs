@@ -17,126 +17,126 @@ pub struct Cli {
 
 #[derive(Debug, Subcommand)]
 pub enum Command {
-    /// Demarre le serveur (HTTP, puis MQTT, planificateur, video... selon les roles).
+    /// Starts the server (HTTP, then MQTT, scheduler, video... depending on the roles).
     Serve(ServeArgs),
-    /// Applique les migrations de la base de donnees.
+    /// Applies the database migrations.
     Migrate,
-    /// Cree les donnees initiales (reglages, navigation) sans jamais ecraser l'existant.
+    /// Creates the initial data (settings, navigation) without ever overwriting what exists.
     Seed(SeedArgs),
-    /// Cree les libelles manquants (nom, icone, unite) des cles d'etat presentes sur les appareils.
+    /// Creates the missing labels (name, icon, unit) of the state keys present on the devices.
     SeedLabels(SeedArgs),
-    /// Cree la source MQTT « Meteo », l'appareil `meteo_locale` et (avec --lat et --lon) une station Open-Meteo.
+    /// Creates the "Meteo" MQTT source, the `meteo_locale` device and (with --lat and --lon) an Open-Meteo station.
     SeedWeather(SeedWeatherArgs),
-    /// Ajoute aux appareils du bilan d'energie les cles d'etat a suivre (compteurs Linky, PAC, `qdy` du SolarMax).
+    /// Adds to the energy summary's devices the state keys to track (Linky meters, heat pump, SolarMax's `qdy`).
     SeedEnergy(SeedArgs),
-    /// Calcule (ou recalcule) le bilan d'energie des derniers jours a partir de l'historique.
+    /// Computes (or recomputes) the energy summary of the last days from the history.
     AggregateEnergy(AggregateEnergyArgs),
-    /// Diagnostic d'un publisher : un seul cycle (lecture de la source, affichage, publication sur le broker).
+    /// Diagnostic of a publisher: a single cycle (reading the source, display, publishing on the broker).
     Publish(PublishArgs),
-    /// Exporte un instantane YAML de l'installation (appareils et leurs etats, schemas de reference).
+    /// Exports a YAML snapshot of the installation (devices and their states, reference schemas).
     DumpContext(DumpContextArgs),
-    /// Envoie un vrai message de test par chaque canal demande (e-mail, SMS Free Mobile). A lancer soi-meme : rien d'autre n'envoie.
+    /// Sends a real test message through each requested channel (e-mail, Free Mobile SMS). To be run by hand: nothing else sends.
     NotifyTest(NotifyTestArgs),
-    /// Sauvegarde maintenant la base (`pg_dump`) et les donnees `ReductStore` dans `BACKUP_DIR`, puis purge les sauvegardes expirees.
+    /// Backs up now the database (`pg_dump`) and the `ReductStore` data into `BACKUP_DIR`, then purges the expired backups.
     Backup,
-    /// Liste les sauvegardes presentes dans `BACKUP_DIR`.
+    /// Lists the backups present in `BACKUP_DIR`.
     Backups,
-    /// Restaure une sauvegarde : la base (fichier `.sql.gz`, DETRUIT les donnees actuelles : exige `--yes`) ou le volume `ReductStore` (fichier `.tar.gz` vers `--to`).
+    /// Restores a backup: the database (`.sql.gz` file, DESTROYS the current data: requires `--yes`) or the `ReductStore` volume (`.tar.gz` file to `--to`).
     Restore(RestoreArgs),
-    /// Ecrit les fichiers de regles d'alerte (Prometheus, Grafana) depuis la base et demande aux services de les relire.
+    /// Writes the alert-rule files (Prometheus, Grafana) from the database and asks the services to re-read them.
     SyncRules,
-    /// Sonde `/healthz` d'un serveur local (pour le healthcheck de Docker, l'image n'a pas `curl`) : code 0 si 200, sinon 1.
+    /// Probes `/healthz` of a local server (for Docker's healthcheck, the image has no `curl`): exit code 0 if 200, otherwise 1.
     Healthcheck(HealthcheckArgs),
-    /// Diagnostic en lecture seule vu depuis l'application (base, migrations, administrateur, cles, MQTT, ReductStore) ; code de sortie 1 s'il y a un point bloquant.
+    /// Read-only diagnostic seen from the application (database, migrations, administrator, keys, MQTT, ReductStore); exit code 1 if there is a blocking point.
     Doctor,
-    /// Affiche une nouvelle cle maitresse (a copier dans `DOMINET_MASTER_KEY`).
+    /// Prints a new master key (to copy into `DOMINET_MASTER_KEY`).
     GenMasterKey,
-    /// Cree un compte administrateur.
+    /// Creates an administrator account.
     Createsuperuser(SuperuserArgs),
-    /// Change le mot de passe d'un compte.
+    /// Changes an account's password.
     Passwd(UserArgs),
 }
 
 #[derive(Debug, clap::Args)]
 pub struct HealthcheckArgs {
-    /// Adresse a sonder (defaut : le port de `HTTP_ADDR`, sur 127.0.0.1).
+    /// Address to probe (default: the port of `HTTP_ADDR`, on 127.0.0.1).
     #[arg(long)]
     pub addr: Option<String>,
 }
 
 #[derive(Debug, clap::Args)]
 pub struct RestoreArgs {
-    /// Fichier de sauvegarde (`.sql.gz` pour la base, `.tar.gz` pour ReductStore).
+    /// Backup file (`.sql.gz` for the database, `.tar.gz` for ReductStore).
     pub file: Option<std::path::PathBuf>,
-    /// A la place d'un fichier : la plus recente sauvegarde de cette nature.
+    /// Instead of a file: the most recent backup of that kind.
     #[arg(long, value_parser = ["postgres", "reductstore"], conflicts_with = "file")]
     pub latest: Option<String>,
-    /// Dossier de donnees ou extraire l'archive ReductStore (ReductStore arrete).
+    /// Data folder to extract the ReductStore archive into (ReductStore stopped).
     #[arg(long)]
     pub to: Option<std::path::PathBuf>,
-    /// Confirme la restauration de la base (elle remplace les donnees actuelles).
+    /// Confirms the database restore (it replaces the current data).
     #[arg(long)]
     pub yes: bool,
-    /// Extrait l'archive ReductStore meme si le dossier cible n'est pas vide.
+    /// Extracts the ReductStore archive even if the target folder is not empty.
     #[arg(long)]
     pub force: bool,
 }
 
 #[derive(Debug, clap::Args)]
 pub struct NotifyTestArgs {
-    /// Envoie un e-mail de test (au destinataire des alertes, ou a `--to`).
+    /// Sends a test e-mail (to the alerts recipient, or to `--to`).
     #[arg(long)]
     pub email: bool,
-    /// Envoie un SMS de test par Free Mobile.
+    /// Sends a test SMS through Free Mobile.
     #[arg(long)]
     pub sms: bool,
-    /// Destinataire de l'e-mail de test (defaut : `EMAIL_RECIPIENT`).
+    /// Recipient of the test e-mail (default: `EMAIL_RECIPIENT`).
     #[arg(long)]
     pub to: Option<String>,
 }
 
 #[derive(Debug, clap::Args)]
 pub struct ServeArgs {
-    /// Ne lancer que ces roles (defaut : tous les roles disponibles).
+    /// Only run these roles (default: all the available roles).
     #[arg(long, value_enum, value_delimiter = ',')]
     pub only: Vec<Role>,
 }
 
 #[derive(Debug, clap::Args)]
 pub struct SeedArgs {
-    /// Montre ce qui serait cree, sans rien ecrire.
+    /// Shows what would be created, without writing anything.
     #[arg(long)]
     pub dry_run: bool,
 }
 
 #[derive(Debug, clap::Args)]
 pub struct AggregateEnergyArgs {
-    /// Nombre de jours passes a calculer (defaut : hier seulement).
+    /// Number of past days to compute (default: yesterday only).
     #[arg(long, default_value_t = 1, value_parser = clap::value_parser!(u32).range(1..=3650))]
     pub days: u32,
-    /// Un jour precis (AAAA-MM-JJ, jour local) ; remplace --days.
+    /// A specific day (YYYY-MM-DD, local day); replaces --days.
     #[arg(long)]
     pub date: Option<chrono::NaiveDate>,
 }
 
 #[derive(Debug, clap::Args)]
 pub struct SeedWeatherArgs {
-    /// Latitude de la station (avec --lon : cree la station).
+    /// Latitude of the station (with --lon: creates the station).
     #[arg(long, allow_hyphen_values = true)]
     pub lat: Option<f64>,
-    /// Longitude de la station.
+    /// Longitude of the station.
     #[arg(long, allow_hyphen_values = true)]
     pub lon: Option<f64>,
-    /// Altitude en metres.
+    /// Altitude in metres.
     #[arg(long, default_value_t = 0, allow_hyphen_values = true)]
     pub alt: i32,
-    /// Fuseau horaire transmis a Open-Meteo.
+    /// Time zone passed to Open-Meteo.
     #[arg(long, default_value = "Europe/Paris")]
     pub timezone: String,
-    /// Intervalle d'interrogation, en minutes.
+    /// Polling interval, in minutes.
     #[arg(long, default_value_t = 10)]
     pub refresh: i16,
-    /// Montre ce qui serait cree, sans rien ecrire.
+    /// Shows what would be created, without writing anything.
     #[arg(long)]
     pub dry_run: bool,
 }
@@ -149,34 +149,34 @@ pub enum PublishTarget {
 
 #[derive(Debug, clap::Args)]
 pub struct PublishArgs {
-    /// Source a lire.
+    /// Source to read.
     #[arg(value_enum)]
     pub target: PublishTarget,
-    /// Affiche le resultat sans rien publier sur le broker.
+    /// Prints the result without publishing anything on the broker.
     #[arg(long)]
     pub print_only: bool,
 }
 
 #[derive(Debug, clap::Args)]
 pub struct DumpContextArgs {
-    /// Ecrit le document dans ce fichier (par defaut : sur la sortie standard).
+    /// Writes the document to this file (default: on standard output).
     #[arg(long)]
     pub output: Option<std::path::PathBuf>,
 }
 
 #[derive(Debug, clap::Args)]
 pub struct SuperuserArgs {
-    /// Nom d'utilisateur (demande en interactif s'il est omis).
+    /// Username (asked interactively if omitted).
     #[arg(long)]
     pub username: Option<String>,
-    /// Adresse e-mail (facultative).
+    /// E-mail address (optional).
     #[arg(long, default_value = "")]
     pub email: String,
 }
 
 #[derive(Debug, clap::Args)]
 pub struct UserArgs {
-    /// Nom d'utilisateur (demande en interactif s'il est omis).
+    /// Username (asked interactively if omitted).
     #[arg(long)]
     pub username: Option<String>,
 }
@@ -192,7 +192,7 @@ pub enum Role {
 }
 
 impl Role {
-    /// Premier jalon de la feuille de route ou le role existe.
+    /// First roadmap milestone where the role exists.
     #[must_use]
     pub fn available_since(self) -> Option<&'static str> {
         match self {

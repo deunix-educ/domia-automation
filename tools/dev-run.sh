@@ -1,18 +1,18 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: AGPL-3.0-or-later
 #
-# Lance DomiNet en developpement, en une commande, contre la stack de dev jetable (`make dev-up`).
+# Run DomiNet in development, in one command, against the throw-away dev stack (`make dev-up`).
 #
-#   tools/dev-run.sh                 serveur web + planificateur (+ MQTT de dev), sur http://127.0.0.1:8080
-#   tools/dev-run.sh --discovery     idem, plus le role `discovery` (WS-Discovery multicast sur le reseau local)
-#   tools/dev-run.sh --discovery-only  seulement le role `discovery`, a lancer dans un SECOND terminal (il ne sonde le reseau que
-#                                    quand on clique sur « Lancer la decouverte » dans l'interface)
-#   DEV_PORT=9000 tools/dev-run.sh   autre port
-#   RELEASE=1 tools/dev-run.sh       interface optimisee (cargo leptos build --release) : ~4 Mo de WASM au lieu de ~48 Mo, la page
-#                                    reagit en une ou deux secondes ; la premiere compilation prend plusieurs minutes
+#   tools/dev-run.sh                 web server + scheduler (+ dev MQTT), on http://127.0.0.1:8080
+#   tools/dev-run.sh --discovery     same, plus the `discovery` role (multicast WS-Discovery on the local network)
+#   tools/dev-run.sh --discovery-only  only the `discovery` role, to run in a SECOND terminal (it only probes the network when
+#                                    you click "Start discovery" in the interface)
+#   DEV_PORT=9000 tools/dev-run.sh   other port
+#   RELEASE=1 tools/dev-run.sh       optimised interface (cargo leptos build --release): ~4 MB of WASM instead of ~48 MB, the page
+#                                    reacts in a second or two; the first build takes several minutes
 #
-# Au premier lancement : cle maitresse et compte administrateur sont crees et gardes dans deploy/.env.dev-run (ignore par git, chmod 600).
-# Aucun contact avec la production : PostgreSQL, MQTT, ReductStore et MediaMTX sont ceux de la stack de dev.
+# On first run: master key and administrator account are created and kept in deploy/.env.dev-run (ignored by git, chmod 600).
+# No contact with production: PostgreSQL, MQTT, ReductStore and MediaMTX are those of the dev stack.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
