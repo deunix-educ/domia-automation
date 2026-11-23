@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Cycle des alertes contre le **implementation de reference** : declenchement, cooldown, resolution,
-//! acquittement (qui sort l'alerte du calcul du cooldown), valeurs absentes ou nulles, texte, bascule rapide. Chaque suite d'etats
-//! rejouee sur une base jetable avec une horloge maitrisee doit laisser les memes alertes que reference apres chaque etape.
+//! Alert cycle against the **reference implementation**: triggering, cooldown, resolution,
+//! acknowledgement (which takes the alert out of the cooldown computation), absent or null values, text, quick toggling. Each series of states
+//! replayed on a throw-away database with a controlled clock must leave the same alerts as the reference after each step.
 
 use std::sync::{Arc, Mutex};
 
@@ -146,7 +146,7 @@ async fn every_alert_scenario_leaves_the_same_alerts_as_reference_after_each_ste
                 "{name} : apres l'etape {i} ({ev})"
             );
         }
-        // Isolation entre scenarios (meme base : l'appareil part avec ses regles et ses alertes).
+        // Isolation between scenarios (same database: the device starts with its rules and its alerts).
         sqlx::query("DELETE FROM device")
             .execute(&pool)
             .await
@@ -173,7 +173,7 @@ async fn a_fired_alert_is_announced_with_the_reference_texts_and_the_count_chang
     assert_eq!(*rec.changed.lock().unwrap(), 0, "rien ne bouge");
     *clock.lock().unwrap() = "2026-07-14T15:04:09Z".parse().unwrap();
     engine.process(&state(36.2)).await;
-    engine.process(&state(37.0)).await; // cooldown : pas de seconde alerte
+    engine.process(&state(37.0)).await; // cooldown: no second alert
     {
         let fired = rec.fired.lock().unwrap();
         assert_eq!(fired.len(), 1);
@@ -243,7 +243,7 @@ async fn disabled_rules_and_other_devices_are_ignored_and_a_firing_alert_survive
         "la regle eteinte ne declenche rien"
     );
 
-    // Redemarrage : un nouveau moteur doit voir l'alerte en cours pour la resoudre quand la valeur redevient normale.
+    // Restart: a new engine must see the ongoing alert to resolve it when the value becomes normal again.
     let rec2 = Arc::new(Rec::default());
     let (engine2, _h, _rx) = AlertEngine::new(
         store.alert_rules(),

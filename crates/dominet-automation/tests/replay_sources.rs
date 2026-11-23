@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Rejeu d'une session de **sources MQTT** (appareils automatiques, journal, marquage « vu ») : l'ingestion Rust doit produire les memes
-//! appareils et lignes d'historique que l'implementation de reference.
-//! Attendu fige dans `tests/fixtures/mqtt/` (ADR 0028).
+//! Replay of a session of **MQTT sources** (automatic devices, log, "seen" marking): Rust ingestion must produce the same
+//! devices and history rows as the reference implementation.
+//! Expected values frozen in `tests/fixtures/mqtt/` (ADR 0028).
 
 mod common;
 
@@ -33,11 +33,11 @@ fn source_of(raw: &Value) -> MqttSource {
     s
 }
 
-/// **Ecart connu et voulu avec reference** (ADR 0028) : un upsert dont les valeurs par defaut ne s'appliquent qu'a
-/// la creation, donc le **premier message** d'un appareil automatique n'en ecrit pas l'etat (il n'est que diffuse). Un appareil qui n'a
-/// recu qu'un seul message reste donc sans etat chez la reference ; ici l'etat est ecrit tout de suite. Le test ne gomme pas l'ecart a
-/// l'aveugle : pour chaque appareil dont l'etat attendu est vide, il exige qu'une source **active, en appareil automatique, dont le filtre
-/// correspond** ait vu un message objet pour lui, et attend alors le dernier de ces messages.
+/// **Known and intended difference with the reference** (ADR 0028): an upsert whose default values only apply at
+/// creation, so the **first message** of an automatic device does not write its state (it is only broadcast). A device that has
+/// received a single message thus stays without state in the reference; here the state is written right away. The test does not blindly erase the difference:
+/// for each device whose expected state is empty, it requires that an **active source, as automatic device, whose filter
+/// matches** has seen an object message for it, and then expects the last of these messages.
 fn apply_known_deviation(golden: &mut Value) -> usize {
     let mut sources = vec![];
     let mut messages = vec![];
@@ -114,11 +114,11 @@ async fn replaying_the_sources_session_gives_what_the_reference_code_gives(pool:
     }
     let mut expected: Value = serde_json::from_str(GOLDEN).unwrap();
     let patched = apply_known_deviation(&mut expected);
-    // Un seul appareil est dans ce cas : « 0xCD/prod » (un seul message). Les appareils crees a la main (`capteur`, `agrege`)
-    // n'ont jamais d'etat ; ceux qui ont recu plusieurs messages ont l'etat de la reference.
+    // A single device is in this case: "0xCD/prod" (a single message). The devices created by hand (`capteur`, `agrege`)
+    // never have a state; those that received several messages have the reference's state.
     assert_eq!(patched, 1, "{expected}");
     let mut actual = dump(&pool).await;
-    // `exposes` / `hidden_keys` des appareils crees a la main : la creation reference laisse `hidden_keys` vide aussi.
+    // `exposes` / `hidden_keys` of the hand-created devices: the reference's creation leaves `hidden_keys` empty too.
     for v in [&mut actual, &mut expected] {
         v["devices"]
             .as_array_mut()
@@ -126,7 +126,7 @@ async fn replaying_the_sources_session_gives_what_the_reference_code_gives(pool:
             .sort_by_key(|d| d["friendly_name"].as_str().unwrap().to_string());
     }
     assert_same(&actual, &expected);
-    // Le sink a vu les appareils automatiques changer (diffusion en direct).
+    // The sink saw the automatic devices change (live broadcast).
     let changed = rec.changed.lock().unwrap();
     assert!(
         changed.iter().any(|(n, _)| n == "compteur")

@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Ingestion Zigbee2MQTT : `bridge/devices`, `bridge/info`, etats et disponibilites (ADR 0027).
+//! Zigbee2MQTT ingestion: `bridge/devices`, `bridge/info`, states and availabilities (ADR 0027).
 //!
-//! Chaque traitement suit la semantique decrite dans `dominet_domain::device`. Les doublons QoS 1 sont
-//! sans consequence : l'etat est remplace, l'historique est a la seconde. En cas de rafale, les messages d'etat d'un meme appareil
-//! recus dans la meme seconde et deja en file ne sont traites que dans leur derniere version ([`coalesce`]).
+//! Each processing follows the semantics described in `dominet_domain::device`. QoS 1 duplicates are
+//! harmless: the state is replaced, the history is per second. In case of a burst, the state messages of the same device
+//! received in the same second and already queued are only processed in their last version ([`coalesce`]).
 
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
@@ -19,44 +19,44 @@ use tokio::sync::mpsc;
 
 use crate::route::{Route, route};
 
-/// Plus gros paquet traite d'un coup (au-dela, les messages restent dans la file du client).
+/// Largest packet processed at once (beyond it, the messages stay in the client's queue).
 const MAX_BATCH: usize = 256;
 
-/// Ce que l'ingestion alimente en dehors de la base : diffusion temps reel (serveur), et plus tard automations et alertes (R4).
+/// What ingestion feeds outside the database: real-time broadcast (server), and later automations and alerts (R4).
 pub trait Sink: Send + Sync + 'static {
-    /// L'etat ou la disponibilite d'un appareil vient de changer (l'appareil est tel qu'en base apres le changement).
+    /// The state or availability of a device has just changed (the device is as in the database after the change).
     fn device_changed(&self, device: &Device);
-    /// Etat `permit_join` lu dans `bridge/info`.
+    /// `permit_join` state read from `bridge/info`.
     fn permit_join(&self, enabled: bool);
     /// Zigbee2MQTT reported an **error** on `bridge/logging` (a command that did not reach its device, for instance): the
     /// only trace of a delivery failure, since a published command always succeeds from the broker's point of view.
     /// No effect by default.
     fn bridge_error(&self, _message: &str) {}
-    /// Un message vient d'etre traite (tous les messages recus, y compris hors Zigbee2MQTT, sauf `bridge/…`, commandes
-    /// `…/set` / `…/get`) : declencheur `mqtt_message` des automations. Sans effet par defaut.
+    /// A message has just been processed (all received messages, including non-Zigbee2MQTT ones, except `bridge/…`, commands
+    /// `…/set` / `…/get`): `mqtt_message` trigger of the automations. No effect by default.
     fn message(&self, _topic: &str, _payload: &Payload) {}
-    /// Un message d'**etat** vient d'etre enregistre (Zigbee2MQTT ou appareil automatique) : declencheur `device_state`.
+    /// A **state** message has just been saved (Zigbee2MQTT or automatic device): `device_state` trigger.
     fn device_state(&self, _device: &Device, _state: &Value) {}
-    /// Un message d'etat a ete **regroupe** (un autre etat du meme appareil suit dans la meme seconde, voir [`coalesce`]) : il
-    /// n'est ni enregistre ni diffuse, mais une automation `device_state` doit le voir quand meme (une telecommande envoie
-    /// `{"action":"1_single"}` puis `{"action":""}` a quelques millisecondes d'ecart). Sans effet par defaut.
+    /// A state message was **coalesced** (another state of the same device follows in the same second, see [`coalesce`]): it
+    /// is neither saved nor broadcast, but a `device_state` automation must still see it (a remote control sends
+    /// `{"action":"1_single"}` then `{"action":""}` a few milliseconds apart). No effect by default.
     fn state_skipped(&self, _name: &str, _topic: &str, _state: &Value) {}
-    /// Un message vise une source MQTT active qui a un code de traitement (`handler_code`, Rhai).
+    /// A message targets an active MQTT source that has a processing code (`handler_code`, Rhai).
     fn source_handler(&self, _source: &MqttSource, _topic: &str, _payload: &Payload) {}
-    /// Des cles suivies viennent d'etre historisees en base : `state` est l'etat complet apres le message. Archive brute
-    /// (ReductStore) ; sans effet par defaut.
+    /// Tracked keys have just been recorded in the database history: `state` is the full state after the message. Raw archive
+    /// (ReductStore); no effect by default.
     fn archive(&self, _device: &Device, _at: DateTime<Utc>, _entries: &[LogEntry]) {}
 }
 
 type Clock = dyn Fn() -> DateTime<Utc> + Send + Sync;
 
-/// Traitement des messages d'appareils.
+/// Processing of device messages.
 pub struct Ingestor<D, L, S> {
     devices: D,
     log: L,
     sink: S,
     base_topic: RwLock<String>,
-    /// Sources MQTT actives (hors Zigbee2MQTT), remplacees d'un bloc quand elles changent.
+    /// Active MQTT sources (outside Zigbee2MQTT), replaced as a block when they change.
     sources: RwLock<Arc<Vec<MqttSource>>>,
     clock: Arc<Clock>,
 }
@@ -67,15 +67,15 @@ impl<D, L, S> std::fmt::Debug for Ingestor<D, L, S> {
     }
 }
 
-/// Un message avec la seconde a laquelle il a ete recu (pour le regroupement).
+/// A message with the second at which it was received (for coalescing).
 struct Stamped {
     msg: Incoming,
     route: Route,
     second: i64,
 }
 
-/// Indices des messages a traiter apres regroupement. Un message d'etat est ecarte si le **message suivant concernant le meme
-/// appareil** est aussi un etat recu dans la meme seconde ; `bridge/devices` coupe tout regroupement.
+/// Indices of the messages to process after coalescing. A state message is dropped if the **next message about the same
+/// device** is also a state received in the same second; `bridge/devices` cuts any coalescing.
 #[must_use]
 fn coalesce(batch: &[(Route, i64)]) -> Vec<usize> {
     #[derive(Clone, Copy, PartialEq)]
@@ -118,7 +118,7 @@ where
         Self::with_clock(devices, log, sink, base_topic, Arc::new(Utc::now))
     }
 
-    /// Avec une horloge fournie (rejeux de tests : le temps vient du fichier de messages).
+    /// With a supplied clock (test replays: the time comes from the message file).
     #[must_use]
     pub fn with_clock(devices: D, log: L, sink: S, base_topic: &str, clock: Arc<Clock>) -> Self {
         Self {
@@ -131,7 +131,7 @@ where
         }
     }
 
-    /// Prefixe Zigbee2MQTT courant.
+    /// Current Zigbee2MQTT prefix.
     #[must_use]
     pub fn base_topic(&self) -> String {
         self.base_topic
@@ -140,14 +140,14 @@ where
             .unwrap_or_default()
     }
 
-    /// Change le prefixe (reglage `Z2M_BASE_TOPIC` modifie).
+    /// Changes the prefix (`Z2M_BASE_TOPIC` setting modified).
     pub fn set_base_topic(&self, base: &str) {
         if let Ok(mut b) = self.base_topic.write() {
             *b = normalize(base);
         }
     }
 
-    /// Remplace les sources MQTT generiques (seules les actives sont gardees).
+    /// Replaces the generic MQTT sources (only the active ones are kept).
     pub fn set_sources(&self, sources: Vec<MqttSource>) {
         let active: Vec<MqttSource> = sources.into_iter().filter(|s| s.active).collect();
         if let Ok(mut slot) = self.sources.write() {
@@ -162,7 +162,7 @@ where
             .unwrap_or_default()
     }
 
-    /// Republie vers le sink l'etat connu de chaque appareil actif (demarrage : les widgets montrent le dernier etat connu).
+    /// Republishes to the sink the known state of each active device (start-up: the widgets show the last known state).
     pub async fn announce_known_states(&self) {
         match self
             .devices
@@ -180,7 +180,7 @@ where
         }
     }
 
-    /// Boucle d'ingestion : prend les messages par paquets (regroupes en cas de retard) jusqu'a la fermeture de la file.
+    /// Ingestion loop: takes the messages in packets (coalesced in case of delay) until the queue is closed.
     pub async fn run(self: Arc<Self>, mut rx: mpsc::Receiver<Incoming>) {
         let mut batch = Vec::with_capacity(MAX_BATCH);
         while rx.recv_many(&mut batch, MAX_BATCH).await > 0 {
@@ -188,12 +188,12 @@ where
         }
     }
 
-    /// Traite un seul message (tests).
+    /// Processes a single message (tests).
     pub async fn handle(&self, msg: Incoming) {
         self.handle_batch(vec![msg]).await;
     }
 
-    /// Traite un paquet de messages, dans l'ordre, apres regroupement.
+    /// Processes a packet of messages, in order, after coalescing.
     pub async fn handle_batch(&self, messages: Vec<Incoming>) {
         let base = self.base_topic();
         let now = (self.clock)();
@@ -227,7 +227,7 @@ where
             } else if let (Route::State(name), Payload::Json(state @ Value::Object(_))) =
                 (&s.route, &s.msg.payload)
             {
-                // Regroupe : pas enregistre, mais les automations le voient (a sa place dans l'ordre des messages).
+                // Coalesced: not saved, but the automations see it (in its place in the message order).
                 self.sink.state_skipped(name, &s.msg.topic, state);
             }
         }
@@ -244,8 +244,8 @@ where
             Route::Other => self.source_message(&msg.topic, payload).await,
             Route::Ignored => {}
         }
-        // Les messages de bridge et les commandes ne declenchent pas d'automation (une automation qui commande un appareil
-        // se declencherait elle-meme en voyant passer sa propre commande).
+        // Bridge messages and commands do not trigger automations (an automation that commands a device
+        // would trigger itself on seeing its own command go by).
         if matches!(
             route,
             Route::State(_) | Route::Availability(_) | Route::Other
@@ -254,7 +254,7 @@ where
         }
     }
 
-    /// `bridge/devices` : cree ou rafraichit chaque appareil (le coordinateur et les noms invalides sont ignores).
+    /// `bridge/devices`: creates or refreshes each device (the coordinator and invalid names are ignored).
     async fn bridge_devices(&self, base: &str, payload: &Payload) {
         let Payload::Json(Value::Array(entries)) = payload else {
             return;
@@ -275,7 +275,7 @@ where
         }
     }
 
-    /// `bridge/logging` : seules les erreurs comptent (`{"level":"error","message":"z2m: Publish 'set' 'state' to 'x' failed: …"}`).
+    /// `bridge/logging`: only errors count (`{"level":"error","message":"z2m: Publish 'set' 'state' to 'x' failed: …"}`).
     fn bridge_log(&self, payload: &Payload) {
         let Some(o) = payload.as_object() else {
             return;
@@ -293,7 +293,7 @@ where
     }
 
     fn bridge_info(&self, payload: &Payload) {
-        // Reference : `permit_join` absent ou `null` -> rien ; sinon `bool(valeur)`.
+        // Reference: `permit_join` absent or `null` -> nothing; otherwise `bool(value)`.
         let Some(value) = payload.as_object().and_then(|o| o.get("permit_join")) else {
             return;
         };
@@ -308,7 +308,7 @@ where
         self.sink.permit_join(enabled);
     }
 
-    /// `{nom}/availability` : `{"state":"online"}` ou le texte `online`.
+    /// `{name}/availability`: `{"state":"online"}` or the text `online`.
     async fn availability(&self, name: &str, payload: &Payload) {
         let available = match payload {
             Payload::Json(Value::Object(o)) => {
@@ -323,7 +323,7 @@ where
         }
     }
 
-    /// `{nom}` : l'etat (objet) remplace celui de l'appareil actif ; historique des cles suivies.
+    /// `{name}`: the state (object) replaces that of the active device; history of the tracked keys.
     async fn state(&self, name: &str, payload: &Payload) {
         let Payload::Json(state @ Value::Object(_)) = payload else {
             return;
@@ -341,7 +341,7 @@ where
         self.sink.device_state(&device, state);
     }
 
-    /// Historique des cles suivies (a la seconde) puis archive brute.
+    /// History of the tracked keys (per second) then raw archive.
     async fn log_state(&self, device: &Device, state: &Value) {
         let entries = log_entries(&device.tracked_keys, state);
         if entries.is_empty() {
@@ -357,9 +357,9 @@ where
         }
     }
 
-    /// Message hors du prefixe Zigbee2MQTT : sources MQTT dont le filtre correspond (journal, appareil automatique), puis
-    /// les appareils dont le topic est celui du message sont marques vus. Le code de gestion (`handler_code`, Rhai) est confie au
-    /// moteur d'automations par le `Sink`.
+    /// Message outside the Zigbee2MQTT prefix: MQTT sources whose filter matches (log, automatic device), then
+    /// the devices whose topic is the message's are marked seen. The handling code (`handler_code`, Rhai) is entrusted to the
+    /// automation engine by the `Sink`.
     async fn source_message(&self, topic: &str, payload: &Payload) {
         let sources = self.current_sources();
         let mut matched = false;
@@ -385,7 +385,7 @@ where
         }
     }
 
-    /// Cree ou met a jour l'appareil d'une source en `auto_device` (nom = topic sans le prefixe de la source).
+    /// Creates or updates the device of a source in `auto_device` (name = topic without the source's prefix).
     async fn auto_device(&self, source: &MqttSource, topic: &str, state: &Value) {
         let prefix = source.base_topic.trim_end_matches('/');
         let (name, base) = match topic
@@ -417,7 +417,7 @@ where
     }
 }
 
-/// Debut d'une charge utile pour le journal (les sources peuvent envoyer des messages volumineux).
+/// Beginning of a payload for the log (sources may send voluminous messages).
 fn preview(payload: &Payload) -> String {
     let text = match payload {
         Payload::Json(v) => v.to_string(),
@@ -460,11 +460,11 @@ mod tests {
 
     #[test]
     fn availability_and_bridge_devices_separate_states() {
-        // Un message de disponibilite entre deux etats : les deux etats comptent (l'etat suivant n'est plus « le suivant »).
+        // An availability message between two states: both states count (the following state is no longer "the next one").
         assert_eq!(coalesce(&[st("a", 1), av("a"), st("a", 1)]), [0, 1, 2]);
-        // Celui d'un autre appareil ne separe rien.
+        // One from another device separates nothing.
         assert_eq!(coalesce(&[st("a", 1), av("b"), st("a", 1)]), [1, 2]);
-        // `bridge/devices` coupe le regroupement.
+        // `bridge/devices` cuts the coalescing.
         assert_eq!(
             coalesce(&[st("a", 1), (Route::BridgeDevices, 1), st("a", 1)]),
             [0, 1, 2]

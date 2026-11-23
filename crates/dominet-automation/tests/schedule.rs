@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Prochains passages d'un cron en heure d'`Europe/Paris` contre des valeurs de reference figees : 119 suites de six passages, dont les nuits de changement d'heure, la fin d'annee et le 29 fevrier.
+//! Next runs of a cron in `Europe/Paris` time against frozen reference values: 119 series of six runs, including clock-change nights, the end of the year and 29 February.
 
 use chrono::{DateTime, Utc};
 use chrono_tz::Europe::Paris;

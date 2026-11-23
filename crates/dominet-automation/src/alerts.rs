@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Evaluation des regles d'alerte (R4 lot 6, ADR 0035) : le cycle des alertes, particularites comprises.
+//! Evaluation of the alert rules (R4 lot 6, ADR 0035): the alert cycle, quirks included.
 //!
-//! Apres chaque message d'**etat** d'un appareil, chaque regle activee de cet appareil lit `etat[cle]` (absente ou `null` : on passe,
-//! ni declenchement ni resolution). Condition vraie : une alerte est creee sauf si une alerte **en cours** (pas une acquittee !)
-//! de la regle a ete declenchee depuis moins de `cooldown_minutes`. Condition fausse : les alertes en cours de la regle sont
-//! resolues. Les envois (bandeau, e-mail, SMS, Android) passent par le port [`Notifier`].
+//! After each device **state** message, each enabled rule of that device reads `state[key]` (absent or `null`: skipped,
+//! neither trigger nor resolution). Condition true: an alert is created unless an **ongoing** alert (not an acknowledged one!)
+//! of the rule was raised less than `cooldown_minutes` ago. Condition false: the ongoing alerts of the rule are
+//! resolved. Sends (banner, e-mail, SMS, Android) go through the [`Notifier`] port.
 //!
-//! Comme pour les automations, une poignee ([`AlertHandle`]) ecarte a la source ce qu'aucune regle n'attend, une file bornee
-//! alimente une seule boucle qui traite les etats dans l'ordre.
+//! As for the automations, a handle ([`AlertHandle`]) discards at the source what no rule expects, a bounded queue
+//! feeds a single loop that processes the states in order.
 
 use std::collections::{HashMap, HashSet};
 use std::sync::atomic::{AtomicU64, Ordering};
@@ -20,31 +20,31 @@ use dominet_domain::repo::{AlertRepo, AlertRuleRepo, NewAlert};
 use serde_json::Value;
 use tokio::sync::mpsc;
 
-/// Taille de la file entre l'ingestion et l'evaluation.
+/// Size of the queue between ingestion and evaluation.
 pub const QUEUE: usize = 1024;
 
-/// Une alerte qui vient d'etre declenchee, avec ce qu'il faut pour la dire (le texte est celui de la reference).
+/// An alert that has just been raised, with what is needed to state it (the text is the reference's).
 #[derive(Debug, Clone, PartialEq)]
 pub struct AlertNotice {
     pub alert: Alert,
     pub rule: AlertRule,
     pub device_name: String,
-    /// Texte long (e-mail).
+    /// Long text (e-mail).
     pub long: String,
-    /// Texte court (SMS, Android, bandeau).
+    /// Short text (SMS, Android, banner).
     pub short: String,
 }
 
-/// Port d'envoi des alertes. R4 : journal et bandeau dans l'interface ; R5 y a ajoute e-mail, SMS et Android selon les trois
-/// canaux de la regle (`notify_email`, `notify_sms`, `notify_android`) et passe `notified` a vrai.
+/// Alert sending port. R4: log and banner in the interface; R5 added e-mail, SMS and Android according to the three
+/// channels of the rule (`notify_email`, `notify_sms`, `notify_android`) and sets `notified` to true.
 pub trait Notifier: Send + Sync + 'static {
-    /// Une alerte vient d'etre declenchee.
+    /// An alert has just been raised.
     fn fired(&self, notice: &AlertNotice);
-    /// Le nombre d'alertes en cours a pu changer (declenchement ou resolution) : a rediffuser aux interfaces.
+    /// The number of ongoing alerts may have changed (raised or resolved): to rebroadcast to the interfaces.
     fn changed(&self);
 }
 
-/// Un etat d'appareil a evaluer.
+/// A device state to evaluate.
 #[derive(Debug, Clone, PartialEq)]
 pub struct AlertEvent {
     pub device: DeviceId,
@@ -60,20 +60,20 @@ struct Shared {
     dropped: AtomicU64,
 }
 
-/// Poignee de l'ingestion.
+/// Ingestion handle.
 #[derive(Debug, Clone)]
 pub struct AlertHandle {
     shared: Arc<Shared>,
     tx: mpsc::Sender<AlertEvent>,
 }
 
-/// Cle d'etat lisible pour une regle : presente et non nulle.
+/// State key readable for a rule: present and non-null.
 fn watched(state: &Value, key: &str) -> bool {
     state.get(key).is_some_and(|v| !v.is_null())
 }
 
 impl AlertHandle {
-    /// Un etat d'appareil (rien n'est empile si aucune regle de cet appareil ne regarde une cle presente).
+    /// A device state (nothing is queued if no rule of that device looks at a present key).
     pub fn state(&self, device: DeviceId, name: &str, state: &Value) {
         let wanted = self.shared.rules.read().is_ok_and(|r| {
             r.get(&device.0)
@@ -95,7 +95,7 @@ impl AlertHandle {
         }
     }
 
-    /// Etats ecartes parce que la file etait pleine.
+    /// States dropped because the queue was full.
     #[must_use]
     pub fn dropped(&self) -> u64 {
         self.shared.dropped.load(Ordering::Relaxed)
@@ -104,13 +104,13 @@ impl AlertHandle {
 
 type Clock = dyn Fn() -> DateTime<Utc> + Send + Sync;
 
-/// Le moteur d'alertes.
+/// The alert engine.
 pub struct AlertEngine<R, A, N> {
     rules: R,
     alerts: A,
     notifier: N,
     shared: Arc<Shared>,
-    /// (regle, appareil) qui ont peut-etre une alerte en cours : evite une ecriture a chaque etat « faux ».
+    /// (rule, device) pairs that may have an ongoing alert: avoids a write on every "false" state.
     maybe_firing: Mutex<HashSet<(i64, i64)>>,
     clock: Arc<Clock>,
 }
@@ -156,7 +156,7 @@ where
         (engine, AlertHandle { shared, tx }, rx)
     }
 
-    /// Relit les regles activees. Liste precedente gardee en cas d'erreur de lecture.
+    /// Re-reads the enabled rules. The previous list is kept on a read error.
     pub async fn reload(&self) {
         match self.rules.list().await {
             Ok(all) => {
@@ -172,7 +172,7 @@ where
         }
     }
 
-    /// Au demarrage : retient les couples (regle, appareil) qui ont une alerte en cours, pour que leur resolution soit vue.
+    /// At start-up: remembers the (rule, device) pairs that have an ongoing alert, so that their resolution is seen.
     pub async fn load_firing(&self) {
         match self.alerts.list(Some(AlertStatus::Firing), 5000).await {
             Ok(list) => {
@@ -187,14 +187,14 @@ where
         }
     }
 
-    /// Boucle : un etat apres l'autre jusqu'a la fermeture de la file.
+    /// Loop: one state after another until the queue is closed.
     pub async fn run(self: Arc<Self>, mut rx: mpsc::Receiver<AlertEvent>) {
         while let Some(event) = rx.recv().await {
             self.process(&event).await;
         }
     }
 
-    /// Evalue les regles de l'appareil contre cet etat.
+    /// Evaluates the device's rules against this state.
     pub async fn process(&self, event: &AlertEvent) {
         let rules: Vec<AlertRule> = self
             .shared
@@ -218,7 +218,7 @@ where
         }
     }
 
-    /// Cree l'alerte sauf si une alerte en cours est plus recente que le cooldown. Renvoie vrai si une alerte a ete creee.
+    /// Creates the alert unless an ongoing alert is more recent than the cooldown. Returns true if an alert was created.
     async fn maybe_fire(&self, rule: &AlertRule, event: &AlertEvent, value: &Value) -> bool {
         let now = (self.clock)();
         let cooldown = Duration::minutes(i64::from(rule.rule.cooldown_minutes));
@@ -269,7 +269,7 @@ where
         true
     }
 
-    /// Resout les alertes en cours de la regle pour cet appareil. Renvoie vrai si au moins une l'a ete.
+    /// Resolves the ongoing alerts of the rule for this device. Returns true if at least one was.
     async fn maybe_resolve(&self, rule: &AlertRule, device: DeviceId) -> bool {
         let key = (rule.id.0, device.0);
         let known = self.maybe_firing.lock().is_ok_and(|s| s.contains(&key));

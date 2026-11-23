@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Rejeu d'une session MQTT enregistree : l'ingestion Rust doit produire **les memes appareils, etats et lignes d'historique**
-//! que le code de l'implementation de reference (critere d'acceptation de R3). Le resultat attendu (`*.golden.json`) vient de l'implementation de reference
-//! lui-meme, execute une fois ; les scripts qui l'ont produit ne sont pas conserves, le fichier l'est (ADR 0027).
+//! Replay of a recorded MQTT session: Rust ingestion must produce **the same devices, states and history rows**
+//! as the reference implementation's code (acceptance criterion of R3). The expected result (`*.golden.json`) comes from the reference implementation
+//! itself, run once; the scripts that produced it are not kept, the file is (ADR 0027).
 //!
-//! Format du fichier de messages : voir `tests/common`.
+//! Format of the message file: see `tests/common`.
 
 mod common;
 
@@ -45,13 +45,13 @@ fn golden() -> Value {
     g
 }
 
-/// **Ecart connu et voulu avec l'implementation de reference** (ADR 0027). A la creation d'un appareil, reference ecrit `ieee`, `vendor`,
-/// `model_id`, `description` et `exposes` dans `defaults`, mais un upsert dont les valeurs par defaut ne s'appliquent
-/// qu'a la creation : un appareil nouvellement decouvert reste sans metadonnees jusqu'a
-/// la republication suivante de `bridge/devices`. Ici elles sont ecrites des la creation.
+/// **Known and intended difference with the reference implementation** (ADR 0027). When a device is created, the reference writes `ieee`, `vendor`,
+/// `model_id`, `description` and `exposes` into `defaults`, but an upsert whose default values only apply
+/// at creation: a newly discovered device stays without metadata until
+/// the next republication of `bridge/devices`. Here they are written from creation.
 ///
-/// Le test ne gomme pas l'ecart a l'aveugle : pour chaque appareil dont les metadonnees sont vides dans le resultat de la reference,
-/// il exige qu'elles soient exactement celles de la derniere decouverte du fichier de messages, et remplace les valeurs attendues.
+/// The test does not blindly erase the difference: for each device whose metadata is empty in the reference's result,
+/// it requires that it be exactly that of the last discovery of the message file, and replaces the expected values.
 fn apply_known_deviation(golden: &mut Value) {
     let last: Vec<Value> = items()
         .into_iter()
@@ -120,14 +120,14 @@ async fn replaying_the_session_one_message_at_a_time_gives_what_the_reference_co
         }
     }
     assert_same(&dump(&pool).await, &golden());
-    // Le sink a vu les changements (diffusion) et `permit_join` : false (premier bridge/info) puis true.
+    // The sink saw the changes (broadcast) and `permit_join`: false (first bridge/info) then true.
     assert!(!rec.changed.lock().unwrap().is_empty());
     assert_eq!(*rec.permit.lock().unwrap(), [false, true]);
 }
 
 #[sqlx::test(migrator = "dominet_store::MIGRATOR")]
 async fn replaying_by_batches_of_the_same_second_gives_the_same_result(pool: PgPool) {
-    // En rafale, les etats d'un meme appareil recus dans la meme seconde sont regroupes : le resultat final est identique.
+    // In a burst, the states of the same device received in the same second are coalesced: the final result is identical.
     let clock = Arc::new(Mutex::new(base()));
     let (ing, _rec, store) = ingestor(pool.clone(), &clock);
     let mut batch: Vec<Incoming> = vec![];
@@ -164,7 +164,7 @@ async fn replaying_by_batches_of_the_same_second_gives_the_same_result(pool: PgP
 
 #[sqlx::test(migrator = "dominet_store::MIGRATOR")]
 async fn replaying_the_same_session_twice_changes_nothing_more(pool: PgPool) {
-    // Doublons QoS 1 : rejouer toute la session ne cree ni appareil ni ligne d'historique de plus.
+    // QoS 1 duplicates: replaying the whole session creates neither an extra device nor an extra history row.
     let clock = Arc::new(Mutex::new(base()));
     let (ing, _rec, store) = ingestor(pool.clone(), &clock);
     for round in 0..2 {
@@ -195,8 +195,8 @@ async fn replaying_the_same_session_twice_changes_nothing_more(pool: PgPool) {
 
 #[sqlx::test(migrator = "dominet_store::MIGRATOR")]
 async fn a_burst_through_the_channel_ends_with_the_last_state_of_every_device(pool: PgPool) {
-    // 50 appareils x 80 messages d'un coup dans la file : l'ingestion les traite par paquets (regroupes par appareil et par
-    // seconde) et la base finit sur le DERNIER etat de chacun ; la file se vide en quelques secondes au plus.
+    // 50 devices x 80 messages at once in the queue: ingestion processes them in packets (coalesced per device and per
+    // second) and the database ends on the LAST state of each; the queue empties in a few seconds at most.
     let store = PgStore::new(pool.clone());
     let rec = Arc::new(Recorder::default());
     let ing = Arc::new(Ingestor::new(
@@ -243,7 +243,7 @@ async fn a_burst_through_the_channel_ends_with_the_last_state_of_every_device(po
         seqs.iter().all(|s| *s == 79),
         "chaque appareil finit sur son dernier etat : {seqs:?}"
     );
-    // 4000 messages recus, mais l'historique est a la seconde : une ligne par appareil et par seconde au plus.
+    // 4000 messages received, but the history is per second: at most one row per device and per second.
     let lines: i64 = sqlx::query_scalar("SELECT count(*) FROM device_state_log")
         .fetch_one(&pool)
         .await

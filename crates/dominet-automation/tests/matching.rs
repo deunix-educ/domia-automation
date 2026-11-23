@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Declencheur `mqtt_message` contre le **implementation de reference** : correspondance de topics, condition
-//! et filtre de payload, sur une grille de cas dont les attendus sont figes dans les fichiers de reference.
+//! `mqtt_message` trigger against the **reference implementation**: topic matching, condition
+//! and payload filter, on a grid of cases whose expected values are frozen in the reference files.
 
 use dominet_automation::engine::topic_matches_py;
 use dominet_domain::automation::{Condition, payload_filter_holds};

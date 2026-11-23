@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Moteur d'automations (R4 lot 3, ADR 0032) : declencheurs `mqtt_message` et `device_state`, condition, actions
+//! Automation engine (R4 lot 3, ADR 0032): `mqtt_message` and `device_state` triggers, condition, actions
 //! `mqtt_publish` / `scene` / `notification`.
 //!
-//! L'ingestion pousse des [`Event`] dans une file ; le moteur les traite **un par un**, dans l'ordre, sans jamais ralentir
-//! l'ingestion (file pleine : l'evenement est ecarte et compte). Les automations actives sont gardees en memoire et rechargees
-//! quand l'administration les change. Les effets (publier, activer une scene, notifier) passent par le port [`Executor`] :
-//! le serveur l'implemente, les tests le simulent.
+//! Ingestion pushes [`Event`]s into a queue; the engine processes them **one by one**, in order, without ever slowing
+//! ingestion down (queue full: the event is dropped and counted). The active automations are kept in memory and reloaded
+//! when the administration changes them. The effects (publish, activate a scene, notify) go through the [`Executor`] port:
+//! the server implements it, the tests simulate it.
 //!
-//! **Garde-fou anti-boucle** (ADR 0031, D3) : une automation qui publie sur un topic qu'elle ecoute bouclerait a l'infini. Au plus
-//! [`MAX_PER_MINUTE`] declenchements par automation et par minute ; les suivants sont ignores et inscrits au journal une seule
-//! fois par minute (statut `limited`).
+//! **Anti-loop safeguard** (ADR 0031, D3): an automation that publishes on a topic it listens to would loop forever. At most
+//! [`MAX_PER_MINUTE`] triggers per automation and per minute; the following ones are ignored and written to the log only
+//! once per minute (status `limited`).
 
 use std::collections::{HashMap, VecDeque};
 use std::future::Future;
@@ -30,27 +30,27 @@ use crate::script::{DeviceView, Effect, Limits, ScriptInput, payload_text, run_i
 use serde_json::Value;
 use tokio::sync::mpsc;
 
-/// Declenchements admis par automation et par minute.
+/// Triggers admitted per automation and per minute.
 pub const MAX_PER_MINUTE: usize = 30;
-/// Taille de la file entre l'ingestion et le moteur.
+/// Size of the queue between ingestion and the engine.
 pub const QUEUE: usize = 1024;
-/// Sourdine d'un code de source en echec, en secondes.
+/// Mute duration of a failing source code, in seconds.
 pub const HANDLER_MUTE_SECS: i64 = 10;
-/// Duree de conservation du journal d'execution.
+/// Retention of the execution log.
 pub const KEEP_RUNS_DAYS: i64 = 30;
 
-/// Ce qui peut declencher une automation.
+/// What can trigger an automation.
 #[derive(Debug, Clone, PartialEq)]
 pub enum Event {
-    /// Un message MQTT recu (topic complet, charge decodee).
+    /// A received MQTT message (full topic, decoded payload).
     Message { topic: String, payload: Payload },
-    /// Un message d'etat d'appareil : nom (`friendly_name`), topic complet et etat complet apres le message.
+    /// A device state message: name (`friendly_name`), full topic and full state after the message.
     State {
         name: String,
         topic: String,
         state: Value,
     },
-    /// Un message pour le code de traitement (`handler_code`) d'une source MQTT.
+    /// A message for the processing code (`handler_code`) of an MQTT source.
     Handler {
         source: String,
         code: String,
@@ -59,12 +59,12 @@ pub enum Event {
     },
 }
 
-/// Ce que voit un script : le message ou l'etat qui l'a declenche (vide pour un declenchement horaire).
+/// What a script sees: the message or the state that triggered it (empty for a scheduled trigger).
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct FireContext {
     pub topic: String,
     pub payload: Value,
-    /// Nom de l'appareil concerne.
+    /// Name of the device concerned.
     pub device: Option<String>,
 }
 
@@ -85,33 +85,33 @@ impl FireContext {
     }
 }
 
-/// Les effets d'une automation. Chaque methode dit en clair ce qui s'est passe (`Ok`) ou pourquoi ca a echoue (`Err`).
+/// The effects of an automation. Each method says plainly what happened (`Ok`) or why it failed (`Err`).
 pub trait Executor: Send + Sync + 'static {
-    /// Publie `payload` (texte tel quel) sur `topic`.
+    /// Publishes `payload` (text as is) on `topic`.
     fn publish(
         &self,
         topic: &str,
         payload: &str,
     ) -> impl Future<Output = Result<String, String>> + Send;
-    /// Active la scene.
+    /// Activates the scene.
     fn scene(&self, id: SceneId) -> impl Future<Output = Result<String, String>> + Send;
-    /// Active la scene de ce nom (scripts).
+    /// Activates the scene of that name (scripts).
     fn scene_by_name(&self, name: &str) -> impl Future<Output = Result<String, String>> + Send;
-    /// Historise une valeur d'un appareil, qu'elle soit suivie ou non (scripts).
+    /// Records a value of a device in the history, whether it is tracked or not (scripts).
     fn log_value(
         &self,
         device: i64,
         key: &str,
         value: &Value,
     ) -> impl Future<Output = Result<(), String>> + Send;
-    /// Instantane des appareils actifs, pour `get_device` et `device` des scripts.
+    /// Snapshot of the active devices, for the scripts' `get_device` and `device`.
     fn devices(&self) -> impl Future<Output = Result<Vec<DeviceView>, String>> + Send;
-    /// Notification (journal et bandeau dans l'interface ; l'envoi par SMS / e-mail / Android attend R5).
+    /// Notification (log and banner in the interface; sending by SMS / e-mail / Android waits for R5).
     fn notify(&self, message: &str, sms: bool);
 }
 
-/// Le topic `filter` (avec jokers) vise-t-il `topic` ? **Comme la reference** (verifie sur une grille de cas, voir
-/// `tests/matching.rs`) : `#` accepte la fin de n'importe quel niveau, un filtre vide ne correspond a rien.
+/// Does the topic `filter` (with wildcards) match `topic`? **Like the reference** (checked on a grid of cases, see
+/// `tests/matching.rs`): `#` accepts the end of any level, an empty filter matches nothing.
 #[must_use]
 pub fn topic_matches_py(filter: &str, topic: &str) -> bool {
     if filter.is_empty() {
@@ -133,7 +133,7 @@ pub fn topic_matches_py(filter: &str, topic: &str) -> bool {
     parts.len() == levels.len()
 }
 
-/// Pourquoi une automation se declenche (texte du journal), si elle se declenche pour cet evenement.
+/// Why an automation triggers (log text), if it triggers for this event.
 #[must_use]
 pub fn fires_on(automation: &Automation, event: &Event) -> Option<String> {
     let draft = &automation.draft;
@@ -190,19 +190,19 @@ fn shown(v: &Value) -> String {
     }
 }
 
-/// Fenetre glissante d'une minute par automation.
+/// One-minute sliding window per automation.
 #[derive(Debug, Default)]
 struct Limiter {
     seen: HashMap<AutomationId, VecDeque<DateTime<Utc>>>,
-    /// Automations dont le depassement de la minute en cours est deja au journal.
+    /// Automations whose overrun of the current minute is already in the log.
     reported: HashMap<AutomationId, DateTime<Utc>>,
 }
 
-/// Decision du garde-fou.
+/// Decision of the safeguard.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum Verdict {
     Allow,
-    /// Ignore ; `true` si c'est le premier depassement de la minute (a inscrire au journal).
+    /// Ignored; `true` if it is the first overrun of the minute (to be written to the log).
     Limited {
         first: bool,
     },
@@ -235,7 +235,7 @@ impl Limiter {
 
 #[derive(Debug, Default)]
 struct Shared {
-    /// Automations actives a declencheur `mqtt_message` ou `device_state`.
+    /// Active automations with an `mqtt_message` or `device_state` trigger.
     cache: RwLock<Arc<Vec<Automation>>>,
     dropped: AtomicU64,
 }
@@ -249,7 +249,7 @@ impl Shared {
     }
 }
 
-/// Poignee de l'ingestion : ecarte tout de suite ce qu'aucune automation n'attend, empile le reste.
+/// Ingestion handle: immediately discards what no automation expects, queues the rest.
 #[derive(Debug, Clone)]
 pub struct EngineHandle {
     shared: Arc<Shared>,
@@ -266,7 +266,7 @@ impl EngineHandle {
         }
     }
 
-    /// Un message MQTT (aucun coup si aucune automation `mqtt_message` ne vise ce topic).
+    /// An MQTT message (no effect if no `mqtt_message` automation targets this topic).
     pub fn message(&self, topic: &str, payload: &Payload) {
         let wanted = self.shared.snapshot().iter().any(|a| {
             matches!(&a.draft.trigger, Trigger::MqttMessage { topic: f, .. } if topic_matches_py(f, topic))
@@ -279,7 +279,7 @@ impl EngineHandle {
         }
     }
 
-    /// Un message d'etat d'appareil (aucun coup si aucune automation `device_state` ne vise cet appareil).
+    /// A device state message (no effect if no `device_state` automation targets this device).
     pub fn state(&self, name: &str, topic: &str, state: &Value) {
         let wanted = self.shared.snapshot().iter().any(
             |a| matches!(&a.draft.trigger, Trigger::DeviceState { friendly_name, .. } if friendly_name == name),
@@ -293,7 +293,7 @@ impl EngineHandle {
         }
     }
 
-    /// Un message pour le code de traitement d'une source (toujours empile : la source a du code).
+    /// A message for a source's processing code (always queued: the source has code).
     pub fn handler(&self, source: &str, code: &str, topic: &str, payload: &Payload) {
         self.push(Event::Handler {
             source: source.to_string(),
@@ -303,7 +303,7 @@ impl EngineHandle {
         });
     }
 
-    /// Filtres de topics des automations `mqtt_message` actives (a ajouter aux abonnements du client).
+    /// Topic filters of the active `mqtt_message` automations (to add to the client's subscriptions).
     #[must_use]
     pub fn message_filters(&self) -> Vec<String> {
         let mut out: Vec<String> = self
@@ -320,7 +320,7 @@ impl EngineHandle {
         out
     }
 
-    /// Evenements ecartes parce que la file etait pleine.
+    /// Events dropped because the queue was full.
     #[must_use]
     pub fn dropped(&self) -> u64 {
         self.shared.dropped.load(Ordering::Relaxed)
@@ -329,14 +329,14 @@ impl EngineHandle {
 
 type Clock = dyn Fn() -> DateTime<Utc> + Send + Sync;
 
-/// Le moteur.
+/// The engine.
 pub struct Engine<A, R, X> {
     automations: A,
     runs: R,
     exec: X,
     shared: Arc<Shared>,
     limiter: Mutex<Limiter>,
-    /// Sources dont le code a echoue : muettes jusqu'a cet instant.
+    /// Sources whose code failed: muted until this instant.
     muted: Mutex<HashMap<String, DateTime<Utc>>>,
     clock: Arc<Clock>,
 }
@@ -353,7 +353,7 @@ where
     R: AutomationRunRepo + Send + Sync + 'static,
     X: Executor,
 {
-    /// Cree le moteur, sa poignee et la file ; `run` consomme la file.
+    /// Creates the engine, its handle and the queue; `run` consumes the queue.
     #[must_use]
     pub fn new(
         automations: A,
@@ -363,7 +363,7 @@ where
         Self::with_clock(automations, runs, exec, Arc::new(Utc::now))
     }
 
-    /// Avec une horloge fournie (tests du garde-fou).
+    /// With a supplied clock (safeguard tests).
     #[must_use]
     pub fn with_clock(
         automations: A,
@@ -385,7 +385,7 @@ where
         (engine, EngineHandle { shared, tx }, rx)
     }
 
-    /// Relit les automations actives. En cas d'erreur de lecture, la liste precedente est gardee.
+    /// Re-reads the active automations. On a read error, the previous list is kept.
     pub async fn reload(&self) {
         match self.automations.list_enabled().await {
             Ok(all) => {
@@ -410,7 +410,7 @@ where
         }
     }
 
-    /// Boucle du moteur : un evenement apres l'autre jusqu'a la fermeture de la file ; purge du journal une fois par jour.
+    /// Engine loop: one event after another until the queue is closed; log purge once a day.
     pub async fn run(self: Arc<Self>, mut rx: mpsc::Receiver<Event>) {
         let mut purge = tokio::time::interval(Duration::from_hours(24));
         loop {
@@ -431,7 +431,7 @@ where
         }
     }
 
-    /// Traite un evenement : chaque automation concernee se declenche, dans l'ordre de la liste (par nom).
+    /// Processes an event: each automation concerned triggers, in the order of the list (by name).
     pub async fn process(&self, event: &Event) {
         if let Event::Handler {
             source,
@@ -451,8 +451,8 @@ where
         }
     }
 
-    /// Declenche l'automation maintenant, sans regarder son declencheur (planificateur) : meme garde-fou, meme journal, memes
-    /// compteurs que pour un message. Renvoie le statut et le detail ecrits au journal.
+    /// Triggers the automation now, without looking at its trigger (scheduler): same safeguard, same log, same
+    /// counters as for a message. Returns the status and the detail written to the log.
     pub async fn fire(
         &self,
         automation: &Automation,
@@ -510,9 +510,9 @@ where
         }
     }
 
-    /// Execute un script (automation ou source) puis applique ses effets, dans l'ordre. Tout ou rien cote script : une erreur
-    /// du script n'applique rien ; un effet refuse (broker coupe, scene inconnue) n'arrete pas les suivants et rend l'ensemble
-    /// en echec.
+    /// Runs a script (automation or source) then applies its effects, in order. All or nothing on the script side: a script error
+    /// applies nothing; a refused effect (broker down, unknown scene) does not stop the following ones and makes the whole
+    /// fail.
     async fn execute_script(&self, code: &str, context: &FireContext) -> (RunStatus, String) {
         let devices = match self.exec.devices().await {
             Ok(d) => d,
@@ -568,9 +568,9 @@ where
         }
     }
 
-    /// Code de traitement d'une source : meme hote que les automations, mais sans journal d'execution (pas d'automation) ;
-    /// le resultat va au journal du serveur. Un code en echec est mis en sourdine [`HANDLER_MUTE_SECS`] secondes : une source
-    /// bavarde avec un code defectueux ne monopolise pas le moteur.
+    /// Processing code of a source: same host as the automations, but without an execution log (no automation);
+    /// the result goes to the server's log. A failing code is muted for [`HANDLER_MUTE_SECS`] seconds: a chatty source
+    /// with a faulty code does not monopolise the engine.
     async fn run_handler(&self, source: &str, code: &str, topic: &str, payload: &Payload) {
         let now = (self.clock)();
         let muted = self
@@ -645,9 +645,9 @@ mod tests {
         assert_eq!(l.check(id, at(5)), Verdict::Limited { first: true });
         assert_eq!(l.check(id, at(6)), Verdict::Limited { first: false });
         assert_eq!(l.check(id, at(59)), Verdict::Limited { first: false });
-        // Une autre automation n'est pas touchee.
+        // Another automation is not touched.
         assert_eq!(l.check(AutomationId(2), at(6)), Verdict::Allow);
-        // Une minute plus tard la fenetre est vide : on repart, et un nouveau depassement sera de nouveau rapporte.
+        // A minute later the window is empty: we start over, and a new overrun will be reported again.
         assert_eq!(l.check(id, at(70)), Verdict::Allow);
         for _ in 1..MAX_PER_MINUTE {
             assert_eq!(l.check(id, at(71)), Verdict::Allow);

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Bilan energetique contre le **implementation de reference** : le vrai `compute_daily_energy` execute sur un
-//! historique de 327 lignes (compteurs Linky et PAC, `qdy` du SolarMax, valeurs texte, remise a zero, nuits de changement d'heure,
-//! bordures de journee locale, journee sans donnee) doit donner, jour par jour, les memes Wh.
+//! Energy summary against the **reference implementation**: the real `compute_daily_energy` run on a
+//! 327-row history (Linky and heat pump meters, SolarMax's `qdy`, text values, reset, clock-change nights,
+//! local-day boundaries, a day without data) must give, day by day, the same Wh.
 
 use chrono::{DateTime, NaiveDate, Utc};
 use chrono_tz::Europe::Paris;
@@ -93,7 +93,7 @@ async fn every_day_of_the_history_gives_the_same_watt_hours_as_reference(pool: P
             "enregistre"
         );
     }
-    // Recalculer ecrase (upsert) : toujours treize jours.
+    // Recomputing overwrites (upsert): still thirteen days.
     assert_eq!(store.energy().recent(365).await.unwrap().len(), 13);
 }
 
@@ -114,12 +114,12 @@ async fn a_missing_device_counts_zero_and_the_local_day_has_the_right_length(poo
         (got.linky_hp_wh, got.linky_hc_wh, got.solar_wh, got.pac_wh),
         (0, 0, 0, 0)
     );
-    // 29 mars 2026 : 23 h (passage a l'heure d'ete) ; 25 octobre : 25 h ; un jour ordinaire : 24 h.
+    // 29 March 2026: 23 h (switch to summer time); 25 October: 25 h; an ordinary day: 24 h.
     for (day, hours) in [("2026-03-29", 23), ("2026-10-25", 25), ("2026-11-03", 24)] {
         let (from, to) = day_window(Paris, day.parse().unwrap()).unwrap();
         assert_eq!((to - from).num_hours(), hours, "{day}");
     }
-    // « Hier » est le jour local d'hier, pas celui d'UTC.
-    let now: DateTime<Utc> = "2026-11-03T23:30:00Z".parse().unwrap(); // 00:30 le 4 a Paris
+    // "Yesterday" is yesterday's local day, not the UTC one.
+    let now: DateTime<Utc> = "2026-11-03T23:30:00Z".parse().unwrap(); // 00:30 on the 4th in Paris
     assert_eq!(yesterday(Paris, now).to_string(), "2026-11-03");
 }

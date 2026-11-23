@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Sources MQTT generiques (hors Zigbee2MQTT) : appareils automatiques, historique, marquage « vu » (base jetable).
+//! Generic MQTT sources (outside Zigbee2MQTT): automatic devices, history, "seen" marking (throw-away database).
 
 use std::sync::{Arc, Mutex};
 
@@ -91,7 +91,7 @@ async fn an_auto_device_source_creates_the_device_named_after_the_topic_without_
     assert_eq!(device.state_topic(), "solarmax/0xAB12/prod");
     assert_eq!(*rec.changed.lock().unwrap(), ["0xAB12/prod"]);
 
-    // Le message suivant remplace l'etat.
+    // The next message replaces the state.
     ing.handle(msg("solarmax/0xAB12/prod", r#"{"energy": 3}"#))
         .await;
     let again = store.devices().get(device.id).await.unwrap().unwrap();
@@ -127,7 +127,7 @@ async fn tracked_keys_of_an_auto_device_feed_the_history_and_the_archive(pool: P
     ing.handle(msg("solarmax/a", r#"{"power": 100, "other": 1}"#))
         .await;
     let d = store.devices().find_by_name("a").await.unwrap().unwrap();
-    // Aucune cle suivie au depart : pas d'historique (comme en reference).
+    // No tracked key at the start: no history (as in the reference).
     assert!(rec.archived.lock().unwrap().is_empty());
     let mut draft = DeviceDraft::new("a");
     draft.base_topic = "solarmax".into();
@@ -200,12 +200,12 @@ async fn a_matching_source_marks_devices_with_that_topic_as_seen_even_without_au
     let d = store.devices().create(&draft).await.unwrap();
     assert!(d.last_seen.is_none());
     let mut s = MqttSource::draft("Maison", "maison/#");
-    s.log_messages = true; // exerce le journal (texte volumineux tronque)
+    s.log_messages = true; // exercises the log (long text truncated)
     ing.set_sources(vec![s]);
     ing.handle(msg("maison/compteur", &"x".repeat(5000))).await;
     let seen = store.devices().get(d.id).await.unwrap().unwrap();
     assert!(seen.last_seen.is_some() && seen.available);
-    // Un topic qui ne correspond a aucune source ne marque rien.
+    // A topic that matches no source marks nothing.
     ing.set_sources(vec![]);
     let before = seen.last_seen;
     ing.handle(msg("maison/compteur", "{}")).await;

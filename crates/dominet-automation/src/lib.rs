@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Ingestion des messages MQTT des appareils (R3) ; plus tard moteur d'automations, planificateur, hote Rhai, alertes (R4).
+//! Ingestion of the devices' MQTT messages (R3); later automation engine, scheduler, Rhai host, alerts (R4).
 //!
-//! L'ingestion est generique sur les ports de stockage et sur le [`ingest::Sink`] : elle ne connait ni PostgreSQL ni le hub
-//! WebSocket, ce qui permet de la rejouer sur des fichiers de messages (tests de parite avec l'implementation de reference).
+//! Ingestion is generic over the storage ports and over the [`ingest::Sink`]: it knows neither PostgreSQL nor the
+//! WebSocket hub, which allows replaying it on message files (parity tests with the reference implementation).
 
 pub mod alerts;
 pub mod energy;
@@ -13,7 +13,7 @@ pub mod route;
 pub mod scheduler;
 pub mod script;
 
-/// Un topic de publication est-il admis (pas de joker, non vide, 256 caracteres au plus) ?
+/// Is a publication topic allowed (no wildcard, non-empty, 256 characters at most)?
 #[must_use]
 pub(crate) fn topic_ok(topic: &str) -> bool {
     dominet_domain::device::is_valid_publish_topic(topic)

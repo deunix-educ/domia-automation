@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Planificateur sur une base jetable avec une horloge manuelle (`Scheduler::tick`) : synchronisation avec les automations,
-//! passages a l'heure, absence de rattrapage, echecs, et les deux automations solaires de la **production**.
+//! Scheduler on a throw-away database with a manual clock (`Scheduler::tick`): synchronisation with the automations,
+//! on-time runs, no catch-up, failures, and the two solar automations of the **production**.
 
-#![allow(clippy::unused_async_trait_impl)] // l'executeur simule n'attend rien
+#![allow(clippy::unused_async_trait_impl)] // the simulated executor waits for nothing
 
 use std::collections::BTreeMap;
 use std::sync::{Arc, Mutex};
@@ -151,7 +151,7 @@ async fn jobs_follow_the_scheduled_automations_and_the_system_job_exists(pool: P
     assert_eq!(job.draft.task, TASK_RUN_AUTOMATION);
     assert_eq!(job.draft.args, json!({"automation_id": cron.id.0}));
 
-    // Une definition changee oublie le prochain passage ; inchangee, elle le garde.
+    // A changed definition forgets the next run; unchanged, it keeps it.
     s.tick(utc(2026, 11, 2, 12, 0, 0)).await;
     let next = |id: AutomationId| {
         let store = store.clone();
@@ -183,7 +183,7 @@ async fn jobs_follow_the_scheduled_automations_and_the_system_job_exists(pool: P
     s.tick(utc(2026, 11, 2, 12, 0, 0)).await;
     assert_eq!(next(cron.id).await, Some(utc(2026, 11, 3, 7, 30, 0)));
 
-    // Desactivee ou supprimee : le travail disparait.
+    // Deactivated or deleted: the job disappears.
     let mut off = cron_automation("Matin", "30 8 * * *");
     off.enabled = false;
     store.automations().update(cron.id, &off).await.unwrap();
@@ -201,9 +201,9 @@ async fn a_job_runs_once_at_its_time_not_before_and_not_again(pool: PgPool) {
         .await
         .unwrap();
     s.sync().await;
-    // 12:00 UTC le 2 novembre 2026 = 13:00 a Paris : le prochain 07:00 est le lendemain (06:00 UTC).
+    // 12:00 UTC on 2 November 2026 = 13:00 in Paris: the next 07:00 is the next day (06:00 UTC).
     let t0 = utc(2026, 11, 2, 12, 0, 0);
-    // Le travail systeme (00:05 locale = 23:05 UTC) est le plus proche.
+    // The system job (00:05 local = 23:05 UTC) is the nearest.
     assert_eq!(s.tick(t0).await, Some(utc(2026, 11, 2, 23, 5, 0)));
     s.tick(utc(2026, 11, 3, 5, 59, 59)).await;
     assert!(ran.0.lock().unwrap().is_empty(), "pas avant l'heure");
@@ -225,7 +225,7 @@ async fn a_job_runs_once_at_its_time_not_before_and_not_again(pool: PgPool) {
     assert_eq!(job.last_run_at, Some(utc(2026, 11, 3, 6, 0, 2)));
     assert_eq!(job.last_status, "ok : fait");
     assert_eq!(job.next_run_at, Some(utc(2026, 11, 4, 6, 0, 0)));
-    // Le lendemain, encore une fois.
+    // The next day, once more.
     s.tick(utc(2026, 11, 4, 6, 0, 1)).await;
     assert_eq!(ran.0.lock().unwrap().len(), 2);
 }
@@ -240,7 +240,7 @@ async fn a_missed_run_is_not_replayed_and_a_failure_is_recorded(pool: PgPool) {
         .unwrap();
     s.sync().await;
     s.tick(utc(2026, 11, 2, 12, 0, 0)).await;
-    // Le serveur etait arrete : on revient 3 heures apres l'heure prevue.
+    // The server was stopped: we come back 3 hours after the scheduled time.
     s.tick(utc(2026, 11, 3, 9, 0, 0)).await;
     assert!(ran.0.lock().unwrap().is_empty(), "pas de rattrapage");
     let job = store
@@ -255,7 +255,7 @@ async fn a_missed_run_is_not_replayed_and_a_failure_is_recorded(pool: PgPool) {
     assert_eq!(job.last_run_at, None);
     assert_eq!(job.next_run_at, Some(utc(2026, 11, 4, 6, 0, 0)));
 
-    // Un echec de la tache est inscrit, et le passage suivant reste planifie.
+    // A task failure is recorded, and the following run stays scheduled.
     let (s, _ran, store2) = rig(store.pool().clone(), true);
     s.tick(utc(2026, 11, 4, 6, 0, 5)).await;
     let job = store2
@@ -289,7 +289,7 @@ async fn the_production_solar_automations_fire_at_sunset_and_sunrise(pool: PgPoo
     }
     assert_eq!(ids.len(), 2);
     s.sync().await;
-    // Valeurs d'`ephem`  pour Marseille le 1er mars 2026.
+    // `ephem` values for Marseille on 1 March 2026.
     let start = utc(2026, 3, 1, 12, 0, 0);
     let soonest = s.tick(start).await.unwrap();
     let sunset = ids["Volets — coucher du soleil"];
@@ -310,7 +310,7 @@ async fn the_production_solar_automations_fire_at_sunset_and_sunrise(pool: PgPoo
     };
     let (set_at, rise_at) = (at(sunset).await, at(sunrise).await);
     assert_eq!(soonest, set_at.min(rise_at));
-    // Les instants d'`ephem`  pour Marseille a partir du 1er mars 2026 a 12:00 UTC : a 90 s pres.
+    // The `ephem` instants for Marseille from 1 March 2026 at 12:00 UTC: to within 90 s.
     let oracle: serde_json::Value = serde_json::from_str(SCHEDULE_FIXTURE).unwrap();
     let expected = |event: &str| {
         let case = oracle["solar"]
@@ -334,7 +334,7 @@ async fn the_production_solar_automations_fire_at_sunset_and_sunrise(pool: PgPoo
             expected(event)
         );
     }
-    // A l'heure, la bonne automation part, une fois.
+    // On time, the right automation goes off, once.
     s.tick(set_at + Duration::seconds(1)).await;
     assert_eq!(
         *ran.0.lock().unwrap(),
@@ -343,7 +343,7 @@ async fn the_production_solar_automations_fire_at_sunset_and_sunrise(pool: PgPoo
     s.tick(rise_at + Duration::seconds(1)).await;
     assert_eq!(ran.0.lock().unwrap().len(), 2);
     assert_eq!(ran.0.lock().unwrap()[1].1, sunrise.0);
-    // Le lendemain : le coucher suivant est environ 24 h plus tard (a deux minutes pres).
+    // The next day: the next sunset is about 24 h later (to within two minutes).
     let next_set = at(sunset).await;
     let day = (next_set - set_at).num_seconds() - 86_400;
     assert!(day.abs() < 180, "{day}");

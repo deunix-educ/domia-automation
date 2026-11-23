@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Bilan energetique d'une journee (R4 lot 7, ADR 0036) : `compute_daily_energy` de l'implementation de reference.
+//! Energy summary of a day (R4 lot 7, ADR 0036): `compute_daily_energy` of the reference implementation.
 //!
-//! Le jour est le **jour local** (du minuit local au minuit local suivant, 23 ou 25 h les jours de changement d'heure), les
-//! compteurs du Linky (`HCHP`, `HCHC`) et de la pompe a chaleur (`energy_a` + `energy_b`) sont cumulatifs (maximum - minimum du jour),
-//! la production solaire est le maximum de `qdy` (kWh remis a zero chaque jour) converti en Wh. Un appareil introuvable compte zero.
+//! The day is the **local day** (from local midnight to the next local midnight, 23 or 25 h on clock-change days), the
+//! Linky meters (`HCHP`, `HCHC`) and the heat pump's (`energy_a` + `energy_b`) are cumulative (maximum - minimum of the day),
+//! solar production is the maximum of `qdy` (kWh reset every day) converted to Wh. A device that is not found counts zero.
 
 use chrono::{DateTime, Duration, NaiveDate, Utc};
 use chrono_tz::Tz;
@@ -12,7 +12,7 @@ use dominet_domain::repo::{DeviceRepo, EnergyRepo, RepoResult, StateLogRepo};
 
 use crate::next::to_utc;
 
-/// Noms (`friendly_name`) des appareils du bilan : `ENERGY_LINKY_DEVICE`, `ENERGY_SOLAR_DEVICE`, `ENERGY_PAC_DEVICE`.
+/// Names (`friendly_name`) of the summary's devices: `ENERGY_LINKY_DEVICE`, `ENERGY_SOLAR_DEVICE`, `ENERGY_PAC_DEVICE`.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct EnergyDevices {
     pub linky: String,
@@ -21,7 +21,7 @@ pub struct EnergyDevices {
 }
 
 impl Default for EnergyDevices {
-    /// Les noms de la production.
+    /// The production's names.
     fn default() -> Self {
         Self {
             linky: "consommation".into(),
@@ -31,9 +31,9 @@ impl Default for EnergyDevices {
     }
 }
 
-/// Cles d'etat qu'il faut **suivre** (historique) : celles du bilan journalier (`HCHP`, `HCHC`, `qdy`, `energy_a`,
-/// `energy_b`) et les puissances instantanees du tableau Grafana « Energie » (`PAPP`, `pac`, `power_ab`).
-/// Une cle vide est ignoree.
+/// State keys to **track** (history): those of the daily summary (`HCHP`, `HCHC`, `qdy`, `energy_a`,
+/// `energy_b`) and the instantaneous powers of the Grafana "Energy" dashboard (`PAPP`, `pac`, `power_ab`).
+/// An empty key is ignored.
 #[must_use]
 pub fn required_keys(devices: &EnergyDevices) -> [(String, [&'static str; 3]); 3] {
     [
@@ -43,7 +43,7 @@ pub fn required_keys(devices: &EnergyDevices) -> [(String, [&'static str; 3]); 3
     ]
 }
 
-/// Intervalle `[debut, fin[` (UTC) du jour local `day`.
+/// Interval `[start, end[` (UTC) of the local day `day`.
 #[must_use]
 pub fn day_window(tz: Tz, day: NaiveDate) -> Option<(DateTime<Utc>, DateTime<Utc>)> {
     let start = to_utc(tz, day.and_hms_opt(0, 0, 0)?)?;
@@ -55,13 +55,13 @@ pub fn day_window(tz: Tz, day: NaiveDate) -> Option<(DateTime<Utc>, DateTime<Utc
     Some((start, end))
 }
 
-/// Le jour local d'hier (jour par defaut du travail de 00:05).
+/// Yesterday's local day (default day of the 00:05 job).
 #[must_use]
 pub fn yesterday(tz: Tz, now: DateTime<Utc>) -> NaiveDate {
     now.with_timezone(&tz).date_naive() - Duration::days(1)
 }
 
-/// (minimum, maximum) d'une cle sur la fenetre ; rien si l'appareil n'existe pas (Reference : avertissement et zero).
+/// (minimum, maximum) of a key over the window; nothing if the device does not exist (reference: warning and zero).
 async fn range<D, L>(
     devices: &D,
     log: &L,
@@ -81,10 +81,10 @@ where
     }
 }
 
-/// Calcule le bilan du jour sans l'enregistrer.
+/// Computes the day's summary without saving it.
 ///
 /// # Errors
-/// Erreur de lecture de la base.
+/// Database read error.
 pub async fn compute<D, L>(
     devices: &D,
     log: &L,
@@ -119,10 +119,10 @@ where
     })
 }
 
-/// Calcule et enregistre (cree ou remplace) le bilan du jour.
+/// Computes and saves (creates or replaces) the day's summary.
 ///
 /// # Errors
-/// Erreur de lecture ou d'ecriture de la base.
+/// Database read or write error.
 pub async fn compute_and_store<D, L, E>(
     devices: &D,
     log: &L,

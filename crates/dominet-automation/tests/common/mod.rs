@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Outils communs des rejeux : lecture du fichier de messages, ingestion sur une base jetable avec horloge virtuelle, instantane
-//! et comparaison.
-#![allow(dead_code)] // chaque fichier de test n'utilise qu'une partie de ces outils
+//! Common replay tools: reading the message file, ingestion on a throw-away database with a virtual clock, snapshot
+//! and comparison.
+#![allow(dead_code)] // each test file only uses part of these tools
 
 use std::sync::{Arc, Mutex};
 
@@ -50,7 +50,7 @@ pub enum Item {
         op: String,
         device: String,
         keys: Vec<String>,
-        /// La ligne complete du fichier (pour les operations a parametres : `source`, `device`).
+        /// The complete line of the file (for operations with parameters: `source`, `device`).
         raw: Value,
     },
 }
@@ -144,7 +144,7 @@ pub async fn apply_op(store: &PgStore, op: &str, device: &str, keys: &[String]) 
     repo.update(d.id, &draft).await.unwrap();
 }
 
-/// Structure du fichier de messages rejoues.
+/// Structure of the replayed message file.
 pub async fn dump(pool: &PgPool) -> Value {
     let store = PgStore::new(pool.clone());
     let mut devices: Vec<Value> = store
@@ -189,7 +189,7 @@ pub async fn dump(pool: &PgPool) -> Value {
     json!({"devices": devices, "state_log": log})
 }
 
-/// Compare appareil par appareil pour que l'ecart soit lisible.
+/// Compares device by device so that the difference is readable.
 pub fn assert_same(actual: &Value, expected: &Value) {
     let names = |v: &Value| {
         v["devices"]

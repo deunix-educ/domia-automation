@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Planificateur (R4 lot 4, ADR 0033) : remplace un planificateur externe. Les travaux sont dans `schedule_job` ; le prochain passage
-//! est persiste (`next_run_at`) pour qu'on le voie dans l'administration, mais il est **recalcule** au demarrage et a chaque
-//! changement de definition.
+//! Scheduler (R4 lot 4, ADR 0033): replaces an external scheduler. The jobs are in `schedule_job`; the next run
+//! is persisted (`next_run_at`) so that it can be seen in the administration, but it is **recomputed** at start-up and at each
+//! definition change.
 //!
-//! - **Pas de rattrapage** : un passage manque pendant un arret n'est pas rejoue (comme un cron classique), sauf si on le decouvre dans
-//!   les [`TOLERANCE_SECS`] secondes qui suivent son heure (tick tardif).
-//! - **Synchronisation** : chaque automation active a declencheur `schedule` ou `solar` a un travail `automation-<id>` qui
-//!   suit sa definition ; un travail dont l'automation est desactivee, supprimee ou devenue `mqtt_message` disparait. Le
-//!   travail systeme `compute_daily_energy` (00:05 locale) est cree s'il manque.
-//! - Les effets passent par le port [`TaskRunner`] (le serveur l'implemente), le temps par une horloge injectee : les tests
-//!   avancent l'heure a la main avec [`Scheduler::tick`].
+//! - **No catch-up**: a run missed during a stop is not replayed (like a classic cron), unless it is discovered within
+//!   the [`TOLERANCE_SECS`] seconds that follow its time (late tick).
+//! - **Synchronisation**: each active automation with a `schedule` or `solar` trigger has an `automation-<id>` job that
+//!   follows its definition; a job whose automation is deactivated, deleted or became `mqtt_message` disappears. The
+//!   `compute_daily_energy` system job (00:05 local) is created if missing.
+//! - The effects go through the [`TaskRunner`] port (the server implements it), the time through an injected clock: the tests
+//!   advance the time by hand with [`Scheduler::tick`].
 
 use std::future::Future;
 use std::sync::Arc;
@@ -25,21 +25,21 @@ use tokio::sync::Notify;
 
 use crate::next::next_run;
 
-/// Retard admis pour executer encore un passage decouvert apres son heure.
+/// Delay allowed to still run a run discovered after its time.
 pub const TOLERANCE_SECS: i64 = 60;
-/// Veille maximale entre deux tours (un autre processus peut avoir modifie la base).
+/// Maximum sleep between two rounds (another process may have modified the database).
 pub const MAX_SLEEP_SECS: u64 = 30;
-/// Reessai quand l'horaire n'a pas de passage proche (soleil polaire) : pas de boucle serree.
+/// Retry when the schedule has no near run (polar sun): no tight loop.
 const RETRY_HOURS: i64 = 6;
 
-/// Nom de la tache d'une automation planifiee.
+/// Name of the task of a scheduled automation.
 pub const TASK_RUN_AUTOMATION: &str = "run_automation";
-/// Nom de la tache du bilan d'energie quotidien.
+/// Name of the daily energy summary task.
 pub const TASK_DAILY_ENERGY: &str = "compute_daily_energy";
-/// Nom du travail du bilan d'energie.
+/// Name of the energy summary job.
 pub const JOB_DAILY_ENERGY: &str = "compute_daily_energy";
 
-/// Ce que savent faire les travaux. `Ok(detail)` ou `Err(raison)`.
+/// What the jobs can do. `Ok(detail)` or `Err(reason)`.
 pub trait TaskRunner: Send + Sync + 'static {
     fn run(&self, job: &Job) -> impl Future<Output = Result<String, String>> + Send;
 }
@@ -50,7 +50,7 @@ pub struct Scheduler<S, A, T> {
     jobs: S,
     automations: A,
     runner: T,
-    /// Fuseau des nouveaux travaux (reglage `TZ`).
+    /// Time zone of the new jobs (`TZ` setting).
     timezone: Tz,
     clock: Arc<Clock>,
 }
@@ -61,7 +61,7 @@ impl<S, A, T> std::fmt::Debug for Scheduler<S, A, T> {
     }
 }
 
-/// Travail attendu pour une automation planifiee.
+/// Job expected for a scheduled automation.
 fn job_of(a: &Automation, tz: Tz) -> Option<JobDraft> {
     if !a.draft.enabled {
         return None;
@@ -116,7 +116,7 @@ where
         }
     }
 
-    /// Aligne les travaux sur les automations et cree le travail systeme manquant.
+    /// Aligns the jobs with the automations and creates the missing system job.
     pub async fn sync(&self) {
         let automations = match self.automations.list().await {
             Ok(a) => a,
@@ -146,7 +146,7 @@ where
             automation: None,
         });
         for draft in &wanted {
-            // Le travail systeme garde le fuseau qu'on lui a donne, l'horaire qu'on lui a edite n'est pas ecrase.
+            // The system job keeps the time zone it was given, the schedule that was edited is not overwritten.
             let current = existing.iter().find(|j| j.draft.name == draft.name);
             let unchanged = current.is_some_and(|j| &j.draft == draft);
             let system_kept = draft.automation.is_none() && current.is_some();
@@ -169,7 +169,7 @@ where
         }
     }
 
-    /// Un tour : calcule les passages qui manquent, execute ceux qui sont dus, et renvoie l'instant du prochain passage connu.
+    /// One round: computes the missing runs, executes those that are due, and returns the instant of the next known run.
     pub async fn tick(&self, now: DateTime<Utc>) -> Option<DateTime<Utc>> {
         let jobs = match self.jobs.list().await {
             Ok(j) => j,
@@ -221,8 +221,8 @@ where
         soonest
     }
 
-    /// Boucle du role `scheduler` : synchronise, execute ce qui est du, dort jusqu'au prochain passage (au plus
-    /// [`MAX_SLEEP_SECS`] s) ou jusqu'a un reveil de l'administration.
+    /// Loop of the `scheduler` role: synchronises, executes what is due, sleeps until the next run (at most
+    /// [`MAX_SLEEP_SECS`] s) or until a wake-up from the administration.
     pub async fn run(self: Arc<Self>, wake: Arc<Notify>) {
         loop {
             self.sync().await;

@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Hote de scripts Rhai sandboxe (R4 lot 5, ADR 0006 et 0034) : actions `script` des automations et `handler_code` des sources.
+//! Sandboxed Rhai script host (R4 lot 5, ADR 0006 and 0034): `script` actions of the automations and `handler_code` of the sources.
 //!
-//! Un script n'a **aucun effet de bord direct** : `publish`, `scene` et `log_value` enregistrent des [`Effect`] que l'appelant
-//! applique apres coup, et seulement si le script a fini sans erreur. `get_device` lit un instantane fourni par l'hote.
-//! Le moteur Rhai est reconstruit a chaque execution avec des limites strictes (operations, profondeur, tailles, duree murale) ;
-//! l'execution a lieu dans un thread de `spawn_blocking` : une panique devient une erreur, pas l'arret du processus.
+//! A script has **no direct side effect**: `publish`, `scene` and `log_value` record [`Effect`]s that the caller
+//! applies afterwards, and only if the script finished without error. `get_device` reads a snapshot supplied by the host.
+//! The Rhai engine is rebuilt at each execution with strict limits (operations, depth, sizes, wall-clock time);
+//! execution takes place in a `spawn_blocking` thread: a panic becomes an error, not the end of the process.
 //!
-//! Variables du script : `topic` (texte), `payload` (objet ou texte), `device` (l'appareil concerne ou `()`).
-//! Un appareil expose `id`, `name`, `type`, `state`, `available`, `topic` et `age_secs` (age du dernier message, `()` s'il n'a jamais parle).
-//! Fonctions : `publish(topic, payload)`, `scene(nom)`, `get_device(nom)`, `log_value(cle, valeur)`, `log(texte)` et `print`.
+//! Script variables: `topic` (text), `payload` (object or text), `device` (the device concerned or `()`).
+//! A device exposes `id`, `name`, `type`, `state`, `available`, `topic` and `age_secs` (age of the last message, `()` if it never spoke).
+//! Functions: `publish(topic, payload)`, `scene(name)`, `get_device(name)`, `log_value(key, value)`, `log(text)` and `print`.
 
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
@@ -17,14 +17,14 @@ use rhai::packages::Package;
 use rhai::{Dynamic, Engine, EvalAltResult, ParseError, Scope};
 use serde_json::{Value, json};
 
-/// Limites d'une execution.
+/// Limits of an execution.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Limits {
     pub max_operations: u64,
     pub timeout: Duration,
-    /// Effets (publications, scenes, valeurs) par execution.
+    /// Effects (publications, scenes, values) per execution.
     pub max_effects: usize,
-    /// Lignes de `print` / `log` gardees.
+    /// `print` / `log` lines kept.
     pub max_log_lines: usize,
 }
 
@@ -39,7 +39,7 @@ impl Default for Limits {
     }
 }
 
-/// Un appareil tel que le script le voit.
+/// A device as the script sees it.
 #[derive(Debug, Clone, PartialEq)]
 pub struct DeviceView {
     pub id: i64,
@@ -80,21 +80,21 @@ impl DeviceView {
     }
 }
 
-/// Ce que le script recoit.
+/// What the script receives.
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct ScriptInput {
     pub topic: String,
     pub payload: Value,
-    /// Nom de l'appareil concerne (`device` dans le script), s'il y en a un.
+    /// Name of the device concerned (`device` in the script), if there is one.
     pub device: Option<String>,
-    /// Instantane des appareils (pour `get_device` et `device`).
+    /// Snapshot of the devices (for `get_device` and `device`).
     pub devices: Vec<DeviceView>,
 }
 
-/// Un effet demande par le script.
+/// An effect requested by the script.
 #[derive(Debug, Clone, PartialEq)]
 pub enum Effect {
-    /// Un texte est publie tel quel, tout autre valeur en JSON.
+    /// A text is published as is, any other value as JSON.
     Publish {
         topic: String,
         payload: Value,
@@ -108,7 +108,7 @@ pub enum Effect {
 }
 
 impl Effect {
-    /// Ligne lisible (essai a blanc, journal).
+    /// Readable line (dry run, log).
     #[must_use]
     pub fn describe(&self) -> String {
         match self {
@@ -121,7 +121,7 @@ impl Effect {
     }
 }
 
-/// Texte publie pour une charge : un texte tel quel, le reste en JSON.
+/// Text published for a payload: a text as is, the rest as JSON.
 #[must_use]
 pub fn payload_text(v: &Value) -> String {
     match v {
@@ -130,10 +130,10 @@ pub fn payload_text(v: &Value) -> String {
     }
 }
 
-/// Resultat d'une execution.
+/// Result of an execution.
 #[derive(Debug, Clone, PartialEq)]
 pub struct ScriptOutput {
-    /// Vide si le script a echoue (rien n'est applique).
+    /// Empty if the script failed (nothing is applied).
     pub effects: Vec<Effect>,
     pub logs: Vec<String>,
     pub elapsed: Duration,
@@ -158,7 +158,7 @@ fn to_value(d: &Dynamic) -> Result<Value, Box<EvalAltResult>> {
 }
 
 fn base_engine(limits: &Limits) -> Engine {
-    // `new_raw` : aucun paquet implicite ; on n'ajoute que le paquet standard (pas de `eval`, pas de module).
+    // `new_raw`: no implicit package; we only add the standard package (no `eval`, no module).
     let mut e = Engine::new_raw();
     e.register_global_module(rhai::packages::StandardPackage::new().as_shared_module());
     e.set_max_operations(limits.max_operations);
@@ -168,7 +168,7 @@ fn base_engine(limits: &Limits) -> Engine {
     e.set_max_array_size(2_000);
     e.set_max_map_size(500);
     e.disable_symbol("eval");
-    // Une cle absente du payload vaut `()` (comme `payload.get("cle")` en Python) : `payload.moving == "UP"` est simplement faux.
+    // A key absent from the payload is `()` (like `payload.get("key")` in Python): `payload.moving == "UP"` is simply false.
     e.set_fail_on_invalid_map_property(false);
     e
 }
@@ -230,7 +230,7 @@ fn engine_for_run(
     e.register_fn(
         "log_value",
         move |key: &str, value: Dynamic| -> Result<(), Box<EvalAltResult>> {
-            // Sans appareil concerne, rien a historiser (comme `PluginContext.log_value` en Python).
+            // Without a device concerned, nothing to record (like `PluginContext.log_value` in Python).
             let Some(id) = current
                 .as_ref()
                 .and_then(|n| devices.iter().find(|d| &d.name == n))
@@ -256,7 +256,7 @@ fn engine_for_run(
     e
 }
 
-/// Message d'erreur lisible (francais) d'une erreur d'execution.
+/// Readable error message (French) of an execution error.
 fn friendly(e: &EvalAltResult, limits: &Limits) -> String {
     match e {
         EvalAltResult::ErrorTooManyOperations(_) => {
@@ -272,7 +272,7 @@ fn friendly(e: &EvalAltResult, limits: &Limits) -> String {
     }
 }
 
-/// Execute le script. Synchrone et borne : a lancer dans un thread (voir [`run_isolated`]).
+/// Runs the script. Synchronous and bounded: to be run in a thread (see [`run_isolated`]).
 #[must_use]
 pub fn run(code: &str, input: &ScriptInput, limits: &Limits) -> ScriptOutput {
     let started = Instant::now();
@@ -296,7 +296,7 @@ pub fn run(code: &str, input: &ScriptInput, limits: &Limits) -> ScriptOutput {
         .map_err(|e| friendly(&e, limits));
     let mut g = lock(&collected);
     ScriptOutput {
-        // Un script en erreur n'applique rien : tout ou rien.
+        // A script in error applies nothing: all or nothing.
         effects: if result.is_ok() {
             std::mem::take(&mut g.effects)
         } else {
@@ -308,7 +308,7 @@ pub fn run(code: &str, input: &ScriptInput, limits: &Limits) -> ScriptOutput {
     }
 }
 
-/// Comme [`run`], dans un thread a part : une panique est une erreur d'execution.
+/// Like [`run`], in a separate thread: a panic is an execution error.
 pub async fn run_isolated(code: String, input: ScriptInput, limits: Limits) -> ScriptOutput {
     let started = Instant::now();
     tokio::task::spawn_blocking(move || run(&code, &input, &limits))
@@ -325,10 +325,10 @@ fn describe_parse_error(e: &ParseError) -> String {
     e.to_string()
 }
 
-/// Verifie la syntaxe (compilation seule, memes limites de profondeur que l'execution).
+/// Checks the syntax (compilation only, same depth limits as execution).
 ///
 /// # Errors
-/// Le message de l'analyseur, avec la ligne et la colonne.
+/// The parser's message, with the line and column.
 pub fn check(code: &str) -> Result<(), String> {
     if looks_like_python(code) {
         return Err("this code looks like Python (def, import, trailing colon, `context.`...): scripts are written in Rhai, see the documentation".to_string());
@@ -339,7 +339,7 @@ pub fn check(code: &str) -> Result<(), String> {
         .map_err(|e| describe_parse_error(&e))
 }
 
-/// Reconnaissance grossiere de l'ancien code Python, pour refuser avec un message clair plutot qu'une erreur d'analyse obscure.
+/// Rough recognition of the old Python code, to refuse with a clear message rather than an obscure parse error.
 #[must_use]
 pub fn looks_like_python(code: &str) -> bool {
     code.lines().map(str::trim).any(|l| {
@@ -541,7 +541,7 @@ mod tests {
     #[test]
     fn the_wall_clock_limit_alone_stops_a_script_with_unlimited_operations() {
         let limits = Limits {
-            max_operations: 0, // illimite
+            max_operations: 0, // unlimited
             timeout: Duration::from_millis(100),
             ..Limits::default()
         };

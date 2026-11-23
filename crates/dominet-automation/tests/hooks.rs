@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Crochets de l'ingestion qui alimentent les automations (R4 lot 3) : quels messages sont annonces au `Sink` comme messages
-//! (`mqtt_message`) et comme etats d'appareil (`device_state`).
+//! Ingestion hooks that feed the automations (R4 lot 3): which messages are announced to the `Sink` as messages
+//! (`mqtt_message`) and as device states (`device_state`).
 
 use std::sync::{Arc, Mutex};
 
@@ -124,17 +124,17 @@ async fn automations_see_states_availability_and_source_messages_but_not_bridge_
             "autre/chose"
         ]
     );
-    // Zigbee2MQTT n'a signale qu'une erreur (un ordre non remis) : elle seule est remontee, pas les lignes d'information.
+    // Zigbee2MQTT only reported one error (an order not delivered): only it is passed up, not the information lines.
     assert_eq!(
         *seen.bridge_errors.lock().unwrap(),
         ["z2m: Publish 'set' 'state' to 'Lampe' failed: 'Error: ZCL command failed'"]
     );
-    // Le code de traitement n'est annonce que pour les messages de la source qui en a un.
+    // The processing code is only announced for the messages of the source that has one.
     assert_eq!(
         *seen.handlers.lock().unwrap(),
         [("Linky".to_string(), "linky/compteur".to_string())]
     );
-    // Les etats : l'appareil connu et l'appareil automatique d'une source ; pas l'appareil inconnu (aucune ligne en base).
+    // The states: the known device and the automatic device of a source; not the unknown device (no row in the database).
     assert_eq!(
         *seen.states.lock().unwrap(),
         [
@@ -149,8 +149,8 @@ async fn automations_see_states_availability_and_source_messages_but_not_bridge_
 
 #[sqlx::test(migrator = "dominet_store::MIGRATOR")]
 async fn a_state_coalesced_in_a_burst_is_still_announced_to_the_automations(pool: PgPool) {
-    // Une telecommande envoie `{"action":"1_single"}` puis `{"action":""}` a quelques millisecondes d'ecart : dans un meme paquet
-    // et la meme seconde, l'ingestion ne garde que le dernier etat, mais la touche ne doit pas se perdre pour les automations.
+    // A remote control sends `{"action":"1_single"}` then `{"action":""}` a few milliseconds apart: in the same packet
+    // and the same second, ingestion only keeps the last state, but the key press must not be lost for the automations.
     let store = PgStore::new(pool);
     let seen = Arc::new(Seen::default());
     let ing = Ingestor::with_clock(

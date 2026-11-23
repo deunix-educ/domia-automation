@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Moteur d'automations sur une base jetable avec un executeur simule : declencheurs `mqtt_message` / `device_state`, condition,
-//! actions, journal et compteurs, garde-fou anti-boucle, et les **automations de la production** (`context.yaml`).
-#![allow(clippy::unused_async_trait_impl)] // l'executeur simule n'attend rien
+//! Automation engine on a throw-away database with a simulated executor: `mqtt_message` / `device_state` triggers, condition,
+//! actions, log and counters, anti-loop safeguard, and the **production automations** (`context.yaml`).
+#![allow(clippy::unused_async_trait_impl)] // the simulated executor waits for nothing
 
 use std::collections::BTreeMap;
 use std::sync::{Arc, Mutex};
@@ -28,11 +28,11 @@ struct Calls {
     scenes_by_name: Vec<String>,
     logged: Vec<(i64, String, Value)>,
     notified: Vec<(String, bool)>,
-    /// Age du dernier message du relais de volet (`None` : il n'a jamais parle).
+    /// Age of the last message of the shutter relay (`None`: it never spoke).
     relay_age: Option<f64>,
 }
 
-/// Executeur simule ; `fail` fait echouer toutes les publications.
+/// Simulated executor; `fail` makes all publications fail.
 struct Fake {
     calls: Arc<Mutex<Calls>>,
     fail: bool,
@@ -209,9 +209,9 @@ async fn a_device_state_automation_fires_on_every_matching_state_and_is_counted_
     .await;
     for ev in [
         state("Tele-commande", &json!({"action": "1_single"})),
-        state("Tele-commande", &json!({"action": "2_single"})), // autre touche
-        state("Autre", &json!({"action": "1_single"})),         // autre appareil
-        state("Tele-commande", &json!({"battery": 90})),        // pas de cle
+        state("Tele-commande", &json!({"action": "2_single"})), // other key
+        state("Autre", &json!({"action": "1_single"})),         // other device
+        state("Tele-commande", &json!({"battery": 90})),        // no key
         state(
             "Tele-commande",
             &json!({"action": "1_single", "battery": 80}),
@@ -263,13 +263,13 @@ async fn an_mqtt_message_automation_uses_wildcards_the_payload_filter_and_the_co
     });
     let id = add(&rig, d).await;
     for (topic, payload) in [
-        ("maison/salon/inter", r#"{"action":"single","battery":100}"#), // oui
-        ("maison/salon/inter", r#"{"action":"single"}"#), // condition : cle absente = vraie
-        ("maison/salon/inter", r#"{"action":"single","battery":50}"#), // condition fausse
-        ("maison/salon/inter", r#"{"action":"double","battery":100}"#), // filtre
+        ("maison/salon/inter", r#"{"action":"single","battery":100}"#), // yes
+        ("maison/salon/inter", r#"{"action":"single"}"#), // condition: absent key = true
+        ("maison/salon/inter", r#"{"action":"single","battery":50}"#), // false condition
+        ("maison/salon/inter", r#"{"action":"double","battery":100}"#), // filter
         ("maison/salon/autre", r#"{"action":"single"}"#), // topic
-        ("maison/a/b/inter", r#"{"action":"single"}"#),   // niveaux en trop
-        ("maison/salon/inter", "texte"),                  // payload texte : filtre non vide
+        ("maison/a/b/inter", r#"{"action":"single"}"#),   // extra levels
+        ("maison/salon/inter", "texte"),                  // text payload: non-empty filter
     ] {
         rig.engine.process(&message(topic, payload)).await;
     }
@@ -343,7 +343,7 @@ async fn notification_failure_script_and_disabled_automations(pool: PgPool) {
         no_runs(&rig, off).await,
         "une automation desactivee ne se declenche pas"
     );
-    // Un echec compte comme un declenchement (l'automation s'est declenchee), comme une action sans effet.
+    // A failure counts as a trigger (the automation did trigger), like an action with no effect.
     for id in [notify, publish, script] {
         assert_eq!(
             rig.store
@@ -407,7 +407,7 @@ async fn the_loop_guard_lets_thirty_firings_per_minute_through_and_journals_the_
 #[sqlx::test(migrator = "dominet_store::MIGRATOR")]
 async fn the_handle_only_queues_what_an_automation_waits_for(pool: PgPool) {
     let mut rig = rig(pool, false);
-    // Rien d'actif : tout est ecarte a la source.
+    // Nothing active: everything is dropped at the source.
     rig.handle.message("a/b", &decode_payload(b"{}"));
     rig.handle
         .state("Lampe", "z/Lampe", &json!({"state": "ON"}));
@@ -450,7 +450,7 @@ async fn the_handle_only_queues_what_an_automation_waits_for(pool: PgPool) {
     assert!(matches!(rig.rx.try_recv(), Ok(Event::Message { .. })));
     assert!(matches!(rig.rx.try_recv(), Ok(Event::State { .. })));
     assert_eq!(rig.handle.message_filters(), ["a/#"]);
-    // File pleine : l'evenement est ecarte et compte, l'ingestion n'attend jamais.
+    // Queue full: the event is dropped and counted, ingestion never waits.
     for _ in 0..(QUEUE + 3) {
         rig.handle.message("a/b", &decode_payload(b"{}"));
     }
@@ -518,7 +518,7 @@ async fn the_run_loop_processes_queued_events_in_order(pool: PgPool) {
     task.abort();
 }
 
-// ---------------------------------------------------------------- automations de la production
+// ---------------------------------------------------------------- production automations
 
 #[sqlx::test(migrator = "dominet_store::MIGRATOR")]
 async fn the_production_remote_control_automations_move_the_shutter(pool: PgPool) {
@@ -530,7 +530,7 @@ async fn the_production_remote_control_automations_move_the_shutter(pool: PgPool
         let id = add(&rig, a.draft(&local).unwrap()).await;
         by_name.insert(a.name.clone(), id);
     }
-    // La telecommande envoie ses touches comme des etats (`action`), suivis d'un etat vide.
+    // The remote control sends its keys as states (`action`), followed by an empty state.
     for (action, name) in [
         ("1_single", "Ouvrir"),
         ("2_single", "Stopper"),
@@ -572,8 +572,8 @@ async fn the_production_remote_control_automations_move_the_shutter(pool: PgPool
             }
         );
     }
-    // Les deux plugins de la production, portes en Rhai : le bouton gauche ouvre, le droit ferme ; le relais n'a pas de cle
-    // `moving`, il est « en mouvement » si son dernier message a moins de 2 s, et un appui l'arrete alors.
+    // The production's two plugins, ported to Rhai: the left button opens, the right one closes; the relay has no `moving`
+    // key, it is "moving" if its last message is less than 2 s old, and a press then stops it.
     let plugin = &by_name["Volet-SB-est ← gauche (open/stop)"];
     let other = &by_name["Volet-SB-est → droite (close/stop)"];
     for (action, relay_age, expected) in [
@@ -709,7 +709,7 @@ async fn a_failing_or_hostile_script_applies_nothing_is_journaled_and_the_engine
         "{:?}",
         started.elapsed()
     );
-    // Les effets d'un script en erreur ne partent pas ; celui d'apres, si.
+    // The effects of a script in error do not go out; the next one's do.
     assert_eq!(
         rig.calls.lock().unwrap().published,
         [("ok/x".to_string(), json!(2))]
@@ -748,7 +748,7 @@ async fn a_source_handler_runs_in_the_same_host_and_a_failing_one_is_muted_for_a
         rig.calls.lock().unwrap().published,
         [("maison/papp".to_string(), json!(420))]
     );
-    // En echec : mise en sourdine, le message suivant (meme source) est ignore, meme avec un code correct.
+    // On failure: muted, the next message (same source) is ignored, even with correct code.
     rig.engine
         .process(&handler("inconnue()", "linky/compteur"))
         .await;
