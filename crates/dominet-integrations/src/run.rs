@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Boucles des publishers (meteo, SolarMax) et supervision (R3 lot 6, ADR 0030).
+//! Publisher loops (weather, SolarMax) and supervision (R3 lot 6, ADR 0030).
 //!
-//! Chaque cycle lit une source externe et **publie sur le broker** ; l'ingestion (sources MQTT du lot 4) fait le reste. Les boucles ne
-//! connaissent ni le serveur ni le client MQTT : elles publient par le trait [`Publisher`].
+//! Each cycle reads an external source and **publishes on the broker**; the ingestion (MQTT sources of lot 4) does the rest. The loops don't
+//! know the server or the MQTT client: they publish through the [`Publisher`] trait.
 
 use std::future::Future;
 use std::sync::Arc;
@@ -14,30 +14,30 @@ use tokio::sync::Notify;
 use crate::solarmax::SolarMaxClient;
 use crate::weather::OpenMeteo;
 
-/// Publication d'un message (QoS 1, sans retenue) ; refusee si le lien avec le broker est coupe.
+/// Publication of a message (QoS 1, not retained); refused if the link with the broker is down.
 pub trait Publisher: Send + Sync {
     /// # Errors
-    /// Texte de l'erreur (lien coupe, topic invalide...).
+    /// Error text (link down, invalid topic...).
     fn publish(&self, topic: &str, payload: &str) -> Result<(), String>;
 }
 
-/// Pause quand aucune station n'est activee : une simple relecture de la base (aucune requete a l'API), pour qu'une station creee par
-/// un autre processus (`dominet seed-weather`) soit prise en compte rapidement. reference attendait 10 minutes.
+/// Pause when no station is enabled: a simple re-read of the database (no request to the API), so that a station created by
+/// another process (`dominet seed-weather`) is picked up quickly. The reference waited 10 minutes.
 const IDLE_PAUSE: Duration = Duration::from_secs(30);
 
-/// Resultat d'un cycle meteo.
+/// Result of a weather cycle.
 #[derive(Debug, Default, PartialEq, Eq)]
 pub struct WeatherReport {
-    /// Stations dont le releve a ete publie.
+    /// Stations whose reading was published.
     pub published: Vec<String>,
-    /// Stations en echec (API injoignable, publication refusee).
+    /// Stations that failed (API unreachable, publication refused).
     pub failed: Vec<String>,
 }
 
-/// Un cycle : toutes les stations activees, chacune sur son topic `meteo/<suffixe>`. Une station en echec n'arrete pas les autres.
+/// One cycle: all the enabled stations, each on its `meteo/<suffix>` topic. A failing station does not stop the others.
 ///
 /// # Errors
-/// Lecture des stations impossible.
+/// The stations cannot be read.
 pub async fn weather_cycle<R: WeatherRepo + Sync, P: Publisher>(
     repo: &R,
     api: &OpenMeteo,
@@ -60,7 +60,7 @@ pub async fn weather_cycle<R: WeatherRepo + Sync, P: Publisher>(
     Ok(report)
 }
 
-/// Duree avant le prochain cycle : le plus court `refresh_minutes` des stations activees, sinon [`IDLE_PAUSE`] (30 s).
+/// Time before the next cycle: the shortest `refresh_minutes` of the enabled stations, otherwise [`IDLE_PAUSE`] (30 s).
 pub async fn weather_pause<R: WeatherRepo + Sync>(repo: &R) -> Duration {
     repo.list_enabled()
         .await
@@ -76,7 +76,7 @@ pub async fn weather_pause<R: WeatherRepo + Sync>(repo: &R) -> Duration {
         })
 }
 
-/// Boucle meteo : un cycle, puis attente jusqu'au prochain cycle ou jusqu'a un reveil (`wake` : station creee ou modifiee).
+/// Weather loop: one cycle, then wait until the next cycle or until a wake-up (`wake`: station created or modified).
 pub async fn run_weather<R: WeatherRepo + Sync, P: Publisher>(
     repo: R,
     api: OpenMeteo,
@@ -103,7 +103,7 @@ pub async fn run_weather<R: WeatherRepo + Sync, P: Publisher>(
     }
 }
 
-/// Reglages du publisher SolarMax.
+/// Settings of the SolarMax publisher.
 #[derive(Debug, Clone)]
 pub struct SolarMaxSettings {
     pub host: String,
@@ -111,14 +111,14 @@ pub struct SolarMaxSettings {
     pub inverter: u8,
     pub topic: String,
     pub interval: Duration,
-    /// Delai d'une operation reseau.
+    /// Timeout of a network operation.
     pub timeout: Duration,
 }
 
-/// Un cycle SolarMax : lit, publie. Renvoie le resume publie.
+/// One SolarMax cycle: reads, publishes. Returns the published summary.
 ///
 /// # Errors
-/// Texte de l'erreur (onduleur, publication).
+/// Error text (inverter, publication).
 pub async fn solarmax_cycle<P: Publisher>(
     client: &mut SolarMaxClient,
     settings: &SolarMaxSettings,
@@ -133,7 +133,7 @@ pub async fn solarmax_cycle<P: Publisher>(
     Ok(json)
 }
 
-/// Boucle SolarMax (toutes les `interval`). Les echecs sont journalises une fois, la reprise aussi (pas une ligne par cycle).
+/// SolarMax loop (every `interval`). Failures are logged once, and so is the recovery (not one line per cycle).
 pub async fn run_solarmax<P: Publisher>(settings: SolarMaxSettings, out: P) -> ! {
     let mut client = SolarMaxClient::new(&settings.host, settings.port, settings.timeout);
     let mut failing = false;
@@ -157,7 +157,7 @@ pub async fn run_solarmax<P: Publisher>(settings: SolarMaxSettings, out: P) -> !
     }
 }
 
-/// Relance une tache qui s'arrete sur une panique (jamais quand elle se termine normalement), avec une pause croissante de 1 a 60 s.
+/// Restarts a task that stops on a panic (never when it ends normally), with a pause growing from 1 to 60 s.
 pub async fn supervise<F, Fut>(name: &'static str, make: F)
 where
     F: Fn() -> Fut + Send + 'static,
@@ -172,7 +172,7 @@ where
                 tracing::error!(task = name, error = %e, "task stopped, restarting in {} s", pause.as_secs());
             }
         }
-        // Une tache restee en vie longtemps repart d'une pause courte.
+        // A task that stayed alive for a long time starts again with a short pause.
         if started.elapsed() > Duration::from_secs(300) {
             pause = Duration::from_secs(1);
         }

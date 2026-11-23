@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Client TCP asynchrone d'un onduleur SolarMax : une connexion, des echanges requete / reponse bornes dans le temps.
+//! Asynchronous TCP client of a SolarMax inverter: one connection, request / response exchanges bounded in time.
 //!
-//! Comme l'implementation de reference, la connexion est abandonnee a la moindre erreur et reprise au cycle suivant. L'adresse de l'onduleur
-//! n'est JAMAIS une valeur par defaut : elle vient de la configuration (`SOLARMAX_HOST`), pour qu'aucun essai ne contacte
-//! l'onduleur de la production par megarde.
+//! Like the reference implementation, the connection is dropped at the slightest error and resumed at the next cycle. The inverter's address
+//! is NEVER a default value: it comes from the configuration (`SOLARMAX_HOST`), so that no trial contacts
+//! the production inverter by mistake.
 
 use std::collections::BTreeMap;
 use std::time::Duration;
@@ -17,9 +17,9 @@ use super::protocol::{
     status_text,
 };
 
-/// Grandeurs demandees a chaque cycle (comme `QUERY_MASK` de la reference).
+/// Quantities requested at each cycle (like `QUERY_MASK` of the reference).
 pub const QUERY_MASK: [&str; 8] = ["UDC", "IDC", "UL1", "IL1", "PAC", "KDY", "KT0", "TKK"];
-/// Taille maximale d'une reponse lue (une reponse normale fait une centaine d'octets).
+/// Maximum size of a response read (a normal response is about a hundred bytes).
 const MAX_ANSWER: usize = 4096;
 
 #[derive(Debug, thiserror::Error)]
@@ -44,14 +44,14 @@ pub enum SolarMaxError {
     },
 }
 
-/// Connexion a un onduleur.
+/// Connection to an inverter.
 #[derive(Debug)]
 pub struct SolarMaxClient {
     host: String,
     port: u16,
     limit: Duration,
     stream: Option<TcpStream>,
-    /// Puissance installee (`PIN`) de l'onduleur detecte sur la connexion courante.
+    /// Installed power (`PIN`) of the inverter detected on the current connection.
     installed: Option<(u8, f64)>,
 }
 
@@ -67,7 +67,7 @@ impl SolarMaxClient {
         }
     }
 
-    /// Oublie la connexion : le prochain cycle en ouvre une nouvelle.
+    /// Forgets the connection: the next cycle opens a new one.
     pub fn reset(&mut self) {
         self.stream = None;
         self.installed = None;
@@ -87,7 +87,7 @@ impl SolarMaxClient {
             .ok_or_else(|| SolarMaxError::Connect("connection lost".into()))
     }
 
-    /// Envoie une requete et lit la reponse (jusqu'a `}`, les octets sont masques sur 7 bits comme en reference).
+    /// Sends a request and reads the response (up to `}`, bytes are masked to 7 bits as in the reference).
     async fn exchange(&mut self, request: &str) -> Result<String, SolarMaxError> {
         let limit = self.limit;
         let stream = self.stream().await?;
@@ -116,10 +116,10 @@ impl SolarMaxClient {
             .map_err(|e| SolarMaxError::Io(e.to_string()))
     }
 
-    /// Interroge l'onduleur `inverter`.
+    /// Queries the inverter `inverter`.
     ///
     /// # Errors
-    /// Reseau, delai depasse, reponse absente ou illisible.
+    /// Network, timeout, missing or unreadable response.
     pub async fn query(
         &mut self,
         inverter: u8,
@@ -132,7 +132,7 @@ impl SolarMaxClient {
         Ok(parse_answer(&answer)?.1)
     }
 
-    /// Detecte l'onduleur (type connu, puissance installee) une fois par connexion.
+    /// Detects the inverter (known type, installed power) once per connection.
     async fn installed(&mut self, inverter: u8) -> Result<f64, SolarMaxError> {
         if let Some((id, installed)) = self.installed
             && id == inverter
@@ -154,7 +154,7 @@ impl SolarMaxClient {
         }
     }
 
-    /// Etat et alarmes (`SYS`, `SAL`).
+    /// State and alarms (`SYS`, `SAL`).
     async fn status(&mut self, inverter: u8) -> Result<(String, String), SolarMaxError> {
         let data = self.query(inverter, &["SYS", "SAL"]).await?;
         let alarms = data.get("SAL").and_then(Value::as_i64).unwrap_or(0);
@@ -170,10 +170,10 @@ impl SolarMaxClient {
         Ok((status.to_string(), errors.join(", ")))
     }
 
-    /// Un cycle complet : detection, grandeurs, etat. A la moindre erreur la connexion est abandonnee.
+    /// One full cycle: detection, quantities, state. At the slightest error the connection is dropped.
     ///
     /// # Errors
-    /// [`SolarMaxError`] ; une alarme de l'onduleur est aussi une erreur (rien n'est publie, comme en reference).
+    /// [`SolarMaxError`]; an inverter alarm is also an error (nothing is published, as in the reference).
     pub async fn read_production(&mut self, inverter: u8) -> Result<Production, SolarMaxError> {
         let result = self.cycle(inverter).await;
         if result.is_err() {

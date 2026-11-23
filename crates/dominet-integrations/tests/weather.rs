@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Publisher meteo contre une API Open-Meteo **simulee** (serveur local) et la base jetable.
+//! Weather publisher against a **simulated** Open-Meteo API (local server) and the throw-away database.
 
 use std::collections::BTreeMap;
 use std::sync::{Arc, Mutex};
@@ -22,7 +22,7 @@ struct Api {
     requests: Mutex<Vec<BTreeMap<String, String>>>,
 }
 
-/// API simulee : latitude 0 -> erreur 500 ; sinon un releve dont la temperature vaut la latitude.
+/// Simulated API: latitude 0 -> error 500; otherwise a reading whose temperature is the latitude.
 async fn forecast(
     State(api): State<Arc<Api>>,
     Query(q): Query<BTreeMap<String, String>>,
@@ -111,7 +111,7 @@ async fn each_enabled_station_is_published_on_its_topic_and_a_failing_one_does_n
         Value::Null,
         "valeur absente de l'API : null"
     );
-    // L'API recoit les parametres de la reference, et la station eteinte n'est pas interrogee.
+    // The API receives the reference's parameters, and the switched-off station is not queried.
     let requests = api.requests.lock().unwrap();
     assert_eq!(requests.len(), 2);
     assert_eq!(requests[0]["wind_speed_unit"], "kmh");

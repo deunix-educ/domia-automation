@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Client SolarMax contre un onduleur **simule** local (jamais le vrai) : cycle complet, alarmes, silence, bruit, reprise.
+//! SolarMax client against a local **simulated** inverter (never the real one): full cycle, alarms, silence, noise, recovery.
 
 use std::time::Duration;
 
@@ -19,13 +19,13 @@ async fn a_cycle_reads_detects_and_derives_like_the_reference_publisher() {
     let sim = SimInverter::start(SimState::default()).await.unwrap();
     let mut c = client(&sim);
     let p = c.read_production(1).await.unwrap();
-    // Valeurs de reference calculees avec l'arithmetique de la reference ().
+    // Reference values computed with the arithmetic of the reference implementation.
     assert_eq!(
         (p.tmpr, p.pac, p.eac, p.pdc, p.edc, p.qdy, p.qt0),
         (45, 632.5, 31, 936.9, 67, 20.0, 8000)
     );
     assert_eq!(p.status, "Operating at MPP");
-    // Detection une seule fois par connexion : une connexion, trois requetes par cycle apres la premiere.
+    // Detection only once per connection: one connection, three requests per cycle after the first.
     c.read_production(1).await.unwrap();
     assert_eq!(sim.connections(), 1);
 }
@@ -33,7 +33,7 @@ async fn a_cycle_reads_detects_and_derives_like_the_reference_publisher() {
 #[tokio::test]
 async fn an_alarm_is_an_error_and_names_the_causes() {
     let sim = SimInverter::start(SimState::default()).await.unwrap();
-    sim.set("SAL", "A"); // bits 2 et 8
+    sim.set("SAL", "A"); // bits 2 and 8
     let err = client(&sim).read_production(1).await.unwrap_err();
     let SolarMaxError::Alarm { errors, .. } = &err else {
         panic!("{err:?}")
@@ -53,7 +53,7 @@ async fn an_unknown_model_or_inverter_is_not_detected() {
         Err(SolarMaxError::NotDetected(1))
     ));
     sim.set("TYP", "4E3E");
-    // Un autre numero d'onduleur : le simulateur ne repond pas.
+    // Another inverter number: the simulator does not answer.
     assert!(matches!(
         client(&sim).read_production(2).await,
         Err(SolarMaxError::Timeout | SolarMaxError::NoAnswer(2))
@@ -88,7 +88,7 @@ async fn silence_and_noise_are_errors_and_the_next_cycle_reconnects() {
 
 #[tokio::test]
 async fn an_unreachable_inverter_is_a_connection_error() {
-    // Port ferme de la boucle locale : jamais une adresse du reseau.
+    // Closed loopback port: never a network address.
     let mut c = SolarMaxClient::new("127.0.0.1", 1, LIMIT);
     assert!(matches!(
         c.read_production(1).await,

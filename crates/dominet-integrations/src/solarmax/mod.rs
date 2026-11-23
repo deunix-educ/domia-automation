@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Onduleur SolarMax : protocole pur, client TCP, simulateur.
+//! SolarMax inverter: pure protocol, TCP client, simulator.
 
 pub mod client;
 pub mod protocol;

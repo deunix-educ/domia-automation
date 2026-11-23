@@ -1,20 +1,20 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Protocole TCP des onduleurs SolarMax (port 12345), partie pure : construction des requetes, lecture des reponses, grandeurs.
-//! Issu de `solarmax.py` de Bernd Wurst (GPL-3.0-or-later, "Developed 2009-2010 by Bernd Wurst", publie en 2012, python-solarmax) ; les tests rejouent des vecteurs de reference figes
-//! (`tests/fixtures/solarmax/vectors.json`, sans acces reseau).
+//! TCP protocol of SolarMax inverters (port 12345), pure part: building the requests, reading the responses, quantities.
+//! Derived from `solarmax.py` by Bernd Wurst (GPL-3.0-or-later, "Developed 2009-2010 by Bernd Wurst", published in 2012, python-solarmax); the tests replay frozen reference vectors
+//! (`tests/fixtures/solarmax/vectors.json`, no network access).
 
 use std::collections::BTreeMap;
 
-/// Grandeurs que l'on peut demander a l'onduleur.
+/// Quantities that can be requested from the inverter.
 pub const QUERY_TYPES: [&str; 20] = [
     "KDY", "KYR", "KMT", "KT0", "IL1", "IDC", "PAC", "PRL", "SYS", "SAL", "TNF", "TKK", "UL1",
     "UDC", "ADR", "TYP", "PIN", "MAC", "CAC", "KHR",
 ];
 
-/// Type de requete du protocole (`100` en decimal = `64` en hexadecimal).
+/// Request type of the protocol (`100` in decimal = `64` in hexadecimal).
 const QUERY_KIND: u32 = 100;
 
-/// Modeles connus : (code `TYP`, nom, puissance maximale en W).
+/// Known models: (`TYP` code, name, maximum power in W).
 pub const INVERTER_TYPES: [(i64, &str, i64); 4] = [
     (20010, "SolarMax 2000S", 2000),
     (20020, "SolarMax 3000S", 3000),
@@ -22,7 +22,7 @@ pub const INVERTER_TYPES: [(i64, &str, i64); 4] = [
     (20040, "SolarMax 6000S", 6000),
 ];
 
-/// Etats de fonctionnement (premier nombre de `SYS`).
+/// Operating states (first number of `SYS`).
 #[must_use]
 pub fn status_text(code: i64) -> &'static str {
     match code {
@@ -39,7 +39,7 @@ pub fn status_text(code: i64) -> &'static str {
     }
 }
 
-/// Alarmes (bits de `SAL`).
+/// Alarms (bits of `SAL`).
 pub const ALARM_CODES: [(i64, &str); 11] = [
     (1, "External error 1"),
     (2, "DC-side insulation error"),
@@ -54,7 +54,7 @@ pub const ALARM_CODES: [(i64, &str); 11] = [
     (1024, "Temperature sensor failure"),
 ];
 
-/// Pourquoi une requete ou une reponse est refusee.
+/// Why a request or a response is refused.
 #[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
 pub enum ProtocolError {
     #[error("grandeur inconnue : {0}")]
@@ -67,12 +67,12 @@ pub enum ProtocolError {
     Length,
 }
 
-/// Valeur lue, deja mise a l'echelle.
+/// Value read, already scaled.
 #[derive(Debug, Clone, PartialEq)]
 pub enum Value {
     Float(f64),
     Int(i64),
-    /// `SYS` : (etat, sous-etat).
+    /// `SYS`: (state, sub-state).
     Pair(i64, i64),
 }
 
@@ -95,17 +95,17 @@ impl Value {
     }
 }
 
-/// Somme des caracteres, en hexadecimal majuscule sur 4 chiffres.
+/// Sum of the characters, in upper-case hexadecimal on 4 digits.
 #[must_use]
 pub fn checksum(s: &str) -> String {
     let total: u32 = s.chars().map(u32::from).sum();
     format!("{total:04X}")
 }
 
-/// Requete pour l'onduleur `inverter` : `{FB;NN;LL|64:K1;K2|CCCC}`.
+/// Request for the inverter `inverter`: `{FB;NN;LL|64:K1;K2|CCCC}`.
 ///
 /// # Errors
-/// [`ProtocolError::UnknownType`] pour une grandeur hors de [`QUERY_TYPES`].
+/// [`ProtocolError::UnknownType`] for a quantity outside [`QUERY_TYPES`].
 pub fn build_query(inverter: u8, keys: &[&str]) -> Result<String, ProtocolError> {
     if let Some(bad) = keys.iter().find(|k| !QUERY_TYPES.contains(k)) {
         return Err(ProtocolError::UnknownType((*bad).to_string()));
@@ -117,7 +117,7 @@ pub fn build_query(inverter: u8, keys: &[&str]) -> Result<String, ProtocolError>
     Ok(format!("{{{message}}}"))
 }
 
-/// Nombre hexadecimal de 32 bits au plus (les valeurs de l'onduleur tiennent sur 16 bits).
+/// Hexadecimal number of at most 32 bits (the inverter's values fit in 16 bits).
 fn hex32(value: &str) -> Result<u32, ProtocolError> {
     u32::from_str_radix(value, 16).map_err(|_| ProtocolError::Malformed)
 }
@@ -126,7 +126,7 @@ fn hex(value: &str) -> Result<i64, ProtocolError> {
     hex32(value).map(i64::from)
 }
 
-/// Mise a l'echelle d'une valeur lue (les memes regles que la reference).
+/// Scaling of a value read (the same rules as the reference).
 fn normalize(key: &str, value: &str) -> Result<Value, ProtocolError> {
     Ok(match key {
         "KDY" | "UL1" | "UDC" => Value::Float(f64::from(hex32(value)?) / 10.0),
@@ -140,10 +140,10 @@ fn normalize(key: &str, value: &str) -> Result<Value, ProtocolError> {
     })
 }
 
-/// Lit une reponse `{NN;FB;LL|64:K=V;K=V|CCCC}` : numero d'onduleur et valeurs.
+/// Reads a response `{NN;FB;LL|64:K=V;K=V|CCCC}`: inverter number and values.
 ///
 /// # Errors
-/// [`ProtocolError`] si la reponse est mal formee, de mauvaise longueur ou de mauvais checksum, ou porte une grandeur inconnue.
+/// [`ProtocolError`] if the response is malformed, of the wrong length or with a wrong checksum, or carries an unknown quantity.
 pub fn parse_answer(answer: &str) -> Result<(u8, BTreeMap<String, Value>), ProtocolError> {
     let inner = answer
         .strip_prefix('{')
@@ -175,7 +175,7 @@ pub fn parse_answer(answer: &str) -> Result<(u8, BTreeMap<String, Value>), Proto
         return Err(ProtocolError::Length);
     }
     let inverter: u8 = inverter.parse().map_err(|_| ProtocolError::Malformed)?;
-    let body = body.get(3..).ok_or(ProtocolError::Malformed)?; // « 64: »
+    let body = body.get(3..).ok_or(ProtocolError::Malformed)?; // "64:"
     let mut data = BTreeMap::new();
     for item in body.split(';') {
         let (key, value) = item.split_once('=').ok_or(ProtocolError::Malformed)?;
@@ -187,7 +187,7 @@ pub fn parse_answer(answer: &str) -> Result<(u8, BTreeMap<String, Value>), Proto
     Ok((inverter, data))
 }
 
-/// Reponse d'onduleur, telle que le simulateur de test la fabrique (valeurs deja en hexadecimal brut).
+/// Inverter response, as the test simulator builds it (values already in raw hexadecimal).
 #[must_use]
 pub fn build_answer(inverter: u8, items: &[(&str, &str)]) -> String {
     let content = items
@@ -197,14 +197,14 @@ pub fn build_answer(inverter: u8, items: &[(&str, &str)]) -> String {
         .join(";");
     let mut length = 0usize;
     for _ in 0..3 {
-        // La longueur est elle-meme dans le message : on la cherche par approximations successives.
+        // The length is itself in the message: we look for it by successive approximations.
         length = format!("{inverter:02};FB;{length:X}|64:{content}|").len() + 4 + 2;
     }
     let body = format!("{inverter:02};FB;{length:X}|64:{content}|");
     format!("{{{body}{}}}", checksum(&body))
 }
 
-/// Les grandeurs publiees (`solarmax/<ieee>/prod`), calculees comme la reference.
+/// The published quantities (`solarmax/<ieee>/prod`), computed like the reference.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Production {
     pub tmpr: i64,
@@ -217,23 +217,23 @@ pub struct Production {
     pub status: String,
 }
 
-/// Rapport en pour cent, tronque vers zero comme `int()` de la reference (les rapports d'un onduleur restent tres loin des bornes de `i64`).
+/// Percentage ratio, truncated towards zero like `int()` of the reference (an inverter's ratios stay very far from the bounds of `i64`).
 #[allow(clippy::cast_possible_truncation)]
 fn percent(ratio: f64) -> i64 {
     (ratio * 100.0) as i64
 }
 
-/// Arrondi a une decimale comme `round(x, 1)` de la reference (demi-pair sur la valeur binaire exacte).
+/// Rounding to one decimal like `round(x, 1)` of the reference (half-even on the exact binary value).
 #[must_use]
 pub fn round1(x: f64) -> f64 {
     format!("{x:.1}").parse().unwrap_or(x)
 }
 
 impl Production {
-    /// `current` : valeurs lues (`UL1`, `IL1`, `UDC`, `IDC`, `TKK`, `KDY`, `KT0`) ; `installed` : puissance installee (`PIN`).
+    /// `current`: values read (`UL1`, `IL1`, `UDC`, `IDC`, `TKK`, `KDY`, `KT0`); `installed`: installed power (`PIN`).
     ///
     /// # Errors
-    /// [`ProtocolError::Malformed`] si une grandeur manque.
+    /// [`ProtocolError::Malformed`] if a quantity is missing.
     pub fn from_values(
         current: &BTreeMap<String, Value>,
         installed: f64,
@@ -247,7 +247,7 @@ impl Production {
         };
         let (uac, iac, udc, idc) = (f("UL1")?, f("IL1")?, f("UDC")?, f("IDC")?);
         let (pac, pdc) = (uac * iac, udc * idc);
-        // `int()` de la reference tronque vers zero ; `as i64` aussi.
+        // `int()` of the reference truncates towards zero; so does `as i64`.
         Ok(Self {
             tmpr: current
                 .get("TKK")
@@ -270,7 +270,7 @@ impl Production {
         })
     }
 
-    /// Charge utile JSON (memes cles que reference).
+    /// JSON payload (same keys as the reference).
     #[must_use]
     pub fn to_json(&self) -> serde_json::Value {
         serde_json::json!({
@@ -366,7 +366,7 @@ mod tests {
         assert_eq!(inverter, 1);
         assert_eq!(data["PAC"], Value::Float(800.0));
         assert_eq!(data["SYS"], Value::Pair(0x4E24, 0));
-        // Octet pour octet la meme reponse que celle que fabrique le code de l'oracle reference.
+        // Byte for byte the same response as the one the reference oracle's code builds.
         let python = vectors()["answers"][2]["raw"].as_str().unwrap().to_string();
         assert_eq!(build_answer(1, &[("SYS", "4E24,0"), ("SAL", "0")]), python);
     }

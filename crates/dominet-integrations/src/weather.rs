@@ -1,21 +1,21 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Open-Meteo : interrogation d'une station et normalisation de la reponse (comme la reference).
+//! Open-Meteo: querying a station and normalising the response (like the reference).
 //!
-//! L'adresse de l'API est un parametre (`OPEN_METEO_URL`) : les tests et la CI parlent a une API **simulee** ; seule la demonstration
-//! (avec accord) fait un appel reel.
+//! The API address is a parameter (`OPEN_METEO_URL`): the tests and the CI talk to a **simulated** API; only the demonstration
+//! (with consent) makes a real call.
 
 use std::time::Duration;
 
 use dominet_domain::device::WeatherStation;
 use serde_json::{Value, json};
 
-/// API publique, sans identifiant.
+/// Public API, no identifier.
 pub const DEFAULT_URL: &str = "https://api.open-meteo.com/v1/forecast";
-/// Variables demandees (`current`).
+/// Requested variables (`current`).
 const CURRENT_VARS: &str = "temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,wind_speed_10m,wind_direction_10m,weather_code,uv_index,surface_pressure,cloud_cover";
-/// Delai maximal d'une requete (comme la reference).
+/// Maximum duration of a request (like the reference).
 const TIMEOUT: Duration = Duration::from_secs(15);
-/// Une reponse normale fait moins de 2 Ko.
+/// A normal response is under 2 KB.
 const MAX_BODY: usize = 256 * 1024;
 
 #[derive(Debug, thiserror::Error)]
@@ -32,7 +32,7 @@ pub enum WeatherError {
     Json(String),
 }
 
-/// Parametres de requete d'une station.
+/// Request parameters of a station.
 #[must_use]
 pub fn request_params(station: &WeatherStation) -> Vec<(&'static str, String)> {
     vec![
@@ -45,7 +45,7 @@ pub fn request_params(station: &WeatherStation) -> Vec<(&'static str, String)> {
     ]
 }
 
-/// Bloc `current` de la reponse -> objet normalise (cles absentes = `null`, comme la reference).
+/// The `current` block of the response -> normalised object (missing keys = `null`, like the reference).
 #[must_use]
 pub fn normalize_current(response: &Value) -> Value {
     let raw = response.get("current").unwrap_or(&Value::Null);
@@ -64,7 +64,7 @@ pub fn normalize_current(response: &Value) -> Value {
     })
 }
 
-/// Client Open-Meteo.
+/// Open-Meteo client.
 #[derive(Debug, Clone)]
 pub struct OpenMeteo {
     client: reqwest::Client,
@@ -73,7 +73,7 @@ pub struct OpenMeteo {
 
 impl OpenMeteo {
     /// # Errors
-    /// Client HTTP impossible a construire (par exemple sans certificats racine).
+    /// The HTTP client cannot be built (for example without root certificates).
     pub fn new(url: &str) -> Result<Self, WeatherError> {
         let client = reqwest::Client::builder()
             .timeout(TIMEOUT)
@@ -86,10 +86,10 @@ impl OpenMeteo {
         })
     }
 
-    /// Releve courant de la station, normalise.
+    /// Current reading of the station, normalised.
     ///
     /// # Errors
-    /// Reseau, statut HTTP, reponse trop grande ou illisible.
+    /// Network, HTTP status, response too large or unreadable.
     pub async fn fetch(&self, station: &WeatherStation) -> Result<Value, WeatherError> {
         let response = self
             .client
@@ -151,7 +151,7 @@ mod tests {
         assert_eq!(out["precipitation"], Value::Null);
         assert_eq!(out["uv_index"], Value::Null);
         assert_eq!(out.as_object().unwrap().len(), 10);
-        // Reponse sans bloc `current` : dix valeurs nulles, comme la reference.
+        // Response without a `current` block: ten null values, like the reference.
         let empty = normalize_current(&json!({"error": true}));
         assert!(empty.as_object().unwrap().values().all(Value::is_null));
     }

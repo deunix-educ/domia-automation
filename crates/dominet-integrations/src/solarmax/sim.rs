@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Onduleur SolarMax **simule** (tests et demonstrations) : un serveur TCP local qui parle le protocole.
-//! Rien ici ne s'adresse a un vrai onduleur : le simulateur ecoute sur `127.0.0.1`.
+//! **Simulated** SolarMax inverter (tests and demonstrations): a local TCP server that speaks the protocol.
+//! Nothing here addresses a real inverter: the simulator listens on `127.0.0.1`.
 
 use std::collections::BTreeMap;
 use std::net::SocketAddr;
@@ -11,42 +11,42 @@ use tokio::net::{TcpListener, TcpStream};
 
 use super::protocol::{QUERY_TYPES, build_answer, checksum};
 
-/// Comportement du simulateur.
+/// Behaviour of the simulator.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Behaviour {
-    /// Repond normalement.
+    /// Answers normally.
     Normal,
-    /// Accepte les connexions mais ne repond jamais.
+    /// Accepts connections but never answers.
     Silent,
-    /// Repond par du bruit.
+    /// Answers with noise.
     Garbage,
 }
 
-/// Valeurs servies, en hexadecimal brut (comme sur le fil).
+/// Served values, in raw hexadecimal (as on the wire).
 #[derive(Debug, Clone)]
 pub struct SimState {
     pub inverter: u8,
     pub values: BTreeMap<String, String>,
     pub behaviour: Behaviour,
-    /// Nombre de connexions acceptees.
+    /// Number of accepted connections.
     pub connections: u32,
 }
 
 impl Default for SimState {
     fn default() -> Self {
         let values = [
-            ("UDC", "0C0A"), // 308,2 V
-            ("IDC", "0130"), // 3,04 A
-            ("UL1", "08FC"), // 230,0 V
-            ("IL1", "0113"), // 2,75 A
+            ("UDC", "0C0A"), // 308.2 V
+            ("IDC", "0130"), // 3.04 A
+            ("UL1", "08FC"), // 230.0 V
+            ("IL1", "0113"), // 2.75 A
             ("PAC", "0640"),
-            ("KDY", "00C8"), // 20,0 kWh
+            ("KDY", "00C8"), // 20.0 kWh
             ("KT0", "1F40"),
-            ("TKK", "002D"), // 45 degres
+            ("TKK", "002D"), // 45 degrees
             ("ADR", "1"),
             ("TYP", "4E3E"),   // 20030 : SolarMax 4200S
             ("PIN", "0FA0"),   // 2000 (4000 W)
-            ("SYS", "4E24,0"), // 20004 : operation sur MPP
+            ("SYS", "4E24,0"), // 20004: operation on MPP
             ("SAL", "0"),
         ]
         .into_iter()
@@ -61,7 +61,7 @@ impl Default for SimState {
     }
 }
 
-/// Simulateur en marche ; s'arrete quand on le lache.
+/// Running simulator; stops when dropped.
 #[derive(Debug)]
 pub struct SimInverter {
     pub addr: SocketAddr,
@@ -76,10 +76,10 @@ impl Drop for SimInverter {
 }
 
 impl SimInverter {
-    /// Ecoute sur un port libre de `127.0.0.1`.
+    /// Listens on a free port of `127.0.0.1`.
     ///
     /// # Errors
-    /// Erreur d'ouverture du port.
+    /// Error opening the port.
     pub async fn start(state: SimState) -> std::io::Result<Self> {
         let listener = TcpListener::bind("127.0.0.1:0").await?;
         let addr = listener.local_addr()?;
@@ -96,7 +96,7 @@ impl SimInverter {
         Ok(Self { addr, state, task })
     }
 
-    /// Change une valeur servie (hexadecimal brut).
+    /// Changes a served value (raw hexadecimal).
     pub fn set(&self, key: &str, raw: &str) {
         if let Ok(mut s) = self.state.lock() {
             s.values.insert(key.to_string(), raw.to_string());
@@ -115,7 +115,7 @@ impl SimInverter {
     }
 }
 
-/// Lit les clefs demandees dans `{FB;NN;LL|64:K1;K2|CCCC}` (checksum verifie).
+/// Reads the requested keys in `{FB;NN;LL|64:K1;K2|CCCC}` (checksum verified).
 fn requested_keys(request: &str) -> Option<(u8, Vec<String>)> {
     let inner = request.strip_prefix('{')?.strip_suffix('}')?;
     let (content, sum) = inner.split_at(inner.len().checked_sub(4)?);
