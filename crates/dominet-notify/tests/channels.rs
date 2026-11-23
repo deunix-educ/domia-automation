@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Canaux d'envoi contre de faux serveurs (aucun envoi reel, D1).
+//! Sending channels against fake servers (nothing is really sent, D1).
 
 use std::time::Duration;
 
@@ -114,7 +114,7 @@ async fn refusals_are_reported_and_secrets_stay_out_of_errors() {
 
 #[tokio::test]
 async fn starttls_is_required_never_downgraded() {
-    // Le faux serveur n'offre pas STARTTLS : l'envoi doit echouer et rien ne doit etre transmis en clair.
+    // The fake server does not offer STARTTLS: sending must fail and nothing must be transmitted in clear text.
     let fake = FakeSmtp::start().await;
     let sender = SmtpSender::new(&cfg(&fake, Security::StartTls, true)).unwrap();
     assert!(
@@ -146,7 +146,7 @@ async fn credentials_without_tls_are_only_allowed_on_loopback() {
 async fn an_unreachable_server_fails_without_hanging() {
     let fake = FakeSmtp::start().await;
     let mut c = cfg(&fake, Security::Plain, false);
-    c.port = 1; // rien n'ecoute
+    c.port = 1; // nothing is listening
     c.timeout = Duration::from_secs(2);
     let sender = SmtpSender::new(&c).unwrap();
     let r = tokio::time::timeout(
@@ -193,10 +193,10 @@ async fn free_mobile_http_codes_are_checked_and_the_key_never_leaks() {
         assert!(e.contains(word), "{code}: {e}");
         assert!(!e.contains("cle-secrete"));
     }
-    // Redirection : refusee, la cle ne suit pas.
+    // Redirect: refused, the key does not follow.
     fake.set_status(302);
     assert!(sms.send("x").await.is_err());
-    // Serveur injoignable : l'erreur ne contient pas l'adresse (donc pas la cle).
+    // Unreachable server: the error does not contain the address (so not the key).
     let dead = FreeMobile::new("http://127.0.0.1:1/sendmsg", "12345678", "cle-secrete").unwrap();
     let e = dead.send("x").await.unwrap_err().to_string();
     assert!(!e.contains("cle-secrete") && !e.contains("pass="), "{e}");

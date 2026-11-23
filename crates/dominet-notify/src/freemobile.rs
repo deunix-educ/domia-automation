@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! SMS Free Mobile : `GET <url>?user=&pass=&msg=` (`msg` coupe a 160 caracteres comme la reference, delai de 5 s).
+//! Free Mobile SMS: `GET <url>?user=&pass=&msg=` (`msg` cut to 160 characters like the reference, 5 s timeout).
 
 use std::fmt;
 use std::time::Duration;
@@ -7,7 +7,7 @@ use std::time::Duration;
 use crate::NotifyError;
 
 pub const DEFAULT_FREE_MOBILE_URL: &str = "https://smsapi.free-mobile.fr/sendmsg";
-/// Longueur maximale du message (`msg[:160]` de la reference, en caracteres).
+/// Maximum message length (`msg[:160]` of the reference, in characters).
 pub const SMS_MAX_CHARS: usize = 160;
 
 #[derive(Clone)]
@@ -30,14 +30,14 @@ impl fmt::Debug for FreeMobile {
 
 impl FreeMobile {
     /// # Errors
-    /// `NotConfigured` si l'identifiant ou la cle est vide ; `FreeMobile` si le client HTTP ne se construit pas.
+    /// `NotConfigured` if the identifier or the key is empty; `FreeMobile` if the HTTP client cannot be built.
     pub fn new(url: &str, user: &str, key: &str) -> Result<Self, NotifyError> {
         if user.is_empty() || key.is_empty() {
             return Err(NotifyError::NotConfigured("SMS Free Mobile"));
         }
         let client = reqwest::Client::builder()
             .timeout(Duration::from_secs(5))
-            // La cle voyage dans l'adresse : jamais de redirection vers une autre machine.
+            // The key travels in the address: never redirect to another machine.
             .redirect(reqwest::redirect::Policy::none())
             .build()
             .map_err(|e| NotifyError::FreeMobile(e.without_url().to_string()))?;
@@ -49,10 +49,10 @@ impl FreeMobile {
         })
     }
 
-    /// Envoie un SMS a **son proprietaire** (l'API ne sait ecrire qu au numero du compte). Le code HTTP est verifie (reference l ignorait).
+    /// Sends an SMS to **its owner** (the API can only write to the account's number). The HTTP status is checked (the reference ignored it).
     ///
     /// # Errors
-    /// `FreeMobile` avec la cause en clair, sans jamais la cle.
+    /// `FreeMobile` with the cause in clear, never the key.
     pub async fn send(&self, message: &str) -> Result<(), NotifyError> {
         let msg: String = message.chars().take(SMS_MAX_CHARS).collect();
         let response = self

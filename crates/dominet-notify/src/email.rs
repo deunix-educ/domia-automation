@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! E-mail texte brut par SMTP .
+//! Plain-text e-mail over SMTP.
 
 use std::fmt;
 use std::time::Duration;
@@ -11,14 +11,14 @@ use lettre::{AsyncSmtpTransport, AsyncTransport, Message, Tokio1Executor};
 
 use crate::NotifyError;
 
-/// Protection de la connexion.
+/// Connection protection.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Security {
-    /// `EMAIL_USE_TLS` (port 587) : connexion claire puis `STARTTLS` **obligatoire** (pas de repli en clair).
+    /// `EMAIL_USE_TLS` (port 587): clear connection, then **mandatory** `STARTTLS` (no fallback to clear text).
     StartTls,
-    /// `EMAIL_USE_SSL` (port 465) : TLS des l'ouverture.
+    /// `EMAIL_USE_SSL` (port 465): TLS from the start.
     Tls,
-    /// Aucune : reserve a la boucle locale (faux serveur, relais local).
+    /// None: reserved for the loopback interface (fake server, local relay).
     Plain,
 }
 
@@ -53,10 +53,10 @@ fn is_loopback(host: &str) -> bool {
 }
 
 impl SmtpConfig {
-    /// Refuse ce qui enverrait un mot de passe en clair sur le reseau.
+    /// Refuses anything that would send a password in clear text over the network.
     ///
     /// # Errors
-    /// `Config` si des identifiants accompagnent `Security::Plain` vers une machine qui n'est pas la boucle locale.
+    /// `Config` if credentials come with `Security::Plain` towards a machine that is not the loopback interface.
     pub fn validate(&self) -> Result<(), NotifyError> {
         if self.host.trim().is_empty() {
             return Err(NotifyError::NotConfigured("SMTP server"));
@@ -73,7 +73,7 @@ impl SmtpConfig {
     }
 }
 
-/// Envoyeur SMTP : une connexion par message (peu de messages, comme la reference).
+/// SMTP sender: one connection per message (few messages, like the reference).
 #[derive(Clone)]
 pub struct SmtpSender {
     transport: AsyncSmtpTransport<Tokio1Executor>,
@@ -87,7 +87,7 @@ impl fmt::Debug for SmtpSender {
 
 impl SmtpSender {
     /// # Errors
-    /// Configuration invalide (voir [`SmtpConfig::validate`]) ou parametres TLS inutilisables.
+    /// Invalid configuration (see [`SmtpConfig::validate`]) or unusable TLS parameters.
     pub fn new(cfg: &SmtpConfig) -> Result<Self, NotifyError> {
         cfg.validate()?;
         let tls = |e: lettre::transport::smtp::Error| NotifyError::Config(e.to_string());
@@ -108,10 +108,10 @@ impl SmtpSender {
         })
     }
 
-    /// Envoie un message texte brut (UTF-8) a un destinataire.
+    /// Sends a plain-text (UTF-8) message to one recipient.
     ///
     /// # Errors
-    /// `Address` si une adresse est invalide ; `Smtp` si le serveur refuse ou est injoignable.
+    /// `Address` if an address is invalid; `Smtp` if the server refuses or cannot be reached.
     pub async fn send(
         &self,
         from: &str,
@@ -124,7 +124,7 @@ impl SmtpSender {
                 .parse::<Mailbox>()
                 .map_err(|e| NotifyError::Address(format!("{s} ({e})")))
         };
-        // Un saut de ligne dans le sujet ne doit pas pouvoir ouvrir un nouvel en-tete.
+        // A line break in the subject must not be able to open a new header.
         let subject: String = subject
             .chars()
             .map(|c| if c.is_control() { ' ' } else { c })

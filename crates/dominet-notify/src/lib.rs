@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Canaux d'envoi (R5, ADR 0038) : e-mail par SMTP (`lettre`) et SMS Free Mobile (HTTP).
+//! Sending channels (R5, ADR 0038): e-mail over SMTP (`lettre`) and Free Mobile SMS (HTTP).
 //!
-//! Aucun secret ne sort d'ici : ni `Debug`, ni les erreurs ne contiennent le mot de passe SMTP ni la cle Free Mobile (que
-//! `reqwest` mettrait sinon dans l'adresse de ses erreurs). Les tests parlent a de **faux serveurs** (feature `testing`) :
-//! aucun envoi reel (plan R5, D1).
+//! No secret leaves this crate: neither `Debug` nor the errors contain the SMTP password or the Free Mobile key (which
+//! `reqwest` would otherwise put in the address of its errors). The tests talk to **fake servers** (`testing` feature):
+//! nothing is ever really sent (plan R5, D1).
 
 mod email;
 mod freemobile;

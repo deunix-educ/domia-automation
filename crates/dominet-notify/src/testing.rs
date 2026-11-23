@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Faux serveurs SMTP et Free Mobile sur la boucle locale (tests, demonstration) : ils enregistrent ce qu'ils recoivent et rien ne
-//! sort de la machine. Le faux SMTP n'offre pas `STARTTLS` : une connexion qui l'exige doit donc echouer sans rien envoyer.
+//! Fake SMTP and Free Mobile servers on the loopback interface (tests, demonstration): they record what they receive and nothing
+//! leaves the machine. The fake SMTP does not offer `STARTTLS`: a connection that requires it must therefore fail without sending anything.
 
 use std::net::SocketAddr;
 use std::sync::{Arc, Mutex};
@@ -8,19 +8,19 @@ use std::sync::{Arc, Mutex};
 use tokio::io::{AsyncBufReadExt, AsyncReadExt, AsyncWriteExt, BufReader};
 use tokio::net::{TcpListener, TcpStream};
 
-/// Un message recu par le faux SMTP.
+/// A message received by the fake SMTP.
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct ReceivedMail {
     pub from: String,
     pub to: Vec<String>,
-    /// Identifiants presentes par `AUTH`, s'il y en a eu.
+    /// Credentials presented by `AUTH`, if there were any.
     pub auth: Option<(String, String)>,
-    /// En-tetes et corps tels que recus (sans le point final).
+    /// Headers and body as received (without the final dot).
     pub data: String,
 }
 
 impl ReceivedMail {
-    /// Valeurs de l'en-tete `name` (insensible a la casse), une par ligne d'en-tete.
+    /// Values of the `name` header (case-insensitive), one per header line.
     #[must_use]
     pub fn header(&self, name: &str) -> Vec<String> {
         let head = self.data.split("\r\n\r\n").next().unwrap_or("");
@@ -32,20 +32,20 @@ impl ReceivedMail {
             .collect()
     }
 
-    /// Corps (apres la ligne vide).
+    /// Body (after the empty line).
     #[must_use]
     pub fn body(&self) -> &str {
         self.data.split_once("\r\n\r\n").map_or("", |(_, b)| b)
     }
 }
 
-/// Comportement du faux SMTP.
+/// Behaviour of the fake SMTP.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SmtpBehavior {
     Accept,
-    /// Refuse chaque destinataire (550).
+    /// Refuses every recipient (550).
     RejectRecipients,
-    /// Refuse l'authentification (535).
+    /// Refuses authentication (535).
     RejectAuth,
 }
 
@@ -83,10 +83,10 @@ fn text(bytes: &[u8]) -> String {
 }
 
 impl FakeSmtp {
-    /// Demarre sur un port libre de `127.0.0.1`.
+    /// Starts on a free port of `127.0.0.1`.
     ///
     /// # Panics
-    /// Si le port ne peut pas etre ouvert.
+    /// If the port cannot be opened.
     pub async fn start() -> Self {
         let listener = TcpListener::bind("127.0.0.1:0").await.expect("bind");
         let addr = listener.local_addr().expect("addr");
@@ -228,7 +228,7 @@ async fn serve_smtp(stream: TcpStream, st: Arc<SmtpState>) -> std::io::Result<()
 
 // ------------------------------------------------------------------ Free Mobile
 
-/// Une requete recue par le faux Free Mobile.
+/// A request received by the fake Free Mobile.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FreeRequest {
     pub user: String,
@@ -250,7 +250,7 @@ pub struct FakeFreeMobile {
 
 impl FakeFreeMobile {
     /// # Panics
-    /// Si le port ne peut pas etre ouvert.
+    /// If the port cannot be opened.
     pub async fn start() -> Self {
         let listener = TcpListener::bind("127.0.0.1:0").await.expect("bind");
         let addr = listener.local_addr().expect("addr");
@@ -303,13 +303,13 @@ impl FakeFreeMobile {
         Self { addr, state }
     }
 
-    /// Adresse de base a donner a `FreeMobile::new` (`SMS_FREE_URL`).
+    /// Base address to give to `FreeMobile::new` (`SMS_FREE_URL`).
     #[must_use]
     pub fn url(&self) -> String {
         format!("http://{}/sendmsg", self.addr)
     }
 
-    /// Code HTTP rendu aux requetes suivantes (200 par defaut).
+    /// HTTP status returned to the following requests (200 by default).
     pub fn set_status(&self, status: u16) {
         *self.state.status.lock().expect("lock") = status;
     }
