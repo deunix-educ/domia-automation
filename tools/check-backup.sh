@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: AGPL-3.0-or-later
 #
-# Controle de bout en bout des sauvegardes (R7 lot 4) avec l'IMAGE Docker (`dominet:dev`, client PostgreSQL 17) contre la PostgreSQL de dev
-# (16) et de VRAIS ReductStore jetables :
-#  - base jetable -> `dominet backup` -> `dominet restore` dans une AUTRE base -> comparaison table par table (la ligne
-#    `SET transaction_timeout` de pg_dump 17, inconnue du serveur 16, est ecartee par la restauration) ;
-#  - ReductStore : des enregistrements ecrits par l'API, sauvegardes (archive du volume), restaures dans un autre dossier, relus par un
-#    SECOND ReductStore et compares octet par octet ;
-#  - fichier abime : la restauration refuse avant de toucher a la base.
-# Rien n'est envoye a l'exterieur, aucune production n'est touchee. Usage : tools/check-backup.sh (stack de dev : make dev-up ; make image)
+# End-to-end check of the backups (R7 lot 4) with the Docker IMAGE (`dominet:dev`, PostgreSQL 17 client) against the dev PostgreSQL
+# (16) and REAL throw-away ReductStores:
+#  - throw-away database -> `dominet backup` -> `dominet restore` into ANOTHER database -> table-by-table comparison (the line
+#    `SET transaction_timeout` of pg_dump 17, unknown to the 16 server, is dropped by the restore);
+#  - ReductStore: records written by the API, backed up (volume archive), restored into another folder, read back by a
+#    SECOND ReductStore and compared byte by byte;
+#  - damaged file: the restore refuses before touching the database.
+# Nothing is sent outside, no production is touched. Usage: tools/check-backup.sh (dev stack: make dev-up; make image)
 set -uo pipefail
 
 IMAGE="${IMAGE:-dominet:dev}"
@@ -46,17 +46,17 @@ dom -e DATABASE_URL="$(url $SRC)" "$IMAGE" seed >/dev/null
 psql_ "$SRC" "INSERT INTO location (name, description) VALUES ('Salon', 'Pièce « principale » — étage 1')" >/dev/null
 psql_ "$SRC" "INSERT INTO device (friendly_name, device_type, state) VALUES ('Sonde', 'sensor', '{\"temperature\": 21.5, \"msg\": \"é — ü\"}')" >/dev/null
 
-# ReductStore source : de vraies donnees ecrites par l'API
+# Source ReductStore: real data written by the API
 docker run -d --name "bk-rs1-$$" --user "$(id -u):$(id -g)" --network host -e RS_PORT=$RS_PORT -e RS_DATA_PATH=/data -e RS_API_TOKEN=bk-token -v "$W/rs1:/data" "$RS_IMAGE" >/dev/null
 for _ in $(seq 1 60); do curl -fs "http://127.0.0.1:$RS_PORT/api/v1/alive" >/dev/null 2>&1 && break; sleep 0.5; done
 RS="http://127.0.0.1:$RS_PORT/api/v1"
-rc() { curl -H "Authorization: Bearer bk-token" "$@"; }   # ReductStore 1.21 exige un jeton
+rc() { curl -H "Authorization: Bearer bk-token" "$@"; }   # ReductStore 1.21 requires a token
 rc -fs -X POST "$RS/b/test" -d '{"quota_type":"FIFO","quota_size":1000000000}' >/dev/null
 head -c 50000 /dev/urandom > "$W/rec1.bin"; head -c 12345 /dev/urandom > "$W/rec2.bin"
 rc -fs -X POST "$RS/b/test/entree?ts=1000000" -H "Content-Type: application/octet-stream" -H "x-reduct-label-camera: cam1" --data-binary @"$W/rec1.bin" >/dev/null
 rc -fs -X POST "$RS/b/test/entree?ts=2000000" -H "Content-Type: application/octet-stream" --data-binary @"$W/rec2.bin" >/dev/null
 check "ReductStore source contient 2 enregistrements" "[ \"\$(rc -s $RS/b/test | python3 -c 'import sys,json; print(json.load(sys.stdin)[\"entries\"][0][\"record_count\"])')\" = 2 ]"
-sleep 2   # laisse ReductStore ecrire ses blocs sur le disque
+sleep 2   # lets ReductStore write its blocks to disk
 
 dom -e DATABASE_URL="$(url $SRC)" "$IMAGE" backup >"$W/backup.log" 2>&1
 check "dominet backup reussit : $(grep -m1 '^Base' "$W/backup.log" | cut -c1-80)" "[ -s $W/backups/postgres/*.sql.gz ] && [ -s $W/backups/reductstore/*.tar.gz ]"
@@ -64,7 +64,7 @@ check "sommes de controle ecrites et valides (sha256sum -c)" "cd $W/backups/post
 dom -e DATABASE_URL="$(url $SRC)" "$IMAGE" backups >"$W/list.log" 2>&1
 check "dominet backups liste les deux sauvegardes" "[ \$(grep -c -E 'postgres|reductstore' $W/list.log) -ge 2 ]"
 
-# Restauration de la base dans une AUTRE base : refus sans --yes, puis comparaison table par table.
+# Restore of the database into ANOTHER database: refusal without --yes, then table-by-table comparison.
 dom -e DATABASE_URL="$(url $DST)" "$IMAGE" restore --latest postgres >"$W/refuse.log" 2>&1
 check "restauration refusee sans --yes" "grep -q -- '--yes' $W/refuse.log"
 dom -e DATABASE_URL="$(url $DST)" "$IMAGE" restore --latest postgres --yes >"$W/restore.log" 2>&1
@@ -78,7 +78,7 @@ fingerprint "$SRC" > "$W/fp-src.txt"; fingerprint "$DST" > "$W/fp-dst.txt"
 check "memes tables et memes lignes dans la base restauree ($(wc -l < "$W/fp-src.txt") tables)" "[ -s $W/fp-src.txt ] && diff -q $W/fp-src.txt $W/fp-dst.txt"
 check "accents et tirets intacts" "[ \"\$(psql_ $DST \"SELECT description FROM location WHERE name='Salon'\")\" = 'Pièce « principale » — étage 1' ]"
 
-# Fichier abime
+# Damaged file
 F="$(ls "$W"/backups/postgres/*.sql.gz | head -1)"
 python3 - "$F" <<'PY'
 import sys

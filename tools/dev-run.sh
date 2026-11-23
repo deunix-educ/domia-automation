@@ -35,15 +35,15 @@ ENV_FILE="deploy/.env.dev-run"
 PORT="${DEV_PORT:-8080}"
 PG_PORT="${PG_PORT:-15432}"
 
-# La stack de dev doit tourner.
+# The dev stack must be running.
 if ! (exec 3<>"/dev/tcp/127.0.0.1/$PG_PORT") 2>/dev/null; then
   echo "PostgreSQL de dev injoignable sur 127.0.0.1:$PG_PORT : lancer d'abord  make dev-up" >&2
   exit 1
 fi
 
-# Binaire et interface (WASM) : construits s'ils manquent ; `make front` les reconstruit apres une modification.
-# Le WASM de la version de developpement est enorme (~48 Mo non optimise) : tant qu'il n'est pas charge et compile, les boutons
-# ne reagissent pas. RELEASE=1 le ramene a quelques Mo.
+# Binary and interface (WASM): built if missing; `make front` rebuilds them after a change.
+# The development WASM is huge (~48 MB unoptimised): as long as it is not loaded and compiled, the buttons
+# do not react. RELEASE=1 brings it down to a few MB.
 if [ -n "${RELEASE:-}" ]; then
   if [ ! -x "$BIN" ] || [ "$(stat -c %s "$SITE/pkg/dominet.wasm" 2>/dev/null || echo 0)" -gt 20000000 ]; then
     echo "dev-run : construction optimisee (cargo leptos build --release), plusieurs minutes la premiere fois..."
@@ -54,7 +54,7 @@ elif [ ! -x "$BIN" ] || [ ! -f "$SITE/pkg/dominet.wasm" ]; then
   make front
 fi
 
-# Cle maitresse et compte administrateur : crees une fois, gardes ensuite.
+# Master key and administrator account: created once, kept afterwards.
 if [ ! -f "$ENV_FILE" ]; then
   umask 077
   {
@@ -78,10 +78,10 @@ export COOKIE_SECURE=false
 export HTTP_ADDR="127.0.0.1:$PORT"
 export SITE_ROOT="$SITE"
 export MEDIAMTX_API_URL="${MEDIAMTX_API_URL:-http://127.0.0.1:19997}"
-# Role video : relit le re-stream du MediaMTX de dev ; images et snapshots dans target/ (ignore par git).
+# Video role: re-reads the dev MediaMTX's re-stream; images and snapshots in target/ (ignored by git).
 export MEDIAMTX_RTSP_URL="${MEDIAMTX_RTSP_URL:-rtsp://127.0.0.1:18554}" SNAPSHOTS_DIR="${SNAPSHOTS_DIR:-$ROOT/target/dev-snapshots}"
 export MQTT_HOST="${MQTT_HOST:-127.0.0.1}" MQTT_PORT="${MQTT_PORT:-11883}" MQTT_CLIENT_ID="${MQTT_CLIENT_ID:-dominet-dev-run}"
-# Enregistrements : le dossier ou le MediaMTX de dev ecrit ses segments (make dev-up).
+# Recordings: the folder where the dev MediaMTX writes its segments (make dev-up).
 export RECORDINGS_DIR="${RECORDINGS_DIR:-$ROOT/deploy/recordings-dev}" RECORDINGS_SEGMENT_DURATION="${RECORDINGS_SEGMENT_DURATION:-10}" RECORDINGS_SCAN_SECS="${RECORDINGS_SCAN_SECS:-10}"
 export REDUCTSTORE_URL="${REDUCTSTORE_URL:-http://127.0.0.1:18383}" REDUCTSTORE_TOKEN="${REDUCTSTORE_TOKEN:-dominet-dev-token}"
 export RUST_LOG="${RUST_LOG:-info}"
@@ -94,11 +94,11 @@ fi
 
 "$BIN" migrate > /dev/null
 "$BIN" seed | tail -1
-# Le navigateur appelle MediaMTX (live) sur le domaine du reglage MEDIAMTX_WEBRTC_DOMAIN : le defaut (localhost:8889) n'est pas le port de
-# la stack de dev (18889). Remplace seulement la valeur par defaut ; un reglage choisi dans l'interface n'est pas touche.
+# The browser calls MediaMTX (live) on the MEDIAMTX_WEBRTC_DOMAIN setting's domain: the default (localhost:8889) is not the dev stack's port
+# (18889). Only replaces the default value; a setting chosen in the interface is not touched.
 docker exec -i "${PG_CONTAINER:-dominet-dev-postgres-1}" psql -q -U dominet -d dominet -c \
   "UPDATE app_setting SET value = '127.0.0.1:18889' WHERE key = 'MEDIAMTX_WEBRTC_DOMAIN' AND value = 'localhost:8889'" > /dev/null 2>&1 || true
-# Le compte existe peut-etre deja (relance) : ce n'est pas une erreur.
+# The account may already exist (re-run): this is not an error.
 if DOMINET_PASSWORD="$DEV_ADMIN_PASSWORD" "$BIN" createsuperuser --username "$DEV_ADMIN_USER" > /dev/null 2>&1; then
   echo "dev-run : compte administrateur \"$DEV_ADMIN_USER\" cree."
 fi
@@ -112,7 +112,7 @@ echo "  MediaMTX : $MEDIAMTX_API_URL    Arret : Ctrl+C"
 echo
 
 if [ "$DISCOVERY" = 1 ]; then
-  # Role `discovery` dans un second processus (il n'ecoute aucun port) ; arrete avec le serveur.
+  # `discovery` role in a second process (it listens on no port); stopped with the server.
   "$BIN" serve --only discovery &
   DISCOVERY_PID=$!
   trap 'kill "$DISCOVERY_PID" 2>/dev/null || true' EXIT INT TERM

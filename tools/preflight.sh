@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: AGPL-3.0-or-later
 #
-# Verifications AVANT d'installer DomiNet sur une machine (R8 lot 4). LECTURE SEULE : rien n'est cree, modifie, arrete ni supprime ;
-# les conteneurs et volumes existants (d'une autre installation, par exemple) sont seulement listes. Code de sortie = nombre de points BLOQUANTS.
+# Checks BEFORE installing DomiNet on a machine (R8 lot 4). READ-ONLY: nothing is created, modified, stopped or deleted;
+# the existing containers and volumes (from another installation, for example) are only listed. Exit code = number of BLOCKING points.
 #
-#   tools/preflight.sh                  (ou : make preflight)
-#   ENV_FILE=autre.env tools/preflight.sh    ports lus dans ce fichier (NGINX_HTTP_PORT, NGINX_HTTPS_PORT, MQTT_LAN_PORT, POSTGRES_HOST_PORT)
+#   tools/preflight.sh                  (or: make preflight)
+#   ENV_FILE=other.env tools/preflight.sh    ports read from this file (NGINX_HTTP_PORT, NGINX_HTTPS_PORT, MQTT_LAN_PORT, POSTGRES_HOST_PORT)
 set -uo pipefail
 cd "$(dirname "$0")/.."
 ENV_FILE="${ENV_FILE:-.env}"
@@ -58,7 +58,7 @@ command -v jq >/dev/null 2>&1 && ok "jq present" || att "jq absent (facultatif)"
 
 section "Ports de l'hote (doivent etre libres)"
 http=$(val NGINX_HTTP_PORT); https=$(val NGINX_HTTPS_PORT); mqtt=$(val MQTT_LAN_PORT); pg=$(val POSTGRES_HOST_PORT)
-listening() { # listening PROTO PORT -> processus ou "?" si le port est pris
+listening() { # listening PROTO PORT -> process or "?" if the port is taken
   local flag=-ltnH; [ "$1" = udp ] && flag=-lunH
   ss $flag 2>/dev/null | awk -v p=":$2" '$4 ~ p"$" {found=1} END {exit !found}'
 }

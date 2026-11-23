@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: AGPL-3.0-or-later
 #
-# Controle de la pile Compose de production (R7 lots 5 et 6) sur la machine de DEV, sans toucher a rien d'autre : projet Compose a part
-# (dominet-chk), ports decales, secrets jetables, certificat auto-signe, volumes detruits a la fin. Verifie : tous les services sains,
-# nginx en TLS (application, WebSocket, Grafana, WebRTC, CA), MQTT (mot de passe / LAN), Prometheus qui scrute DomiNet, regles partagees,
-# Grafana provisionne, sauvegarde. Aucun contact avec la production.
-# Usage : tools/check-stack.sh [image]   (defaut dominet:local ; l'image doit exister : docker build -t dominet:local .)
-# Prerequis : la stack de dev arretee (le port ICE 8189 est unique) -> make dev-down
+# Check of the production Compose stack (R7 lots 5 and 6) on the DEV machine, without touching anything else: separate Compose project
+# (dominet-chk), shifted ports, throw-away secrets, self-signed certificate, volumes destroyed at the end. Checks: all services healthy,
+# nginx in TLS (application, WebSocket, Grafana, WebRTC, CA), MQTT (password / LAN), Prometheus scraping DomiNet, shared rules,
+# provisioned Grafana, backup. No contact with production.
+# Usage: tools/check-stack.sh [image]   (default dominet:local; the image must exist: docker build -t dominet:local .)
+# Prerequisite: the dev stack stopped (the ICE port 8189 is unique) -> make dev-down
 set -uo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 IMAGE="${1:-dominet:local}"

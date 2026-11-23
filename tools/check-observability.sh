@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: AGPL-3.0-or-later
 #
-# Controle de bout en bout de l'observabilite (R7 lot 3) avec de VRAIS Prometheus et Grafana jetables (images deja
-# presentes : prom/prometheus:v2.52.0, grafana/grafana:11.0.0), sur des ports decales de la machine :
-#  - base jetable (CREATE DATABASE dans la PostgreSQL de dev), migrations, `dominet seed`, `dominet sync-rules` ;
-#  - `promtool check rules` sur le rules.yml ecrit, puis chargement par Prometheus (/api/v1/rules) ;
-#  - Grafana charge le provisionnement (tableaux, sources, points de contact, politiques, regles d'alerte) SANS erreur, la source
-#    PostgreSQL se connecte, une requete SQL d'un tableau s'execute dans Grafana, et le rechargement demande par DomiNet est accepte.
-# Rien n'est envoye a l'exterieur, aucune production n'est touchee. Usage : tools/check-observability.sh (stack de dev : make dev-up)
+# End-to-end check of observability (R7 lot 3) with REAL throw-away Prometheus and Grafana (images already
+# present: prom/prometheus:v2.52.0, grafana/grafana:11.0.0), on ports shifted on the machine:
+#  - throw-away database (CREATE DATABASE in the dev PostgreSQL), migrations, `dominet seed`, `dominet sync-rules`;
+#  - `promtool check rules` on the written rules.yml, then loading by Prometheus (/api/v1/rules);
+#  - Grafana loads the provisioning (dashboards, sources, contact points, policies, alert rules) WITHOUT error, the
+#    PostgreSQL source connects, a dashboard's SQL query runs in Grafana, and the reload requested by DomiNet is accepted.
+# Nothing is sent outside, no production is touched. Usage: tools/check-observability.sh (dev stack: make dev-up)
 set -uo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -40,7 +40,7 @@ KEY="$("$BIN" gen-master-key | tail -1)"; export DOMINET_MASTER_KEY="$KEY"
 "$BIN" migrate >/dev/null && "$BIN" seed | tail -1
 
 echo "== Prometheus"
-# 1) premier ecrit des fichiers sans services (rechargement attendu en echec)
+# 1) first write of the files without services (reload expected to fail)
 "$BIN" sync-rules >"$W/sync1.log" 2>&1; check "dominet sync-rules ecrit les deux fichiers" "[ -s $W/prom-rules/rules.yml ] && [ -s $W/graf-alerting/rules.yaml ]"
 check "rechargement signale en echec quand les services sont absents" "grep -q ECHOUE $W/sync1.log"
 docker run --rm --entrypoint promtool -v "$W/prom-rules:/r:ro" prom/prometheus:v2.52.0 check rules /r/rules.yml >"$W/promtool.log" 2>&1
@@ -53,7 +53,7 @@ for _ in $(seq 1 40); do curl -fs "http://127.0.0.1:$PROM_PORT/-/ready" >/dev/nu
 GROUPS_WRITTEN="$(grep -c '^  - name:' "$W/prom-rules/rules.yml")"
 check "Prometheus charge les groupes de regles ($GROUPS_WRITTEN attendus : ceux du fichier ecrit)" "[ \"\$(curl -s http://127.0.0.1:$PROM_PORT/api/v1/rules | python3 -c 'import sys,json; print(len(json.load(sys.stdin)[\"data\"][\"groups\"]))')\" = $GROUPS_WRITTEN ]"
 
-# 2) modification dans la base puis rechargement demande par DomiNet
+# 2) modification in the database then reload requested by DomiNet
 docker exec "$PG_CT" psql -q -U dominet -d "$DB" -c "UPDATE prometheus_rule SET summary = 'Resume modifie par le controle' WHERE name = 'DominetDown'" >/dev/null
 "$BIN" sync-rules >"$W/sync2.log" 2>&1
 check "Prometheus accepte le rechargement demande par DomiNet" "grep -q 'Prometheus : $GROUPS_WRITTEN groupe(s) ecrit(s), rechargement demande' $W/sync2.log"
@@ -84,12 +84,12 @@ check "point de contact dominet-email" "curl -s -u $A $G/api/v1/provisioning/con
 check "politique de notification vers dominet-email" "curl -s -u $A $G/api/v1/provisioning/policies | grep -q dominet-email"
 check "API d'alertes de Grafana lue par DomiNet (liste)" "curl -fs -u $A '$G/api/alertmanager/grafana/api/v2/alerts?active=true&silenced=false&inhibited=false' | python3 -c 'import sys,json; assert isinstance(json.load(sys.stdin), list)'"
 check "API d'alertes de Prometheus lue par DomiNet" "curl -fs http://127.0.0.1:$PROM_PORT/api/v1/alerts | python3 -c 'import sys,json; assert json.load(sys.stdin)[\"data\"][\"alerts\"] is not None'"
-# Une requete SQL d'un tableau, executee PAR Grafana contre la base.
+# A dashboard's SQL query, run BY Grafana against the database.
 cat > "$W/q.json" <<'JSON'
 {"queries":[{"refId":"A","datasource":{"type":"postgres","uid":"postgresql"},"rawSql":"SELECT COUNT(*) AS value FROM device WHERE active = true","format":"table"}],"from":"now-1h","to":"now"}
 JSON
 check "Grafana execute la requete SQL du tableau « appareils actifs »" "curl -s -u $A -H 'Content-Type: application/json' -d @$W/q.json $G/api/ds/query | grep -q '\"value\"'"
-# Le tableau energie : chaque requete est executee PAR Grafana (macros $__timeFilter developpees par lui) sur la base jetable.
+# The energy dashboard: each query is run BY Grafana (its $__timeFilter macros expanded by it) on the throw-away database.
 python3 - "$ROOT/deploy/grafana/provisioning/dashboards/energy.json" > "$W/energy-queries.json" <<'PY'
 import json, sys
 doc = json.load(open(sys.argv[1]))
@@ -98,7 +98,7 @@ queries = [{"refId": f"{p['id']}{t['refId']}", "datasource": t["datasource"], "r
 print(json.dumps({"queries": queries, "from": "now-30d", "to": "now"}))
 PY
 check "Grafana execute les requetes SQL du tableau energie (sans erreur)" "curl -s -u $A -H 'Content-Type: application/json' -d @$W/energy-queries.json $G/api/ds/query | python3 -c 'import sys,json; r=json.load(sys.stdin)[\"results\"]; assert r and not [k for k,v in r.items() if \"error\" in v], r'"
-# Rechargement demande par DomiNet : le point d'entree existe dans Grafana 11 et accepte nos identifiants.
+# Reload requested by DomiNet: the entry point exists in Grafana 11 and accepts our credentials.
 "$BIN" sync-rules >"$W/sync3.log" 2>&1
 check "Grafana accepte le rechargement du provisionnement d'alertes" "grep -q 'Grafana : 4 groupe(s) ecrit(s), rechargement demande' $W/sync3.log || grep -q 'Grafana : 1 groupe(s) ecrit(s), rechargement demande' $W/sync3.log"
 

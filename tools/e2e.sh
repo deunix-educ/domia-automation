@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: AGPL-3.0-or-later
 #
-# E2E navigateur reproductible : demarre un serveur sur une base JETABLE (creee puis supprimee), un Firefox headless a
-# profil temporaire, et rejoue les scripts de tests/e2e/ (Marionette).
+# Reproducible browser E2E: starts a server on a THROW-AWAY database (created then deleted), a headless Firefox with a
+# temporary profile, and replays the scripts of tests/e2e/ (Marionette).
 #
-#   tools/e2e.sh                       serveur = target/debug/dominet + target/site (apres `make front`)
-#   tools/e2e.sh --image dominet:dev   serveur = l'image Docker (le test qui compte pour livrer)
-#   tools/e2e.sh home auth             seulement ces scripts (defaut : tous)
-#   SITE_ROOT=/vide tools/e2e.sh --image I home   verifie que le test echoue bien avec une image sans fichiers statiques
+#   tools/e2e.sh                       server = target/debug/dominet + target/site (after `make front`)
+#   tools/e2e.sh --image dominet:dev   server = the Docker image (the test that counts before delivering)
+#   tools/e2e.sh home auth             only these scripts (default: all)
+#   SITE_ROOT=/vide tools/e2e.sh --image I home   checks that the test does fail with an image without static files
 #
-# Prerequis : stack de dev (`make dev-up`, PostgreSQL 15432) et Firefox. Aucun contact avec la production : ni Mosquitto, ni
-# cameras, ni Zigbee. Tout ce qui est cree (base, profil, conteneur, processus) est supprime a la fin, meme en cas d'echec.
+# Prerequisites: dev stack (`make dev-up`, PostgreSQL 15432) and Firefox. No contact with production: no Mosquitto,
+# cameras, or Zigbee. Everything that is created (database, profile, container, processes) is removed at the end, even on failure.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -34,7 +34,7 @@ chmod 700 "$WORK"
 PORT="$(python3 -c 'import socket; s = socket.socket(); s.bind(("127.0.0.1", 0)); print(s.getsockname()[1]); s.close()')"
 BASE="http://127.0.0.1:$PORT/"
 export DATABASE_URL="postgres://dominet:dominet-dev@127.0.0.1:${PG_PORT}/${DB}"
-# Commande qui lit du SQL sur son entree standard, sur la base jetable (pour preparer des donnees que l'interface ne sait pas encore creer).
+# Command that reads SQL on its standard input, on the throw-away database (to prepare data the interface cannot create yet).
 export E2E_DB_SHELL="docker exec -i $PG_CONTAINER psql -q -U dominet -d $DB -v ON_ERROR_STOP=1"
 PASSWORD="$(head -c 24 /dev/urandom | base64 | tr -dc 'A-Za-z0-9' | head -c 16)"
 ADMIN=e2eadmin
@@ -62,12 +62,12 @@ if python3 -c 'import socket,sys; s=socket.socket(); sys.exit(0 if s.connect_ex(
   exit 1
 fi
 
-# Binaire et fichiers de l'interface (DOMINET_BIN=target-rel/release/dominet pour essayer un autre profil de compilation).
+# Binary and interface files (DOMINET_BIN=target-rel/release/dominet to try another build profile).
 BIN="${DOMINET_BIN:-target/debug/dominet}"
 SITE="${DOMINET_SITE:-$(dirname "$(dirname "$BIN")")/site}"
 [ -n "$IMAGE" ] || export SITE_ROOT="$SITE"
 
-# Cle maitresse jetable (les scripts enregistrent un secret).
+# Throw-away master key (the scripts save a secret).
 if [ -n "$IMAGE" ]; then
   KEY="$(docker run --rm "$IMAGE" gen-master-key 2>/dev/null | tail -1)"
 else
@@ -75,28 +75,28 @@ else
   KEY="$($BIN gen-master-key 2>/dev/null | tail -1)"
 fi
 export DOMINET_MASTER_KEY="$KEY" COOKIE_SECURE=false HTTP_ADDR="127.0.0.1:${PORT}" SYSTEM_STATS_SECS="${SYSTEM_STATS_SECS:-1}"
-# Serveur MCP allume pour le script `mcp` (coupe par defaut ; sans jeton cree dans l'administration, personne n'y entre).
+# MCP server turned on for the `mcp` script (off by default; without a token created in the administration, nobody gets in).
 export MCP_ENABLED=true
 export RUST_BACKTRACE=1
-# Le serveur ecoute le Mosquitto de dev (stack `make dev-up`, port 11883) sous un identifiant de client propre a ce lancement.
+# The server listens to the dev Mosquitto (`make dev-up` stack, port 11883) under a client identifier specific to this run.
 export MQTT_HOST="${MQTT_HOST:-127.0.0.1}" MQTT_PORT="${MQTT_PORT:-11883}" MQTT_CLIENT_ID="dominet-e2e-$$"
-# Archive brute : bucket jetable du ReductStore de dev (port 18383), supprime a la fin.
+# Raw archive: throw-away bucket of the dev ReductStore (port 18383), deleted at the end.
 export REDUCTSTORE_URL="${REDUCTSTORE_URL:-http://127.0.0.1:18383}" REDUCTSTORE_TOKEN="${REDUCTSTORE_TOKEN:-dominet-dev-token}" REDUCTSTORE_IOT_BUCKET="e2e-iot-$$" REDUCTSTORE_VIDEO_BUCKET="e2e-video-$$"
-# API Open-Meteo et onduleur SolarMax SIMULES (boucle locale, ports libres) : aucun appel reel, jamais l'onduleur de la production.
+# SIMULATED Open-Meteo API and SolarMax inverter (loopback, free ports): no real call, never the production inverter.
 free_port() { python3 -c 'import socket; s = socket.socket(); s.bind(("127.0.0.1", 0)); print(s.getsockname()[1]); s.close()'; }
 METEO_PORT="$(free_port)"; SUN_PORT="$(free_port)"
 python3 tools/sim-open-meteo.py "$METEO_PORT" > "$WORK/sim-meteo.log" 2>&1 & echo $! > "$WORK/sim-meteo.pid"
 python3 tools/sim-solarmax.py "$SUN_PORT" > "$WORK/sim-sun.log" 2>&1 & echo $! > "$WORK/sim-sun.pid"
-# Serveur SMTP SIMULE : les e-mails de la messagerie y sont ecrits (une ligne JSON chacun) et ne sortent jamais de la machine.
+# SIMULATED SMTP server: the messaging e-mails are written there (one JSON line each) and never leave the machine.
 SMTP_PORT="$(free_port)"; : > "$WORK/mails.jsonl"
 python3 tools/sim-smtp.py "$SMTP_PORT" "$WORK/mails.jsonl" > "$WORK/sim-smtp.log" 2>&1 & echo $! > "$WORK/sim-smtp.pid"
-# Prometheus SIMULE, seulement pour le script `platform_alerts` (R13) : sinon la pastille compterait ses alertes dans les autres scripts.
+# SIMULATED Prometheus, only for the `platform_alerts` script (R13): otherwise the badge would count its alerts in the other scripts.
 if printf '%s\n' "${SCRIPTS[@]}" | grep -qx platform_alerts; then
   PROM_PORT="$(free_port)"
   python3 tools/sim-prometheus.py "$PROM_PORT" > "$WORK/sim-prom.log" 2>&1 & echo $! > "$WORK/sim-prom.pid"
   export PROMETHEUS_URL="http://127.0.0.1:${PROM_PORT}" PROMETHEUS_ALERTS_POLL_SECS=2 E2E_PROM_MODE_URL="http://127.0.0.1:${PROM_PORT}/__mode"
 fi
-# Camera ONVIF simulee (famille NVT : service sur un port quelconque, URL de flux avec mot de passe en clair).
+# Simulated ONVIF camera (NVT family: service on any port, stream URL with a clear-text password).
 ONVIF_PORT="$(free_port)"
 python3 tools/sim-onvif.py "$ONVIF_PORT" nvt admin e2e-onvif-secret "$WORK/onvif-commands.log" > "$WORK/sim-onvif.log" 2>&1 & echo $! > "$WORK/sim-onvif.pid"
 export E2E_ONVIF_PORT="$ONVIF_PORT" E2E_ONVIF_PASSWORD=e2e-onvif-secret E2E_ONVIF_LOG="$WORK/onvif-commands.log"
@@ -104,29 +104,29 @@ export EMAIL_HOST=127.0.0.1 EMAIL_PORT="$SMTP_PORT" EMAIL_USE_TLS=false E2E_SMTP
 export OPEN_METEO_URL="http://127.0.0.1:${METEO_PORT}/v1/forecast" E2E_METEO_COUNT_URL="http://127.0.0.1:${METEO_PORT}/__count"
 export SOLARMAX_HOST=127.0.0.1 SOLARMAX_PORT="$SUN_PORT" SOLARMAX_TOPIC="e2e-sun-$$/inv/prod" SOLARMAX_INTERVAL_SECS=2
 export E2E_SOLARMAX_TOPIC="$SOLARMAX_TOPIC"
-# Tableaux Grafana des appareils : dossier jetable (monte tel quel dans le conteneur en mode image).
+# Device Grafana dashboards: throw-away folder (mounted as is in the container in image mode).
 export GRAFANA_DASHBOARDS_DIR="$WORK/grafana" E2E_GRAFANA_DIR="$WORK/grafana"
 mkdir -p "$WORK/grafana" && chmod 777 "$WORK/grafana"
-# Regles d'alerte (R7 lot 2) : fichiers de provisionnement jetables, sans adresse de service (rechargement « a faire a la main »).
-# /metrics n'est pas expose (le port 9100 pourrait servir a un autre processus de la machine).
+# Alert rules (R7 lot 2): throw-away provisioning files, without a service address (reload "to be done by hand").
+# /metrics is not exposed (port 9100 might serve another process of the machine).
 export PROMETHEUS_RULES_PATH="$WORK/rules/rules.yml" GRAFANA_ALERTING_PATH="$WORK/rules/rules.yaml" METRICS_ADDR=off
 export E2E_PROMETHEUS_RULES="$PROMETHEUS_RULES_PATH" E2E_GRAFANA_RULES="$GRAFANA_ALERTING_PATH"
 mkdir -p "$WORK/rules" && chmod 777 "$WORK/rules"
-# Role video : relit le re-stream du MediaMTX de dev (publie sur 18554 de la machine) ; images et snapshots dans un dossier jetable.
+# Video role: re-reads the dev MediaMTX's re-stream (published on the machine's 18554); images and snapshots in a throw-away folder.
 export MEDIAMTX_RTSP_URL="${MEDIAMTX_RTSP_URL:-rtsp://127.0.0.1:18554}" SNAPSHOTS_DIR="$WORK/snapshots" E2E_SNAPSHOTS_DIR="$WORK/snapshots"
 mkdir -p "$WORK/snapshots" && chmod 777 "$WORK/snapshots"
-# Enregistrements : le dossier ou le MediaMTX de dev ecrit ses segments (make dev-up) ; passages rapides, segments de 10 s.
-# Mouvement (evalue toutes les 5 s) et detection : modele de `make fetch-model` (dans l'image : /models), images annotees dans un dossier jetable.
+# Recordings: the folder where the dev MediaMTX writes its segments (make dev-up); fast passes, 10 s segments.
+# Motion (evaluated every 5 s) and detection: model from `make fetch-model` (in the image: /models), annotated images in a throw-away folder.
 export MOTION_INTERVAL_SECS=5 DETECTIONS_DIR="$WORK/detections"
 mkdir -p "$WORK/detections" && chmod 777 "$WORK/detections"
 if [ -n "$IMAGE" ]; then export YOLO_MODEL_PATH=/models/yolov8n.onnx; else export YOLO_MODEL_PATH="$ROOT/models/yolov8n.onnx"; fi
 export E2E_YOLO_MODEL="$ROOT/models/yolov8n.onnx" E2E_BUS_IMAGE="$ROOT/crates/dominet-surveillance/fixtures/yolo/bus.jpg"
 export RECORDINGS_DIR="${RECORDINGS_DIR:-$ROOT/deploy/recordings-dev}" RECORDINGS_SEGMENT_DURATION=10 RECORDINGS_SCAN_SECS=5 E2E_RECORDINGS_DIR="${RECORDINGS_DIR:-$ROOT/deploy/recordings-dev}"
-# MediaMTX de la stack de dev (jamais celui de la production) : les cameras de test y creent leurs paths, puis les retirent.
+# The dev stack's MediaMTX (never the production's): the test cameras create their paths there, then remove them.
 export MEDIAMTX_API_URL="${MEDIAMTX_API_URL:-http://127.0.0.1:19997}"
 export RUST_LOG="${RUST_LOG:-info}"
 
-# CLI : le binaire local, ou l'image sur le reseau de l'hote (pour joindre la base de dev).
+# CLI: the local binary, or the image on the host's network (to reach the dev database).
 dom() {
   if [ -n "$IMAGE" ]; then
     docker run --rm --network host -e DATABASE_URL -e DOMINET_MASTER_KEY -e DOMINET_PASSWORD -e COOKIE_SECURE -e OPEN_METEO_URL -e SOLARMAX_HOST -e SOLARMAX_PORT -e SOLARMAX_TOPIC -e EMAIL_HOST -e EMAIL_PORT -e EMAIL_USE_TLS "$IMAGE" "$@"
@@ -155,7 +155,7 @@ dom seed | tail -1
 DOMINET_PASSWORD="$PASSWORD" dom createsuperuser --username "$ADMIN" >/dev/null
 start_server
 
-# Commande de redemarrage donnee a realtime.py (les sessions sont en base : elles survivent).
+# Restart command given to realtime.py (the sessions are in the database: they survive).
 cat > "$WORK/restart.sh" <<RESTART
 #!/usr/bin/env bash
 set -e
@@ -193,13 +193,13 @@ for s in "${SCRIPTS[@]}"; do
     grep -E 'FAIL|Traceback|Error|DIAGNOSTIC' -A3 "$WORK/$s.out" | head -20
     echo "  --- fin du journal du serveur ---"
     if [ -n "$IMAGE" ]; then docker logs "$NAME" > "$WORK/server.log" 2>&1; fi
-    # Un panic serveur est la cause la plus probable d'une page qui ne repond plus : on montre son debut, pas la queue.
+    # A server panic is the most likely cause of a page that no longer answers: we show its beginning, not the tail.
     if grep -q panicked "$WORK/server.log"; then grep -m2 -A70 panicked "$WORK/server.log" | cut -c1-240; else tail -25 "$WORK/server.log" | cut -c1-300; fi
     [ -n "${KEEP_SERVER_LOG:-}" ] && cp "$WORK/server.log" "$KEEP_SERVER_LOG"
     failed+=("$s")
   fi
 done
-# Commandes de diagnostic contre les simulateurs : un cycle SolarMax sans publier, et l'instantane de contexte.
+# Diagnostic commands against the simulators: a SolarMax cycle without publishing, and the context snapshot.
 echo "  --- diagnostics (simulateurs) ---"
 if dom publish solarmax --print-only 2>&1 | grep -q '"pac": 632.5'; then echo "  OK    dominet publish solarmax --print-only"; else echo "  ECHEC publish solarmax"; failed+=("publish-solarmax"); fi
 if dom dump-context 2>&1 | grep -q '^devices:'; then echo "  OK    dominet dump-context"; else echo "  ECHEC dump-context"; failed+=("dump-context"); fi

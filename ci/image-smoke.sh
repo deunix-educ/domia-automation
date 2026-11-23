@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: AGPL-3.0-or-later
-# Construit l'image Docker, la demarre sans base de donnees et verifie : /healthz repond, /readyz repond 503
-# (la base est absente), le processus tourne sous un utilisateur non-root, et l'arret est propre (code 0).
+# Builds the Docker image, starts it without a database and checks: /healthz answers, /readyz answers 503
+# (the database is absent), the process runs as a non-root user, and the shutdown is clean (code 0).
 set -euo pipefail
 
 IMAGE="${IMAGE:-dominet:ci}"
@@ -29,8 +29,8 @@ code="$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:${port}/readyz"
 [ "$code" = 503 ] || { echo "ERREUR : /readyz devrait repondre 503 sans base (obtenu ${code})" >&2; exit 1; }
 echo "readyz sans base : ${code} (attendu)"
 
-# Interface : la page de connexion se rend (sans base), la politique de securite est la, et les fichiers statiques sont servis
-# avec le bon type et compresses. Sans eux l'image demarre mais l'interface reste inerte (voir le piege dans PROJECT_CONTEXT.md).
+# Interface: the login page renders (without a database), the security policy is there, and the static files are served
+# with the right type and compressed. Without them the image starts but the interface stays inert (see the pitfall in PROJECT_CONTEXT.md).
 base="http://127.0.0.1:${port}"
 page_headers="$(curl -sS -D- -o "$tmp/login.html" "$base/login")"
 echo "$page_headers" | head -1 | grep -q ' 200' || { echo "ERREUR : /login ne repond pas 200 :" >&2; echo "$page_headers" | head -3 >&2; exit 1; }

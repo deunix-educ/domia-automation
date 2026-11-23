@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: AGPL-3.0-or-later
-# Client PostgreSQL de test : `pg_dump` du conteneur qui publie le port de la base (la stack de dev, ou la base jetable du hook pre-push) ;
-# la machine n'a pas de client installe. Le service de sauvegarde transmet la connexion par l'environnement (PGHOST, PGPORT, PGUSER,
-# PGPASSWORD, PGDATABASE, du point de vue de l'hote) ; on retrouve le conteneur par son port publie et on parle a son PostgreSQL local.
+# Test PostgreSQL client: the `pg_dump` of the container that publishes the database port (the dev stack, or the pre-push hook's throw-away database);
+# the machine has no client installed. The backup service passes the connection through the environment (PGHOST, PGPORT, PGUSER,
+# PGPASSWORD, PGDATABASE, from the host's point of view); we find the container by its published port and talk to its local PostgreSQL.
 set -euo pipefail
 cid="$(docker ps -q --filter "publish=${PGPORT:?}" | head -1)"
 [ -n "$cid" ] || { echo "pg_dump : aucun conteneur ne publie le port $PGPORT" >&2; exit 2; }

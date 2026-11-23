@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: AGPL-3.0-or-later
 #
-# Exploitation de la pile de production (R7 lot 6). Appele par les cibles `make prod-*` ; jamais a lancer sur une machine que l'on ne
-# veut pas deployer. Variables : ENV_FILE (defaut .env), PROJECT (defaut dominet), CERTS_DIR (defaut ./certs).
-# Sous-commandes : init pull-image compose doctor guard certs export-ca up superuser seed seed-energy health deploy update migrate passwd dump-context backup backups mqtt-user mqtt-del mqtt-users report video logs ps down
+# Operation of the production stack (R7 lot 6). Called by the `make prod-*` targets; never to be run on a machine you do not
+# want to deploy. Variables: ENV_FILE (default .env), PROJECT (default dominet), CERTS_DIR (default ./certs).
+# Sub-commands: init pull-image compose doctor guard certs export-ca up superuser seed seed-energy health deploy update migrate passwd dump-context backup backups mqtt-user mqtt-del mqtt-users report video log
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -16,7 +16,7 @@ val() { grep -s "^$1=" "$ENV_FILE" | tail -1 | cut -d= -f2- | sed 's/[[:space:]]
 rand() { head -c 48 /dev/urandom | base64 | tr -dc 'A-Za-z0-9' | head -c "${1:-24}"; }
 say() { printf '%s\n' "$*"; }
 die() { printf '\n  Erreur : %s\n\n' "$*" >&2; exit 1; }
-setvar() { # setvar NOM VALEUR : remplace ou ajoute NOM=VALEUR dans le fichier d'environnement
+setvar() { # setvar NAME VALUE: replaces or adds NAME=VALUE in the environment file
   local k="$1" v="$2"
   if grep -q "^$k=" "$ENV_FILE"; then
     local esc; esc="$(printf '%s' "$v" | sed 's/[|&\\]/\\&/g')"
@@ -42,8 +42,8 @@ compose() {
 }
 dominet() { compose exec -T "$@" ; }
 
-# Decodage video materiel : si l'hote a /dev/dri/renderD128, ecrit VIDEO_DEVICE et RENDER_GID dans .env (le compose passe le peripherique
-# au conteneur). Idempotent ; sans GPU, ne fait rien.
+# Hardware video decoding: if the host has /dev/dri/renderD128, writes VIDEO_DEVICE and RENDER_GID to .env (the compose passes the device
+# to the container). Idempotent; without a GPU, does nothing.
 enable_video() {
   local node=/dev/dri/renderD128 gid
   if [ -e "$node" ]; then
@@ -144,7 +144,7 @@ cmd_certs() {
   ip="$(val LOCAL_DOMAIN)"; [ -n "$ip" ] || ip="$(hostname -I | awk '{print $1}')"
   extra="$(val CERT_EXTRA_SANS | tr ',' ' ')"
   if command -v mkcert >/dev/null 2>&1; then
-    # Installe l'autorite dans le magasin de confiance de CETTE machine (sudo) : utile pour y tester, pas indispensable au serveur.
+    # Installs the authority into THIS machine's trust store (sudo): useful to test on it, not essential for the server.
     mkcert -install || say "  (mkcert -install n'a pas pu modifier le magasin de confiance de cette machine : sans importance pour les autres appareils.)"
     # shellcheck disable=SC2086
     mkcert -cert-file "$CERTS_DIR/cert.pem" -key-file "$CERTS_DIR/key.pem" "$domain" localhost 127.0.0.1 $ip $extra
@@ -268,16 +268,16 @@ cmd_update() {
   cmd_health
 }
 
-# Bilan de surveillance (R8 lot 6) : LECTURE SEULE, rien n'est modifie et aucun secret n'est affiche. HOURS (12) : fenetre des journaux
-# et des compteurs. Chaque section est independante : une section en echec affiche « n/a » et le bilan continue.
-# Lignes qui ne sont PAS des erreurs bien qu'elles contiennent le mot : niveau WARN/INFO/DEBUG (tracing, MediaMTX « WAR »,
-# Zigbee2MQTT « info: »), ou le champ `error=` d'un avertissement. Sensible a la casse : le niveau est en majuscules ou suivi de « : ».
+# Monitoring summary (R8 lot 6): READ-ONLY, nothing is modified and no secret is displayed. HOURS (12): window of the logs
+# and counters. Each section is independent: a failing section prints "n/a" and the summary continues.
+# Lines that are NOT errors although they contain the word: WARN/INFO/DEBUG level (tracing, MediaMTX "WAR",
+# Zigbee2MQTT "info:"), or the `error=` field of a warning. Case-sensitive: the level is in capitals or followed by ":".
 NOT_ERROR='(^|[^A-Za-z])(WARN|WAR|WRN|INFO|INF|DEBUG|DEB)([^A-Za-z]|$)|(info|debug|warn|warning):'
-# Les niveaux colores (« ESC[31mERROR ») n'ont pas de frontiere de mot : on retire les couleurs avant de compter.
+# Coloured levels ("ESC[31mERROR") have no word boundary: we strip the colours before counting.
 strip_ansi() { sed 's/\x1b\[[0-9;]*m//g'; }
 
-# Diagnostic de la machine et de la pile, en lecture seule (rien n'est modifie, aucun secret affiche), puis diagnostic applicatif
-# (`dominet doctor`) dans le conteneur. Code de sortie : nombre de points bloquants.
+# Diagnostic of the machine and the stack, read-only (nothing is modified, no secret displayed), then application diagnostic
+# (`dominet doctor`) in the container. Exit code: number of blocking points.
 cmd_doctor() {
   local block=0 warn=0
   ok() { printf '  %-9s %s\n' OK "$*"; }
@@ -413,7 +413,7 @@ cmd_report() {
   sql "select 'base ' || pg_size_pretty(pg_database_size(current_database()))"
 
   sect "Sauvegardes (les plus recentes)"
-  local out; # Les 2 plus recentes de CHAQUE sorte (un simple `tail` ne montrait plus que ReductStore).
+  local out; # The 2 most recent of EACH kind (a plain `tail` only showed ReductStore any more).
   out="$(dominet dominet dominet backups 2>/dev/null | awk '{ n[$1]++; l[$1, n[$1]] = $0 } END { for (k in n) for (i = (n[k] > 2 ? n[k] - 1 : 1); i <= n[k]; i++) print l[k, i] }' | sort || true)"
   if [ -n "$out" ]; then printf '%s\n' "$out" | sed 's/^/  /'; else say "  n/a"; fi
 
@@ -443,7 +443,7 @@ case "${1:-}" in
   dump-context) dominet dominet dominet dump-context ;;
   backup) dominet dominet dominet backup ;;
   backups) dominet dominet dominet backups ;;
-  mqtt-user) # NAME=nom [TOPIC=sujet/#] [ACCESS=read|write|readwrite] [PASSWORD=...] : compte MQTT d'un client du LAN (mot de passe genere et affiche une fois)
+  mqtt-user) # NAME=name [TOPIC=subject/#] [ACCESS=read|write|readwrite] [PASSWORD=...]: MQTT account of a LAN client (password generated and shown once)
     [ -n "${NAME:-}" ] || die "NAME requis : make prod-mqtt-user NAME=linky"
     pw="${PASSWORD:-$(rand 24)}"
     dominet mosquitto sh /deploy/accounts.sh add "$NAME" "$pw" "${TOPIC:-$NAME/#}" "${ACCESS:-readwrite}"

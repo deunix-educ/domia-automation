@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: AGPL-3.0-or-later
 #
-# Installation vierge sur la machine de DEV (R7 lot 6) : `prod-init` puis `prod-deploy` avec un fichier d'environnement, un projet Compose
-# (dominet-chk2) et des ports a part, administrateur non interactif ; puis `prod-update` et sauvegarde. Detruit tout a la fin.
-# Prerequis : pile de dev arretee (make dev-down, port ICE 8189 unique). Usage : tools/check-install.sh
+# Fresh installation on the DEV machine (R7 lot 6): `prod-init` then `prod-deploy` with an environment file, a Compose project
+# (dominet-chk2) and separate ports, non-interactive administrator; then `prod-update` and backup. Destroys everything at the end.
+# Prerequisite: dev stack stopped (make dev-down, unique ICE port 8189). Usage: tools/check-install.sh
 set -uo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"; cd "$ROOT"
 T="$(mktemp -d /tmp/dominet-inst-XXXXXX)"

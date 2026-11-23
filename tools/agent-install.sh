@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: AGPL-3.0-or-later
-# Installe l'assistant local sur la machine d'inference : modele Qwen3-8B + service systemd (utilisateur) pour llama-server.
-# Usage : tools/agent-install.sh --llama-dir <dossier de llama-server> [--models-dir D] [--port 8081] [--host 0.0.0.0] [--dry-run]
-# Rien n'est lance en root ; le service est cree dans ~/.config/systemd/user.
+# Installs the local assistant on the inference machine: Qwen3-8B model + systemd (user) service for llama-server.
+# Usage: tools/agent-install.sh --llama-dir <llama-server folder> [--models-dir D] [--port 8081] [--host 0.0.0.0] [--dry-run]
+# Nothing is run as root; the service is created in ~/.config/systemd/user.
 set -euo pipefail
 
 MODEL_FILE="Qwen3-8B-Q4_K_M.gguf"
@@ -29,7 +29,7 @@ done
 
 run() { if [ "$DRY" = 1 ]; then echo "[essai] $*"; else "$@"; fi; }
 
-# 1. Modele (5 Go), repris si le telechargement a ete interrompu.
+# 1. Model (5 GB), resumed if the download was interrupted.
 run mkdir -p "$MODELS_DIR"
 if [ -f "$MODELS_DIR/$MODEL_FILE" ]; then
   echo "modele deja present : $MODELS_DIR/$MODEL_FILE"
@@ -37,7 +37,7 @@ else
   run curl -fL -C - -o "$MODELS_DIR/$MODEL_FILE" "$MODEL_URL"
 fi
 
-# 2. Service systemd utilisateur : contexte 16 k, appels d'outils (--jinja), une requete a la fois.
+# 2. User systemd service: 16k context, tool calls (--jinja), one request at a time.
 UNIT_DIR="$HOME/.config/systemd/user"
 UNIT="$UNIT_DIR/dominet-llm.service"
 CONTENT="[Unit]

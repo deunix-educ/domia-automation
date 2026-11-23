@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: AGPL-3.0-or-later
-# Rejoue une session de fixtures Z2M (.jsonl) vers le Mosquitto de dev.
-# Usage : tools/replay-z2m.sh [fichier.jsonl] [delai_s]
+# Replays a session of Z2M fixtures (.jsonl) to the dev Mosquitto.
+# Usage: tools/replay-z2m.sh [file.jsonl] [delay_s]
 set -euo pipefail
 cd "$(dirname "$0")/.."
 file="${1:-tests/fixtures/z2m/session-basic.jsonl}"

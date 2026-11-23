@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: AGPL-3.0-or-later
 #
-# Prepare un poste de DEVELOPPEMENT de DomiNet (depot deja clone) : Rust epingle, outils de la barriere locale, hook pre-push,
-# stack de dev jetable. Idempotent : le relancer ne casse rien. N'ecrit rien hors du dossier personnel (pas de sudo) ; ce qui
-# demande root (paquets systeme, groupe docker) est seulement affiche.
+# Prepares a DomiNet DEVELOPMENT workstation (repository already cloned): pinned Rust, local-gate tools, pre-push hook,
+# throw-away dev stack. Idempotent: re-running it breaks nothing. Writes nothing outside the home folder (no sudo); what
+# needs root (system packages, docker group) is only displayed.
 #
-#   tools/setup-dev-host.sh          installe / verifie tout
-#   tools/setup-dev-host.sh --ci     ... puis lance `make ci` (premiere compilation : longue)
+#   tools/setup-dev-host.sh          installs / checks everything
+#   tools/setup-dev-host.sh --ci     ... then runs `make ci` (first build: long)
 #
-# Aucun contact avec la production : la stack de dev est locale (ports 1xxxx sur 127.0.0.1). Voir docs/dev-machine.md.
+# No contact with production: the dev stack is local (ports 1xxxx on 127.0.0.1). See docs/dev-machine.md.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -37,11 +37,11 @@ if ! have rustup; then
 fi
 # shellcheck disable=SC1091
 [ -f "$HOME/.cargo/env" ] && . "$HOME/.cargo/env"
-rustup toolchain install   # lit rust-toolchain.toml : version, composants (rustfmt, clippy) et cible wasm32
+rustup toolchain install   # reads rust-toolchain.toml: version, components (rustfmt, clippy) and wasm32 target
 rustc --version
 
 say "3/5 Outils de la barriere locale (versions de tools/check-tools.sh)"
-install_tool() {  # install_tool <binaire> <motif de version> <args cargo install...>
+install_tool() {  # install_tool <binary> <version pattern> <cargo install args...>
   local bin="$1" want="$2"; shift 2
   if "$bin" --version 2>/dev/null | head -1 | grep -qE "$want"; then echo "  ok   $bin"; return; fi
   echo "  installation de $bin (compilation, quelques minutes)..."

@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: AGPL-3.0-or-later
-# Balayage des fichiers suivis avant publication (feuille de route ROADMAP-depot-public.md, P0).
-# Cherche, par categorie : adresses privees, identites, hotes, references a l'ancien systeme, secrets probables.
-# Usage : tools/public-scan.sh            resume par categorie
-#         tools/public-scan.sh --files    + liste des fichiers par categorie
-#         tools/public-scan.sh --strict   code de sortie 1 s'il reste une trouvaille (a brancher avant publication)
-# Lecture seule : ne lit jamais un .env reel (seuls les fichiers suivis par git sont examines, et .env est ignore).
+# Sweep of the tracked files before publication (roadmap ROADMAP-depot-public.md, P0).
+# Looks, by category, for: private addresses, identities, hosts, references to the old system, probable secrets.
+# Usage: tools/public-scan.sh            summary per category
+#         tools/public-scan.sh --files    + list of the files per category
+#         tools/public-scan.sh --strict   exit code 1 if a finding remains (to wire in before publication)
+# Read-only: never reads a real .env (only the files tracked by git are examined, and .env is ignored).
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -18,10 +18,10 @@ for a in "$@"; do
   esac
 done
 
-# Ce script et la feuille de route citent les motifs : on les exclut du balayage.
+# This script and the roadmap quote the patterns: we exclude them from the sweep.
 EXCL=(':!tools/public-scan.sh' ':!ROADMAP-depot-public.md' ':!INVENTAIRE-depot-public.md' ':!Cargo.lock' ':!.sqlx')
 
-# categorie|expression reguliere etendue (insensible a la casse sauf mention)
+# category|extended regular expression (case-insensitive unless stated)
 CATS=(
   "adresses-privees|(^|[^0-9.])(192\\.168|10\\.[0-9]{1,3}|172\\.(1[6-9]|2[0-9]|3[01]))\\.[0-9]{1,3}\\.[0-9]{1,3}"
   "identite|mirace[t]i|deunix-educ/DomiNe[t]-rs"
@@ -33,7 +33,7 @@ CATS=(
 total=0
 for entry in "${CATS[@]}"; do
   name="${entry%%|*}"; re="${entry#*|}"
-  # -I : ignore les binaires ; -i : insensible a la casse ; -E : regex etendues
+  # -I: ignores binaries; -i: case-insensitive; -E: extended regexes
   list="$(git grep -IilE -e "$re" -- . "${EXCL[@]}" 2>/dev/null || true)"
   n=0; if [ -n "$list" ]; then n="$(printf "%s\n" "$list" | wc -l)"; fi
   hits="$(git grep -IiE -c -e "$re" -- . "${EXCL[@]}" 2>/dev/null | awk -F: '{s+=$NF} END{print s+0}' || true)"

@@ -1,8 +1,8 @@
 #!/bin/sh
 # SPDX-License-Identifier: AGPL-3.0-or-later
-# Demarrage de Mosquitto (prod et demo, ADR 0055 puis 0057) : configuration, comptes et droits produits a partir de l'environnement
-# (MQTT_USER, MQTT_PASSWORD) et du volume des comptes externes ; jamais de secret dans le depot.
-# Un seul listener, 1883 : mot de passe obligatoire pour tous (reseau Docker et LAN), droits par compte (acl_file). Pas d'acces anonyme.
+# Mosquitto start-up (prod and demo, ADR 0055 then 0057): configuration, accounts and rights produced from the environment
+# (MQTT_USER, MQTT_PASSWORD) and from the external accounts volume; never a secret in the repository.
+# A single listener, 1883: mandatory password for everyone (Docker network and LAN), per-account rights (acl_file). No anonymous access.
 set -eu
 CONF=/mosquitto/config/mosquitto.conf
 mkdir -p /mosquitto/config
@@ -10,7 +10,7 @@ sh /deploy/accounts.sh regen
 
 {
   echo "per_listener_settings true"
-  # File d'attente par client (1 000 par defaut) : au-dela, Mosquitto jette les messages QoS 1 d'un abonne plus lent que le flux.
+  # Per-client queue (1000 by default): beyond it, Mosquitto drops the QoS 1 messages of a subscriber slower than the flow.
   echo "max_queued_messages 100000"
   echo "persistence true"
   echo "persistence_location /mosquitto/data/"

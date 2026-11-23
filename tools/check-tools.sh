@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: AGPL-3.0-or-later
-# Verifie que le poste dispose des outils de la barriere locale (make ci) (a installer avant de construire) et affiche leurs
-# versions. Echoue avec un message clair s'il en manque un : mieux qu'une erreur obscure au milieu d'un job.
+# Checks that the workstation has the tools of the local gate (make ci) (to install before building) and prints their
+# versions. Fails with a clear message if one is missing: better than an obscure error in the middle of a job.
 set -uo pipefail
 fail=0
-need() {  # need <commande> <motif de version attendu>
+need() {  # need <command> <expected version pattern>
   local cmd="$1" want="$2" out
   if ! out="$("$cmd" --version 2>&1 | head -1)"; then out="(absent)"; fi
   if printf '%s' "$out" | grep -qE "$want"; then printf '  ok   %-14s %s\n' "$cmd" "$out"

@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: AGPL-3.0-or-later
-# Redemarrages a froid en boucle : quelques requetes concurrentes sur une page juste apres le demarrage du serveur (conteneur).
-# Sert a mesurer le defaut de rendu de Leptos que `src/web/render_guard.rs` contourne (ADR 0021) :
-#   - avec le garde-fou, « anomalies » doit rester a 0 (les rendus relances sont comptes a part) ;
-#   - pour tester une nouvelle version de Leptos, retirer le garde-fou, reconstruire l'image et verifier que les anomalies
-#     et les rendus relances restent a 0 sur plusieurs centaines de demarrages.
+# Cold restarts in a loop: a few concurrent requests on a page right after the server starts (container).
+# Used to measure Leptos's rendering defect that `src/web/render_guard.rs` works around (ADR 0021):
+#   - with the safeguard, "anomalies" must stay at 0 (retried renders are counted separately);
+#   - to test a new Leptos version, remove the safeguard, rebuild the image and check that the anomalies
+#     and the retried renders stay at 0 over several hundred starts.
 #
-# Usage : tools/stress-cold-render.sh [image] [demarrages] [requetes_concurrentes] [page]
-#   defauts : dominet:dev 100 3 /admin/settings
-# Prerequis : stack de dev (`make dev-up`) et image construite (`make image`). Base jetable, supprimee a la fin.
+# Usage: tools/stress-cold-render.sh [image] [starts] [concurrent_requests] [page]
+#   defaults: dominet:dev 100 3 /admin/settings
+# Prerequisites: dev stack (`make dev-up`) and built image (`make image`). Throw-away database, deleted at the end.
 set -u
 IMG="${1:-dominet:dev}"; N="${2:-100}"; PAR="${3:-3}"; PAGE="${4:-/admin/settings}"
 PG_CONTAINER="${PG_CONTAINER:-dominet-dev-postgres-1}"; PG_PORT="${PG_PORT:-15432}"

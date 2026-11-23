@@ -26,7 +26,7 @@ regen() {
   {
     echo "user $MQTT_USER"
     echo "topic readwrite #"
-    echo "topic read \$SYS/#"   # sonde de sante ($SYS n'est pas couvert par « # »)
+    echo "topic read \$SYS/#"   # health probe ($SYS is not covered by "#")
     for f in "$ACC"/acl.d/*; do [ -f "$f" ] && { echo; cat "$f"; }; done
   } > "$ACL"
   chown mosquitto:mosquitto "$PASSWD" "$ACL" 2>/dev/null || true

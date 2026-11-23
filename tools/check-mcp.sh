@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: AGPL-3.0-or-later
 #
-# Verification en lecture seule d'un serveur MCP DomiNet (aucune ecriture, aucune commande) :
+# Read-only check of a DomiNet MCP server (no write, no command):
 #
-#   MCP_TOKEN=dnm_... tools/check-mcp.sh [URL]            URL par defaut : http://127.0.0.1:8080/mcp
+#   MCP_TOKEN=dnm_... tools/check-mcp.sh [URL]            default URL: http://127.0.0.1:8080/mcp
 #   CACERT=dominet-ca.crt MCP_TOKEN=dnm_... tools/check-mcp.sh https://dominet.local/mcp
 #
-# Controle : refus sans jeton (401), liste des outils et des prompts propres a la portee du jeton, `system_status`.
-# Le jeton n'est jamais affiche.
+# Checks: refusal without a token (401), list of the tools and prompts specific to the token's scope, `system_status`.
+# The token is never displayed.
 set -euo pipefail
 
 URL="${1:-http://127.0.0.1:8080/mcp}"

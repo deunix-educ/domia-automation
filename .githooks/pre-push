@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: AGPL-3.0-or-later
 #
-# Garde-fou avant `git push` : lance `make ci` sur une copie PROPRE de chaque commit pousse (git archive), avec un
-# PostgreSQL jetable. Une copie propre, c'est ce qui attrape ce que la compilation locale cache : un fichier oublie
-# dans `git add`. Voir ADR 0015.
+# Safeguard before `git push`: runs `make ci` on a CLEAN copy of each pushed commit (git archive), with a
+# throw-away PostgreSQL. A clean copy is what catches what the local build hides: a file forgotten
+# in `git add`. See ADR 0015.
 #
-#   DOMINET_SKIP_PREPUSH=1 git push   ou   git push --no-verify     pour passer outre
-#   DOMINET_PREPUSH_CMD='make ci-full' git push                     pour ajouter build de l'interface et de l'image
+#   DOMINET_SKIP_PREPUSH=1 git push   or   git push --no-verify     to bypass
+#   DOMINET_PREPUSH_CMD='make ci-full' git push                     to add the interface and image build
 #
-# Active par `make hooks` (git config core.hooksPath .githooks).
+# Enabled by `make hooks` (git config core.hooksPath .githooks).
 set -euo pipefail
 
 if [ "${DOMINET_SKIP_PREPUSH:-0}" = 1 ]; then
@@ -19,14 +19,14 @@ fi
 zero=0000000000000000000000000000000000000000
 tips=()
 while read -r local_ref local_sha _remote_ref _remote_sha; do
-  [ "$local_sha" = "$zero" ] && continue          # suppression de branche
+  [ "$local_sha" = "$zero" ] && continue          # branch deletion
   case "$local_ref" in refs/heads/*) tips+=("$local_sha") ;; esac
 done
 [ "${#tips[@]}" -gt 0 ] || exit 0
 
 repo="$(git rev-parse --show-toplevel)"
 cmd="${DOMINET_PREPUSH_CMD:-make ci}"
-# Cible Cargo dediee : ne perturbe pas la compilation en cours dans l'arbre de travail. Premiere execution a froid : plus longue.
+# Dedicated Cargo target: does not disturb the build in progress in the working tree. First cold run: longer.
 export CARGO_TARGET_DIR="${CARGO_TARGET_DIR:-$repo/target/prepush}"
 
 work="$(mktemp -d)"
