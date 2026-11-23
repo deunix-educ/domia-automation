@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Chiffrement des valeurs sensibles au repos (ADR 0011) : AES-256-GCM.
+//! Encryption of sensitive values at rest (ADR 0011): AES-256-GCM.
 //!
-//! Format stocke : `v1:` + base64( nonce de 96 bits ‖ texte chiffre ‖ etiquette d'authentification ).
-//! La **donnee associee** (AAD) est le nom du reglage : un chiffre recopie dans la ligne d'un autre reglage ne
-//! se dechiffre pas. Le nonce est aleatoire a chaque chiffrement, donc deux chiffres du meme texte different.
+//! Stored format: `v1:` + base64( 96-bit nonce ‖ ciphertext ‖ authentication tag ).
+//! The **associated data** (AAD) is the setting's name: a ciphertext copied into another setting's row does not
+//! decrypt. The nonce is random at each encryption, so two ciphertexts of the same text differ.
 
 use std::fmt;
 
@@ -28,7 +28,7 @@ pub enum SecretError {
     Decrypt,
 }
 
-/// Cle maitresse AES-256 ; `Debug` ne montre rien.
+/// AES-256 master key; `Debug` shows nothing.
 #[derive(Clone)]
 pub struct MasterKey([u8; KEY_LEN]);
 
@@ -40,14 +40,14 @@ impl fmt::Debug for MasterKey {
 
 impl MasterKey {
     /// # Errors
-    /// `BadKey` si le texte n'est pas du base64 valide de 32 octets exactement.
+    /// `BadKey` if the text is not valid base64 of exactly 32 bytes.
     pub fn parse(b64: &str) -> Result<Self, SecretError> {
         let bytes = B64.decode(b64.trim()).map_err(|_| SecretError::BadKey)?;
         let key: [u8; KEY_LEN] = bytes.try_into().map_err(|_| SecretError::BadKey)?;
         Ok(Self(key))
     }
 
-    /// Nouvelle cle aleatoire, deja encodee en base64 (a copier dans `DOMINET_MASTER_KEY`).
+    /// New random key, already base64-encoded (to copy into `DOMINET_MASTER_KEY`).
     #[must_use]
     pub fn generate() -> String {
         let key = aes_gcm::Key::<Aes256Gcm>::generate();
@@ -55,7 +55,7 @@ impl MasterKey {
     }
 }
 
-/// Chiffre et dechiffre avec la cle maitresse.
+/// Encrypts and decrypts with the master key.
 #[derive(Clone)]
 pub struct SecretBox {
     cipher: Aes256Gcm,
@@ -70,16 +70,16 @@ impl fmt::Debug for SecretBox {
 impl SecretBox {
     #[must_use]
     pub fn new(key: &MasterKey) -> Self {
-        // La longueur est garantie par `MasterKey`.
+        // The length is guaranteed by `MasterKey`.
         Self {
             cipher: Aes256Gcm::new_from_slice(&key.0).expect("32-byte key"),
         }
     }
 
-    /// Chiffre `plaintext`, lie au nom `aad` (le nom du reglage).
+    /// Encrypts `plaintext`, bound to the name `aad` (the setting's name).
     ///
     /// # Panics
-    /// Si le generateur aleatoire du systeme est indisponible (cas non recuperable).
+    /// If the system's random generator is unavailable (unrecoverable case).
     #[must_use]
     pub fn seal(&self, aad: &str, plaintext: &str) -> String {
         let nonce = Nonce::generate();
@@ -100,8 +100,8 @@ impl SecretBox {
     }
 
     /// # Errors
-    /// `BadFormat` si la valeur n'est pas au format `v1:`, `Decrypt` si la cle, la donnee associee ou le contenu
-    /// ne correspondent pas (valeur alteree comprise).
+    /// `BadFormat` if the value is not in `v1:` format, `Decrypt` if the key, the associated data or the content
+    /// do not match (tampered value included).
     pub fn open(&self, aad: &str, sealed: &str) -> Result<String, SecretError> {
         let encoded = sealed
             .strip_prefix(VERSION_PREFIX)

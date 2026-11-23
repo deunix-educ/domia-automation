@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Configuration typee, lue dans l'environnement.
+//! Typed configuration, read from the environment.
 //!
-//! Les noms de variables sont ceux de `.env.example.prod` de DomiNet quand ils ont un sens. Toutes les
-//! erreurs sont collectees puis rapportees ensemble. Les secrets sont enveloppes dans [`Secret`] pour ne
-//! jamais apparaitre dans un `Debug` ni dans les journaux.
+//! The variable names are those of DomiNet's `.env.example.prod` when they make sense. All the
+//! errors are collected then reported together. Secrets are wrapped in [`Secret`] so that they never
+//! appear in a `Debug` nor in the logs.
 
 use std::fmt;
 use std::net::SocketAddr;
 
-/// Valeur sensible : `Debug` ne montre jamais le contenu.
+/// Sensitive value: `Debug` never shows the content.
 #[derive(Clone, PartialEq, Eq)]
 pub struct Secret(String);
 
@@ -18,7 +18,7 @@ impl Secret {
         Self(value.into())
     }
 
-    /// Acces explicite au contenu (a n'utiliser que pour s'en servir, jamais pour l'afficher).
+    /// Explicit access to the content (to be used only to use it, never to display it).
     #[must_use]
     pub fn expose(&self) -> &str {
         &self.0
@@ -43,8 +43,8 @@ pub struct MqttConfig {
     pub port: u16,
     pub user: Option<String>,
     pub password: Option<Secret>,
-    /// `MQTT_CLIENT_ID` (defaut `dominet`) : identifiant de client stable. Different de celui de l'implementation de reference
-    /// (`dominet-automation`) pour que les deux puissent coexister sur un meme broker pendant la migration.
+    /// `MQTT_CLIENT_ID` (default `dominet`): stable client identifier. Different from that of the reference implementation
+    /// (`dominet-automation`) so that both can coexist on the same broker during the migration.
     pub client_id: String,
 }
 
@@ -52,171 +52,171 @@ pub struct MqttConfig {
 pub struct ReductConfig {
     pub url: String,
     pub token: Option<Secret>,
-    /// `IOT_QUOTA_GB` (defaut 5) : quota FIFO du bucket `iot`, applique a sa creation.
+    /// `IOT_QUOTA_GB` (default 5): FIFO quota of the `iot` bucket, applied at its creation.
     pub iot_quota_gb: u32,
-    /// `REDUCTSTORE_IOT_BUCKET` (defaut `iot`) : change le nom du bucket (tests et essais sur une stack partagee).
+    /// `REDUCTSTORE_IOT_BUCKET` (default `iot`): changes the bucket name (tests and trials on a shared stack).
     pub iot_bucket: String,
-    /// `VIDEO_QUOTA_GB` (defaut 50, comme la reference) : quota FIFO du bucket des segments video, applique a sa creation.
+    /// `VIDEO_QUOTA_GB` (default 50, like the reference): FIFO quota of the video segments bucket, applied at its creation.
     pub video_quota_gb: u32,
-    /// `REDUCTSTORE_VIDEO_BUCKET` (defaut `surveillance`, comme la reference).
+    /// `REDUCTSTORE_VIDEO_BUCKET` (default `surveillance`, like the reference).
     pub video_bucket: String,
 }
 
-/// Onduleur SolarMax a interroger (`SOLARMAX_*`). Sans `SOLARMAX_HOST`, aucun publisher : l'adresse n'a **aucune valeur par defaut**,
-/// pour qu'un essai ne contacte jamais l'onduleur de la production par megarde.
+/// SolarMax inverter to query (`SOLARMAX_*`). Without `SOLARMAX_HOST`, no publisher: the address has **no default value**,
+/// so that a trial never contacts the production inverter by mistake.
 #[derive(Debug, Clone)]
 pub struct SolarMaxConfig {
     pub host: String,
-    /// `SOLARMAX_PORT` (defaut 12345).
+    /// `SOLARMAX_PORT` (default 12345).
     pub port: u16,
-    /// `SOLARMAX_INVERTER_ID` (defaut 1).
+    /// `SOLARMAX_INVERTER_ID` (default 1).
     pub inverter: u8,
-    /// `SOLARMAX_TOPIC` (defaut celui de l'implementation de reference).
+    /// `SOLARMAX_TOPIC` (default that of the reference implementation).
     pub topic: String,
-    /// `SOLARMAX_INTERVAL_SECS` (defaut 10).
+    /// `SOLARMAX_INTERVAL_SECS` (default 10).
     pub interval_secs: u32,
 }
 
-/// Topic de production de l'implementation de reference (ses appareils et tableaux le referencent).
+/// Production topic of the reference implementation (its devices and dashboards refer to it).
 pub const DEFAULT_SOLARMAX_TOPIC: &str = "solarmax/0x6f0930a64c8b8803/prod";
 
-/// Serveur SMTP des e-mails (`EMAIL_*`, memes noms que l'implementation de reference). Absent tant que `EMAIL_HOST` ne l'est pas.
+/// SMTP server for e-mails (`EMAIL_*`, same names as the reference implementation). Absent as long as `EMAIL_HOST` is not set.
 #[derive(Debug, Clone)]
 pub struct EmailConfig {
     pub host: String,
-    /// `EMAIL_PORT` (defaut 587, ou 465 avec `EMAIL_USE_SSL`).
+    /// `EMAIL_PORT` (default 587, or 465 with `EMAIL_USE_SSL`).
     pub port: u16,
     pub user: Option<String>,
     pub password: Option<Secret>,
     pub security: dominet_notify::Security,
-    /// `EMAIL_TIMEOUT_SECS` (defaut 10).
+    /// `EMAIL_TIMEOUT_SECS` (default 10).
     pub timeout_secs: u32,
 }
 
 #[derive(Debug, Clone)]
 pub struct Config {
-    /// `HTTP_ADDR` (defaut `0.0.0.0:8000`).
+    /// `HTTP_ADDR` (default `0.0.0.0:8000`).
     pub http_addr: SocketAddr,
-    /// `METRICS_ADDR` (defaut `0.0.0.0:9100`, `off` pour couper) : ecouteur `/metrics` pour Prometheus, jamais publie sur l'hote (ADR 0051).
+    /// `METRICS_ADDR` (default `0.0.0.0:9100`, `off` to disable): `/metrics` listener for Prometheus, never published on the host (ADR 0051).
     pub metrics_addr: Option<SocketAddr>,
-    /// `DATABASE_URL` (obligatoire, contient un mot de passe).
+    /// `DATABASE_URL` (required, contains a password).
     pub database_url: Secret,
-    /// `DOMINET_MASTER_KEY` : cle AES-256 (32 octets en base64) du chiffrement des secrets au repos.
+    /// `DOMINET_MASTER_KEY`: AES-256 key (32 bytes in base64) for encrypting secrets at rest.
     pub master_key: Option<Secret>,
-    /// `SESSION_IDLE_MINUTES` (defaut 480) : deconnexion apres cette duree sans activite.
+    /// `SESSION_IDLE_MINUTES` (default 480): logout after this long without activity.
     pub session_idle_minutes: u32,
-    /// `SESSION_MAX_DAYS` (defaut 14) : duree de vie maximale d'une session, activite ou non.
+    /// `SESSION_MAX_DAYS` (default 14): maximum lifetime of a session, active or not.
     pub session_max_days: u32,
-    /// `WS_HEARTBEAT_SECS` (defaut 25) : intervalle des battements WebSocket ; a chaque battement la session est revalidee.
+    /// `WS_HEARTBEAT_SECS` (default 25): WebSocket heartbeat interval; at each heartbeat the session is revalidated.
     pub ws_heartbeat_secs: u32,
-    /// `PTZ_DEAD_MAN_SECS` (defaut 8) : un mouvement PTZ continu non rafraichi est arrete apres ce delai.
+    /// `PTZ_DEAD_MAN_SECS` (default 8): a continuous PTZ movement that is not refreshed is stopped after this delay.
     pub ptz_dead_man_secs: u32,
-    /// `SYSTEM_STATS_SECS` (defaut 5) : intervalle de mesure des ressources de la machine (jauges de la barre laterale).
+    /// `SYSTEM_STATS_SECS` (default 5): measurement interval of the machine's resources (sidebar gauges).
     pub system_stats_secs: u32,
-    /// `TRUSTED_PROXIES` : adresses ou reseaux CIDR des proxys dont on croit `X-Forwarded-For`.
+    /// `TRUSTED_PROXIES`: addresses or CIDR networks of the proxies whose `X-Forwarded-For` is trusted.
     pub trusted_proxies: Vec<ipnet::IpNet>,
-    /// `SITE_ROOT` (defaut `target/site`) : dossier des fichiers statiques de l'interface (JS/WASM/CSS).
+    /// `SITE_ROOT` (default `target/site`): folder of the interface's static files (JS/WASM/CSS).
     pub site_root: String,
-    /// `DOCS_ROOT` (defaut `target/docs-site`) : site de documentation MkDocs, servi sur `/docs/` derriere la connexion.
+    /// `DOCS_ROOT` (default `target/docs-site`): MkDocs documentation site, served on `/docs/` behind the login.
     pub docs_root: String,
-    /// `CUSTOM_CSS` : fichier de personnalisation de l'apparence, servi sur `/custom.css` apres la feuille principale (relu a chaque
-    /// requete : une modification se voit au rechargement, sans reconstruction). Absent ou introuvable : feuille vide.
+    /// `CUSTOM_CSS`: appearance customisation file, served on `/custom.css` after the main stylesheet (re-read at each
+    /// request: a change shows on reload, without rebuilding). Absent or not found: empty stylesheet.
     pub custom_css: Option<String>,
     pub allowed_hosts: Vec<String>,
     pub csrf_trusted_origins: Vec<String>,
-    /// `COOKIE_SECURE` (defaut `true`) : a mettre a `false` en HTTP sur le LAN.
+    /// `COOKIE_SECURE` (default `true`): set to `false` over HTTP on the LAN.
     pub cookie_secure: bool,
-    /// `MCP_ENABLED` (defaut `false`) : serveur MCP sur `/mcp` (R11, ADR 0058). Sans jeton d'acces cree dans l'administration
-    /// (ADR 0059), personne n'y entre.
+    /// `MCP_ENABLED` (default `false`): MCP server on `/mcp` (R11, ADR 0058). Without an access token created in the administration
+    /// (ADR 0059), nobody gets in.
     pub mcp_enabled: bool,
-    /// `MCP_RATE_LIMIT_PER_MIN` (defaut 120) : appels par minute et par jeton ; au-dela, 429.
+    /// `MCP_RATE_LIMIT_PER_MIN` (default 120): calls per minute and per token; beyond that, 429.
     pub mcp_rate_limit_per_min: u32,
-    /// `MCP_AUDIT_RETENTION_DAYS` (defaut 365) : age maximal des lignes du journal d'audit MCP, purge quotidienne.
+    /// `MCP_AUDIT_RETENTION_DAYS` (default 365): maximum age of the MCP audit log lines, purged daily.
     pub mcp_audit_retention_days: u32,
-    /// `TZ` (defaut `Europe/Paris`).
+    /// `TZ` (default `Europe/Paris`).
     pub timezone: String,
-    /// `LOG_FORMAT` = `pretty` (defaut) ou `json`. Le filtre se regle par `RUST_LOG`.
+    /// `LOG_FORMAT` = `pretty` (default) or `json`. The filter is set by `RUST_LOG`.
     pub log_format: LogFormat,
-    /// `MQTT_HOST` (+ `MQTT_PORT`, `MQTT_USER`, `MQTT_PASSWORD`) : absent tant que MQTT n'est pas configure.
+    /// `MQTT_HOST` (+ `MQTT_PORT`, `MQTT_USER`, `MQTT_PASSWORD`): absent as long as MQTT is not configured.
     pub mqtt: Option<MqttConfig>,
     /// `REDUCTSTORE_URL` (+ `REDUCTSTORE_TOKEN`, `IOT_QUOTA_GB`).
     pub reductstore: Option<ReductConfig>,
-    /// `OPEN_METEO_URL` (defaut : l'API publique d'Open-Meteo) : les tests et la CI parlent a une API simulee.
+    /// `OPEN_METEO_URL` (default: Open-Meteo's public API): the tests and the CI talk to a simulated API.
     pub open_meteo_url: String,
     /// `SOLARMAX_HOST` (+ `SOLARMAX_PORT`, `SOLARMAX_INVERTER_ID`, `SOLARMAX_TOPIC`, `SOLARMAX_INTERVAL_SECS`).
     pub solarmax: Option<SolarMaxConfig>,
     /// `EMAIL_HOST` (+ `EMAIL_PORT`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`, `EMAIL_USE_TLS`, `EMAIL_USE_SSL`, `EMAIL_TIMEOUT_SECS`).
     pub email: Option<EmailConfig>,
-    /// `SMS_FREE_URL` (defaut : l'API publique de Free Mobile) : les tests et la demonstration parlent a un faux serveur.
+    /// `SMS_FREE_URL` (default: Free Mobile's public API): the tests and the demonstration talk to a fake server.
     pub sms_free_url: String,
-    /// `GRAFANA_DASHBOARDS_DIR` : dossier surveille par Grafana, ou les tableaux d'appareils sont ecrits en fichiers JSON.
+    /// `GRAFANA_DASHBOARDS_DIR`: folder watched by Grafana, where the device dashboards are written as JSON files.
     pub grafana_dashboards_dir: Option<String>,
-    /// `BACKUP_DIR` (ex. `/backups`) : dossier des sauvegardes ; absent, la sauvegarde planifiee est desactivee et `dominet backup` refuse.
+    /// `BACKUP_DIR` (e.g. `/backups`): backups folder; absent, the scheduled backup is disabled and `dominet backup` refuses.
     pub backup_dir: Option<String>,
-    /// `BACKUP_RETENTION_DAYS` (defaut 7, comme la reference) : age maximal des sauvegardes gardees (la plus recente est toujours gardee).
+    /// `BACKUP_RETENTION_DAYS` (default 7, like the reference): maximum age of the backups kept (the most recent is always kept).
     pub backup_retention_days: u32,
-    /// `BACKUP_HOUR` (defaut 3, heure locale) : heure de la sauvegarde quotidienne.
+    /// `BACKUP_HOUR` (default 3, local time): hour of the daily backup.
     pub backup_hour: u32,
-    /// `REDUCTSTORE_BACKUP_SRC` (ex. `/reductstore-src`, volume en lecture seule) : donnees de ReductStore a archiver ; absent, seule la base l'est.
+    /// `REDUCTSTORE_BACKUP_SRC` (e.g. `/reductstore-src`, read-only volume): ReductStore data to archive; absent, only the database is.
     pub reductstore_backup_src: Option<String>,
-    /// `PG_DUMP_BIN` / `PSQL_BIN` (defaut `pg_dump` / `psql`) : clients PostgreSQL, tests et installations particulieres.
+    /// `PG_DUMP_BIN` / `PSQL_BIN` (default `pg_dump` / `psql`): PostgreSQL clients, tests and special installations.
     pub pg_dump_bin: String,
     pub psql_bin: String,
-    /// `PROMETHEUS_RULES_PATH` : fichier `rules.yml` que Prometheus relit ; absent, les regles ne sont pas ecrites.
+    /// `PROMETHEUS_RULES_PATH`: `rules.yml` file that Prometheus re-reads; absent, the rules are not written.
     pub prometheus_rules_path: Option<String>,
-    /// `PROMETHEUS_URL` (ex. `http://prometheus:9090`) : `POST /-/reload` apres chaque ecriture.
+    /// `PROMETHEUS_URL` (e.g. `http://prometheus:9090`): `POST /-/reload` after each write.
     pub prometheus_url: Option<String>,
-    /// `PROMETHEUS_ALERTS_POLL_SECS` (defaut 60, comme la reference) : intervalle du sondage de `/api/v1/alerts`.
+    /// `PROMETHEUS_ALERTS_POLL_SECS` (default 60, like the reference): polling interval of `/api/v1/alerts`.
     pub prometheus_alerts_poll_secs: u32,
-    /// `PROMETHEUS_ALERT_COOLDOWN` (secondes, defaut 3600) : silence d'une alerte deja notifiee.
+    /// `PROMETHEUS_ALERT_COOLDOWN` (seconds, default 3600): silence of an already notified alert.
     pub prometheus_alert_cooldown_secs: u32,
-    /// `GRAFANA_ALERTING_PATH` : fichier `rules.yaml` du provisionnement d'alertes de Grafana.
+    /// `GRAFANA_ALERTING_PATH`: `rules.yaml` file of Grafana's alerting provisioning.
     pub grafana_alerting_path: Option<String>,
-    /// `GRAFANA_URL` (ex. `http://grafana:3000`) : rechargement du provisionnement d'alertes.
+    /// `GRAFANA_URL` (e.g. `http://grafana:3000`): reload of the alerting provisioning.
     pub grafana_url: Option<String>,
-    /// `GRAFANA_USER` (defaut `admin`) et `GRAFANA_PASSWORD` : compte du rechargement.
+    /// `GRAFANA_USER` (default `admin`) and `GRAFANA_PASSWORD`: account used for the reload.
     pub grafana_user: String,
     pub grafana_password: Option<Secret>,
-    /// `MEDIAMTX_API_URL` (ex. `http://mediamtx:9997`) : API REST de MediaMTX ; absente, les cameras ne sont pas synchronisees.
+    /// `MEDIAMTX_API_URL` (e.g. `http://mediamtx:9997`): MediaMTX REST API; absent, the cameras are not synchronised.
     pub mediamtx_api_url: Option<String>,
-    /// `MEDIAMTX_RTSP_URL` (ex. `rtsp://mediamtx:8554`) : re-stream que le role `video` lit (`<url>/<uuid>`) ; sans elle, pas d'images.
+    /// `MEDIAMTX_RTSP_URL` (e.g. `rtsp://mediamtx:8554`): re-stream that the `video` role reads (`<url>/<uuid>`); without it, no images.
     pub mediamtx_rtsp_url: Option<String>,
-    /// `SNAPSHOTS_DIR` (defaut `data/snapshots`) : snapshots indexes et, sous `latest/`, derniere image de chaque camera.
+    /// `SNAPSHOTS_DIR` (default `data/snapshots`): indexed snapshots and, under `latest/`, each camera's last image.
     pub snapshots_dir: String,
-    /// `SNAPSHOTS_MAX_PER_CAMERA` (defaut 500) : au-dela, les plus anciens snapshots indexes d'une camera sont supprimes.
+    /// `SNAPSHOTS_MAX_PER_CAMERA` (default 500): beyond that, a camera's oldest indexed snapshots are deleted.
     pub snapshots_max_per_camera: u32,
-    /// `RECORDINGS_DIR` (defaut `/recordings`, comme la reference) : dossier ou MediaMTX ecrit les segments (`<dossier>/<uuid>/<date>.mp4`).
+    /// `RECORDINGS_DIR` (default `/recordings`, like the reference): folder where MediaMTX writes the segments (`<folder>/<uuid>/<date>.mp4`).
     pub recordings_dir: String,
-    /// `RECORDINGS_SEGMENT_DURATION` (defaut 60 s) : duree d'un segment, la meme que `recordSegmentDuration` de MediaMTX.
+    /// `RECORDINGS_SEGMENT_DURATION` (default 60 s): duration of a segment, the same as MediaMTX's `recordSegmentDuration`.
     pub recordings_segment_secs: u32,
-    /// `RECORDINGS_SCAN_SECS` (defaut 60) : intervalle du scan des segments termines.
+    /// `RECORDINGS_SCAN_SECS` (default 60): scan interval for finished segments.
     pub recordings_scan_secs: u32,
-    /// `RECORDINGS_GRACE_SECS` (defaut 15) : un segment non modifie depuis ce delai est considere comme termine.
+    /// `RECORDINGS_GRACE_SECS` (default 15): a segment not modified for this long is considered finished.
     pub recordings_grace_secs: u32,
-    /// `MOTION_THRESHOLD` (defaut 0,01, comme la reference) : part de l'image qui doit bouger (0 a 1) pour declarer un mouvement.
+    /// `MOTION_THRESHOLD` (default 0.01, like the reference): share of the image that must move (0 to 1) to declare a motion.
     pub motion_threshold: f64,
-    /// `MOTION_INTERVAL_SECS` (defaut 30, comme la tache de la reference) : intervalle d'evaluation du mouvement par camera en mode `motion`.
+    /// `MOTION_INTERVAL_SECS` (default 30, like the reference's task): interval of motion evaluation per camera in `motion` mode.
     pub motion_interval_secs: u32,
-    /// `MOTION_ALERT_COOLDOWN` (defaut 600 s) et `DETECTION_ALERT_COOLDOWN` (defaut 300 s) : delai minimal entre deux notifications d'une camera.
+    /// `MOTION_ALERT_COOLDOWN` (default 600 s) and `DETECTION_ALERT_COOLDOWN` (default 300 s): minimum delay between two notifications from a camera.
     pub motion_alert_cooldown_secs: u32,
     pub detection_alert_cooldown_secs: u32,
-    /// `YOLO_MODEL_PATH` (defaut `models/yolov8n.onnx`, `make fetch-model`) : modele utilise quand le reglage du detecteur n'en donne pas.
+    /// `YOLO_MODEL_PATH` (default `models/yolov8n.onnx`, `make fetch-model`): model used when the detector setting gives none.
     pub yolo_model_path: String,
-    /// `YOLO_WORKERS` (defaut 1) : sessions ONNX Runtime a un fil de calcul chacune.
+    /// `YOLO_WORKERS` (default 1): ONNX Runtime sessions with one compute thread each.
     pub yolo_workers: u32,
-    /// `DETECTIONS_DIR` (defaut `data/detections`) : images annotees des detections (reglage « enregistrer les images » du detecteur).
+    /// `DETECTIONS_DIR` (default `data/detections`): annotated images of the detections (the detector's "save the images" setting).
     pub detections_dir: String,
-    /// `FFMPEG_HWACCEL` : `auto` (defaut, VAAPI si disponible) ou `off` (decodage logiciel).
+    /// `FFMPEG_HWACCEL`: `auto` (default, VAAPI if available) or `off` (software decoding).
     pub ffmpeg_hwaccel_auto: bool,
-    /// `HISTORY_RETENTION_DAYS` (defaut 400) : age maximal des lignes de `device_state_log`, purge quotidienne.
+    /// `HISTORY_RETENTION_DAYS` (default 400): maximum age of the `device_state_log` rows, purged daily.
     pub history_retention_days: u32,
-    /// `ENERGY_LINKY_DEVICE` / `ENERGY_SOLAR_DEVICE` / `ENERGY_PAC_DEVICE` (defauts `consommation`, `prod`, `PAC-CE`) : appareils du
-    /// bilan d'energie journalier.
+    /// `ENERGY_LINKY_DEVICE` / `ENERGY_SOLAR_DEVICE` / `ENERGY_PAC_DEVICE` (defaults `consommation`, `prod`, `PAC-CE`): devices of the
+    /// daily energy summary.
     pub energy: dominet_automation::energy::EnergyDevices,
 }
 
 impl EmailConfig {
-    /// Parametres de la crate d'envoi (le mot de passe n'y est copie que pour s'en servir).
+    /// Parameters of the sending crate (the password is only copied there to be used).
     #[must_use]
     pub fn smtp(&self) -> dominet_notify::SmtpConfig {
         dominet_notify::SmtpConfig {
@@ -230,19 +230,19 @@ impl EmailConfig {
     }
 }
 
-/// Toutes les erreurs de configuration, une par ligne.
+/// All the configuration errors, one per line.
 #[derive(Debug, thiserror::Error)]
 #[error("configuration invalide :\n  - {}", .0.join("\n  - "))]
 pub struct ConfigError(pub Vec<String>);
 
-/// Lecteur d'environnement : collecte les erreurs au lieu de s'arreter a la premiere.
+/// Environment reader: collects the errors instead of stopping at the first one.
 struct Env<'a> {
     get: &'a dyn Fn(&str) -> Option<String>,
     errors: Vec<String>,
 }
 
 impl Env<'_> {
-    /// Valeur nettoyee ; une valeur vide compte comme absente.
+    /// Cleaned value; an empty value counts as absent.
     fn var(&self, key: &str) -> Option<String> {
         (self.get)(key)
             .map(|v| v.trim().to_string())
@@ -333,7 +333,7 @@ impl Env<'_> {
         })
     }
 
-    /// `MCP_ENABLED` : le serveur MCP est coupe par defaut.
+    /// `MCP_ENABLED`: the MCP server is off by default.
     fn mcp_enabled(&mut self) -> bool {
         match self.var("MCP_ENABLED") {
             None => false,
@@ -359,8 +359,8 @@ impl Env<'_> {
         }
     }
 
-    /// `FFMPEG_HWACCEL` : `auto` (defaut) ou `off`.
-    /// Un rapport entre 0 (exclu) et 1 (inclus).
+    /// `FFMPEG_HWACCEL`: `auto` (default) or `off`.
+    /// A ratio between 0 (excluded) and 1 (included).
     fn ratio(&mut self, key: &str, default: f64) -> f64 {
         let Some(v) = self.var(key) else {
             return default;
@@ -394,7 +394,7 @@ impl Env<'_> {
         }
     }
 
-    /// Heure du jour (0 a 23), `default` si absente.
+    /// Hour of the day (0 to 23), `default` if absent.
     fn hour(&mut self, key: &str, default: u32) -> u32 {
         let Some(v) = self.var(key) else {
             return default;
@@ -428,7 +428,7 @@ impl Env<'_> {
     fn trusted_proxies(&mut self) -> Vec<ipnet::IpNet> {
         let mut out = Vec::new();
         for item in self.list("TRUSTED_PROXIES") {
-            // Une adresse seule est un reseau /32 (ou /128).
+            // A single address is a /32 network (or /128).
             let parsed = item
                 .parse::<ipnet::IpNet>()
                 .or_else(|_| item.parse::<std::net::IpAddr>().map(ipnet::IpNet::from));
@@ -477,7 +477,7 @@ impl Env<'_> {
         if tls && ssl && self.var("EMAIL_USE_TLS").is_some() {
             self.fail("EMAIL_USE_TLS and EMAIL_USE_SSL are mutually exclusive".into());
         }
-        // SSL prime sur le defaut de TLS ; sans l'un ni l'autre (explicitement), pas de chiffrement (boucle locale seulement).
+        // SSL takes precedence over the TLS default; with neither (explicitly), no encryption (loopback only).
         let security = if ssl {
             Security::Tls
         } else if tls {
@@ -573,18 +573,18 @@ impl Env<'_> {
 }
 
 impl Config {
-    /// Lit la configuration dans l'environnement du processus.
+    /// Reads the configuration from the process environment.
     ///
     /// # Errors
-    /// Retourne toutes les variables manquantes ou invalides.
+    /// Returns all the missing or invalid variables.
     pub fn from_env() -> Result<Self, ConfigError> {
         Self::from_lookup(|key| std::env::var(key).ok())
     }
 
-    /// Lit la configuration via une fonction de recherche (testable sans toucher a l'environnement).
+    /// Reads the configuration through a lookup function (testable without touching the environment).
     ///
     /// # Errors
-    /// Retourne toutes les variables manquantes ou invalides.
+    /// Returns all the missing or invalid variables.
     #[allow(
         clippy::too_many_lines,
         reason = "one line per environment variable: wrapping would not help reading"
@@ -760,7 +760,7 @@ mod tests {
         assert!(c.mqtt.is_none() && c.reductstore.is_none());
         assert_eq!(c.allowed_hosts.len(), 0);
         assert_eq!(c.history_retention_days, 400);
-        // Aucune adresse d'onduleur par defaut : sans SOLARMAX_HOST, pas de publisher SolarMax.
+        // No inverter address by default: without SOLARMAX_HOST, no SolarMax publisher.
         assert!(c.solarmax.is_none());
         assert_eq!(c.open_meteo_url, "https://api.open-meteo.com/v1/forecast");
     }
@@ -794,11 +794,11 @@ mod tests {
     #[test]
     fn email_follows_the_reference_variables_and_never_downgrades_silently() {
         use dominet_notify::Security;
-        // Sans EMAIL_HOST : pas d'e-mail ; l'API Free Mobile est l'officielle.
+        // Without EMAIL_HOST: no e-mail; the Free Mobile API is the official one.
         let c = load(&[DB]).unwrap();
         assert!(c.email.is_none());
         assert_eq!(c.sms_free_url, "https://smsapi.free-mobile.fr/sendmsg");
-        // Defaut : STARTTLS sur 587.
+        // Default: STARTTLS on 587.
         let e = load(&[
             DB,
             ("EMAIL_HOST", "smtp.example.com"),
@@ -816,13 +816,13 @@ mod tests {
             !format!("{e:?}").contains("\"p\""),
             "mot de passe masque : {e:?}"
         );
-        // SSL : TLS direct, port 465.
+        // SSL: direct TLS, port 465.
         let e = load(&[DB, ("EMAIL_HOST", "h"), ("EMAIL_USE_SSL", "True")])
             .unwrap()
             .email
             .unwrap();
         assert_eq!((e.port, e.security), (465, Security::Tls));
-        // Explicitement sans chiffrement : permis sans identifiants, ou vers la boucle locale.
+        // Explicitly without encryption: allowed without credentials, or towards the loopback.
         assert!(load(&[DB, ("EMAIL_HOST", "relais"), ("EMAIL_USE_TLS", "False")]).is_ok());
         assert!(
             load(&[
@@ -834,7 +834,7 @@ mod tests {
             ])
             .is_ok()
         );
-        // Identifiants sans chiffrement vers une autre machine : refuse.
+        // Credentials without encryption towards another machine: refused.
         let err = load(&[
             DB,
             ("EMAIL_HOST", "smtp.example.com"),
@@ -845,7 +845,7 @@ mod tests {
         .unwrap_err()
         .to_string();
         assert!(err.contains("EMAIL_*") && !err.contains("\"p\""), "{err}");
-        // Valeurs invalides, toutes signalees.
+        // Invalid values, all reported.
         let err = load(&[
             DB,
             ("EMAIL_HOST", "h"),
@@ -922,7 +922,7 @@ mod tests {
             let e = load(&[DB, ("SOLARMAX_HOST", "x"), (key, bad)]).unwrap_err();
             assert!(e.to_string().contains(key), "{key}={bad} : {e}");
         }
-        // Sans hote, les autres variables SOLARMAX_* sont sans effet.
+        // Without a host, the other SOLARMAX_* variables have no effect.
         assert!(
             load(&[DB, ("SOLARMAX_PORT", "abc")])
                 .unwrap()

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! `dominet doctor` : diagnostic en lecture seule, vu depuis l'application (base, migrations, administrateur, cles, MQTT,
-//! ReductStore, e-mail, sauvegardes). Chaque constat dit quoi faire. Ne modifie rien, n'affiche aucun secret.
-//! La partie « machine » (conteneurs, ports, certificat, disque) est dans `tools/prod.sh doctor`, qui appelle celle-ci.
+//! `dominet doctor`: read-only diagnostic, seen from the application (database, migrations, administrator, keys, MQTT,
+//! ReductStore, e-mail, backups). Each finding says what to do. Changes nothing, prints no secret.
+//! The "machine" part (containers, ports, certificate, disk) is in `tools/prod.sh doctor`, which calls this one.
 
 use std::net::{TcpStream, ToSocketAddrs};
 use std::time::Duration;
@@ -33,7 +33,7 @@ impl Finding {
     }
 }
 
-/// Constats qui ne dependent que de la configuration (testables sans base ni reseau).
+/// Findings that only depend on the configuration (testable without a database or network).
 #[must_use]
 pub fn config_findings(config: &Config) -> Vec<Finding> {
     use Level::{Blocking, Ok, Warning};
@@ -159,7 +159,7 @@ async fn database_findings(config: &Config) -> Vec<Finding> {
     out
 }
 
-/// Tous les constats, dans l'ordre d'affichage.
+/// All the findings, in display order.
 pub async fn findings(config: &Config) -> Vec<Finding> {
     use Level::{Blocking, Ok};
     let mut out = config_findings(config);
@@ -201,7 +201,7 @@ pub async fn findings(config: &Config) -> Vec<Finding> {
     out
 }
 
-/// `dominet doctor` : affiche les constats et retourne le nombre de points bloquants.
+/// `dominet doctor`: prints the findings and returns the number of blocking points.
 pub async fn run(config: &Config) -> usize {
     let all = findings(config).await;
     for f in &all {

@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Sauvegarde et restauration (R7 lot 4, ADR 0054) : la base PostgreSQL (`pg_dump`, SQL compresse) et les donnees de ReductStore (archive
-//! tar.gz du volume monte en lecture seule). Chaque fichier a sa somme SHA-256 a cote ; une restauration la verifie d'abord.
+//! Backup and restore (R7 lot 4, ADR 0054): the PostgreSQL database (`pg_dump`, compressed SQL) and the ReductStore data (tar.gz
+//! archive of the volume mounted read-only). Each file has its SHA-256 sum next to it; a restore checks it first.
 //!
-//! Dossier : `<BACKUP_DIR>/postgres/dominet_<AAAAMMJJ_HHMMSS>.sql.gz` et `<BACKUP_DIR>/reductstore/reductstore_<...>.tar.gz`
-//! (noms stables, horodates). Le mot de passe de la base ne passe jamais par la ligne de
-//! commande des clients PostgreSQL : il est transmis par l'environnement du processus fils (`PGPASSWORD`).
+//! Folder: `<BACKUP_DIR>/postgres/dominet_<YYYYMMDD_HHMMSS>.sql.gz` and `<BACKUP_DIR>/reductstore/reductstore_<...>.tar.gz`
+//! (stable, timestamped names). The database password never goes through the
+//! command line of the PostgreSQL clients: it is passed through the child process's environment (`PGPASSWORD`).
 
 use std::fs::{self, File};
 use std::io::{BufRead, BufReader, Read, Write};
@@ -53,7 +53,7 @@ fn io(what: impl Into<String>) -> impl FnOnce(std::io::Error) -> BackupError {
     move |source| BackupError::Io { what, source }
 }
 
-/// Connexion a la base, extraite de `DATABASE_URL`, transmise aux clients PostgreSQL par l'environnement.
+/// Database connection, extracted from `DATABASE_URL`, passed to the PostgreSQL clients through the environment.
 #[derive(Clone)]
 struct PgTarget {
     host: String,
@@ -137,23 +137,23 @@ impl PgTarget {
     }
 }
 
-/// Une sauvegarde ecrite.
+/// A backup written.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Artifact {
     pub path: PathBuf,
     pub bytes: u64,
 }
 
-/// Resultat d'un passage.
+/// Result of one run.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct BackupReport {
     pub postgres: Artifact,
-    /// `None` si `REDUCTSTORE_BACKUP_SRC` n'est pas renseigne ou introuvable.
+    /// `None` if `REDUCTSTORE_BACKUP_SRC` is not set or not found.
     pub reductstore: Option<Artifact>,
     pub pruned: usize,
 }
 
-/// Service de sauvegarde (construit depuis la configuration).
+/// Backup service (built from the configuration).
 #[derive(Debug, Clone)]
 pub struct BackupService {
     dir: Option<PathBuf>,
@@ -164,7 +164,7 @@ pub struct BackupService {
     db: Result<PgTarget, String>,
 }
 
-/// Horodatage des noms de fichiers (UTC, comme la reference).
+/// Timestamp of the file names (UTC, like the reference).
 fn stamp(now: DateTime<Utc>) -> String {
     now.format("%Y%m%d_%H%M%S").to_string()
 }
@@ -184,7 +184,7 @@ fn sha256_of(path: &Path) -> Result<String, BackupError> {
     }
     let mut hex = String::with_capacity(64);
     for byte in hasher.finalize() {
-        // `write!` sur un `String` ne peut pas echouer.
+        // `write!` on a `String` cannot fail.
         let _ = std::fmt::Write::write_fmt(&mut hex, format_args!("{byte:02x}"));
     }
     Ok(hex)
@@ -199,7 +199,7 @@ fn sidecar(path: &Path) -> PathBuf {
     path.with_file_name(name)
 }
 
-/// Ecrit la somme de controle a cote du fichier (`<somme>  <nom>`, lisible par `sha256sum -c`).
+/// Writes the checksum next to the file (`<sum>  <name>`, readable by `sha256sum -c`).
 fn write_checksum(path: &Path) -> Result<(), BackupError> {
     let sum = sha256_of(path)?;
     let name = path
@@ -209,8 +209,8 @@ fn write_checksum(path: &Path) -> Result<(), BackupError> {
     fs::write(sidecar(path), format!("{sum}  {name}\n")).map_err(io("writing the checksum"))
 }
 
-/// Verifie la somme de controle d'un fichier ; l'absence de somme n'est pas une erreur (sauvegarde copiee a la main), une somme
-/// differente en est une.
+/// Checks a file's checksum; the absence of a checksum is not an error (backup copied by hand), a different
+/// checksum is one.
 fn verify_checksum(path: &Path) -> Result<(), BackupError> {
     let Ok(text) = fs::read_to_string(sidecar(path)) else {
         return Ok(());
@@ -223,8 +223,8 @@ fn verify_checksum(path: &Path) -> Result<(), BackupError> {
     }
 }
 
-/// Retire une ligne que PostgreSQL 16 ne comprend pas : `pg_dump` 17 ecrit `SET transaction_timeout = 0;`, parametre inconnu d'un
-/// serveur plus ancien (ADR 0054).
+/// Removes a line that PostgreSQL 16 does not understand: `pg_dump` 17 writes `SET transaction_timeout = 0;`, a parameter unknown to an
+/// older server (ADR 0054).
 fn is_unsupported_line(line: &[u8]) -> bool {
     line.starts_with(b"SET transaction_timeout")
 }
@@ -249,7 +249,7 @@ impl BackupService {
         }
     }
 
-    /// La sauvegarde planifiee tourne-t-elle (destination connue) ?
+    /// Is the scheduled backup running (destination known)?
     #[must_use]
     pub fn is_configured(&self) -> bool {
         self.dir.is_some()
@@ -265,7 +265,7 @@ impl BackupService {
             .map_err(|e| BackupError::BadDatabaseUrl(e.clone()))
     }
 
-    /// `pg_dump` -> gzip -> fichier (ecrit sous un nom temporaire puis renomme).
+    /// `pg_dump` -> gzip -> file (written under a temporary name then renamed).
     fn dump_postgres(&self, dir: &Path, stamp: &str) -> Result<Artifact, BackupError> {
         let target = self.target()?;
         let folder = dir.join(POSTGRES_DIR);
@@ -282,7 +282,7 @@ impl BackupService {
             .map_err(io(format!("starting {}", self.pg_dump)))?;
         let mut stdout = child.stdout.take().expect("stdout requested");
         let mut stderr = child.stderr.take().expect("stderr requested");
-        // Les erreurs sont lues a part : un tube plein bloquerait le client.
+        // Errors are read separately: a full pipe would block the client.
         let errors = std::thread::spawn(move || {
             let mut buf = vec![];
             let _ = stderr.read_to_end(&mut buf);
@@ -310,7 +310,7 @@ impl BackupService {
         Ok(Artifact { path, bytes })
     }
 
-    /// Archive tar.gz du volume ReductStore ; `None` sans source (ou source absente : signale, pas bloquant, comme la reference).
+    /// tar.gz archive of the ReductStore volume; `None` without a source (or missing source: reported, not blocking, like the reference).
     fn archive_reductstore(
         &self,
         dir: &Path,
@@ -330,7 +330,7 @@ impl BackupService {
         let written = (|| -> std::io::Result<()> {
             let gz = GzEncoder::new(File::create(&tmp)?, Compression::default());
             let mut tarball = tar::Builder::new(gz);
-            // Les fichiers qui disparaissent pendant la lecture (ReductStore ecrit) n'arretent pas la sauvegarde.
+            // Files that disappear during reading (ReductStore is writing) do not stop the backup.
             tarball.follow_symlinks(false);
             tarball.append_dir_all(".", src)?;
             tarball.into_inner()?.finish()?.sync_all()
@@ -348,8 +348,8 @@ impl BackupService {
         Ok(Some(Artifact { path, bytes }))
     }
 
-    /// Supprime les sauvegardes plus vieilles que la retention, **sauf la plus recente de chaque dossier** (un arret prolonge de la
-    /// sauvegarde ne doit jamais laisser sans rien).
+    /// Deletes the backups older than the retention, **except the most recent of each folder** (a prolonged stop of the
+    /// backup must never leave nothing at all).
     fn prune(&self, dir: &Path, now: SystemTime) -> usize {
         let mut removed = 0;
         for kind in [POSTGRES_DIR, REDUCTSTORE_DIR] {
@@ -365,7 +365,7 @@ impl BackupService {
                 .filter_map(|e| Some((e.metadata().ok()?.modified().ok()?, e.path())))
                 .collect();
             files.sort();
-            files.pop(); // la plus recente reste
+            files.pop(); // the most recent one stays
             for (modified, path) in files {
                 if now
                     .duration_since(modified)
@@ -382,10 +382,10 @@ impl BackupService {
         removed
     }
 
-    /// Sauvegarde complete (bloquante : a lancer dans `spawn_blocking`).
+    /// Complete backup (blocking: to be run in `spawn_blocking`).
     ///
     /// # Errors
-    /// Destination absente, client PostgreSQL en echec, disque plein...
+    /// Destination missing, PostgreSQL client failing, disk full...
     pub fn run_blocking(&self, now: DateTime<Utc>) -> Result<BackupReport, BackupError> {
         let dir = self.dir()?;
         let stamp = stamp(now);
@@ -399,7 +399,7 @@ impl BackupService {
         })
     }
 
-    /// Sauvegardes presentes (la plus recente en dernier) : `(nature, chemin)`.
+    /// Backups present (the most recent last): `(kind, path)`.
     #[must_use]
     pub fn list(&self) -> Vec<(&'static str, PathBuf)> {
         let Ok(dir) = self.dir() else {
@@ -426,7 +426,7 @@ impl BackupService {
         out
     }
 
-    /// La sauvegarde la plus recente d'une nature (`postgres` ou `reductstore`).
+    /// The most recent backup of a kind (`postgres` or `reductstore`).
     #[must_use]
     pub fn latest(&self, kind: &str) -> Option<PathBuf> {
         self.list()
@@ -436,12 +436,12 @@ impl BackupService {
             .map(|(_, p)| p)
     }
 
-    /// Restaure la base depuis un fichier `.sql.gz` : la somme de controle est verifiee, puis `psql` rejoue le SQL **en une seule
-    /// transaction** (`ON_ERROR_STOP`) : un echec ne laisse pas une base a moitie restauree. Detruit les tables de l'application
-    /// (le dump les recree : `--clean --if-exists`).
+    /// Restores the database from a `.sql.gz` file: the checksum is checked, then `psql` replays the SQL **in a single
+    /// transaction** (`ON_ERROR_STOP`): a failure does not leave a half-restored database. Destroys the application's tables
+    /// (the dump recreates them: `--clean --if-exists`).
     ///
     /// # Errors
-    /// Fichier abime, base injoignable, SQL refuse.
+    /// Damaged file, database unreachable, SQL refused.
     pub fn restore_postgres(&self, file: &Path) -> Result<(), BackupError> {
         verify_checksum(file)?;
         let target = self.target()?;
@@ -490,11 +490,11 @@ impl BackupService {
         fed.map_err(io("reading the backup"))
     }
 
-    /// Extrait une archive ReductStore dans `dest` (ReductStore doit etre arrete, `dest` etre son dossier de donnees). Refuse un
-    /// dossier non vide sans `force`.
+    /// Extracts a ReductStore archive into `dest` (ReductStore must be stopped, `dest` must be its data folder). Refuses a
+    /// non-empty folder without `force`.
     ///
     /// # Errors
-    /// Somme de controle incorrecte, dossier non vide, archive illisible.
+    /// Wrong checksum, non-empty folder, unreadable archive.
     pub fn restore_reductstore(file: &Path, dest: &Path, force: bool) -> Result<u64, BackupError> {
         verify_checksum(file)?;
         if dest.is_dir()
@@ -516,7 +516,7 @@ impl BackupService {
         let mut count = 0;
         for entry in archive.entries().map_err(io("reading the archive"))? {
             let mut entry = entry.map_err(io("reading the archive"))?;
-            // `unpack_in` refuse les chemins qui sortent du dossier cible.
+            // `unpack_in` refuses the paths that go outside the target folder.
             if entry.unpack_in(dest).map_err(io("extraction"))? {
                 count += 1;
             }
@@ -525,14 +525,14 @@ impl BackupService {
     }
 }
 
-/// Prochaine heure de sauvegarde : `hour`:00 locale, aujourd'hui si elle n'est pas passee, demain sinon.
+/// Next backup time: `hour`:00 local, today if it has not passed, tomorrow otherwise.
 #[must_use]
 pub fn next_run(now: DateTime<Utc>, tz: chrono_tz::Tz, hour: u32) -> DateTime<Utc> {
     use chrono::{Days, Timelike};
     let local = now.with_timezone(&tz);
     let mut day = local.date_naive();
     for _ in 0..4 {
-        // Heure inexistante (saut d'heure) : la suivante.
+        // Non-existent hour (clock jump): the next one.
         if let Some(at) = tz
             .from_local_datetime(&day.and_hms_opt(hour, 0, 0).unwrap_or_default())
             .earliest()
@@ -547,7 +547,7 @@ pub fn next_run(now: DateTime<Utc>, tz: chrono_tz::Tz, hour: u32) -> DateTime<Ut
     now + chrono::Duration::hours(24 - i64::from(local.hour().min(23)))
 }
 
-/// Gauge « derniere sauvegarde reussie » reprise des fichiers a l'amorcage (le processus a pu redemarrer depuis).
+/// "Last successful backup" gauge restored from the files at start-up (the process may have restarted since).
 fn init_metrics(service: &BackupService) {
     if let Some(newest) = service
         .latest(POSTGRES_DIR)
@@ -559,10 +559,10 @@ fn init_metrics(service: &BackupService) {
     }
 }
 
-/// Une sauvegarde, avec metriques et journal (bloquante dans `spawn_blocking`).
+/// A backup, with metrics and log (blocking, in `spawn_blocking`).
 ///
 /// # Errors
-/// Voir [`BackupService::run_blocking`].
+/// See [`BackupService::run_blocking`].
 pub async fn run_once(service: BackupService) -> Result<BackupReport, BackupError> {
     let started = std::time::Instant::now();
     let result = tokio::task::spawn_blocking(move || service.run_blocking(Utc::now()))
@@ -592,7 +592,7 @@ pub async fn run_once(service: BackupService) -> Result<BackupReport, BackupErro
     result
 }
 
-/// Sauvegarde quotidienne a `BACKUP_HOUR` (heure locale), dans le planificateur ; sans `BACKUP_DIR`, rien ne tourne.
+/// Daily backup at `BACKUP_HOUR` (local time), in the scheduler; without `BACKUP_DIR`, nothing runs.
 pub fn spawn(state: &AppState) {
     let service = BackupService::new(&state.config);
     if !service.is_configured() {
@@ -613,7 +613,7 @@ pub fn spawn(state: &AppState) {
                 .to_std()
                 .unwrap_or(Duration::from_secs(60));
             tokio::time::sleep(wait).await;
-            // Un echec est journalise et compte, la suivante aura lieu le lendemain.
+            // A failure is logged and counted, the next one will take place the next day.
             let _ = run_once(service.clone()).await;
         }
     });
@@ -662,15 +662,15 @@ mod tests {
     fn the_next_run_is_today_if_the_hour_has_not_come_and_tomorrow_otherwise() {
         let paris = chrono_tz::Europe::Paris;
         let at = |y, m, d, h| Utc.with_ymd_and_hms(y, m, d, h, 0, 0).unwrap();
-        // 2026-11-09 01:00 UTC = 02:00 a Paris (hiver, UTC+1) : 03:00 locale = 02:00 UTC le meme jour.
+        // 2026-11-09 01:00 UTC = 02:00 in Paris (winter, UTC+1): 03:00 local = 02:00 UTC the same day.
         assert_eq!(next_run(at(2026, 11, 9, 0), paris, 3), at(2026, 11, 9, 2));
-        // 10:00 UTC : l'heure est passee, demain.
+        // 10:00 UTC: the hour has passed, tomorrow.
         assert_eq!(next_run(at(2026, 11, 9, 10), paris, 3), at(2026, 11, 10, 2));
-        // Ete (UTC+2) : 03:00 locale = 01:00 UTC.
+        // Summer (UTC+2): 03:00 local = 01:00 UTC.
         assert_eq!(next_run(at(2026, 7, 1, 0), paris, 3), at(2026, 7, 1, 1));
-        // Heure exactement atteinte : on attend le lendemain (pas de boucle de sauvegardes).
+        // Exactly the time reached: we wait for the next day (no loop of backups).
         assert_eq!(next_run(at(2026, 11, 9, 2), paris, 3), at(2026, 11, 10, 2));
-        // Saut d'heure (31 mars 2026, 02:30 n'existe pas) : la sauvegarde de 02:00 locale a lieu quand meme un jour proche.
+        // Clock jump (31 March 2026, 02:30 does not exist): the 02:00 local backup still takes place on a nearby day.
         let gap = next_run(at(2026, 3, 30, 12), paris, 2);
         assert!(gap > at(2026, 3, 30, 12) && gap < at(2026, 4, 2, 0));
     }

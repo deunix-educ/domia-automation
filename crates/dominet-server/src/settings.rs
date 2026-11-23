@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Service des reglages applicatifs : lecture typee (avec valeur par defaut), ecriture validee et chiffrement des
-//! secrets, cache memoire invalide a chaque ecriture, donnees initiales (`seed`).
+//! Application settings service: typed reading (with default value), validated writing and encryption of
+//! secrets, in-memory cache invalidated at each write, initial data (`seed`).
 //!
-//! - Un reglage absent de la base vaut sa **valeur par defaut** du registre : l'application fonctionne avant `seed`.
-//! - Une valeur vide n'est jamais chiffree (rien a proteger) ; une valeur secrete non vide l'est toujours, avec le
-//!   nom du reglage comme donnee associee.
-//! - Si la cle maitresse change, les secrets existants deviennent illisibles : seuls ces reglages le sont (erreur
-//!   explicite), les autres continuent de fonctionner.
+//! - A setting absent from the database has the registry's **default value**: the application works before `seed`.
+//! - An empty value is never encrypted (nothing to protect); a non-empty secret value always is, with the
+//!   setting's name as associated data.
+//! - If the master key changes, the existing secrets become unreadable: only those settings are (explicit
+//!   error), the others keep working.
 
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -35,8 +35,8 @@ pub enum SettingsError {
     Repo(#[from] RepoError),
 }
 
-/// Ce que l'interface voit d'un reglage : jamais la valeur d'un secret.
-// Indicateurs independants, repris tels quels dans le DTO.
+/// What the interface sees of a setting: never a secret's value.
+// Independent flags, taken as is in the DTO.
 #[allow(clippy::struct_excessive_bools)]
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SettingView {
@@ -45,18 +45,18 @@ pub struct SettingView {
     pub category: &'static str,
     pub description: &'static str,
     pub is_secret: bool,
-    /// Valeur affichable : masquee pour un secret renseigne.
+    /// Displayable value: masked for a set secret.
     pub value: String,
-    /// Vrai si une valeur non vide est definie.
+    /// True if a non-empty value is defined.
     pub is_set: bool,
-    /// Vrai si la base ne contient pas ce reglage (la valeur par defaut s'applique).
+    /// True if the database does not contain this setting (the default value applies).
     pub from_default: bool,
-    /// Faux si un secret ne peut pas etre dechiffre.
+    /// False if a secret cannot be decrypted.
     pub readable: bool,
     pub updated_at: Option<DateTime<Utc>>,
 }
 
-/// Resultat de `seed`.
+/// Result of `seed`.
 #[derive(Debug, Default, PartialEq, Eq)]
 pub struct SeedReport {
     pub created: Vec<&'static str>,
@@ -66,7 +66,7 @@ pub struct SeedReport {
 #[derive(Debug, Clone)]
 struct Cached {
     stored: AppSetting,
-    /// Valeur en clair (dechiffree pour un secret) ou `None` si le secret est illisible.
+    /// Clear value (decrypted for a secret) or `None` if the secret is unreadable.
     plain: Option<String>,
 }
 
@@ -97,7 +97,7 @@ impl SettingsService {
         }
     }
 
-    /// Recoit le nom de chaque reglage modifie (pour que les taches concernees se reconfigurent).
+    /// Receives the name of each modified setting (so that the tasks concerned reconfigure themselves).
     #[must_use]
     pub fn subscribe(&self) -> broadcast::Receiver<String> {
         self.inner.events.subscribe()
@@ -121,10 +121,10 @@ impl SettingsService {
         }
     }
 
-    /// Relit toute la table et remplace le cache.
+    /// Re-reads the whole table and replaces the cache.
     ///
     /// # Errors
-    /// Erreur de depot si la base est injoignable.
+    /// Repository error if the database is unreachable.
     pub async fn reload(&self) -> Result<(), SettingsError> {
         let rows = self.inner.repo.list().await?;
         let map = rows
@@ -138,7 +138,7 @@ impl SettingsService {
         Ok(())
     }
 
-    /// Vide le cache : la prochaine lecture recharge depuis la base.
+    /// Empties the cache: the next read reloads from the database.
     pub async fn invalidate(&self) {
         *self.inner.cache.write().await = None;
     }
@@ -151,10 +151,10 @@ impl SettingsService {
         Ok(self.inner.cache.read().await.clone().unwrap_or_default())
     }
 
-    /// Valeur typee d'un reglage connu (valeur par defaut s'il n'est pas en base).
+    /// Typed value of a known setting (default value if it is not in the database).
     ///
     /// # Errors
-    /// `UnknownKey`, `Unreadable` (secret non dechiffrable) ou erreur de depot.
+    /// `UnknownKey`, `Unreadable` (undecryptable secret) or repository error.
     pub async fn get(&self, key: &str) -> Result<SettingValue, SettingsError> {
         let spec = setting_spec(key).ok_or_else(|| SettingsError::UnknownKey(key.to_string()))?;
         let map = self.snapshot().await?;
@@ -165,16 +165,16 @@ impl SettingsService {
                 .ok_or_else(|| SettingsError::Unreadable(key.to_string()))?,
             None => spec.default.to_string(),
         };
-        // Une valeur vide (secret non renseigne) n'a pas de type numerique : on la rend telle quelle.
+        // An empty value (secret not set) has no numeric type: we return it as is.
         if raw.is_empty() {
             return Ok(SettingValue::Str(raw));
         }
         Ok(SettingValue::parse(&raw, spec.value_type)?)
     }
 
-    /// Texte d'un reglage lu **sans attendre** (cache deja charge, valeur par defaut sinon) : pour du code synchrone comme
-    /// l'en-tete CSP, qui ne peut pas interroger la base. `None` si le reglage est inconnu, illisible ou si le cache est
-    /// en cours d'ecriture.
+    /// Text of a setting read **without waiting** (cache already loaded, default value otherwise): for synchronous code such as
+    /// the CSP header, which cannot query the database. `None` if the setting is unknown, unreadable or if the cache is
+    /// being written.
     #[must_use]
     pub fn cached_string(&self, key: &str) -> Option<String> {
         let spec = setting_spec(key)?;
@@ -185,10 +185,10 @@ impl SettingsService {
         }
     }
 
-    /// Texte brut d'un reglage (pratique pour les URL, adresses, secrets...).
+    /// Plain text of a setting (handy for URLs, addresses, secrets...).
     ///
     /// # Errors
-    /// Voir [`Self::get`].
+    /// See [`Self::get`].
     pub async fn get_string(&self, key: &str) -> Result<String, SettingsError> {
         Ok(self.get(key).await?.to_raw())
     }
@@ -223,10 +223,10 @@ impl SettingsService {
         }
     }
 
-    /// Tous les reglages connus, tries par categorie puis cle, valeurs secretes masquees.
+    /// All the known settings, sorted by category then key, secret values masked.
     ///
     /// # Errors
-    /// Erreur de depot si la base est injoignable.
+    /// Repository error if the database is unreachable.
     pub async fn list(&self) -> Result<Vec<SettingView>, SettingsError> {
         let map = self.snapshot().await?;
         let mut views: Vec<_> = SETTINGS
@@ -237,7 +237,7 @@ impl SettingsService {
         Ok(views)
     }
 
-    /// Valeur a stocker : normalisee selon le type, chiffree si secrete et non vide.
+    /// Value to store: normalised according to the type, encrypted if secret and non-empty.
     fn prepare(&self, spec: &SettingSpec, raw: &str) -> Result<String, SettingsError> {
         let draft = spec.draft(raw);
         draft.validate()?;
@@ -259,19 +259,19 @@ impl SettingsService {
         Ok(normalized)
     }
 
-    /// Dit si `raw` serait accepte pour `key` (type, regles du reglage, cle maitresse pour un secret) sans rien ecrire.
+    /// Says whether `raw` would be accepted for `key` (type, setting rules, master key for a secret) without writing anything.
     ///
     /// # Errors
-    /// `UnknownKey`, `Invalid` ou `MasterKeyMissing`, comme [`Self::set`].
+    /// `UnknownKey`, `Invalid` or `MasterKeyMissing`, like [`Self::set`].
     pub fn check(&self, key: &str, raw: &str) -> Result<(), SettingsError> {
         let spec = setting_spec(key).ok_or_else(|| SettingsError::UnknownKey(key.to_string()))?;
         self.prepare(spec, raw).map(|_| ())
     }
 
-    /// Modifie un reglage connu : valide, chiffre si secret, enregistre, met le cache a jour et previent les abonnes.
+    /// Modifies a known setting: validates, encrypts if secret, saves, updates the cache and notifies the subscribers.
     ///
     /// # Errors
-    /// `UnknownKey`, `Invalid` (valeur incompatible avec le type), `MasterKeyMissing` ou erreur de depot.
+    /// `UnknownKey`, `Invalid` (value incompatible with the type), `MasterKeyMissing` or repository error.
     pub async fn set(&self, key: &str, raw: &str) -> Result<SettingView, SettingsError> {
         let spec = setting_spec(key).ok_or_else(|| SettingsError::UnknownKey(key.to_string()))?;
         let stored_value = self.prepare(spec, raw)?;
@@ -286,16 +286,16 @@ impl SettingsService {
         if let Some(map) = self.inner.cache.write().await.as_mut() {
             map.insert(key.to_string(), cached);
         }
-        let _ = self.inner.events.send(key.to_string()); // aucun abonne n'est pas une erreur
+        let _ = self.inner.events.send(key.to_string()); // no subscriber is not an error
         Ok(view)
     }
 
-    /// Cree les reglages absents (valeur de l'environnement `lookup`, sinon valeur par defaut) sans jamais ecraser
-    /// un reglage existant. Avec `dry_run`, ne fait que rapporter.
+    /// Creates the missing settings (value from the `lookup` environment, otherwise default value) without ever overwriting
+    /// an existing setting. With `dry_run`, only reports.
     ///
     /// # Errors
-    /// `MasterKeyMissing` si un secret non vide doit etre ecrit sans cle maitresse, `Invalid` si une valeur de
-    /// l'environnement ne correspond pas au type, ou erreur de depot.
+    /// `MasterKeyMissing` if a non-empty secret must be written without a master key, `Invalid` if an
+    /// environment value does not match the type, or repository error.
     pub async fn seed(
         &self,
         lookup: impl Fn(&str) -> Option<String>,
@@ -306,7 +306,7 @@ impl SettingsService {
             self.inner.cache.read().await.clone().unwrap_or_default()
         };
         let mut report = SeedReport::default();
-        // 1. Tout valider et chiffrer d'abord : une erreur ne doit rien avoir ecrit.
+        // 1. Validate and encrypt everything first: an error must have written nothing.
         let mut to_write = Vec::new();
         for spec in &SETTINGS {
             if existing.contains_key(spec.key) {
@@ -320,7 +320,7 @@ impl SettingsService {
             to_write.push((spec, raw, stored_value));
             report.created.push(spec.key);
         }
-        // 2. Puis ecrire (sans ecraser ce qu'un autre processus aurait cree entre-temps).
+        // 2. Then write (without overwriting what another process might have created in the meantime).
         if !dry_run {
             for (spec, raw, stored_value) in &to_write {
                 self.inner
