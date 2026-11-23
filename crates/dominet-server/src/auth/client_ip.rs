@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Adresse IP du client, y compris derriere un proxy de confiance (nginx).
+//! Client IP address, including behind a trusted proxy (nginx).
 
 use std::net::{IpAddr, SocketAddr};
 
@@ -13,9 +13,9 @@ fn trusted(ip: IpAddr, proxies: &[IpNet]) -> bool {
     proxies.iter().any(|n| n.contains(&ip))
 }
 
-/// Determine l'IP du client : l'adresse du pair, sauf si ce pair est un proxy de confiance, auquel cas on
-/// remonte `X-Forwarded-For` de droite a gauche jusqu'a la premiere adresse qui n'est pas un proxy de confiance.
-/// Un en-tete forge par un client direct est donc ignore.
+/// Determines the client's IP: the peer's address, unless that peer is a trusted proxy, in which case we
+/// go up `X-Forwarded-For` from right to left to the first address that is not a trusted proxy.
+/// A header forged by a direct client is therefore ignored.
 #[must_use]
 pub fn resolve(peer: Option<IpAddr>, forwarded_for: Option<&str>, proxies: &[IpNet]) -> String {
     let Some(peer) = peer else {
@@ -33,20 +33,20 @@ pub fn resolve(peer: Option<IpAddr>, forwarded_for: Option<&str>, proxies: &[IpN
         match hop.parse::<IpAddr>() {
             Ok(ip) if trusted(ip, proxies) => {}
             Ok(ip) => return ip.to_string(),
-            Err(_) => break, // valeur illisible : on s'arrete sur le pair
+            Err(_) => break, // unreadable value: we stop at the peer
         }
     }
     peer.to_string()
 }
 
-/// Extracteur : IP du client (`"unknown"` si l'adresse du pair est inconnue, par exemple en test).
+/// Extractor: client IP (`"unknown"` if the peer's address is unknown, for example in tests).
 #[derive(Debug, Clone)]
 pub struct ClientIp(pub String);
 
 impl FromRequestParts<AppState> for ClientIp {
     type Rejection = std::convert::Infallible;
 
-    #[allow(clippy::unused_async_trait_impl)] // le trait impose `async`
+    #[allow(clippy::unused_async_trait_impl)] // the trait requires `async`
     async fn from_request_parts(
         parts: &mut Parts,
         state: &AppState,
@@ -103,7 +103,7 @@ mod tests {
     #[test]
     fn the_rightmost_untrusted_hop_wins_so_a_spoofed_prefix_is_ignored() {
         let p = nets(&["172.18.0.0/16", "10.0.0.1/32"]);
-        // Le client a envoye "1.1.1.1" ; nginx a ajoute sa vue du client (192.168.1.50) puis un proxy interne.
+        // The client sent "1.1.1.1"; nginx added its view of the client (192.168.1.50) then an internal proxy.
         assert_eq!(
             resolve(
                 Some(ip("172.18.0.1")),

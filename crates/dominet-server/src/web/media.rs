@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Images d'appareils (R3 lot 5, ADR 0029) : televersement par formulaire (administrateurs) et service (comptes connectes).
+//! Device images (R3 lot 5, ADR 0029): upload by form (administrators) and serving (logged-in accounts).
 //!
-//! L'image est decodee, **reduite pour tenir dans 400 x 300** et reencodee en JPEG : ce qui est stocke est toujours une image
-//! saine, de taille bornee, quel que soit le fichier envoye (un fichier qui n'est pas une image, ou trop grand, est refuse).
-//! Les images sont en base (`device_image`) : rien a sauvegarder a part.
+//! The image is decoded, **reduced to fit in 400 x 300** and re-encoded as JPEG: what is stored is always a sound image,
+//! of bounded size, whatever file was sent (a file that is not an image, or is too big, is refused).
+//! The images are in the database (`device_image`): nothing to back up separately.
 
 use std::io::Cursor;
 
@@ -22,27 +22,27 @@ use crate::AppState;
 use crate::auth::extract::{CurrentUser, RequireAdmin};
 use crate::error::{AppError, AppResult};
 
-/// Taille maximale du fichier envoye.
+/// Maximum size of the uploaded file.
 pub const MAX_UPLOAD_BYTES: usize = 5 * 1024 * 1024;
-/// Dimensions maximales de l'image stockee.
+/// Maximum dimensions of the stored image.
 pub const MAX_WIDTH: u32 = 400;
 pub const MAX_HEIGHT: u32 = 300;
-/// Dimensions maximales acceptees a l'entree (une image de 60 000 x 60 000 pixels tient dans quelques Ko compressee).
+/// Maximum dimensions accepted on input (a 60000 x 60000 pixel image fits in a few KB compressed).
 const MAX_INPUT_SIDE: u32 = 8000;
 const JPEG_QUALITY: u8 = 85;
 
-/// Pourquoi une image est refusee.
+/// Why an image is refused.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ImageProblem {
-    /// Ni JPEG, ni PNG, ni WebP, ni GIF (ou illisible).
+    /// Neither JPEG, PNG, WebP nor GIF (or unreadable).
     Unsupported,
     TooLarge,
 }
 
-/// Decode, reduit et reencode un fichier envoye.
+/// Decodes, reduces and re-encodes an uploaded file.
 ///
 /// # Errors
-/// [`ImageProblem`] si ce n'est pas une image JPEG, PNG, WebP ou GIF lisible, ou si elle est trop grande.
+/// [`ImageProblem`] if it is not a readable JPEG, PNG, WebP or GIF image, or if it is too big.
 pub fn process_upload(bytes: &[u8]) -> Result<Vec<u8>, ImageProblem> {
     if bytes.len() > MAX_UPLOAD_BYTES {
         return Err(ImageProblem::TooLarge);
@@ -70,7 +70,7 @@ pub fn process_upload(bytes: &[u8]) -> Result<Vec<u8>, ImageProblem> {
     } else {
         decoded
     };
-    // Transparence : composee sur du blanc (le JPEG n'a pas de canal alpha).
+    // Transparency: composited onto white (JPEG has no alpha channel).
     let rgba = fitted.to_rgba8();
     let mut rgb = RgbImage::new(rgba.width(), rgba.height());
     for (x, y, p) in rgba.enumerate_pixels() {
@@ -86,7 +86,7 @@ pub fn process_upload(bytes: &[u8]) -> Result<Vec<u8>, ImageProblem> {
     Ok(out)
 }
 
-/// Routes d'ecriture, sous `/api`.
+/// Write routes, under `/api`.
 pub fn api_routes() -> Router<AppState> {
     Router::new()
         .route("/devices/{id}/image", post(upload))
@@ -94,7 +94,7 @@ pub fn api_routes() -> Router<AppState> {
         .layer(DefaultBodyLimit::max(MAX_UPLOAD_BYTES + 64 * 1024))
 }
 
-/// Route de lecture : `/media/devices/{id}`.
+/// Read route: `/media/devices/{id}`.
 pub fn media_routes() -> Router<AppState> {
     Router::new().route("/media/devices/{id}", get(serve))
 }
@@ -130,7 +130,7 @@ async fn upload(
     let Some(bytes) = file.filter(|b| !b.is_empty()) else {
         return Ok(back(id, "missing"));
     };
-    // Le decodage est du calcul pur : hors du thread de la requete.
+    // Decoding is pure computation: off the request thread.
     let processed = tokio::task::spawn_blocking(move || process_upload(&bytes))
         .await
         .map_err(AppError::internal)?;
@@ -193,7 +193,7 @@ async fn serve(
         header::ETAG,
         HeaderValue::from_str(&etag).map_err(AppError::internal)?,
     );
-    // `private` : l'image n'est pas publique ; `no-cache` : revalidee par ETag a chaque affichage (304 sans corps).
+    // `private`: the image is not public; `no-cache`: revalidated by ETag at each display (304 without a body).
     response_headers.insert(
         header::CACHE_CONTROL,
         HeaderValue::from_static("private, no-cache"),
@@ -262,7 +262,7 @@ mod tests {
             Err(ImageProblem::Unsupported)
         );
         assert_eq!(process_upload(b""), Err(ImageProblem::Unsupported));
-        // Signature PNG, puis des octets qui n'en font pas une image.
+        // PNG signature, then bytes that do not make an image.
         assert_eq!(
             process_upload(&[0x89, b'P', b'N', b'G', 0x0D, 0x0A, 0x1A, 0x0A, 1, 2, 3]),
             Err(ImageProblem::Unsupported)
@@ -278,7 +278,7 @@ mod tests {
             process_upload(&vec![0u8; MAX_UPLOAD_BYTES + 1]),
             Err(ImageProblem::TooLarge)
         );
-        // 9 000 x 10 pixels : petit fichier, mais depasse la dimension acceptee.
+        // 9000 x 10 pixels: small file, but exceeds the accepted dimension.
         assert_eq!(
             process_upload(&png(9000, 10, 255)),
             Err(ImageProblem::TooLarge)

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Routeur HTTP : pile de middlewares et routes.
+//! HTTP router: middleware stack and routes.
 
 mod auth;
 mod csrf;
@@ -36,7 +36,7 @@ use tower_http::trace::TraceLayer;
 use crate::AppState;
 use crate::auth::session;
 
-/// Chemin a ecrire dans les journaux : le jeton d'un appareil Android (secret) n'y figure jamais.
+/// Path to write in the logs: an Android device's token (a secret) never appears there.
 #[must_use]
 pub fn loggable_path(path: &str) -> std::borrow::Cow<'_, str> {
     if path.starts_with("/ws/android/device/") {
@@ -51,27 +51,27 @@ fn header_layer(name: HeaderName, value: &'static str) -> SetResponseHeaderLayer
     SetResponseHeaderLayer::if_not_present(name, HeaderValue::from_static(value))
 }
 
-/// Re-export : conversion compte -> DTO, reutilisee par les fonctions serveur de l'interface.
+/// Re-export: account -> DTO conversion, reused by the interface's server functions.
 pub use auth::user_dto;
 
-/// Routeur sans interface (API, sondes) : utilise par les tests.
+/// Router without the interface (API, probes): used by the tests.
 pub fn router(state: AppState) -> Router {
     build(state, None, None)
 }
 
-/// Routeur complet : l'API et les sondes, puis l'interface (`ui`) pour tout le reste. Les middlewares
-/// (session, CSRF, en-tetes de securite) enveloppent aussi l'interface.
+/// Full router: the API and the probes, then the interface (`ui`) for everything else. The middlewares
+/// (session, CSRF, security headers) also wrap the interface.
 pub fn router_with_ui(state: AppState, ui: Router) -> Router {
     build(state, Some(ui), None)
 }
 
-/// Comme [`router_with_ui`], avec des routes supplementaires (serveur MCP, R11) qui passent par les memes middlewares :
-/// journal, identifiant de requete, delai maximal, en-tetes de securite. Un client hors navigateur n'est pas concerne par le CSRF.
+/// Like [`router_with_ui`], with extra routes (MCP server, R11) that go through the same middlewares:
+/// log, request identifier, maximum delay, security headers. A non-browser client is not concerned by CSRF.
 pub fn router_with_extra(state: AppState, ui: Router, extra: Option<Router<AppState>>) -> Router {
     build(state, Some(ui), extra)
 }
 
-/// Construit le routeur. Le premier `layer` d'un `ServiceBuilder` est le plus externe.
+/// Builds the router. The first `layer` of a `ServiceBuilder` is the outermost.
 fn build(state: AppState, ui: Option<Router>, extra: Option<Router<AppState>>) -> Router {
     let sessions = session::layer(state.store.sessions(), &state.config);
     let hsts = state.config.cookie_secure;
@@ -100,7 +100,7 @@ fn build(state: AppState, ui: Option<Router>, extra: Option<Router<AppState>>) -
         app = app.merge(extra);
     }
     if let Some(ui) = ui {
-        // Le rendu des pages est borne dans le temps et relance s'il se fige (voir `render_guard`, ADR 0021).
+        // Page rendering is bounded in time and restarted if it freezes (see `render_guard`, ADR 0021).
         app = app.fallback_service(render_guard::RenderGuardLayer::new().layer(ui));
     }
     let mut app = app
@@ -122,7 +122,7 @@ fn build(state: AppState, ui: Option<Router>, extra: Option<Router<AppState>>) -
             "camera=(), microphone=(), geolocation=()",
         ));
     if hsts {
-        // Sert derriere TLS (cookie Secure) : le navigateur doit s'en souvenir.
+        // Served behind TLS (Secure cookie): the browser must remember it.
         app = app.layer(header_layer(
             header::STRICT_TRANSPORT_SECURITY,
             "max-age=31536000",

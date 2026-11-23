@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! `GET /api/system-stats/` : ressources de la machine (compte connecte), au format de l'implementation de reference.
+//! `GET /api/system-stats/`: machine resources (logged-in account), in the reference implementation's format.
 //!
-//! La reponse est le dernier message du sujet `system` du hub (voir `system_stats`) : pas de mesure a la demande, donc
-//! pas de charge supplementaire quand plusieurs clients interrogent.
+//! The response is the last message of the hub's `system` subject (see `system_stats`): no on-demand measurement, hence
+//! no extra load when several clients poll.
 
 use axum::extract::State;
 use axum::routing::get;
@@ -23,7 +23,7 @@ async fn system_stats(
 ) -> AppResult<Json<SystemStatsDto>> {
     match state.hub.retained(&Topic::System).as_deref() {
         Some(WsServerMsg::SystemStats(latest)) => Ok(Json(*latest)),
-        // Collecteur pas encore passe (demarrage) ou desactive : on ne devine pas.
+        // Collector not yet run (start-up) or disabled: we do not guess.
         _ => Err(AppError::Unavailable("no measurement available yet".into())),
     }
 }

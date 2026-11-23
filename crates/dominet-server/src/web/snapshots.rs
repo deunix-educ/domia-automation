@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Images des cameras (R6 lot 6, ADR 0048) : la derniere image d'une camera et les fichiers des snapshots indexes.
+//! Camera images (R6 lot 6, ADR 0048): a camera's last image and the files of the indexed snapshots.
 //!
-//! - `GET /surveillance/camera/<uuid>/snapshot/` (comme la reference) : la derniere image de la camera, tout compte connecte. `?force=1` attend
-//!   une image **posterieure a la requete** (4 s au plus ; le role `video` en ecrit une par seconde, aucun `ffmpeg` n'est lance a froid :
-//!   ADR 0003) ; `?save=1` l'inscrit en plus dans la galerie (administrateurs, comme le bouton de la page live).
-//! - `GET /surveillance/snapshots/<id>/file/` : le fichier d'un snapshot indexe, tout compte connecte.
+//! - `GET /surveillance/camera/<uuid>/snapshot/` (like the reference): the camera's last image, any logged-in account. `?force=1` waits for
+//!   an image **later than the request** (4 s at most; the `video` role writes one per second, no `ffmpeg` is started cold:
+//!   ADR 0003); `?save=1` also records it in the gallery (administrators, like the live page's button).
+//! - `GET /surveillance/snapshots/<id>/file/`: the file of an indexed snapshot, any logged-in account.
 //!
-//! Reponse `204` quand il n'y a pas d'image recente ; jamais de mise en cache (`no-store`).
+//! `204` response when there is no recent image; never cached (`no-store`).
 
 use std::collections::HashMap;
 use std::time::Duration;

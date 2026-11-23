@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Erreur applicative et sa traduction en reponse HTTP.
+//! Application error and its translation into an HTTP response.
 //!
-//! Le corps est toujours `{"error":{"code":"...","message":"..."}}`. Les erreurs internes sont journalisees
-//! avec leur cause mais le client ne recoit qu'un message generique ; l'identifiant de requete voyage dans
-//! l'en-tete `x-request-id`.
+//! The body is always `{"error":{"code":"...","message":"..."}}`. Internal errors are logged
+//! with their cause but the client only receives a generic message; the request identifier travels in
+//! the `x-request-id` header.
 
 use axum::Json;
 use axum::http::{HeaderValue, StatusCode, header};
@@ -50,7 +50,7 @@ impl AppError {
         }
     }
 
-    /// Code stable, exploitable par le front et les tests.
+    /// Stable code, usable by the front end and the tests.
     #[must_use]
     pub fn code(&self) -> &'static str {
         match self {
@@ -138,7 +138,7 @@ impl From<RepoError> for AppError {
     }
 }
 
-/// Message utile pour les contraintes que l'utilisateur peut declencher lui-meme.
+/// Useful message for the constraints the user can trigger themselves.
 #[must_use]
 pub fn conflict_message(constraint: &str) -> &'static str {
     match constraint {
@@ -155,7 +155,7 @@ impl IntoResponse for AppError {
             Self::Unavailable(why) => tracing::warn!(%why, "service unavailable"),
             _ => tracing::debug!(error = %self, "request refused"),
         }
-        // Message public : jamais la cause d'une erreur interne.
+        // Public message: never the cause of an internal error.
         let message = match &self {
             Self::Internal(_) => "internal error".to_string(),
             other => other.to_string(),

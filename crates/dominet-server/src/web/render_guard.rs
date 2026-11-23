@@ -1,17 +1,17 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Garde-fou du rendu des pages : un `GET` de l'interface qui ne repond pas dans un delai borne est abandonne et relance.
+//! Page-rendering safeguard: an interface `GET` that does not answer within a bounded delay is abandoned and retried.
 //!
-//! Pourquoi : avec Leptos 0.8.23 (derniere version stable), le rendu serveur d'une page peut ne jamais se terminer quand
-//! plusieurs pages sont rendues en meme temps juste apres le demarrage (1 a 5 % des demarrages dans `tools/stress-cold-render.sh`,
-//! y compris sur la page d'accueil ; tous les fils sont alors endormis : une attente n'est jamais reveillee, ce n'est ni
-//! une boucle ni un verrou tenu). Le navigateur attendrait alors indefiniment. Un nouveau rendu de la meme requete
-//! aboutit presque toujours, et un `GET` ne modifie rien : on peut le relancer sans risque.
+//! Why: with Leptos 0.8.23 (latest stable version), the server rendering of a page may never finish when
+//! several pages are rendered at the same time just after start-up (1 to 5% of the start-ups in `tools/stress-cold-render.sh`,
+//! including on the home page; all the threads are then asleep: a wait is never woken up, it is neither
+//! a loop nor a held lock). The browser would then wait forever. A new render of the same request
+//! almost always succeeds, and a `GET` modifies nothing: it can be retried safely.
 //!
-//! Portee : seulement `GET`/`HEAD` sans corps. Les fonctions serveur (`POST`) ne sont ni minutees ni relancees. Le rendu
-//! abandonne laisse des taches orphelines qui paniquent plus tard en lisant un signal libere (« reactive value that has
-//! already been disposed ») : bruyant dans le journal, sans effet sur les autres requetes (verifie par le test de charge).
+//! Scope: only `GET`/`HEAD` without a body. Server functions (`POST`) are neither timed nor retried. The abandoned render
+//! leaves orphan tasks that panic later when reading a disposed signal ("reactive value that has
+//! already been disposed"): noisy in the log, without effect on the other requests (checked by the load test).
 //!
-//! A retirer quand Leptos corrige le defaut : relancer `tools/stress-cold-render.sh` sans ce garde-fou (voir ADR 0021).
+//! To be removed when Leptos fixes the defect: rerun `tools/stress-cold-render.sh` without this safeguard (see ADR 0021).
 
 use std::convert::Infallible;
 use std::future::Future;
@@ -23,9 +23,9 @@ use axum::body::Body;
 use axum::http::{Method, Request, Response, StatusCode, header};
 use tower::{Layer, Service};
 
-/// Delai accorde a un rendu avant de le relancer (un rendu normal prend quelques dizaines de millisecondes).
+/// Delay granted to a render before retrying it (a normal render takes a few tens of milliseconds).
 pub const STALL_AFTER: Duration = Duration::from_secs(5);
-/// Nombre total d'essais (le premier compris).
+/// Total number of attempts (the first one included).
 pub const ATTEMPTS: u32 = 3;
 
 #[derive(Clone, Copy, Debug)]
@@ -74,13 +74,13 @@ pub struct RenderGuard<S> {
     attempts: u32,
 }
 
-/// Une requete sans corps qu'on peut rejouer : `GET`/`HEAD` dont le corps est vide.
+/// A request without a body that can be replayed: `GET`/`HEAD` whose body is empty.
 fn replayable(req: &Request<Body>) -> bool {
     matches!(*req.method(), Method::GET | Method::HEAD)
         && axum::body::HttpBody::is_end_stream(req.body())
 }
 
-/// Copie d'une requete sans corps (meme methode, adresse, en-tetes et extensions : session, adresse du pair...).
+/// Copy of a request without a body (same method, address, headers and extensions: session, peer address...).
 fn duplicate(req: &Request<Body>) -> Request<Body> {
     let mut copy = Request::new(Body::empty());
     *copy.method_mut() = req.method().clone();
@@ -108,7 +108,7 @@ where
     }
 
     fn call(&mut self, req: Request<Body>) -> Self::Future {
-        // Le service pret est celui qu'on a verifie : on le garde, et on laisse un clone dans `self`.
+        // The ready service is the one we checked: we keep it, and leave a clone in `self`.
         let ready = self.inner.clone();
         let mut inner = std::mem::replace(&mut self.inner, ready);
         let (stall_after, attempts) = (self.stall_after, self.attempts);
@@ -152,7 +152,7 @@ mod tests {
 
     const FAST: Duration = Duration::from_millis(80);
 
-    /// Un routeur dont `/page` ne repond jamais aux `hang_first` premiers appels, puis repond 200.
+    /// A router whose `/page` never answers the first `hang_first` calls, then answers 200.
     fn app(hang_first: u32, calls: &Arc<AtomicU32>) -> RenderGuard<Router> {
         let c = Arc::clone(calls);
         let router = Router::new()
@@ -251,7 +251,7 @@ mod tests {
             .uri("/act")
             .body(Body::empty())
             .unwrap();
-        // 250 ms > delai du garde-fou (80 ms) : un POST lent doit aller au bout, une seule fois.
+        // 250 ms > the safeguard's delay (80 ms): a slow POST must run to completion, exactly once.
         let r = app(0, &calls).oneshot(req).await.unwrap();
         assert_eq!(body(r).await, "done");
         assert_eq!(calls.load(Ordering::SeqCst), 1);

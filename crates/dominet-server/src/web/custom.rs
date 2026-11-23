@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Feuille de style de personnalisation (`/custom.css`) : un fichier de la machine (`CUSTOM_CSS`), relu a chaque requete, charge apres la
-//! feuille principale. Elle permet de changer couleurs, police et largeurs (variables CSS de `style/main.css`) **sans reconstruire l'image**.
+//! Customisation stylesheet (`/custom.css`): a file on the machine (`CUSTOM_CSS`), re-read at every request, loaded after the
+//! main stylesheet. It lets you change colours, font and widths (CSS variables of `style/main.css`) **without rebuilding the image**.
 //!
-//! Publique (la page de connexion est aussi habillee) : ce n'est que du style. Absente, illisible ou trop grosse : feuille vide, jamais une erreur.
+//! Public (the login page is styled too): it is only style. Absent, unreadable or too big: empty stylesheet, never an error.
 
 use axum::Router;
 use axum::extract::State;
@@ -12,7 +12,7 @@ use axum::routing::get;
 
 use crate::AppState;
 
-/// Taille maximale lue (256 Kio) : au-dela, le fichier est ignore.
+/// Maximum size read (256 KiB): beyond it, the file is ignored.
 const MAX_BYTES: u64 = 256 * 1024;
 
 pub fn routes() -> Router<AppState> {
@@ -31,7 +31,7 @@ async fn custom_css(State(state): State<AppState>) -> Response {
                 header::CONTENT_TYPE,
                 HeaderValue::from_static("text/css; charset=utf-8"),
             ),
-            // Une modification du fichier se voit au rechargement de la page.
+            // A change to the file shows up on page reload.
             (header::CACHE_CONTROL, HeaderValue::from_static("no-cache")),
         ],
         body,

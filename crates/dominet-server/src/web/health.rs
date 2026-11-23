@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Sondes de sante : `/healthz` (le processus repond) et `/readyz` (les dependances repondent).
+//! Health probes: `/healthz` (the process answers) and `/readyz` (the dependencies answer).
 
 use std::time::Duration;
 
@@ -10,12 +10,12 @@ use serde_json::{Value, json};
 
 use crate::AppState;
 
-/// Liveness : aucune dependance externe, repond tant que le processus tourne.
+/// Liveness: no external dependency, answers as long as the process runs.
 pub async fn healthz() -> Json<Value> {
     Json(json!({ "status": "ok", "version": env!("CARGO_PKG_VERSION") }))
 }
 
-/// La base repond en moins de 2 s (sonde de `/readyz`, reprise par l'outil MCP `system_status`).
+/// The database answers in under 2 s (probe of `/readyz`, reused by the MCP tool `system_status`).
 pub async fn database_ok(pool: &sqlx::PgPool) -> bool {
     matches!(
         tokio::time::timeout(
@@ -27,7 +27,7 @@ pub async fn database_ok(pool: &sqlx::PgPool) -> bool {
     )
 }
 
-/// Readiness : 200 si la base repond en moins de 2 s, 503 sinon (sans detail sur la cause).
+/// Readiness: 200 if the database answers in under 2 s, 503 otherwise (without detail on the cause).
 pub async fn readyz(State(state): State<AppState>) -> (StatusCode, Json<Value>) {
     let db_ok = database_ok(&state.pool).await;
     let status = if db_ok {

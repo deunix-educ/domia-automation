@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Protection CSRF par controle de l'origine des requetes non sures.
+//! CSRF protection by checking the origin of unsafe requests.
 //!
-//! En complement du cookie `SameSite=Lax` : une requete POST/PUT/PATCH/DELETE envoyee par un navigateur porte
-//! `Origin` (ou a defaut `Referer`) ; elle n'est acceptee que si cette origine est celle du site (en-tete
-//! `Host`) ou figure dans `CSRF_TRUSTED_ORIGINS`. Les clients hors navigateur (curl, application Android)
-//! n'envoient ni `Origin` ni `Sec-Fetch-Site` : ils ne sont pas concernes par le CSRF et passent.
+//! In addition to the `SameSite=Lax` cookie: a POST/PUT/PATCH/DELETE request sent by a browser carries
+//! `Origin` (or failing that `Referer`); it is only accepted if that origin is the site's (`Host`
+//! header) or is in `CSRF_TRUSTED_ORIGINS`. Non-browser clients (curl, Android application)
+//! send neither `Origin` nor `Sec-Fetch-Site`: they are not concerned by CSRF and pass.
 
 use axum::extract::{Request, State};
 use axum::http::{HeaderMap, Method, header};
@@ -21,7 +21,7 @@ fn is_safe(method: &Method) -> bool {
     )
 }
 
-/// Origine `schema://hote[:port]` d'une valeur `Origin` ou `Referer` (le chemin est ignore).
+/// `scheme://host[:port]` origin of an `Origin` or `Referer` value (the path is ignored).
 fn origin_of(value: &str) -> Option<String> {
     let (scheme, rest) = value.split_once("://")?;
     let authority = rest.split(['/', '?', '#']).next()?;
@@ -35,7 +35,7 @@ fn origin_of(value: &str) -> Option<String> {
     ))
 }
 
-/// L'origine est autorisee si son hote:port est celui de la requete ou si elle est dans la liste de confiance.
+/// The origin is allowed if its host:port is the request's or if it is in the trusted list.
 pub(crate) fn origin_allowed(origin: &str, host: Option<&str>, trusted: &[String]) -> bool {
     let Some(origin) = origin_of(origin) else {
         return false;
@@ -59,7 +59,7 @@ pub(crate) fn verdict(headers: &HeaderMap, trusted: &[String]) -> bool {
     if let Some(referer) = get(header::REFERER) {
         return origin_allowed(referer, host, trusted);
     }
-    // Ni Origin ni Referer : un navigateur moderne annonce quand meme `Sec-Fetch-Site`.
+    // Neither Origin nor Referer: a modern browser still announces `Sec-Fetch-Site`.
     !matches!(
         headers.get("sec-fetch-site").and_then(|v| v.to_str().ok()),
         Some("cross-site" | "same-site")

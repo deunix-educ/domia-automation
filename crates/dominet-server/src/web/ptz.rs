@@ -1,22 +1,22 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! WebSocket de pilotage PTZ : `/ws/surveillance/ptz/<uuid>/` (R6 lot 5, ADR 0047).
+//! PTZ control WebSocket: `/ws/surveillance/ptz/<uuid>/` (R6 lot 5, ADR 0047).
 //!
-//! Protocole de l'implementation de reference (`PTZConsumer`), messages JSON :
+//! Protocol of the reference implementation (`PTZConsumer`), JSON messages:
 //!
-//! | Navigateur -> serveur | Effet |
+//! | Browser -> server | Effect |
 //! |---|---|
-//! | `{"action":"move","pan":-1..1,"tilt":-1..1,"speed_pt":0.05..1}` | `ContinuousMove` (axes multiplies par la vitesse) |
-//! | `{"action":"zoom","z":-1..1,"speed_z":0.05..1}` | `ContinuousMove` sur le zoom |
+//! | `{"action":"move","pan":-1..1,"tilt":-1..1,"speed_pt":0.05..1}` | `ContinuousMove` (axes multiplied by the speed) |
+//! | `{"action":"zoom","z":-1..1,"speed_z":0.05..1}` | `ContinuousMove` on the zoom |
 //! | `{"action":"stop"}` | `Stop` |
-//! | `{"action":"home"}` | preset de la camera nomme `home` / `maison`, sinon `GotoHomePosition`, ou `AbsoluteMove` au centre si la camera n'a pas de position d'origine |
-//! | `{"action":"get_presets"}` / `set_preset` (`name`) / `remove_preset` (`id`) | presets de la base, reponse `{"type":"presets","presets":[{id,name,token}]}` |
-//! | `{"action":"goto_preset","id":N}` | `GotoPreset`, ou `AbsoluteMove` vers la position enregistree si le preset n'a pas de jeton |
+//! | `{"action":"home"}` | camera preset named `home` / `maison`, otherwise `GotoHomePosition`, or `AbsoluteMove` to the centre if the camera has no home position |
+//! | `{"action":"get_presets"}` / `set_preset` (`name`) / `remove_preset` (`id`) | presets from the database, response `{"type":"presets","presets":[{id,name,token}]}` |
+//! | `{"action":"goto_preset","id":N}` | `GotoPreset`, or `AbsoluteMove` to the saved position if the preset has no token |
 //!
-//! Reponses : `{"type":"ready"}` quand la camera est jointe, `{"type":"error","message":"..."}` sinon.
+//! Responses: `{"type":"ready"}` when the camera is reached, `{"type":"error","message":"..."}` otherwise.
 //!
-//! Ecarts voulus : administrateurs seulement (D9, l'implementation de reference laissait tout compte connecte), refus **avant** l'ouverture du WebSocket
-//! (camera inconnue, inactive ou sans PTZ), controle de l'origine comme pour les notifications, et **arret automatique** : un mouvement
-//! continu que personne ne rafraichit ni n'arrete (onglet fige, reseau coupe) est stoppe au bout de 8 s (`PTZ_DEAD_MAN_SECS`), en plus de l'arret a la fermeture.
+//! Intended differences: administrators only (D9, the reference implementation allowed any logged-in account), refusal **before** the WebSocket opens
+//! (unknown, inactive or non-PTZ camera), origin check as for the notifications, and **automatic stop**: a continuous movement
+//! that nobody refreshes or stops (frozen tab, network cut) is stopped after 8 s (`PTZ_DEAD_MAN_SECS`), in addition to the stop on closing.
 
 use std::time::Duration;
 
@@ -84,7 +84,7 @@ fn error(message: &str) -> Value {
     json!({"type": "error", "message": message})
 }
 
-/// Nombre lu dans un message : un nombre JSON ou un texte numerique (comme `float()` de la reference) ; `default` s'il manque.
+/// Number read from a message: a JSON number or a numeric text (like the reference's `float()`); `default` if missing.
 fn number(v: &Value, key: &str, default: f64) -> f64 {
     match v.get(key) {
         Some(Value::Number(n)) => n.as_f64().unwrap_or(default),
@@ -93,7 +93,7 @@ fn number(v: &Value, key: &str, default: f64) -> f64 {
     }
 }
 
-/// Numero de preset d'un message (entier JSON ou texte numerique ; 0, qui n'existe pas, s'il manque).
+/// Preset number of a message (JSON integer or numeric text; 0, which does not exist, if missing).
 fn preset_id(v: &Value) -> PtzPresetId {
     PtzPresetId(match v.get("id") {
         Some(Value::Number(n)) => n.as_i64().unwrap_or(0),
@@ -126,7 +126,7 @@ async fn serve(mut socket: WebSocket, state: AppState, camera: Camera) {
     if !send(&mut socket, &json!({"type": "ready"})).await {
         return;
     }
-    // Quand arreter un mouvement que personne ne rafraichit (`PTZ_DEAD_MAN_SECS`, 8 s par defaut).
+    // When to stop a movement that nobody refreshes (`PTZ_DEAD_MAN_SECS`, 8 s by default).
     let dead_man = Duration::from_secs(u64::from(state.config.ptz_dead_man_secs));
     let mut stop_at: Option<Instant> = None;
     loop {
@@ -169,11 +169,11 @@ async fn serve(mut socket: WebSocket, state: AppState, camera: Camera) {
             }
         }
     }
-    // Fermeture : plus rien ne doit bouger.
+    // Closing: nothing must move any more.
     let _ = ptz.stop().await;
 }
 
-/// Le preset qui fait office d'origine : « home » de preference, sinon « maison ».
+/// The preset that serves as the home position: "home" preferably, otherwise "maison".
 fn home_preset(
     presets: &[dominet_surveillance::onvif::ptz::CameraPreset],
 ) -> Option<dominet_surveillance::onvif::ptz::CameraPreset> {
@@ -207,7 +207,7 @@ async fn presets_json(state: &AppState, camera: CameraId) -> Result<Vec<Value>, 
         .collect())
 }
 
-/// Un ordre du navigateur. Les erreurs sont des phrases sans secret, renvoyees telles quelles au navigateur.
+/// An order from the browser. Errors are sentences without a secret, sent back as is to the browser.
 #[allow(
     clippy::too_many_lines,
     reason = "one action of the protocol per branch"
@@ -254,14 +254,14 @@ async fn act(
             if name.is_empty() || name.chars().count() > NAME_MAX {
                 return Err("invalid preset name (1 to 128 characters)".into());
             }
-            // Position actuelle (la NVT ne la donne pas : zeros), puis le preset dans la camera, puis la base (source de verite).
+            // Current position (the NVT does not give it: zeros), then the preset in the camera, then the database (source of truth).
             let position = ptz
                 .status()
                 .await
                 .ok()
                 .and_then(|s| s.position)
                 .unwrap_or_default();
-            // Remplacer un preset de meme nom : l'ancien jeton ne doit pas rester orphelin dans la camera (reference le laissait).
+            // Replacing a preset of the same name: the old token must not stay orphaned in the camera (the reference left it).
             if let Ok(existing) = state.store.ptz_presets().list(camera.id).await
                 && let Some(old) = existing
                     .into_iter()
@@ -269,8 +269,8 @@ async fn act(
             {
                 let _ = ptz.remove_preset(&old.draft.token).await;
             }
-            // Certaines cameras (128 emplacements fixes) repondent un jeton qui n'est pas celui de l'emplacement pris : la liste de la
-            // camera, interrogee par nom, fait foi ; la reponse de `SetPreset` ne sert qu'a defaut.
+            // Some cameras (128 fixed slots) answer a token that is not that of the slot taken: the camera's list,
+            // queried by name, is authoritative; the response of `SetPreset` is only used as a fallback.
             let answered = ptz.set_preset(&name).await.unwrap_or_default();
             let on_camera = ptz.presets().await.unwrap_or_default();
             let token = on_camera
@@ -313,7 +313,7 @@ async fn act(
                 .filter(|p| p.camera == camera.id);
             if let Some(p) = found {
                 if !p.draft.token.is_empty() {
-                    // Comme la reference : la camera peut ne plus l'avoir, ce n'est pas une erreur.
+                    // Like the reference: the camera may no longer have it, that is not an error.
                     let _ = ptz.remove_preset(&p.draft.token).await;
                 }
                 state
@@ -326,7 +326,7 @@ async fn act(
             Ok(Reply::Presets(presets_json(state, camera.id).await?))
         }
         "set_home" => {
-            // L'origine est le preset « home » de la camera : on ecrase celui qui existe (« home » ou « maison »), sinon on le cree.
+            // The home position is the camera's "home" preset: we overwrite the existing one ("home" or "maison"), otherwise we create it.
             let slot = home_preset(&ptz.presets().await.unwrap_or_default()).map(|p| p.token);
             let token = ptz
                 .set_preset_at("home", slot.as_deref())
@@ -336,8 +336,8 @@ async fn act(
             Ok(Reply::HomeSet)
         }
         "home" => {
-            // Un preset de la camera nomme « home » (ou « maison ») fait office d'origine : beaucoup de cameras n'ont pas de position
-            // d'origine ONVIF. Sinon `GotoHomePosition`, puis, a defaut, retour au centre (0, 0) par `AbsoluteMove`.
+            // A camera preset named "home" (or "maison") serves as the home position: many cameras have no ONVIF home
+            // position. Otherwise `GotoHomePosition`, then, failing that, a return to the centre (0, 0) by `AbsoluteMove`.
             let named = home_preset(&ptz.presets().await.unwrap_or_default());
             if let Some(preset) = named {
                 ptz.goto_preset(&preset.token).await.map_err(onvif)?;
@@ -374,8 +374,8 @@ async fn act(
                 "go to PTZ preset"
             );
             if preset.draft.token.is_empty() {
-                // Pas de preset dans la camera : `AbsoluteMove` vers la position enregistree, dans l'espace que la camera annonce
-                // (Thingino : degres ; le defaut serait `[-1, 1]`).
+                // No preset in the camera: `AbsoluteMove` to the saved position, in the space the camera announces
+                // (Thingino: degrees; the default would be `[-1, 1]`).
                 let space = ptz
                     .status()
                     .await

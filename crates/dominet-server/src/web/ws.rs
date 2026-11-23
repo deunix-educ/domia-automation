@@ -1,19 +1,19 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! WebSocket des notifications : `/ws/notifications/`.
+//! Notifications WebSocket: `/ws/notifications/`.
 //!
-//! - **Authentification** par la session (cookie) : sans session valide la poignee de main repond 401, sans ouvrir de
+//! - **Authentication** by the session (cookie): without a valid session the handshake answers 401, without opening a
 //!   WebSocket.
-//! - **Origine** : les navigateurs n'appliquent pas la politique de meme origine aux WebSocket ; une page tierce pourrait
-//!   ouvrir cette connexion avec le cookie de l'utilisateur (detournement de WebSocket inter-sites). L'en-tete `Origin`
-//!   est donc controle comme pour les requetes non sures (`csrf`).
-//! - **Sujets** : la connexion recoit toujours les notifications ; le reste s'abonne a la demande par messages
-//!   `subscribe` / `unsubscribe` (voir `dominet_proto::Topic`). Un abonnement renvoie `subscribed` puis, pour un sujet
-//!   d'etat, le dernier message retenu par le hub ; une demande refusee renvoie `refused` (sujet invalide, interdit, ou
-//!   trop d'abonnements : 128 par connexion).
-//! - **Battement** (`WS_HEARTBEAT_SECS`) : le serveur envoie `ping`, le navigateur repond `pong` ; sans reponse avant
-//!   le battement suivant la connexion est fermee. A chaque battement la **session est revalidee** (elle existe
-//!   toujours, le compte est actif et son mot de passe n'a pas change) : deconnexion, desactivation, suppression ou
-//!   reinitialisation coupent donc aussi la connexion temps reel, au plus un battement plus tard.
+//! - **Origin**: browsers do not apply the same-origin policy to WebSocket connections; a third-party page could
+//!   open this connection with the user's cookie (cross-site WebSocket hijacking). The `Origin` header
+//!   is therefore checked like for unsafe requests (`csrf`).
+//! - **Subjects**: the connection always receives the notifications; the rest is subscribed on demand by
+//!   `subscribe` / `unsubscribe` messages (see `dominet_proto::Topic`). A subscription returns `subscribed` then, for a state
+//!   subject, the last message kept by the hub; a refused request returns `refused` (invalid or forbidden subject, or
+//!   too many subscriptions: 128 per connection).
+//! - **Heartbeat** (`WS_HEARTBEAT_SECS`): the server sends `ping`, the browser answers `pong`; without an answer before
+//!   the next heartbeat the connection is closed. At each heartbeat the **session is revalidated** (it still
+//!   exists, the account is active and its password has not changed): logout, deactivation, deletion or
+//!   reset therefore also cut the real-time connection, one heartbeat later at most.
 
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -41,12 +41,12 @@ use crate::auth::extract::CurrentUser;
 use crate::error::AppError;
 use crate::hub::{ConnectionGuard, Hub};
 
-/// Taille maximale d'un message du navigateur : il n'envoie que `pong`.
+/// Maximum size of a message from the browser: it only sends `pong`.
 const MAX_MESSAGE_BYTES: usize = 1024;
 
-/// Code de fermeture applicatif : la session n'est plus valide.
+/// Application close code: the session is no longer valid.
 pub const CLOSE_SESSION_ENDED: u16 = 4401;
-/// Code de fermeture applicatif : pas de reponse au battement.
+/// Application close code: no answer to the heartbeat.
 pub const CLOSE_NO_HEARTBEAT: u16 = 4408;
 
 pub fn routes() -> Router<AppState> {
@@ -92,7 +92,7 @@ async fn close(socket: &mut WebSocket, code: u16, reason: &'static str) {
         .await;
 }
 
-/// La session existe encore, le compte est actif et son mot de passe n'a pas change depuis l'ouverture.
+/// The session still exists, the account is active and its password has not changed since opening.
 async fn still_valid(state: &AppState, user: &User, session_id: &Id) -> bool {
     let session_alive = matches!(state.store.sessions().load(session_id).await, Ok(Some(_)));
     session_alive
@@ -102,11 +102,11 @@ async fn still_valid(state: &AppState, user: &User, session_id: &Id) -> bool {
         )
 }
 
-/// Abonnements maximum d'une connexion (notifications comprises) : borne le travail et la memoire par onglet.
+/// Maximum subscriptions of a connection (notifications included): bounds the work and memory per tab.
 const MAX_SUBSCRIPTIONS: usize = 128;
 
-/// Sujets auxquels une connexion est abonnee. Chaque abonnement est une tache qui recopie les messages du sujet vers la
-/// boite de la connexion ; elles sont toutes arretees quand la connexion se ferme.
+/// Subjects a connection is subscribed to. Each subscription is a task that copies the subject's messages to the
+/// connection's mailbox; they are all stopped when the connection closes.
 struct Subscriptions {
     hub: Hub,
     inbox: mpsc::Sender<Arc<WsServerMsg>>,
@@ -122,9 +122,9 @@ impl Subscriptions {
         }
     }
 
-    /// S'abonne et renvoie le dernier message retenu du sujet, a envoyer tout de suite. L'abonnement est pris **avant** de
-    /// lire l'etat retenu : un message publie entre les deux n'est pas perdu (au pire il arrive deux fois, ce qui est
-    /// sans consequence pour un etat).
+    /// Subscribes and returns the subject's last kept message, to send right away. The subscription is taken **before**
+    /// reading the kept state: a message published between the two is not lost (at worst it arrives twice, which is
+    /// harmless for a state).
     fn add(&mut self, topic: Topic) -> Option<Arc<WsServerMsg>> {
         let mut rx = self.hub.subscribe(&topic);
         let retained = self.hub.retained(&topic);
@@ -164,7 +164,7 @@ impl Drop for Subscriptions {
     }
 }
 
-/// Le proprietaire de l'appareil ou un administrateur (comme la page Android de l'implementation de reference).
+/// The device's owner or an administrator (like the reference implementation's Android page).
 async fn may_follow_android(state: &AppState, user: &User, device: i64) -> bool {
     use dominet_domain::android::AndroidDeviceId;
     use dominet_domain::repo::AndroidDeviceRepo;
@@ -174,7 +174,7 @@ async fn may_follow_android(state: &AppState, user: &User, device: i64) -> bool 
     )
 }
 
-/// La camera existe et est active : tout compte connecte peut suivre ses evenements (comme la page de consultation).
+/// The camera exists and is active: any logged-in account may follow its events (like the viewing page).
 async fn may_follow_camera(state: &AppState, uuid: uuid::Uuid) -> bool {
     use dominet_domain::camera::CameraUuid;
     use dominet_domain::repo::CameraRepo;
@@ -184,7 +184,7 @@ async fn may_follow_camera(state: &AppState, uuid: uuid::Uuid) -> bool {
     )
 }
 
-/// L'expediteur, un destinataire ou un administrateur (comme la page de detail).
+/// The sender, a recipient or an administrator (like the detail page).
 async fn may_follow_message(state: &AppState, user: &User, id: i64) -> bool {
     use dominet_domain::messaging::MessageId;
     use dominet_domain::repo::MessageRepo;
@@ -202,7 +202,7 @@ async fn may_follow_message(state: &AppState, user: &User, id: i64) -> bool {
             .is_ok_and(|d| d.iter().any(|d| d.recipient == user.id))
 }
 
-/// Traite une demande d'abonnement ; `false` si la connexion est perdue.
+/// Handles a subscription request; `false` if the connection is lost.
 async fn on_subscribe(
     socket: &mut WebSocket,
     subs: &mut Subscriptions,
@@ -217,18 +217,18 @@ async fn on_subscribe(
     let Ok(topic) = text.parse::<Topic>() else {
         return send(socket, &refuse(RefusalReason::Invalid)).await;
     };
-    // Tout compte connecte lit les notifications, les statistiques et l'etat des appareils (comme dans l'implementation de reference) ; les autres
-    // sujets ont leurs propres verifications, ci-dessous (appareil Android, message, camera, decouverte).
+    // Any logged-in account reads the notifications, the statistics and the devices' state (as in the reference implementation); the other
+    // subjects have their own checks, below (Android device, message, camera, discovery).
     if let Topic::Android(id) = topic
         && !may_follow_android(state, user, id).await
     {
-        // Meme reponse pour un appareil inconnu et pour celui d'un autre : rien n'est revele.
+        // Same answer for an unknown device and for another account's: nothing is revealed.
         return send(socket, &refuse(RefusalReason::Forbidden)).await;
     }
     if let Topic::Camera(uuid) = topic
         && !may_follow_camera(state, uuid).await
     {
-        // Meme reponse pour une camera inconnue et pour une camera inactive.
+        // Same answer for an unknown camera and for an inactive one.
         return send(socket, &refuse(RefusalReason::Forbidden)).await;
     }
     if topic == Topic::Discovery && !user.role.is_admin() {
@@ -279,7 +279,7 @@ async fn serve(
         state.config.ws_heartbeat_secs,
     )));
     beat.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Delay);
-    beat.tick().await; // le premier battement est immediat : on le consomme
+    beat.tick().await; // the first heartbeat is immediate: we consume it
     let mut awaiting_pong = false;
 
     if !send(
@@ -292,7 +292,7 @@ async fn serve(
     {
         return;
     }
-    // Les notifications sont toujours recues ; le reste s'abonne a la demande.
+    // The notifications are always received; the rest is subscribed on demand.
     let (inbox_tx, mut inbox) = mpsc::channel(64);
     let mut subs = Subscriptions::new(state.hub.clone(), inbox_tx);
     subs.add(Topic::Notifications);
@@ -308,7 +308,7 @@ async fn serve(
                         }
                     }
                     Ok(WsClientMsg::Unsubscribe { topic }) => {
-                        // Les notifications ne se desabonnent pas ; un sujet mal ecrit est ignore.
+                        // Notifications cannot be unsubscribed; a badly written subject is ignored.
                         if let Ok(topic) = topic.parse::<Topic>()
                             && topic != Topic::Notifications
                         {

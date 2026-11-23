@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Documentation (R7 lot 7, ADR 0056) : le site MkDocs construit au `docker build` (`DOCS_ROOT`), servi sur `/docs/` **derriere la connexion**.
+//! Documentation (R7 lot 7, ADR 0056): the MkDocs site built at `docker build` (`DOCS_ROOT`), served on `/docs/` **behind the login**.
 //!
-//! Un visiteur non connecte est renvoye vers `/login?next=/docs/` (comme les pages de l'interface). Le site est statique : aucun acces a la base
-//! hors verification de la session ; si le dossier n'existe pas (developpement sans `make docs`), les pages repondent 404.
+//! A visitor who is not logged in is sent to `/login?next=/docs/` (like the interface pages). The site is static: no database access
+//! beyond checking the session; if the folder does not exist (development without `make docs`), the pages answer 404.
 
 use std::fmt::Write as _;
 
@@ -34,7 +34,7 @@ async fn require_login(State(state): State<AppState>, req: Request, next: Next) 
         return Redirect::to(&format!("/login?next={encoded}")).into_response();
     }
     let mut res = next.run(Request::from_parts(parts, body)).await;
-    // Documentation interne : pas de mise en cache partagee.
+    // Internal documentation: no shared caching.
     if res.status() != StatusCode::NOT_MODIFIED {
         res.headers_mut().insert(
             header::CACHE_CONTROL,
@@ -44,7 +44,7 @@ async fn require_login(State(state): State<AppState>, req: Request, next: Next) 
     res
 }
 
-/// Encodage pourcent minimal d'un chemin pour `?next=` (les octets non alphanumeriques, sauf `-_.~`).
+/// Minimal percent-encoding of a path for `?next=` (the non-alphanumeric bytes, except `-_.~`).
 fn url_encode(s: &str) -> String {
     let mut out = String::with_capacity(s.len());
     for b in s.bytes() {

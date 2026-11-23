@@ -1,28 +1,28 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Hachage des mots de passe (argon2id, ADR 0004).
+//! Password hashing (argon2id, ADR 0004).
 
 use argon2::password_hash::phc::PasswordHash;
 use argon2::password_hash::{PasswordHasher, PasswordVerifier};
 use argon2::{Algorithm, Argon2, Params, Version};
 
-/// Cout memoire (Kio), iterations et parallelisme par defaut : 64 Mio, 3 passes, 1 voie, soit ~126 ms par
-/// hachage sur l'EliteDesk i5-6500 (ADR 0004). Le minimum OWASP (19 Mio, 2 passes) ne prend que ~23 ms.
+/// Default memory cost (KiB), iterations and parallelism: 64 MiB, 3 passes, 1 lane, i.e. ~126 ms per
+/// hash on the EliteDesk i5-6500 (ADR 0004). The OWASP minimum (19 MiB, 2 passes) takes only ~23 ms.
 pub const DEFAULT_M_COST_KIB: u32 = 64 * 1024;
 pub const DEFAULT_T_COST: u32 = 3;
 pub const DEFAULT_P_COST: u32 = 1;
 
-/// Resultat d'une verification.
+/// Result of a verification.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Verification {
-    /// Le mot de passe correspond ; `needs_rehash` si le condensat utilise d'anciens parametres.
+    /// The password matches; `needs_rehash` if the hash uses old parameters.
     Valid {
         needs_rehash: bool,
     },
     Invalid,
 }
 
-/// Hache et verifie. `verify_dummy` brule le meme temps de calcul pour un compte inconnu : la duree de
-/// reponse ne revele pas si un nom d'utilisateur existe.
+/// Hashes and verifies. `verify_dummy` burns the same computation time for an unknown account: the response
+/// time does not reveal whether a username exists.
 #[derive(Debug, Clone)]
 pub struct Hasher {
     params: Params,
@@ -31,7 +31,7 @@ pub struct Hasher {
 
 impl Hasher {
     /// # Errors
-    /// Retourne une erreur si les parametres argon2 sont hors bornes.
+    /// Returns an error if the argon2 parameters are out of bounds.
     pub fn with_params(m_cost_kib: u32, t_cost: u32, p_cost: u32) -> anyhow::Result<Self> {
         let params = Params::new(m_cost_kib, t_cost, p_cost, None)
             .map_err(|e| anyhow::anyhow!("invalid argon2 parameters: {e}"))?;
@@ -43,10 +43,10 @@ impl Hasher {
         Ok(hasher)
     }
 
-    /// Parametres par defaut.
+    /// Default parameters.
     ///
     /// # Panics
-    /// Jamais : les constantes par defaut sont valides.
+    /// Never: the default constants are valid.
     #[must_use]
     pub fn new() -> Self {
         Self::with_params(DEFAULT_M_COST_KIB, DEFAULT_T_COST, DEFAULT_P_COST)
@@ -57,10 +57,10 @@ impl Hasher {
         Argon2::new(Algorithm::Argon2id, Version::V0x13, self.params.clone())
     }
 
-    /// Condensat au format PHC (`$argon2id$v=19$m=...`), sel aleatoire.
+    /// Hash in PHC format (`$argon2id$v=19$m=...`), random salt.
     ///
     /// # Errors
-    /// Retourne une erreur si le hachage echoue (memoire, parametres).
+    /// Returns an error if the hashing fails (memory, parameters).
     pub fn hash(&self, password: &str) -> anyhow::Result<String> {
         let hash = self
             .argon2()
@@ -69,7 +69,7 @@ impl Hasher {
         Ok(hash.to_string())
     }
 
-    /// Verifie un mot de passe ; un condensat illisible compte comme invalide.
+    /// Verifies a password; an unreadable hash counts as invalid.
     #[must_use]
     pub fn verify(&self, password: &str, hash: &str) -> Verification {
         let Ok(parsed) = PasswordHash::new(hash) else {
@@ -87,7 +87,7 @@ impl Hasher {
         }
     }
 
-    /// Calcul factice de meme cout qu'une verification reelle.
+    /// Dummy computation of the same cost as a real verification.
     pub fn verify_dummy(&self, password: &str) {
         let _ = self.verify(password, &self.dummy_hash);
     }
@@ -116,7 +116,7 @@ mod tests {
 
     use super::*;
 
-    // Parametres legers pour que les tests restent rapides ; la calibration reelle est dans `calibrate`.
+    // Light parameters so that the tests stay fast; the real calibration is in `calibrate`.
     fn light() -> Hasher {
         Hasher::with_params(1024, 1, 1).unwrap()
     }
@@ -195,7 +195,7 @@ mod tests {
         );
     }
 
-    /// Calibration manuelle : `cargo test -p dominet-server calibrate -- --ignored --nocapture`.
+    /// Manual calibration: `cargo test -p dominet-server calibrate -- --ignored --nocapture`.
     #[test]
     #[ignore = "mesure, pas un test"]
     fn calibrate() {

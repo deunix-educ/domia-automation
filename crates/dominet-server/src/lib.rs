@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Serveur DomiNet : configuration, erreurs, observabilite, authentification, routes HTTP, CLI.
+//! DomiNet server: configuration, errors, observability, authentication, HTTP routes, CLI.
 
 pub mod alerts;
 pub mod android;
@@ -55,7 +55,7 @@ use crate::config::Config;
 use crate::secrets::{MasterKey, SecretBox};
 use crate::settings::SettingsService;
 
-/// Etat partage par tous les gestionnaires HTTP.
+/// State shared by all the HTTP handlers.
 #[derive(Clone, Debug)]
 pub struct AppState {
     pub pool: PgPool,
@@ -63,57 +63,57 @@ pub struct AppState {
     pub config: Arc<Config>,
     pub auth: AuthService,
     pub settings: SettingsService,
-    /// Cameras : secrets chiffres et synchronisation MediaMTX (R6).
+    /// Cameras: encrypted secrets and MediaMTX synchronisation (R6).
     pub cameras: cameras::CameraService,
-    /// Canaux d'envoi (e-mail, SMS Free Mobile) : messagerie et alertes.
+    /// Sending channels (e-mail, Free Mobile SMS): messaging and alerts.
     pub channels: notify::Channels,
-    /// Diffusion temps reel (WebSocket).
+    /// Real-time broadcast (WebSocket).
     pub hub: hub::Hub,
-    /// Appareils Android connectes (R5) et ordres qu'on peut leur adresser.
+    /// Connected Android devices (R5) and the orders that can be sent to them.
     pub android: android::AndroidRelay,
-    /// Client MQTT, present si le role `mqtt` tourne (`MQTT_HOST` renseigne).
+    /// MQTT client, present if the `mqtt` role is running (`MQTT_HOST` set).
     pub mqtt: Option<dominet_mqtt::MqttClient>,
-    /// `permit_join` de Zigbee2MQTT tel que lu dans `bridge/info` (faux tant qu'on ne l'a pas recu).
+    /// Zigbee2MQTT's `permit_join` as read from `bridge/info` (false until it has been received).
     pub permit_join: Arc<std::sync::atomic::AtomicBool>,
-    /// Signale que les sources MQTT ont change (administration) : l'ecoute recharge ses abonnements.
+    /// Signals that the MQTT sources have changed (administration): listening reloads its subscriptions.
     pub sources_changed: Arc<tokio::sync::Notify>,
-    /// Signale que les automations ont change (administration) : le moteur les recharge et les abonnements suivent.
+    /// Signals that the automations have changed (administration): the engine reloads them and the subscriptions follow.
     pub automations_changed: Arc<tokio::sync::Notify>,
-    /// Signale que les automations ont change : le planificateur resynchronise ses travaux et se reveille.
+    /// Signals that the automations have changed: the scheduler resynchronises its jobs and wakes up.
     pub schedule_changed: Arc<tokio::sync::Notify>,
-    /// Signale que les regles d'alerte ont change (administration) : l'evaluation les relit.
+    /// Signals that the alert rules have changed (administration): the evaluation re-reads them.
     pub alert_rules_changed: Arc<tokio::sync::Notify>,
-    /// Signale que les stations meteo ont change (administration) : le publisher interroge tout de suite.
+    /// Signals that the weather stations have changed (administration): the publisher queries right away.
     pub stations_changed: Arc<tokio::sync::Notify>,
-    /// Signale que les cameras ont change (administration) : le role `video` relit la liste des flux a decoder.
+    /// Signals that the cameras have changed (administration): the `video` role re-reads the list of streams to decode.
     pub cameras_changed: Arc<tokio::sync::Notify>,
-    /// Flux d'images decodees (role `video`).
+    /// Stream of decoded images (`video` role).
     pub frames: frames::FrameHub,
-    /// Derniere image de chaque camera et snapshots indexes.
+    /// Last image of each camera and indexed snapshots.
     pub snapshots: snapshots::SnapshotService,
-    /// Segments enregistres : index, archive ReductStore, lecture, enregistrement manuel.
+    /// Recorded segments: index, ReductStore archive, playback, manual recording.
     pub recordings: recordings::RecordingService,
-    /// Mouvement et detection d'objets (role `video`).
+    /// Motion and object detection (`video` role).
     pub detector: detection::Detector,
-    /// Regles d'alerte Prometheus et Grafana : fichiers de provisionnement et rechargement (R7).
+    /// Prometheus and Grafana alert rules: provisioning files and reload (R7).
     pub rules: rules::RulesService,
-    /// Alertes en cours chez Prometheus et Grafana, en lecture seule (R13).
+    /// Ongoing alerts at Prometheus and Grafana, read-only (R13).
     pub external_alerts: external_alerts::ExternalAlerts,
 }
 
 impl AppState {
-    /// Etat avec les parametres de hachage de production.
+    /// State with the production hashing parameters.
     #[must_use]
     pub fn new(pool: PgPool, config: Arc<Config>) -> Self {
         Self::with_hasher(pool, config, Hasher::new())
     }
 
-    /// Etat avec un hacheur fourni (tests : parametres legers).
+    /// State with a supplied hasher (tests: light parameters).
     #[must_use]
     pub fn with_hasher(pool: PgPool, config: Arc<Config>, hasher: Hasher) -> Self {
         let store = PgStore::new(pool.clone());
         let auth = AuthService::new(store.clone(), hasher, LockoutPolicy::default());
-        // La cle maitresse a deja ete validee par `Config` ; invalide ici, on la traite comme absente.
+        // The master key has already been validated by `Config`; invalid here, we treat it as absent.
         let sealer = config
             .master_key
             .as_ref()
@@ -185,7 +185,7 @@ impl AppState {
         }
     }
 
-    /// Les automations viennent de changer (creation, modification, suppression) : le moteur et le planificateur les relisent.
+    /// The automations have just changed (creation, modification, deletion): the engine and the scheduler re-read them.
     pub fn automations_updated(&self) {
         self.automations_changed.notify_one();
         self.schedule_changed.notify_one();

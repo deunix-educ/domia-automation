@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Service d'authentification : connexion avec blocage, changement de mot de passe, creation de comptes.
+//! Authentication service: login with lock-out, password change, account creation.
 
 use std::sync::Arc;
 
@@ -13,12 +13,12 @@ use tokio::sync::Semaphore;
 
 use super::password::{Hasher, Verification};
 
-/// Nombre maximal de hachages simultanes : chacun reserve 64 Mio de memoire.
+/// Maximum number of simultaneous hashes: each reserves 64 MiB of memory.
 const MAX_CONCURRENT_HASHES: usize = 4;
 
 #[derive(Debug, thiserror::Error)]
 pub enum AuthError {
-    /// Nom inconnu, mot de passe faux ou compte desactive : meme reponse pour ne rien reveler.
+    /// Unknown name, wrong password or deactivated account: same answer so as to reveal nothing.
     #[error("identifiants invalides")]
     InvalidCredentials,
     #[error("trop de tentatives")]
@@ -65,7 +65,7 @@ impl AuthService {
             .map_err(|e| AuthError::Internal(e.into()))
     }
 
-    /// Refuse si le blocage anti force brute est actif pour ce compte et cette adresse.
+    /// Refuses if the anti brute-force lock-out is active for this account and this address.
     async fn ensure_not_locked(&self, username: &str, ip: &str) -> Result<(), AuthError> {
         let stats = self
             .store
@@ -80,11 +80,11 @@ impl AuthService {
         }
     }
 
-    /// Connexion. Ordre voulu : blocage d'abord (sans verifier le mot de passe, pour ne rien apprendre a un
-    /// attaquant bloque), puis verification de duree constante, puis journal des tentatives.
+    /// Login. Intended order: lock-out first (without checking the password, so as to teach a locked-out
+    /// attacker nothing), then constant-time verification, then the attempts log.
     ///
     /// # Errors
-    /// `Locked` si le blocage est actif, `InvalidCredentials` pour tout echec d'authentification.
+    /// `Locked` if the lock-out is active, `InvalidCredentials` for any authentication failure.
     pub async fn authenticate(
         &self,
         username: &str,
@@ -109,7 +109,7 @@ impl AuthService {
                 self.blocking(move |h| h.verify(&pw, &hash)).await?
             }
             _ => {
-                // Compte inconnu, desactive ou mot de passe demesure : meme travail qu'une vraie verification.
+                // Unknown or deactivated account or oversized password: same work as a real verification.
                 self.blocking(move |h| h.verify_dummy(&pw)).await?;
                 Verification::Invalid
             }
@@ -127,7 +127,7 @@ impl AuthService {
         Err(AuthError::InvalidCredentials)
     }
 
-    /// Remplace un condensat ancien par un neuf (echec journalise, sans consequence pour la connexion).
+    /// Replaces an old hash with a new one (failure logged, with no consequence for the login).
     async fn rehash(&self, id: UserId, password: &str) {
         let pw = password.to_string();
         let result = async {
@@ -144,10 +144,10 @@ impl AuthService {
         }
     }
 
-    /// Change le mot de passe d'un compte et **revoque toutes ses sessions**.
+    /// Changes an account's password and **revokes all its sessions**.
     ///
     /// # Errors
-    /// `Invalid` si le nouveau mot de passe viole la politique.
+    /// `Invalid` if the new password violates the policy.
     pub async fn set_password(
         &self,
         id: UserId,
@@ -169,13 +169,13 @@ impl AuthService {
         Ok(())
     }
 
-    /// Change son propre mot de passe : exige l'ancien. Une session volee ne doit pas permettre de deviner l'ancien
-    /// mot de passe sans limite : le meme blocage que la connexion s'applique (verifie avant tout calcul), et chaque
-    /// verification est journalisee comme une tentative de connexion.
+    /// Changes one's own password: requires the old one. A stolen session must not allow guessing the old
+    /// password without limit: the same lock-out as the login applies (checked before any computation), and each
+    /// verification is logged like a login attempt.
     ///
     /// # Errors
-    /// `Locked` si le blocage est actif, `InvalidCredentials` si l'ancien mot de passe est faux, `Invalid` si le
-    /// nouveau viole la politique.
+    /// `Locked` if the lock-out is active, `InvalidCredentials` if the old password is wrong, `Invalid` if the
+    /// new one violates the policy.
     pub async fn change_own_password(
         &self,
         user: &User,
@@ -203,10 +203,10 @@ impl AuthService {
         self.set_password(user.id, &user.username, new).await
     }
 
-    /// Cree un compte (CLI `createsuperuser`).
+    /// Creates an account (CLI `createsuperuser`).
     ///
     /// # Errors
-    /// `Invalid` (nom, mobile, mot de passe) ou `Repo(Conflict)` si le nom existe deja.
+    /// `Invalid` (name, mobile, password) or `Repo(Conflict)` if the name already exists.
     pub async fn create_user(
         &self,
         username: &str,
@@ -228,10 +228,10 @@ impl AuthService {
         .await
     }
 
-    /// Cree un compte complet (administration).
+    /// Creates a complete account (administration).
     ///
     /// # Errors
-    /// `Invalid` (nom, mobile, mot de passe) ou `Repo(Conflict)` si le nom existe deja (casse ignoree).
+    /// `Invalid` (name, mobile, password) or `Repo(Conflict)` if the name already exists (case ignored).
     pub async fn create_account(&self, a: &NewAccount<'_>) -> Result<User, AuthError> {
         let username = Username::parse(a.username)?;
         PasswordPolicy::check(a.password, username.as_str())?;
@@ -254,12 +254,12 @@ impl AuthService {
         Ok(self.store.users().create(&new).await?)
     }
 
-    /// Modifie le profil d'un compte (administration) et, si `new_password` est fourni, le remplace en **fermant toutes
-    /// les sessions du compte**. La politique du mot de passe est verifiee avant toute ecriture. Le depot refuse de
-    /// retirer le dernier administrateur actif.
+    /// Modifies an account's profile (administration) and, if `new_password` is supplied, replaces it by **closing all
+    /// the account's sessions**. The password policy is checked before any write. The repository refuses to
+    /// remove the last active administrator.
     ///
     /// # Errors
-    /// `Invalid` (mobile, mot de passe), `Repo(NotFound)` si le compte n'existe pas, `Repo(LastAdmin)`.
+    /// `Invalid` (mobile, password), `Repo(NotFound)` if the account does not exist, `Repo(LastAdmin)`.
     pub async fn update_account(
         &self,
         id: UserId,
@@ -286,7 +286,7 @@ impl AuthService {
     }
 }
 
-/// Donnees d'un compte a creer depuis l'administration.
+/// Data of an account to create from the administration.
 #[derive(Clone, Copy)]
 pub struct NewAccount<'a> {
     pub username: &'a str,
@@ -299,7 +299,7 @@ pub struct NewAccount<'a> {
     pub password: &'a str,
 }
 
-// `Debug` ne doit jamais montrer le mot de passe.
+// `Debug` must never show the password.
 impl std::fmt::Debug for NewAccount<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("NewAccount")

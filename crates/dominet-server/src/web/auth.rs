@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Routes d'authentification et de gestion des comptes (`/api/auth/*`, `/api/users`).
+//! Authentication and account management routes (`/api/auth/*`, `/api/users`).
 
 use axum::extract::State;
 use axum::http::StatusCode;
@@ -66,8 +66,8 @@ async fn me(CurrentUser(user): CurrentUser) -> Json<UserDto> {
     Json(user_dto(&user))
 }
 
-/// Change son propre mot de passe (meme blocage anti force brute que la connexion). Toutes les sessions du compte sont revoquees, y compris celle-ci :
-/// il faut se reconnecter.
+/// Changes one's own password (same anti brute-force lock-out as the login). All the account's sessions are revoked, this one included:
+/// a new login is needed.
 async fn change_password(
     State(state): State<AppState>,
     ClientIp(ip): ClientIp,

@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! `GET /api/energy/?days=N` : bilans d'energie journaliers (compte connecte), au format de l'API de l'implementation de reference
+//! `GET /api/energy/?days=N`: daily energy summaries (logged-in account), in the reference implementation's API format
 //! (`{"data": [{"date", "linky_hp_wh", "linky_hc_wh", "linky_total_wh", "solar_wh", "pac_wh", "net_wh"}]}`).
 //!
-//! Difference voulue : ce sont les `N` **derniers** jours (du plus ancien au plus recent) ; reference renvoyait les `N` premiers
-//! enregistres (`order_by("date")[:N]`), si bien que la page se figeait au bout de trente jours.
+//! Intended difference: these are the **last** `N` days (from oldest to most recent); the reference returned the first `N`
+//! recorded (`order_by("date")[:N]`), so the page froze after thirty days.
 
 use axum::extract::{Query, State};
 use axum::routing::get;
@@ -16,9 +16,9 @@ use crate::AppState;
 use crate::auth::extract::CurrentUser;
 use crate::error::AppResult;
 
-/// Plus grand nombre de jours renvoye.
+/// Largest number of days returned.
 pub const MAX_DAYS: u32 = 365;
-/// Nombre de jours par defaut.
+/// Default number of days.
 pub const DEFAULT_DAYS: u32 = 30;
 
 pub fn routes() -> Router<AppState> {
@@ -30,7 +30,7 @@ struct Params {
     days: Option<String>,
 }
 
-/// Un jour, tel que reference le renvoyait.
+/// A day, as the reference returned it.
 #[derive(Debug, Serialize)]
 pub struct EnergyRow {
     pub date: String,
@@ -61,7 +61,7 @@ pub struct EnergyBody {
     pub data: Vec<EnergyRow>,
 }
 
-/// Nombre de jours demande : 30 si absent ou illisible, au plus 365.
+/// Number of days requested: 30 if absent or unreadable, 365 at most.
 #[must_use]
 pub fn days_from(text: Option<&str>) -> u32 {
     text.and_then(|t| t.trim().parse::<i64>().ok())

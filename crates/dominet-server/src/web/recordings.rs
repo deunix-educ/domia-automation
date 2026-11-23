@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Lecture d'un segment enregistre (R6 lot 7, ADR 0049) : `GET /surveillance/recordings/<uuid>/<id>/stream/` (comme la reference), tout compte
-//! connecte. Le fichier local est servi avec ses requetes `Range` (le navigateur peut avancer dans la video) ; s'il a ete supprime apres
-//! archivage, le segment est lu dans ReductStore, en memoire, avec le meme support de `Range`.
+//! Playback of a recorded segment (R6 lot 7, ADR 0049): `GET /surveillance/recordings/<uuid>/<id>/stream/` (like the reference), any logged-in
+//! account. The local file is served with its `Range` requests (the browser can seek in the video); if it was deleted after
+//! archiving, the segment is read from ReductStore, in memory, with the same `Range` support.
 
 use axum::Router;
 use axum::body::Body;
@@ -23,7 +23,7 @@ pub fn routes() -> Router<AppState> {
     Router::new().route("/surveillance/recordings/{uuid}/{id}/stream/", get(stream))
 }
 
-/// `bytes=debut-fin` (une seule plage) sur un contenu de `len` octets : (debut, fin incluse).
+/// `bytes=start-end` (a single range) on a content of `len` bytes: (start, end inclusive).
 fn parse_range(headers: &HeaderMap, len: usize) -> Option<(usize, usize)> {
     let value = headers.get(header::RANGE)?.to_str().ok()?;
     let spec = value.strip_prefix("bytes=")?;
@@ -32,7 +32,7 @@ fn parse_range(headers: &HeaderMap, len: usize) -> Option<(usize, usize)> {
     }
     let (start, end) = spec.split_once('-')?;
     let (start, end) = match (start.is_empty(), end.is_empty()) {
-        // `-N` : les N derniers octets.
+        // `-N`: the last N bytes.
         (true, false) => (len.saturating_sub(end.parse().ok()?), len - 1),
         (false, true) => (start.parse().ok()?, len - 1),
         (false, false) => (start.parse().ok()?, end.parse::<usize>().ok()?.min(len - 1)),

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Journalisation structuree (`tracing`) : texte lisible en dev, JSON en production.
-//! Le filtre se regle par `RUST_LOG` (defaut `info`). Les memes evenements alimentent le tampon de `/admin/logs` (voir `logbuf`).
+//! Structured logging (`tracing`): readable text in dev, JSON in production.
+//! The filter is set by `RUST_LOG` (default `info`). The same events feed the `/admin/logs` buffer (see `logbuf`).
 
 use tracing_subscriber::prelude::*;
 use tracing_subscriber::{EnvFilter, Layer};
@@ -8,7 +8,7 @@ use tracing_subscriber::{EnvFilter, Layer};
 use crate::config::LogFormat;
 use crate::logbuf::LogLayer;
 
-/// Installe le journal global. Sans effet si un journal est deja installe (tests).
+/// Installs the global logger. No effect if a logger is already installed (tests).
 pub fn init(format: LogFormat) {
     let filter = EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info"));
     let console = match format {

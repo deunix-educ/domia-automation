@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Routes des reglages applicatifs (`/api/settings`), reservees aux administrateurs.
+//! Application settings routes (`/api/settings`), reserved to administrators.
 
 use axum::extract::{Path, State};
 use axum::routing::{get, put};
@@ -48,7 +48,7 @@ async fn update(
     Json(req): Json<SettingUpdate>,
 ) -> AppResult<Json<SettingDto>> {
     let view = state.settings.set(&key, &req.value).await?;
-    // On journalise qui a change quoi, jamais la valeur.
+    // We log who changed what, never the value.
     tracing::info!(admin_id = admin.id.0, %key, secret = view.is_secret, "setting changed");
     Ok(Json(dto(view)))
 }

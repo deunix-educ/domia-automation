@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Extracteurs Axum : compte connecte et controle de role.
+//! Axum extractors: logged-in account and role check.
 
 use axum::extract::FromRequestParts;
 use axum::http::request::Parts;
@@ -12,8 +12,8 @@ use super::session::{AUTH_AT_KEY, close};
 use crate::AppState;
 use crate::error::AppError;
 
-/// Compte connecte. Refuse (401) si la session est absente, trop ancienne ou si le compte n'existe plus
-/// ou est desactive.
+/// Logged-in account. Refuses (401) if the session is absent, too old or if the account no longer exists
+/// or is deactivated.
 #[derive(Debug, Clone)]
 pub struct CurrentUser(pub User);
 
@@ -30,7 +30,7 @@ impl FromRequestParts<AppState> for CurrentUser {
             return Err(AppError::Unauthorized);
         };
 
-        // Duree de vie absolue : meme une session active expire apres SESSION_MAX_DAYS.
+        // Absolute lifetime: even an active session expires after SESSION_MAX_DAYS.
         let max_age = i64::from(state.config.session_max_days) * 86_400;
         if chrono::Utc::now().timestamp() - auth_at > max_age {
             close(&session).await?;
@@ -47,7 +47,7 @@ impl FromRequestParts<AppState> for CurrentUser {
     }
 }
 
-/// Compte connecte **et administrateur** (403 sinon).
+/// Logged-in account **and administrator** (403 otherwise).
 #[derive(Debug, Clone)]
 pub struct RequireAdmin(pub User);
 

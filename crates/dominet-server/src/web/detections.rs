@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Image annotee d'une detection (R6 lot 8, ADR 0050) : `GET /surveillance/detections/<id>/frame/`, tout compte connecte.
+//! Annotated image of a detection (R6 lot 8, ADR 0050): `GET /surveillance/detections/<id>/frame/`, any logged-in account.
 
 use axum::Router;
 use axum::extract::{Path, State};
@@ -29,7 +29,7 @@ async fn frame(
         .await
         .map_err(|e| AppError::Internal(anyhow::anyhow!("reading a detection: {e}")))?
         .ok_or(AppError::NotFound)?;
-    // Un nom ecrit par l'application (`<uuid>_<date>.jpg`) : une seule composante, rien d'autre.
+    // A name written by the application (`<uuid>_<date>.jpg`): a single component, nothing else.
     let name = std::path::Path::new(&event.frame_path);
     if event.frame_path.is_empty()
         || name.components().count() != 1

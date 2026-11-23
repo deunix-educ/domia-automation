@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Configuration des cookies de session et ouverture/fermeture de session.
+//! Session cookie configuration and session opening/closing.
 
 use dominet_domain::user::User;
 use dominet_store::{PgSessionStore, USER_ID_KEY};
@@ -10,10 +10,10 @@ use crate::config::Config;
 use crate::error::{AppError, AppResult};
 
 pub const COOKIE_NAME: &str = "dominet_session";
-/// Instant de la connexion (secondes Unix) : sert a faire respecter la duree de vie maximale.
+/// Login instant (Unix seconds): used to enforce the maximum lifetime.
 pub const AUTH_AT_KEY: &str = "auth_at";
 
-/// Couche de session : cookie `HttpOnly`, `SameSite=Lax`, `Secure` selon `COOKIE_SECURE`, expiration par inactivite.
+/// Session layer: `HttpOnly` cookie, `SameSite=Lax`, `Secure` according to `COOKIE_SECURE`, expiry by inactivity.
 #[must_use]
 pub fn layer(store: PgSessionStore, config: &Config) -> SessionManagerLayer<PgSessionStore> {
     SessionManagerLayer::new(store)
@@ -27,14 +27,14 @@ pub fn layer(store: PgSessionStore, config: &Config) -> SessionManagerLayer<PgSe
         ))))
 }
 
-/// Ouvre une session pour `user` : l'ancienne session (anonyme ou autre compte) est detruite et un nouvel
-/// identifiant est genere (anti fixation de session).
+/// Opens a session for `user`: the old session (anonymous or another account) is destroyed and a new
+/// identifier is generated (anti session fixation).
 ///
 /// # Errors
-/// Erreur interne si le store de sessions echoue.
+/// Internal error if the session store fails.
 pub async fn open(session: &Session, user: &User) -> AppResult<()> {
-    // `flush` detruit l'ancienne session mais garde son identifiant en memoire : sans `cycle_id`, il serait
-    // reutilise a l'enregistrement et la fixation de session resterait possible.
+    // `flush` destroys the old session but keeps its identifier in memory: without `cycle_id`, it would be
+    // reused when saving and session fixation would remain possible.
     session.flush().await.map_err(AppError::internal)?;
     session.cycle_id().await.map_err(AppError::internal)?;
     session
@@ -48,10 +48,10 @@ pub async fn open(session: &Session, user: &User) -> AppResult<()> {
     Ok(())
 }
 
-/// Ferme la session courante (donnees et enregistrement supprimes).
+/// Closes the current session (data and record deleted).
 ///
 /// # Errors
-/// Erreur interne si le store de sessions echoue.
+/// Internal error if the session store fails.
 pub async fn close(session: &Session) -> AppResult<()> {
     session.flush().await.map_err(AppError::internal)
 }

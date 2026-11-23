@@ -1,26 +1,26 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Assainissement du HTML saisi par les administrateurs (widget `text`, ADR 0022).
+//! Sanitising of the HTML entered by administrators (`text` widget, ADR 0022).
 //!
-//! Liste blanche (`ammonia`) : mise en forme, listes, tableaux, liens et images. Ni script, ni iframe, ni formulaire, ni
-//! attribut `style` ni gestionnaire d'evenement ; les liens http(s)/mailto/tel seulement, ouverts avec
-//! `rel="noopener noreferrer"`. La CSP bloque deja les scripts, mais pas le detournement de formulaires : d'ou la liste
-//! blanche plutot qu'une simple interdiction des scripts.
+//! Allow-list (`ammonia`): formatting, lists, tables, links and images. No script, no iframe, no form, no
+//! `style` attribute and no event handler; only http(s)/mailto/tel links, opened with
+//! `rel="noopener noreferrer"`. The CSP already blocks scripts, but not form hijacking: hence the allow
+//! list rather than a simple ban on scripts.
 
 use std::collections::HashSet;
 
-/// HTML sur : a utiliser a l'enregistrement **et** avant tout affichage (le contenu en base n'est pas fiable).
+/// Safe HTML: to use when saving **and** before any display (the content in the database is not trusted).
 #[must_use]
 pub fn sanitize_widget_html(dirty: &str) -> String {
     let mut builder = ammonia::Builder::default();
     builder
         .url_schemes(HashSet::from(["http", "https", "mailto", "tel"]))
         .link_rel(Some("noopener noreferrer"))
-        // `target` est retire par defaut : un lien externe reste dans l'onglet (pas de fenetre piegee).
+        // `target` is removed by default: an external link stays in the tab (no trapped window).
         .strip_comments(true);
     builder.clean(dirty).to_string()
 }
 
-/// Texte brut -> HTML : tout est echappe, les retours a la ligne deviennent `<br>`.
+/// Plain text -> HTML: everything is escaped, line breaks become `<br>`.
 #[must_use]
 pub fn plain_text_to_html(text: &str) -> String {
     ammonia::clean_text(text)
