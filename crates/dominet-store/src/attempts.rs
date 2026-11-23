@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Journal des tentatives de connexion (`login_attempt`).
+//! Log of login attempts (`login_attempt`).
 
 use chrono::{DateTime, Utc};
 use dominet_domain::auth::AttemptStats;
@@ -7,7 +7,7 @@ use dominet_domain::repo::{LoginAttemptRepo, RepoResult};
 
 use crate::pg::repo_err;
 
-/// Acces PostgreSQL au journal des tentatives (implemente `LoginAttemptRepo`).
+/// PostgreSQL access to the attempts log (implements `LoginAttemptRepo`).
 #[derive(Debug, Clone)]
 pub struct PgAttempts {
     pool: sqlx::PgPool,
@@ -43,7 +43,7 @@ impl LoginAttemptRepo for PgAttempts {
         ip: &str,
         since: DateTime<Utc>,
     ) -> RepoResult<AttemptStats> {
-        // Les compteurs "compte" et "couple" repartent de zero apres une connexion reussie du compte.
+        // The "account" and "pair" counters restart from zero after a successful login of the account.
         let row = sqlx::query!(
             r#"WITH last_ok AS (
                    SELECT coalesce(max(attempted_at), '-infinity'::timestamptz) AS t

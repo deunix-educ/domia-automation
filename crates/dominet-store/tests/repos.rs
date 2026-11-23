@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Tests des depots PostgreSQL via les ports du domaine (base isolee par test, `make dev-up`).
+//! Tests of the PostgreSQL repositories through the domain ports (database isolated per test, `make dev-up`).
 
 use dominet_domain::RepoError;
 use dominet_domain::dashboard::{
@@ -283,7 +283,7 @@ async fn only_active_admins_are_counted(pool: PgPool) {
         1,
         "un admin desactive ne compte pas"
     );
-    // Le dernier administrateur actif ne peut plus etre retrograde (voir les tests « last_admin »).
+    // The last active administrator can no longer be demoted (see the "last_admin" tests).
     assert!(matches!(
         store
             .users()
@@ -320,13 +320,13 @@ async fn the_last_active_admin_cannot_be_demoted_deactivated_or_deleted(pool: Pg
         .await
         .unwrap();
 
-    // Tant qu'il en reste un autre, tout est permis.
+    // As long as another one remains, everything is allowed.
     store
         .users()
         .update_profile(b, &profile(Role::Admin, false))
         .await
         .unwrap();
-    // `a` est maintenant le dernier : demotion, desactivation et suppression sont refusees...
+    // `a` is now the last one: demotion, deactivation and deletion are refused...
     for p in [
         profile(Role::User, true),
         profile(Role::Admin, false),
@@ -344,23 +344,23 @@ async fn the_last_active_admin_cannot_be_demoted_deactivated_or_deleted(pool: Pg
         store.users().delete(a).await,
         Err(RepoError::LastAdmin)
     ));
-    // ... sans rien modifier,
+    // ... without changing anything,
     let a_now = store.users().find_by_id(a).await.unwrap().unwrap();
     assert!(a_now.role.is_admin() && a_now.is_active);
-    // ... mais une modification qui le laisse administrateur actif passe, et supprimer les autres aussi.
+    // ... but a change that leaves it an active administrator goes through, and so does deleting the others.
     store
         .users()
         .update_profile(a, &profile(Role::Admin, true))
         .await
         .unwrap();
     store.users().delete(simple.id).await.unwrap();
-    store.users().delete(b).await.unwrap(); // `b` etait deja desactive : ne compte pas
-    // `a` reste le dernier administrateur actif.
+    store.users().delete(b).await.unwrap(); // `b` was already deactivated: does not count
+    // `a` remains the last active administrator.
     assert!(matches!(
         store.users().delete(a).await,
         Err(RepoError::LastAdmin)
     ));
-    // Un compte inexistant reste « introuvable », pas « dernier administrateur ».
+    // A non-existent account stays "not found", not "last administrator".
     assert!(matches!(
         store.users().delete(UserId(424_242)).await,
         Err(RepoError::NotFound)
@@ -378,7 +378,7 @@ async fn the_last_active_admin_cannot_be_demoted_deactivated_or_deleted(pool: Pg
 async fn two_admins_demoting_each_other_at_once_never_leave_zero(pool: PgPool) {
     let store = PgStore::new(pool);
     let ids = admins(&store, &["root1", "root2"]).await;
-    // Sans verrou, chacun verrait « il reste l'autre » et les deux passeraient. On rejoue la course plusieurs fois.
+    // Without a lock, each would see "the other one remains" and both would go through. We replay the race several times.
     for _ in 0..25 {
         let (s1, s2) = (store.clone(), store.clone());
         let (a, b) = (ids[0], ids[1]);
@@ -400,7 +400,7 @@ async fn two_admins_demoting_each_other_at_once_never_leave_zero(pool: PgPool) {
             "les deux ne peuvent pas passer : {r1:?} / {r2:?}"
         );
         assert_eq!(store.users().count_active_admins().await.unwrap(), 1);
-        // Remet les deux en administrateurs pour le tour suivant.
+        // Puts both back as administrators for the next round.
         for id in ids.clone() {
             store
                 .users()
@@ -529,7 +529,7 @@ async fn secret_settings_store_what_they_are_given_and_mask_it(pool: PgPool) {
         "Notifications",
         true,
     );
-    // Le depot stocke la valeur deja chiffree que l'appelant lui fournit (lot 6), jamais le clair.
+    // The repository stores the already encrypted value the caller gives it (lot 6), never the clear text.
     let s = store
         .settings()
         .upsert(&d, "v1:chiffre-opaque")
@@ -737,7 +737,7 @@ async fn location_crud_and_order(pool: PgPool) {
     ));
 }
 
-// ---------------------------------------------------------------- tableaux de bord et widgets
+// ---------------------------------------------------------------- dashboards and widgets
 
 fn dash(name: &str, is_default: bool) -> DashboardDraft {
     DashboardDraft {
@@ -866,7 +866,7 @@ async fn designating_a_default_moves_the_status_and_it_cannot_be_unset_directly(
         "l'autre compte n'est pas touche"
     );
 
-    // Demander `false` sur le tableau par defaut ne le retire pas ; renommer ne change pas le statut.
+    // Asking for `false` on the default dashboard does not remove it; renaming does not change the status.
     let kept = store
         .dashboards()
         .update(b.id, &dash("B2", false))
@@ -935,7 +935,7 @@ async fn widgets_are_stored_listed_in_grid_order_and_updated(pool: PgPool) {
         .await
         .unwrap();
     let mut dev = WidgetDraft::new(WidgetType::Device);
-    // Depuis R3, la reference doit viser un appareil existant.
+    // Since R3, the reference must target an existing device.
     let sonde = store
         .devices()
         .create(&dominet_domain::device::DeviceDraft::new("Lampe"))
@@ -1063,7 +1063,7 @@ async fn an_overlapping_widget_is_refused_whether_created_updated_or_moved(pool:
         store.widgets().get(a.id).await.unwrap().unwrap().rect,
         a.rect
     );
-    // Un deplacement libre passe, y compris vers une cellule que le widget occupait deja en partie.
+    // A free move goes through, including to a cell the widget already partly occupied.
     let moved = store.widgets().move_to(b.id, 3, 0).await.unwrap();
     assert_eq!(
         (moved.rect.col, moved.rect.row, moved.rect.width),
@@ -1133,7 +1133,7 @@ async fn deleting_a_dashboard_deletes_its_widgets_and_widgets_delete_alone(pool:
         store.widgets().delete(w1.id).await,
         Err(RepoError::NotFound)
     ));
-    // La place liberee peut etre reutilisee.
+    // The freed place can be reused.
     store
         .widgets()
         .create(d.id, &text_at(0, 0, 2, 2))
@@ -1149,7 +1149,7 @@ async fn deleting_a_dashboard_deletes_its_widgets_and_widgets_delete_alone(pool:
         store.dashboards().delete(d.id).await,
         Err(RepoError::NotFound)
     ));
-    // Un tableau inexistant.
+    // A non-existent dashboard.
     assert!(matches!(
         store.widgets().create(d.id, &text_at(0, 0, 2, 2)).await,
         Err(RepoError::NotFound)

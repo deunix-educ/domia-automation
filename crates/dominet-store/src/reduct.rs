@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Archive brute de l'historique dans ReductStore : bucket `iot`, une entree `dev_<id>` par appareil (ADR 0002 et 0028).
+//! Raw archive of the history in ReductStore: bucket `iot`, one `dev_<id>` entry per device (ADR 0002 and 0028).
 //!
-//! Un enregistrement par message qui change au moins une cle suivie : le corps est l'etat JSON complet, une etiquette par
-//! cle numerique suivie permet les requetes a seuil. PostgreSQL reste la source des graphiques ; ReductStore est facultatif et
-//! **ne bloque jamais l'ingestion** : les ecritures passent par une file bornee et un ecrivain en tache de fond, qui reessaie la
-//! creation du bucket tant que le serveur est injoignable et abandonne (en comptant) les enregistrements qui ne passent pas.
+//! One record per message that changes at least one tracked key: the body is the full JSON state, one label per
+//! tracked numeric key allows threshold queries. PostgreSQL remains the source of the charts; ReductStore is optional and
+//! **never blocks ingestion**: writes go through a bounded queue and a background writer, which retries the
+//! bucket creation as long as the server is unreachable and drops (counting them) the records that do not go through.
 
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -17,29 +17,29 @@ use reduct_rs::{Bucket, QuotaType, Record, ReductClient};
 use serde_json::Value;
 use tokio::sync::{Mutex, mpsc};
 
-/// Nom du bucket des series brutes.
+/// Name of the raw-series bucket.
 pub const IOT_BUCKET: &str = "iot";
-/// Plus gros lot ecrit d'un coup (les metadonnees de lot voyagent dans les en-tetes HTTP : ADR 0002).
+/// Largest batch written at once (the batch metadata travels in the HTTP headers: ADR 0002).
 const MAX_BATCH: usize = 50;
-/// Taille de la file entre l'ingestion et l'ecrivain.
+/// Size of the queue between ingestion and the writer.
 const QUEUE: usize = 10_000;
-/// Delai entre deux tentatives apres un echec d'ecriture.
+/// Delay between two attempts after a write failure.
 const RETRY_PAUSE: Duration = Duration::from_secs(2);
 
-/// Nom de l'entree d'un appareil.
+/// Name of a device's entry.
 #[must_use]
 pub fn entry_name(device: DeviceId) -> String {
     format!("dev_{}", device.0)
 }
 
-/// Un enregistrement a archiver.
+/// A record to archive.
 #[derive(Debug, Clone)]
 pub struct IotRecord {
     pub device: DeviceId,
     pub at: DateTime<Utc>,
-    /// Etat complet de l'appareil apres le message.
+    /// Full state of the device after the message.
     pub state: Value,
-    /// Lignes d'historique des cles suivies (les numeriques deviennent des etiquettes).
+    /// History rows of the tracked keys (the numeric ones become labels).
     pub entries: Vec<LogEntry>,
 }
 
@@ -69,10 +69,10 @@ impl std::fmt::Debug for ReductIot {
 }
 
 impl ReductIot {
-    /// Pas d'acces reseau ici : le bucket est cree a la premiere ecriture.
+    /// No network access here: the bucket is created at the first write.
     ///
     /// # Errors
-    /// URL invalide, ou client HTTP impossible a construire (par exemple sans certificats racine dans l'image).
+    /// Invalid URL, or HTTP client that cannot be built (for example without root certificates in the image).
     pub fn new(
         url: &str,
         token: Option<&str>,
@@ -81,7 +81,7 @@ impl ReductIot {
         Self::with_bucket(url, token, IOT_BUCKET, quota_bytes)
     }
 
-    /// Avec un autre nom de bucket (tests : ne pas toucher au bucket `iot` de la stack de dev).
+    /// With another bucket name (tests: do not touch the `iot` bucket of the dev stack).
     ///
     /// # Errors
     /// Voir [`ReductIot::new`].
@@ -103,7 +103,7 @@ impl ReductIot {
         })
     }
 
-    /// Cree le bucket s'il n'existe pas (quota FIFO) et le garde.
+    /// Creates the bucket if it does not exist (FIFO quota) and keeps it.
     async fn bucket(&self) -> Result<Arc<Bucket>, reduct_rs::ReductError> {
         let mut slot = self.bucket.lock().await;
         if let Some(b) = slot.as_ref() {
@@ -126,10 +126,10 @@ impl ReductIot {
         *self.bucket.lock().await = None;
     }
 
-    /// Ecrit un lot (au plus [`MAX_BATCH`]). Renvoie le nombre d'enregistrements refuses par le serveur.
+    /// Writes a batch (at most [`MAX_BATCH`]). Returns the number of records refused by the server.
     ///
     /// # Errors
-    /// Erreur si le serveur est injoignable ou refuse le lot entier.
+    /// Error if the server is unreachable or refuses the whole batch.
     pub async fn write(&self, batch: &[(IotRecord, u64)]) -> Result<usize, reduct_rs::ReductError> {
         let bucket = self.bucket().await?;
         let mut request = bucket.write_record_batch();
@@ -153,16 +153,16 @@ impl ReductIot {
         }
     }
 
-    /// Le bucket (lecture : tests et diagnostic).
+    /// The bucket (read: tests and diagnostics).
     ///
     /// # Errors
-    /// Erreur si le serveur est injoignable.
+    /// Error if the server is unreachable.
     pub async fn open(&self) -> Result<Arc<Bucket>, reduct_rs::ReductError> {
         self.bucket().await
     }
 }
 
-/// Ecrivain en tache de fond : l'ingestion y depose les enregistrements sans attendre.
+/// Background writer: ingestion drops the records there without waiting.
 #[derive(Debug, Clone)]
 pub struct IotWriter {
     tx: mpsc::Sender<IotRecord>,
@@ -170,7 +170,7 @@ pub struct IotWriter {
 }
 
 impl IotWriter {
-    /// Demarre la tache d'ecriture.
+    /// Starts the writing task.
     #[must_use]
     pub fn spawn(archive: ReductIot) -> Self {
         let (tx, rx) = mpsc::channel(QUEUE);
@@ -179,7 +179,7 @@ impl IotWriter {
         Self { tx, dropped }
     }
 
-    /// Depose un enregistrement ; si la file est pleine il est abandonne (et compte).
+    /// Enqueues a record; if the queue is full it is dropped (and counted).
     pub fn push(&self, record: IotRecord) {
         if self.tx.try_send(record).is_err() {
             let n = self.dropped.fetch_add(1, Ordering::Relaxed) + 1;
@@ -189,7 +189,7 @@ impl IotWriter {
         }
     }
 
-    /// Enregistrements abandonnes depuis le demarrage.
+    /// Records dropped since start-up.
     #[must_use]
     pub fn dropped(&self) -> u64 {
         self.dropped.load(Ordering::Relaxed)
@@ -197,7 +197,7 @@ impl IotWriter {
 }
 
 async fn run(archive: ReductIot, mut rx: mpsc::Receiver<IotRecord>, dropped: Arc<AtomicU64>) {
-    // Dernier horodatage utilise par entree : ReductStore refuse deux enregistrements au meme instant.
+    // Last timestamp used per entry: ReductStore refuses two records at the same instant.
     let mut last: HashMap<i64, u64> = HashMap::new();
     let mut buf = Vec::with_capacity(MAX_BATCH);
     let mut unreachable = false;

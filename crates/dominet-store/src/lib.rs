@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Adaptateurs de stockage : migrations PostgreSQL et depots `sqlx` (les ports sont dans `dominet-domain`).
+//! Storage adapters: PostgreSQL migrations and `sqlx` repositories (the ports are in `dominet-domain`).
 //!
-//! Les requetes sont verifiees a la compilation (`query!`) ; les metadonnees hors ligne sont dans `.sqlx/`
+//! Queries are checked at compile time (`query!`); the offline metadata is in `.sqlx/`
 //! (voir `make sqlx-prepare`).
 
 mod alerts;
@@ -47,13 +47,13 @@ pub use settings::PgSettings;
 pub use sources::{PgMqttSources, PgWeather};
 pub use users::PgUsers;
 
-/// Migrations embarquees dans le binaire (dossier `migrations/`).
+/// Migrations embedded in the binary (`migrations/` folder).
 pub static MIGRATOR: Migrator = sqlx::migrate!("./migrations");
 
-/// Applique les migrations en attente ; relancer est sans effet.
+/// Applies the pending migrations; running again has no effect.
 ///
 /// # Errors
-/// Retourne l'erreur de `sqlx` (connexion, SQL invalide, migration modifiee apres application...).
+/// Returns the `sqlx` error (connection, invalid SQL, migration modified after being applied...).
 pub async fn migrate(pool: &PgPool) -> Result<(), MigrateError> {
     accept_legacy_checksums(pool).await?;
     MIGRATOR.run(pool).await

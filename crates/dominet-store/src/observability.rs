@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Depots des regles d'alerte Prometheus et Grafana (`prometheus_rule`, `grafana_alert_rule`).
+//! Repositories of the Prometheus and Grafana alert rules (`prometheus_rule`, `grafana_alert_rule`).
 
 use dominet_domain::RepoError;
 use dominet_domain::alert::Severity;
@@ -223,7 +223,7 @@ impl PgGrafanaRules {
         Self { pool }
     }
 
-    /// `uid` de la regle : celui du brouillon, ou tire du titre et rendu unique comme la reference (`titre`, `titre-1`...).
+    /// `uid` of the rule: the draft's, or derived from the title and made unique like the reference (`title`, `title-1`...).
     async fn uid_for(&self, d: &GrafanaRuleDraft, except: Option<i64>) -> RepoResult<String> {
         if !d.uid.is_empty() {
             return Ok(d.uid.clone());

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Depots des tableaux de bord et de leurs widgets (`dashboard`, `widget`).
+//! Repositories of dashboards and their widgets (`dashboard`, `widget`).
 
 use dominet_domain::RepoError;
 use dominet_domain::dashboard::{
@@ -30,7 +30,7 @@ impl From<DashboardRow> for Dashboard {
     }
 }
 
-/// Acces PostgreSQL aux tableaux de bord (implemente `DashboardRepo`).
+/// PostgreSQL access to dashboards (implements `DashboardRepo`).
 #[derive(Debug, Clone)]
 pub struct PgDashboards {
     pool: sqlx::PgPool,
@@ -42,8 +42,8 @@ impl PgDashboards {
     }
 }
 
-/// Verrouille la ligne du proprietaire (serialise les changements de tableau par defaut d'un meme compte) ;
-/// `NotFound` s'il n'existe pas.
+/// Locks the owner's row (serialises the default-dashboard changes of one account);
+/// `NotFound` if it does not exist.
 async fn lock_owner(tx: &mut sqlx::Transaction<'_, sqlx::Postgres>, owner: i64) -> RepoResult<()> {
     sqlx::query_scalar!("SELECT id FROM users WHERE id = $1 FOR UPDATE", owner)
         .fetch_optional(&mut **tx)
@@ -100,7 +100,7 @@ impl DashboardRepo for PgDashboards {
         .await
         .map_err(repo_err)?
         .unwrap_or(0);
-        // Le premier tableau d'un compte est son tableau par defaut.
+        // The first dashboard of an account is its default dashboard.
         let is_default = draft.is_default || existing == 0;
         if is_default {
             sqlx::query!(
@@ -128,8 +128,8 @@ impl DashboardRepo for PgDashboards {
 
     async fn update(&self, id: DashboardId, draft: &DashboardDraft) -> RepoResult<Dashboard> {
         let mut tx = self.pool.begin().await.map_err(repo_err)?;
-        // Le proprietaire d'un tableau ne change jamais : on le lit, on prend le verrou, PUIS on relit l'etat du tableau.
-        // Lire `is_default` avant le verrou donnerait une valeur perimee si un autre changement vient de passer.
+        // The owner of a dashboard never changes: we read it, take the lock, THEN read the dashboard's state again.
+        // Reading `is_default` before the lock would give a stale value if another change has just gone through.
         let owner_id = sqlx::query_scalar!("SELECT owner_id FROM dashboard WHERE id = $1", id.0)
             .fetch_optional(&mut *tx)
             .await
@@ -144,7 +144,7 @@ impl DashboardRepo for PgDashboards {
         .await
         .map_err(repo_err)?
         .ok_or(RepoError::NotFound)?;
-        // Un tableau par defaut le reste : le statut passe a un autre tableau quand celui-ci est designe.
+        // A default dashboard stays so: the status moves to another dashboard when that one is designated.
         let is_default = draft.is_default || current.is_default;
         if is_default && !current.is_default {
             sqlx::query!(
@@ -241,10 +241,10 @@ impl PgWidgets {
     }
 }
 
-/// Verrouille la ligne du tableau jusqu'a la fin de la transaction : les ecritures de widgets d'un meme tableau passent
-/// l'une apres l'autre. Sans cela, deux insertions simultanees sur les memes cellules se bloquent mutuellement dans la
-/// verification de la contrainte d'exclusion (`deadlock detected`) au lieu d'etre refusees proprement.
-/// `NotFound` si le tableau n'existe pas.
+/// Locks the dashboard's row until the end of the transaction: the widget writes of one dashboard go through
+/// one after the other. Without it, two simultaneous inserts on the same cells block each other in the
+/// exclusion-constraint check (`deadlock detected`) instead of being cleanly refused.
+/// `NotFound` if the dashboard does not exist.
 async fn lock_dashboard(tx: &mut sqlx::Transaction<'_, sqlx::Postgres>, id: i64) -> RepoResult<()> {
     sqlx::query_scalar!("SELECT id FROM dashboard WHERE id = $1 FOR UPDATE", id)
         .fetch_optional(&mut **tx)
@@ -254,7 +254,7 @@ async fn lock_dashboard(tx: &mut sqlx::Transaction<'_, sqlx::Postgres>, id: i64)
         .ok_or(RepoError::NotFound)
 }
 
-/// Tableau d'un widget (il ne change jamais), ou `NotFound`.
+/// Dashboard of a widget (it never changes), or `NotFound`.
 async fn dashboard_of(
     tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
     widget: i64,

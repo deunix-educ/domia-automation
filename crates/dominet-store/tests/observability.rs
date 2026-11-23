@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Depots des regles d'alerte Prometheus et Grafana (R7 lot 2) : base isolee par test (`#[sqlx::test]`).
+//! Repositories of the Prometheus and Grafana alert rules (R7 lot 2): isolated database per test (`#[sqlx::test]`).
 
 use dominet_domain::RepoError;
 use dominet_domain::alert::Severity;
@@ -70,7 +70,7 @@ async fn prometheus_rules_are_listed_by_group_then_name_and_can_be_changed(pool:
         Severity::Info
     );
 
-    // Le nom est unique ; une regle absente est « introuvable ».
+    // The name is unique; a missing rule is "not found".
     assert!(matches!(
         repo.create(&prom("A", "g9")).await,
         Err(RepoError::Conflict { .. })
@@ -116,7 +116,7 @@ async fn grafana_uids_come_from_the_title_and_stay_unique(pool: PgPool) {
     assert_eq!(first.draft.uid, "heat-wave-temperature-35c");
     assert_eq!(second.draft.uid, "heat-wave-temperature-35c-1");
     assert_eq!(third.draft.uid, "mon-uid");
-    // Un uid vide a la mise a jour est recalcule sans se heurter a lui-meme.
+    // An empty uid at update is recomputed without colliding with itself.
     let mut d = first.draft.clone();
     d.uid = String::new();
     assert_eq!(
@@ -160,7 +160,7 @@ async fn grafana_rules_are_listed_by_folder_group_title_and_seeded_once(pool: Pg
 #[sqlx::test(migrator = "dominet_store::MIGRATOR")]
 async fn the_database_refuses_invalid_values_even_without_the_domain(pool: PgPool) {
     let repo = PgStore::new(pool.clone()).grafana_rules();
-    // uid hors `[a-z0-9_-]`, etat inconnu : refuses par les contraintes de la table.
+    // uid outside `[a-z0-9_-]`, unknown state: refused by the table constraints.
     assert!(repo.create(&graf("Majuscule", "T")).await.is_err());
     let mut bad = graf("ok", "T");
     bad.no_data_state = "Peut-etre".into();

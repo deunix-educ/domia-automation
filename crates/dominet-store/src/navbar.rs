@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Depot de la navigation (`navbar_item`).
+//! Repository of the navigation (`navbar_item`).
 
 use dominet_domain::RepoError;
 use dominet_domain::navbar::{NavPosition, NavbarDraft, NavbarItem, NavbarItemId};
@@ -55,7 +55,7 @@ impl PgNavbar {
 
 impl NavbarRepo for PgNavbar {
     async fn list(&self) -> RepoResult<Vec<NavbarItem>> {
-        // Haut avant bas ('bottom' < 'top' alphabetiquement, d'ou l'expression), puis ordre, puis libelle.
+        // Top before bottom ('bottom' < 'top' alphabetically, hence the expression), then order, then label.
         sqlx::query_as!(
             NavbarRow,
             "SELECT id, icon_name, label, url, url_target, admin_only, position, sort_order

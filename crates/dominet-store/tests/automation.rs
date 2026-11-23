@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Schema (migration 0009) et depots des scenes, automations, alertes et du bilan d'energie (R4). Les scenarios viennent du
-//! `context.yaml` de la production reference (jeux d'essai, aucun import). Chaque test a sa base isolee (`make dev-up`).
+//! Schema (migration 0009) and repositories of scenes, automations, alerts and the energy summary (R4). The scenarios come from the
+//! `context.yaml` of the reference production (test data, no import). Each test has its isolated database (`make dev-up`).
 
 use std::collections::BTreeMap;
 
@@ -67,7 +67,7 @@ async fn scenes_keep_their_actions_in_order_and_replace_them_on_update(pool: PgP
         ))
         .await
         .unwrap();
-    // L'ordre est celui de la liste, pas celui des identifiants d'appareils.
+    // The order is that of the list, not that of the device ids.
     assert_eq!(
         created.actions.iter().map(|x| x.device).collect::<Vec<_>>(),
         [b, a, c]
@@ -243,7 +243,7 @@ async fn the_production_scenes_and_automations_are_stored_and_read_back_unchange
         assert!(draft.problems().is_empty(), "{}", sc.name);
         local.insert(sc.pk, store.scenes().create(&draft).await.unwrap().id);
     }
-    // Les trois scenes de la production gardent leurs 6 / 4 / 4 actions, dans l'ordre et vers les bons topics de commande.
+    // The production's three scenes keep their 6 / 4 / 4 actions, in order and towards the right command topics.
     let scenes = store.scenes().list().await.unwrap();
     assert_eq!(scenes.iter().map(|s| s.actions.len()).sum::<usize>(), 14);
     let evening = store
@@ -281,7 +281,7 @@ async fn the_production_scenes_and_automations_are_stored_and_read_back_unchange
     }
     let all = store.automations().list().await.unwrap();
     assert_eq!(all.len(), 7);
-    // Les deux automations solaires visent les scenes de la base de test, pas les numeros de la production.
+    // The two solar automations target the scenes of the test database, not the production's numbers.
     let solar: Vec<_> = all
         .iter()
         .filter(|a| a.draft.trigger.kind() == "solar")
@@ -572,7 +572,7 @@ async fn alerts_fire_resolve_and_are_acknowledged_one_by_one_or_all(pool: PgPool
     );
     assert_eq!(store.alerts().count_firing().await.unwrap(), 1);
 
-    // Condition retombee : les alertes en cours sont resolues ; une resolue n'est plus « en cours ».
+    // Condition cleared: ongoing alerts are resolved; a resolved one is no longer "ongoing".
     assert_eq!(
         store
             .alerts()
@@ -598,7 +598,7 @@ async fn alerts_fire_resolve_and_are_acknowledged_one_by_one_or_all(pool: PgPool
         0
     );
 
-    // Acquittement : seulement une alerte en cours, et une acquittee sort du « en cours » (particularite de la reference, ADR 0031).
+    // Acknowledgement: only an ongoing alert, and an acknowledged one leaves "ongoing" (a quirk of the reference, ADR 0031).
     let second = store.alerts().create(&new(10, "37")).await.unwrap();
     let third = store.alerts().create(&new(11, "38")).await.unwrap();
     let acked = store
@@ -649,7 +649,7 @@ async fn alerts_fire_resolve_and_are_acknowledged_one_by_one_or_all(pool: PgPool
     );
     assert_eq!(store.alerts().count_firing().await.unwrap(), 0);
 
-    // Filtres de la page : par statut, les plus recentes d'abord ; `notified` se pose a part.
+    // Page filters: by status, most recent first; `notified` is set separately.
     let alerts = store.alerts();
     let by = |s| alerts.list(s, 10);
     assert_eq!(by(None).await.unwrap().len(), 3);
@@ -666,7 +666,7 @@ async fn alerts_fire_resolve_and_are_acknowledged_one_by_one_or_all(pool: PgPool
     store.alerts().mark_notified(first.id).await.unwrap();
     assert!(by(Some(AlertStatus::Resolved)).await.unwrap()[0].notified);
 
-    // Supprimer la regle garde l'historique, sans regle ; supprimer l'appareil emporte ses alertes.
+    // Deleting the rule keeps the history, without a rule; deleting the device takes its alerts with it.
     store.alert_rules().delete(rule.id).await.unwrap();
     assert!(by(None).await.unwrap().iter().all(|a| a.rule.is_none()));
     store.devices().delete(dev).await.unwrap();
@@ -714,7 +714,7 @@ async fn the_daily_balance_is_replaced_per_day_and_read_back_oldest_first(pool: 
         3
     );
     assert!(store.energy().get(day(9)).await.unwrap().is_none());
-    // Les trois derniers jours enregistres, du plus ancien au plus recent (reference renvoyait les plus anciens : defaut).
+    // The last three recorded days, from oldest to most recent (the reference returned the oldest: a defect).
     let recent = store.energy().recent(3).await.unwrap();
     assert_eq!(
         recent.iter().map(|d| d.day).collect::<Vec<_>>(),

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Schema (migration 0008) et depots des appareils, groupes, libelles, historique, images, sources MQTT et stations meteo.
+//! Schema (migration 0008) and repositories of devices, groups, labels, history, images, MQTT sources and weather stations.
 //! Chaque test a sa base isolee (`make dev-up`).
 
 use chrono::{Duration, TimeZone, Utc};
@@ -47,8 +47,8 @@ async fn the_device_tables_enforce_their_constraints(pool: PgPool) {
         "INSERT INTO device (friendly_name) VALUES ('a')", // unicite
         "INSERT INTO device (friendly_name) VALUES ('')",  // nom vide
         "INSERT INTO device (friendly_name, device_type) VALUES ('b', 'fan')", // type inconnu
-        "INSERT INTO device (friendly_name, state) VALUES ('b', '[]')", // l'etat est un objet
-        "INSERT INTO device (friendly_name, exposes) VALUES ('b', '{}')", // exposes est un tableau
+        "INSERT INTO device (friendly_name, state) VALUES ('b', '[]')", // the state is an object
+        "INSERT INTO device (friendly_name, exposes) VALUES ('b', '{}')", // exposes is an array
         "INSERT INTO device (friendly_name, group_id) VALUES ('b', 999)", // groupe inexistant
         "INSERT INTO device_label (key, name, icon_name) VALUES ('', 'x', 'y')",
         "INSERT INTO mqtt_source (name, topic_pattern, qos) VALUES ('s', 'a/#', 3)",
@@ -61,7 +61,7 @@ async fn the_device_tables_enforce_their_constraints(pool: PgPool) {
     ] {
         expect_violation(&pool, bad).await;
     }
-    // Valeurs par defaut de l'implementation de reference.
+    // Default values of the reference implementation.
     let (base, hidden, available): (String, Vec<String>, bool) = sqlx::query_as(
         "SELECT base_topic, hidden_keys, available FROM device WHERE friendly_name = 'a'",
     )
@@ -135,7 +135,7 @@ async fn widgets_reference_devices_with_a_foreign_key_that_nulls_on_delete(pool:
     let mut draft = WidgetDraft::new(WidgetType::Device);
     draft.device_id = Some(device.id.0);
     let widget = store.widgets().create(board.id, &draft).await.unwrap();
-    // Une reference a un appareil inexistant est refusee (c'est ce qui differencie R3 de R2).
+    // A reference to a non-existent device is refused (this is what differentiates R3 from R2).
     let mut orphan = WidgetDraft::new(WidgetType::Device);
     orphan.device_id = Some(424_242);
     orphan.rect.col = 6;
@@ -143,7 +143,7 @@ async fn widgets_reference_devices_with_a_foreign_key_that_nulls_on_delete(pool:
         store.widgets().create(board.id, &orphan).await,
         Err(RepoError::Conflict { .. })
     ));
-    // Supprimer l'appareil garde le widget, sans reference.
+    // Deleting the device keeps the widget, without a reference.
     store.devices().delete(device.id).await.unwrap();
     let kept = store.widgets().get(widget.id).await.unwrap().unwrap();
     assert_eq!(kept.device_id, None);
@@ -188,7 +188,7 @@ async fn discovery_creates_with_reference_defaults_then_only_refreshes_the_metad
         (d.ieee.as_str(), d.vendor.as_str(), d.exposes.len()),
         ("0x00124b0000000001", "Test", 1)
     );
-    // L'administrateur adapte l'appareil et un message d'etat arrive.
+    // The administrator adapts the device and a state message arrives.
     let mut draft = DeviceDraft::new("Bureau");
     draft.device_type = DeviceType::Climate;
     draft.tracked_keys = vec!["temperature".into()];
@@ -198,7 +198,7 @@ async fn discovery_creates_with_reference_defaults_then_only_refreshes_the_metad
         .await
         .unwrap()
         .unwrap();
-    // Une nouvelle decouverte ne touche ni au type, ni au suivi, ni a l'etat ; elle rafraichit la description.
+    // A new discovery touches neither the type, nor the tracking, nor the state; it refreshes the description.
     let mut again = discovered("Bureau");
     again.description = "Capteur v2".into();
     again.exposes = vec![];
@@ -231,7 +231,7 @@ async fn a_state_message_replaces_the_state_and_only_reaches_active_devices(pool
         .unwrap()
         .unwrap();
     assert!(a.available && a.last_seen.is_some());
-    // Remplacement, pas fusion.
+    // Replacement, not merge.
     let b = repo
         .apply_state("Bureau", &json!({"temperature": 22}))
         .await
@@ -298,7 +298,7 @@ async fn auto_devices_are_created_updated_and_reactivated_without_changing_their
         (d.base_topic.as_str(), d.device_type, d.available),
         ("solarmax", DeviceType::Sensor, true)
     );
-    // L'administrateur en fait un interrupteur et le desactive ; le message suivant le reactive, sans toucher au type.
+    // The administrator makes it a switch and deactivates it; the next message reactivates it, without touching the type.
     let mut draft = DeviceDraft::new("0x6f09/prod");
     draft.device_type = DeviceType::Switch;
     draft.base_topic = "solarmax".into();
@@ -452,7 +452,7 @@ async fn devices_are_listed_with_filters_and_names_stay_unique(pool: PgPool) {
         .await,
         Vec::<DeviceId>::new()
     );
-    // Renommer vers un nom pris est un conflit ; supprimer un groupe ou un emplacement laisse l'appareil.
+    // Renaming to a taken name is a conflict; deleting a group or a location leaves the device.
     assert!(matches!(
         repo.update(b.id, &DeviceDraft::new("a")).await,
         Err(RepoError::Conflict { .. })
@@ -552,7 +552,7 @@ async fn history_is_written_per_second_replaced_on_duplicates_and_purged(pool: P
         3
     );
     assert_eq!(log.record(d.id, t0, &[]).await.unwrap(), 0);
-    // Un doublon QoS 1 dans la meme seconde remplace la valeur au lieu d'ajouter une ligne.
+    // A QoS 1 duplicate within the same second replaces the value instead of adding a row.
     log.record(d.id, t0, &[entry("temperature", Some(20.5), "")])
         .await
         .unwrap();
@@ -596,7 +596,7 @@ async fn history_is_written_per_second_replaced_on_duplicates_and_purged(pool: P
         (contact[0].value_num, contact[0].value_str.as_str()),
         (Some(1.0), "True")
     );
-    // Purge : seules les lignes strictement anterieures partent.
+    // Purge: only the strictly older rows go.
     assert_eq!(
         log.purge_before(t0 + Duration::seconds(1)).await.unwrap(),
         3
@@ -645,7 +645,7 @@ async fn images_are_stored_replaced_and_follow_the_device(pool: PgPool) {
     );
 }
 
-// ------------------------------------------------------------------ sources et stations
+// ------------------------------------------------------------------ sources and stations
 
 #[sqlx::test(migrator = "dominet_store::MIGRATOR")]
 async fn mqtt_sources_round_trip_and_only_active_ones_are_subscribed(pool: PgPool) {

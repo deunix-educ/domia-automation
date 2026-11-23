@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Depots du relais Android et de la messagerie (R5, migration 0010). Chaque test a sa base isolee (`make dev-up`).
+//! Repositories of the Android relay and of messaging (R5, migration 0010). Each test has its isolated database (`make dev-up`).
 
 use chrono::{Duration, TimeZone, Utc};
 use dominet_domain::RepoError;
@@ -72,7 +72,7 @@ async fn the_token_is_given_once_and_only_its_hash_is_stored(pool: PgPool) {
             .is_none()
     );
 
-    // La regeneration invalide l'ancien jeton.
+    // Regeneration invalidates the old token.
     let fresh = devices.regenerate_token(d.id).await.unwrap();
     assert_ne!(fresh, token);
     assert!(devices.find_by_token(&token).await.unwrap().is_none());
@@ -188,7 +188,7 @@ async fn sms_are_listed_per_owner_and_marked_read(pool: PgPool) {
     assert_eq!(sms.mark_read(da.id).await.unwrap(), 2);
     assert_eq!(sms.unread_count(Some(alice)).await.unwrap(), 0);
     assert_eq!(sms.unread_count(Some(bob)).await.unwrap(), 1);
-    // `None` : la vue d'un administrateur, tous les appareils.
+    // `None`: an administrator's view, all the devices.
     assert_eq!(sms.list(None, None, 10).await.unwrap().len(), 4);
     assert_eq!(sms.unread_count(None).await.unwrap(), 1);
 }
@@ -235,7 +235,7 @@ async fn the_call_log_follows_the_plan(pool: PgPool) {
     assert_eq!(closed.ended_at, Some(t0 + Duration::minutes(5)));
     assert!(calls.find_open(d.id, "0612").await.unwrap().is_none());
 
-    // Appel manque sans appel ouvert : entree directement terminee.
+    // Missed call without an open call: entry directly ended.
     let missed = calls
         .apply(&plan_call(
             d.id,
@@ -301,7 +301,7 @@ async fn an_ack_only_counts_for_the_owning_device_and_only_once(pool: PgPool) {
     assert_eq!(outbox.pending_for_device(a.id).await.unwrap().len(), 1);
     assert_eq!(outbox.pending_for_device(b.id).await.unwrap().len(), 0);
 
-    // Un autre appareil ne peut pas acquitter.
+    // Another device cannot acknowledge.
     assert!(
         outbox
             .ack(b.id, item.id, OutboxStatus::Sent, "", t0)
@@ -318,7 +318,7 @@ async fn an_ack_only_counts_for_the_owning_device_and_only_once(pool: PgPool) {
         (done.status, done.error.as_str(), done.acked_at),
         (OutboxStatus::Failed, "no signal", Some(t0))
     );
-    // Un second accuse est sans effet.
+    // A second acknowledgement has no effect.
     assert!(
         outbox
             .ack(a.id, item.id, OutboxStatus::Sent, "", t0)
@@ -466,7 +466,7 @@ async fn a_message_is_sent_when_nothing_is_pending(pool: PgPool) {
         "une seule fois"
     );
 
-    // Les erreurs successives s'ajoutent.
+    // Successive errors add up.
     let d = messages
         .set_delivery(ds[0].id, None, None, "second")
         .await

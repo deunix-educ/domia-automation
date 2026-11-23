@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Point d'entree PostgreSQL : un acces par domaine (`users()`, `settings()`, `navbar()`, `locations()`).
+//! PostgreSQL entry point: one access per domain (`users()`, `settings()`, `navbar()`, `locations()`).
 //!
-//! Un objet par port evite les appels ambigus (`create`, `list`, `get`... existent dans plusieurs ports).
+//! One object per port avoids ambiguous calls (`create`, `list`, `get`... exist in several ports).
 
 use dominet_domain::RepoError;
 use sqlx::PgPool;
@@ -224,7 +224,7 @@ impl PgStore {
     }
 }
 
-/// Traduit une erreur `sqlx` en erreur de depot (sans fuite de SQL vers l'appelant).
+/// Translates a `sqlx` error into a repository error (without leaking SQL to the caller).
 pub(crate) fn repo_err(err: sqlx::Error) -> RepoError {
     match &err {
         sqlx::Error::RowNotFound => RepoError::NotFound,
@@ -244,7 +244,7 @@ pub(crate) fn repo_err(err: sqlx::Error) -> RepoError {
     }
 }
 
-/// Erreur de donnees stockees invalides (ex. role inconnu) : bug ou base modifiee a la main.
+/// Error for invalid stored data (e.g. unknown role): a bug or a database edited by hand.
 pub(crate) fn corrupt(what: impl std::fmt::Display) -> RepoError {
     RepoError::Backend(format!("invalid stored data: {what}").into())
 }

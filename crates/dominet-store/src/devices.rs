@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Depots des appareils, groupes, libelles, historique d'etat et images (R3, ADR 0025).
+//! Repositories of devices, groups, labels, state history and images (R3, ADR 0025).
 
 use std::str::FromStr;
 
@@ -18,7 +18,7 @@ use serde_json::Value;
 
 use crate::pg::{corrupt, repo_err};
 
-// Reflet d'une ligne de table : les indicateurs sont independants.
+// Mirror of a table row: the flags are independent.
 #[allow(clippy::struct_excessive_bools)]
 struct DeviceRow {
     id: i64,
@@ -41,7 +41,7 @@ struct DeviceRow {
     tracked_keys: Vec<String>,
     hidden_keys: Vec<String>,
     grafana_dashboard: bool,
-    /// Vrai si la ligne vient d'etre inseree (`xmax = 0`) ; `false` pour les lectures.
+    /// True if the row was just inserted (`xmax = 0`); `false` for reads.
     created: bool,
 }
 
@@ -429,7 +429,7 @@ impl From<LabelRow> for DeviceLabel {
     }
 }
 
-/// Acces PostgreSQL aux libelles de cles d'etat.
+/// PostgreSQL access to the state-key labels.
 #[derive(Debug, Clone)]
 pub struct PgDeviceLabels {
     pool: sqlx::PgPool,
@@ -543,7 +543,7 @@ impl DeviceLabelRepo for PgDeviceLabels {
 
 // ------------------------------------------------------------------ historique
 
-/// Acces PostgreSQL a l'historique des cles suivies.
+/// PostgreSQL access to the history of the tracked keys.
 #[derive(Debug, Clone)]
 pub struct PgStateLog {
     pool: sqlx::PgPool,
@@ -671,7 +671,7 @@ impl DeviceImageRepo for PgDeviceImages {
         )
         .execute(&self.pool)
         .await
-        // Cle etrangere : l'appareil n'existe pas.
+        // Foreign key: the device does not exist.
         .map_err(|e| match repo_err(e) {
             RepoError::Conflict { .. } => RepoError::NotFound,
             other => other,

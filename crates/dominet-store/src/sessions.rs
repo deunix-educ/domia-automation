@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Store de sessions PostgreSQL pour `tower-sessions` 0.15 (ADR 0004).
+//! PostgreSQL session store for `tower-sessions` 0.15 (ADR 0004).
 //!
-//! Le store officiel est reste sur `sqlx` 0.8 / `tower-sessions` 0.14 ; celui-ci utilise `sqlx` 0.9. La colonne
-//! `user_id` est remplie a partir de la cle `"user_id"` des donnees de session : elle permet de revoquer
-//! d'un coup toutes les sessions d'un compte.
+//! The official store stayed on `sqlx` 0.8 / `tower-sessions` 0.14; this one uses `sqlx` 0.9. The `user_id`
+//! column is filled from the `"user_id"` key of the session data: it allows revoking
+//! all the sessions of an account at once.
 
 use chrono::{DateTime, Utc};
 use dominet_domain::user::UserId;
@@ -12,7 +12,7 @@ use time::OffsetDateTime;
 use tower_sessions_core::session::{Id, Record};
 use tower_sessions_core::session_store::{self, ExpiredDeletion, SessionStore};
 
-/// Cle de session portant l'identifiant du compte connecte.
+/// Session key carrying the identifier of the logged-in account.
 pub const USER_ID_KEY: &str = "user_id";
 
 #[derive(Debug, Clone)]
@@ -26,10 +26,10 @@ impl PgSessionStore {
         Self { pool }
     }
 
-    /// Supprime toutes les sessions d'un compte (changement de mot de passe, desactivation, suppression).
+    /// Deletes all the sessions of an account (password change, deactivation, deletion).
     ///
     /// # Errors
-    /// Retourne l'erreur de base de donnees.
+    /// Returns the database error.
     pub async fn delete_for_user(&self, user: UserId) -> Result<u64, sqlx::Error> {
         let done = sqlx::query!("DELETE FROM session WHERE user_id = $1", user.0)
             .execute(&self.pool)
@@ -37,10 +37,10 @@ impl PgSessionStore {
         Ok(done.rows_affected())
     }
 
-    /// Nombre de sessions stockees (expirees comprises) : diagnostic et tests.
+    /// Number of stored sessions (expired ones included): diagnostics and tests.
     ///
     /// # Errors
-    /// Retourne l'erreur de base de donnees.
+    /// Returns the database error.
     pub async fn count(&self) -> Result<i64, sqlx::Error> {
         Ok(sqlx::query_scalar!("SELECT count(*) FROM session")
             .fetch_one(&self.pool)
@@ -78,7 +78,7 @@ fn data_json(record: &Record) -> Result<serde_json::Value, session_store::Error>
 #[async_trait::async_trait]
 impl SessionStore for PgSessionStore {
     async fn create(&self, record: &mut Record) -> session_store::Result<()> {
-        // Collision d'identifiant (quasi impossible sur 128 bits) : on en tire un autre.
+        // Identifier collision (almost impossible over 128 bits): we draw another one.
         loop {
             let done = sqlx::query!(
                 "INSERT INTO session (id, data, expiry_date, user_id) VALUES ($1, $2, $3, $4) ON CONFLICT (id) DO NOTHING",

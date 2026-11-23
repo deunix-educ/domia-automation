@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Depot des travaux du planificateur (R4 lot 4, ADR 0033) : table `schedule_job`.
+//! Repository of the scheduler jobs (R4 lot 4, ADR 0033): `schedule_job` table.
 
 use chrono::{DateTime, Utc};
 use dominet_domain::automation::{AutomationId, SolarEvent};
@@ -8,7 +8,7 @@ use dominet_domain::schedule::{IntervalPeriod, Job, JobDraft, JobId, JobSchedule
 
 use crate::pg::{corrupt, repo_err};
 
-/// Acces PostgreSQL aux travaux du planificateur.
+/// PostgreSQL access to the scheduler jobs.
 #[derive(Debug, Clone)]
 pub struct PgSchedule {
     pool: sqlx::PgPool,
@@ -20,7 +20,7 @@ impl PgSchedule {
     }
 }
 
-/// Colonnes d'un horaire, dans l'ordre : type, repetition, periode, expression cron, evenement solaire, latitude, longitude.
+/// Columns of a schedule, in order: type, repetition, period, cron expression, solar event, latitude, longitude.
 type Columns = (
     &'static str,
     Option<i32>,

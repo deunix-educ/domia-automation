@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Tests du schema PostgreSQL : tables, contraintes, cascades, valeurs par defaut, declencheurs.
+//! Tests of the PostgreSQL schema: tables, constraints, cascades, default values, triggers.
 //!
-//! `#[sqlx::test]` cree une base isolee par test et y applique les migrations
-//! (`DATABASE_URL` = stack de dev : `make dev-up`).
+//! `#[sqlx::test]` creates an isolated database per test and applies the migrations
+//! (`DATABASE_URL` = dev stack: `make dev-up`).
 
 use sqlx::PgPool;
 
@@ -11,7 +11,7 @@ const CHECK: &str = "23514";
 const FOREIGN_KEY: &str = "23503";
 const EXCLUSION: &str = "23P01";
 
-/// Code SQLSTATE d'une erreur de base ("" si ce n'en est pas une).
+/// SQLSTATE code of a database error ("" if it is not one).
 fn code(err: &sqlx::Error) -> String {
     err.as_database_error()
         .and_then(sqlx::error::DatabaseError::code)
@@ -30,7 +30,7 @@ async fn add_user(pool: &PgPool, username: &str) -> i64 {
 }
 
 async fn count(pool: &PgPool, table: &str) -> i64 {
-    // `table` vient de constantes du test : SQL dynamique audite.
+    // `table` comes from the test's constants: audited dynamic SQL.
     sqlx::query_scalar(sqlx::AssertSqlSafe(format!("SELECT count(*) FROM {table}")))
         .fetch_one(pool)
         .await
@@ -151,7 +151,7 @@ async fn updated_at_trigger_fires_on_update(pool: PgPool) {
         .execute(&pool)
         .await
         .unwrap();
-    // Le declencheur remet updated_at a now() quel que soit le contenu de la mise a jour.
+    // The trigger resets updated_at to now() whatever the content of the update.
     sqlx::query("UPDATE users SET mobile = '+33612345678' WHERE id = $1")
         .bind(id)
         .execute(&pool)
@@ -240,7 +240,7 @@ async fn navbar_item_defaults_and_ordering(pool: PgPool) {
             .fetch_all(&pool)
             .await
             .unwrap();
-    // 'bottom' < 'top' alphabetiquement ; l'ordre affiche est decide par l'application (haut puis bas).
+    // 'bottom' < 'top' alphabetically; the displayed order is decided by the application (top then bottom).
     assert_eq!(labels, ["Android", "Surveillance", "Automation"]);
     let bad = sqlx::query(
         "INSERT INTO navbar_item (icon_name, label, url, position) VALUES ('x', 'y', '/', 'left')",
@@ -424,10 +424,10 @@ async fn schedule_job_requires_the_fields_of_its_kind(pool: PgPool) {
             .unwrap_or_else(|e| panic!("{row} : {e}"));
     }
     let bad = [
-        "('a', 't', 'interval', NULL, NULL, NULL, NULL, NULL, NULL)", // intervalle sans periode
+        "('a', 't', 'interval', NULL, NULL, NULL, NULL, NULL, NULL)", // interval without a period
         "('b', 't', 'interval', 0, 'minutes', NULL, NULL, NULL, NULL)", // intervalle nul
         "('c', 't', 'cron', NULL, NULL, '', NULL, NULL, NULL)",       // cron vide
-        "('d', 't', 'solar', NULL, NULL, NULL, 'sunset', NULL, NULL)", // solaire sans position
+        "('d', 't', 'solar', NULL, NULL, NULL, 'sunset', NULL, NULL)", // solar without a position
         "('e', 't', 'solar', NULL, NULL, NULL, 'sunset', 91, 2.3)",   // latitude hors bornes
         "('f', 't', 'weekly', NULL, NULL, NULL, NULL, NULL, NULL)",   // type inconnu
     ];
@@ -465,7 +465,7 @@ async fn login_attempts_are_recorded(pool: PgPool) {
     assert_eq!(failures, 1);
 }
 
-// ---------------------------------------------------------------- tableaux de bord et widgets
+// ---------------------------------------------------------------- dashboards and widgets
 
 async fn add_dashboard(pool: &PgPool, owner: i64, name: &str, is_default: bool) -> i64 {
     sqlx::query_scalar(
@@ -479,7 +479,7 @@ async fn add_dashboard(pool: &PgPool, owner: i64, name: &str, is_default: bool) 
     .unwrap()
 }
 
-/// Insere un widget `text` aux coordonnees donnees ; renvoie le resultat brut pour tester les refus.
+/// Inserts a `text` widget at the given coordinates; returns the raw result to test the refusals.
 async fn put_widget(
     pool: &PgPool,
     dashboard: i64,
@@ -506,7 +506,7 @@ async fn a_user_has_at_most_one_default_dashboard_and_names_are_bounded(pool: Pg
     let (bob, eve) = (add_user(&pool, "bob").await, add_user(&pool, "eve").await);
     add_dashboard(&pool, bob, "Salon", true).await;
     add_dashboard(&pool, bob, "Cuisine", false).await;
-    add_dashboard(&pool, eve, "Salon", true).await; // un autre compte a son propre defaut
+    add_dashboard(&pool, eve, "Salon", true).await; // another account has its own default
     let second_default = sqlx::query(
         "INSERT INTO dashboard (name, owner_id, is_default) VALUES ('Autre', $1, TRUE)",
     )
@@ -618,11 +618,11 @@ async fn widgets_of_one_dashboard_never_overlap_but_may_touch(pool: PgPool) {
         let err = put_widget(&pool, a, col, row, w, h).await.unwrap_err();
         assert_eq!(code(&err), EXCLUSION, "({col},{row}) {w}x{h}");
     }
-    // Un autre tableau a sa propre grille.
+    // Another dashboard has its own grid.
     put_widget(&pool, b, 0, 0, 2, 2)
         .await
         .expect("autre tableau");
-    // Un deplacement sur une case occupee est refuse aussi, et la mise a jour de soi-meme ne se heurte pas a elle-meme.
+    // A move onto an occupied cell is refused too, and updating itself does not collide with itself.
     let id = put_widget(&pool, a, 6, 0, 2, 2).await.unwrap();
     let err = sqlx::query("UPDATE widget SET grid_col = 1 WHERE id = $1")
         .bind(id)
@@ -641,7 +641,7 @@ async fn widgets_of_one_dashboard_never_overlap_but_may_touch(pool: PgPool) {
 async fn the_camera_reference_has_no_foreign_key_until_its_module_exists(pool: PgPool) {
     let owner = add_user(&pool, "bob").await;
     let dash = add_dashboard(&pool, owner, "A", true).await;
-    // `device` (R3) et `scene` (R4) ont leur cle etrangere (voir `devices.rs` et `automation.rs`) ; `camera` (R6) pas encore.
+    // `device` (R3) and `scene` (R4) have their foreign key (see `devices.rs` and `automation.rs`); `camera` (R6) not yet.
     assert!(sqlx::query("INSERT INTO widget (dashboard_id, widget_type, device_id, grid_col) VALUES ($1, 'device', 424242, 0)")
         .bind(dash).execute(&pool).await.is_err(), "appareil inexistant");
     assert!(sqlx::query("INSERT INTO widget (dashboard_id, widget_type, scene_id, grid_col) VALUES ($1, 'scene', 424242, 4)")

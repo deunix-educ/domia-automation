@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Depot des reglages applicatifs (`app_setting`).
+//! Repository of the application settings (`app_setting`).
 
 use chrono::{DateTime, Utc};
 use dominet_domain::RepoError;

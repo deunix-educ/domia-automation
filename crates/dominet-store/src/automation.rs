@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Depots des scenes, des automations et de leur journal d'execution (R4, ADR 0031).
+//! Repositories of scenes, automations and their execution log (R4, ADR 0031).
 
 use std::collections::HashMap;
 
@@ -29,7 +29,7 @@ impl PgScenes {
         Self { pool }
     }
 
-    /// Les actions des scenes demandees, par scene.
+    /// The actions of the requested scenes, per scene.
     async fn actions_of(&self, ids: &[i64]) -> RepoResult<HashMap<i64, Vec<SceneAction>>> {
         let rows = sqlx::query!(
             "SELECT id, scene_id, device_id, payload, position FROM scene_action WHERE scene_id = ANY($1) ORDER BY scene_id, position, id",

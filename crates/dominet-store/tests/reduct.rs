@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Archive brute `iot` contre le ReductStore de la stack de dev (bucket jetable, supprime en fin de test).
+//! Raw `iot` archive against the ReductStore of the dev stack (throw-away bucket, deleted at the end of the test).
 //!
-//! `REDUCTSTORE_URL` (defaut `http://127.0.0.1:18383`) et `REDUCTSTORE_TOKEN` (defaut `dominet-dev-token`).
+//! `REDUCTSTORE_URL` (default `http://127.0.0.1:18383`) and `REDUCTSTORE_TOKEN` (default `dominet-dev-token`).
 
 use std::time::Duration;
 
@@ -68,7 +68,7 @@ async fn records_are_archived_with_numeric_labels_and_unique_timestamps() {
     let reader = ReductIot::with_bucket(&url(), Some(&token()), &name, 10_000_000).unwrap();
     let writer = IotWriter::spawn(archive);
 
-    // Trois messages du meme appareil a la meme seconde : trois enregistrements distincts (horodatages decales).
+    // Three messages from the same device in the same second: three distinct records (shifted timestamps).
     for _ in 0..3 {
         writer.push(record(7, 0, 21.5));
     }

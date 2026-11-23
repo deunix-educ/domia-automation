@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Depots des regles d'alerte, des alertes et du bilan d'energie (R4, ADR 0031).
+//! Repositories of alert rules, alerts and the energy summary (R4, ADR 0031).
 
 use chrono::{DateTime, NaiveDate, Utc};
 use dominet_domain::RepoError;
@@ -13,7 +13,7 @@ use dominet_domain::user::UserId;
 
 use crate::pg::{corrupt, repo_err};
 
-// Reflet d'une ligne de table : les indicateurs sont independants.
+// Mirror of a table row: the flags are independent.
 #[allow(clippy::struct_excessive_bools)]
 struct RuleRow {
     id: i64,

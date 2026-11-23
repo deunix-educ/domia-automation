@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Depots de la surveillance (R6 lot 1, migration 0011). Chaque test a sa base isolee (`make dev-up`).
+//! Surveillance repositories (R6 lot 1, migration 0011). Each test has its isolated database (`make dev-up`).
 
 use chrono::{Duration, TimeZone, Utc};
 use dominet_domain::RepoError;
@@ -150,7 +150,7 @@ async fn partial_updates_and_location_link(pool: PgPool) {
     assert_eq!(c.config.recording_mode, RecordingMode::Continuous);
     assert!(c.config.yolo_enabled);
 
-    // Supprimer l'emplacement detache la camera.
+    // Deleting the location detaches the camera.
     store.locations().delete(loc.id).await.unwrap();
     let c = store.cameras().get(cam.id).await.unwrap().unwrap();
     assert_eq!(c.config.location_id, None);
@@ -475,7 +475,7 @@ async fn a_preset_of_the_same_name_is_replaced_not_duplicated(pool: PgPool) {
     assert_eq!(first.id, again.id, "meme ligne");
     assert_eq!((again.draft.token.as_str(), again.draft.pan), ("p2", 20.0));
     assert_eq!(store.ptz_presets().list(cam.id).await.unwrap().len(), 1);
-    // Le meme nom sur une autre camera est un autre preset.
+    // The same name on another camera is another preset.
     let elsewhere = store
         .ptz_presets()
         .upsert(other.id, &preset("x", 1.0))

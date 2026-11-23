@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Tests du store de sessions et du journal des tentatives de connexion (base isolee par test).
+//! Tests of the session store and of the login-attempts log (database isolated per test).
 
 use chrono::{Duration, Utc};
 use dominet_domain::repo::{LoginAttemptRepo, UserRepo};
@@ -70,7 +70,7 @@ async fn the_user_id_column_follows_the_session_data(pool: PgPool) {
     let mut rec = record(None, time::Duration::hours(1));
     sessions.create(&mut rec).await.unwrap();
 
-    // Connexion : la cle user_id apparait dans les donnees -> la colonne est renseignee.
+    // Login: the user_id key appears in the data -> the column is filled in.
     rec.data
         .insert(USER_ID_KEY.into(), serde_json::json!(alice.0));
     sessions.save(&rec).await.unwrap();
@@ -81,7 +81,7 @@ async fn the_user_id_column_follows_the_session_data(pool: PgPool) {
         .unwrap();
     assert_eq!(col, Some(alice.0));
 
-    // Deconnexion : la cle disparait -> la colonne aussi.
+    // Logout: the key disappears -> so does the column.
     rec.data.remove(USER_ID_KEY);
     sessions.save(&rec).await.unwrap();
     let col: Option<i64> = sqlx::query_scalar("SELECT user_id FROM session WHERE id = $1")

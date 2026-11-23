@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Depots du relais Android et de la messagerie (R5, ADR 0037).
+//! Repositories of the Android relay and of messaging (R5, ADR 0037).
 //!
-//! Le jeton d'un appareil n'est jamais stocke : `gen_random_uuid()` le produit, SQL en calcule l'empreinte SHA-256 (hex) et le clair
-//! n'est rendu qu'a la creation ou a la regeneration.
+//! A device's token is never stored: `gen_random_uuid()` produces it, SQL computes its SHA-256 fingerprint (hex) and the clear text
+//! is only returned at creation or regeneration.
 
 use chrono::{DateTime, Utc};
 use dominet_domain::RepoError;

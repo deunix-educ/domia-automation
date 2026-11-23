@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Depot des emplacements (`location`).
+//! Repository of locations (`location`).
 
 use dominet_domain::RepoError;
 use dominet_domain::location::{Location, LocationDraft, LocationId};

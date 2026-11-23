@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Depots des sources MQTT et des stations meteo (R3, ADR 0025).
+//! Repositories of the MQTT sources and weather stations (R3, ADR 0025).
 
 use std::str::FromStr;
 

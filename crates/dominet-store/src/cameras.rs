@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Depots de la surveillance (R6, ADR 0043) : cameras, presets PTZ, enregistrements, snapshots, evenements, detecteur.
+//! Surveillance repositories (R6, ADR 0043): cameras, PTZ presets, recordings, snapshots, events, detector.
 //!
-//! Les secrets (mots de passe, cle d'API) arrivent et repartent **chiffres** : ce module ne chiffre ni ne dechiffre.
+//! Secrets (passwords, API key) come in and go out **encrypted**: this module neither encrypts nor decrypts.
 
 use chrono::{DateTime, Utc};
 use dominet_domain::RepoError;
@@ -739,7 +739,7 @@ impl SnapshotRepo for PgSnapshots {
     }
 }
 
-// ------------------------------------------------------------------ mouvements et detections
+// ------------------------------------------------------------------ motion and detections
 
 fn labels_json(labels: &[Detection]) -> Value {
     Value::Array(

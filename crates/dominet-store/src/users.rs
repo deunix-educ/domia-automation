@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Depot des comptes (`users`).
+//! Repository of accounts (`users`).
 
 use chrono::{DateTime, Utc};
 use dominet_domain::RepoError;
@@ -46,7 +46,7 @@ impl UserRow {
     }
 }
 
-/// Meme chose que `UserRow` avec le condensat du mot de passe (connexion uniquement).
+/// Same as `UserRow` with the password hash (login only).
 struct CredentialsRow {
     id: i64,
     username: String,
@@ -190,7 +190,7 @@ impl UserRepo for PgUsers {
     async fn update_profile(&self, id: UserId, profile: &UserProfile) -> RepoResult<User> {
         let mut tx = self.pool().begin().await.map_err(repo_err)?;
         let leaves_admins = lock_admin_set(&mut tx, id).await?;
-        // Le compte etait un administrateur actif : il ne doit pas le cesser s'il est le dernier.
+        // The account was an active administrator: it must not stop being one if it is the last.
         let stays_active_admin = profile.role == Role::Admin && profile.is_active;
         if leaves_admins == AdminState::ActiveAdmin
             && !stays_active_admin
@@ -271,7 +271,7 @@ impl UserRepo for PgUsers {
     }
 }
 
-/// Cle du verrou consultatif qui serialise toute modification de l'ensemble des administrateurs.
+/// Key of the advisory lock that serialises every change to the set of administrators.
 const ADMIN_SET_LOCK: i64 = 0x0044_4F4D_4941_444D;
 
 #[derive(Debug, PartialEq, Eq)]
@@ -280,10 +280,10 @@ enum AdminState {
     Other,
 }
 
-/// Prend le verrou des administrateurs (jusqu'a la fin de la transaction) puis lit l'etat du compte vise.
+/// Takes the administrators lock (until the end of the transaction) then reads the state of the targeted account.
 ///
-/// Sans ce verrou, deux administrateurs qui se retrogradent en meme temps verraient chacun « il en reste un autre »
-/// et la base se retrouverait sans administrateur actif : verifier puis ecrire n'est pas atomique.
+/// Without this lock, two administrators demoting each other at the same time would each see "there is another one left"
+/// and the database would end up without an active administrator: checking then writing is not atomic.
 async fn lock_admin_set(
     tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
     id: UserId,

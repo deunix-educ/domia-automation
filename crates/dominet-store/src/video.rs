@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Archive des segments video dans ReductStore (R6 lot 7, ADR 0049) : bucket `surveillance`, une entree `cam_<uuid>` par camera,
-//! un enregistrement par segment fMP4 horodate en microsecondes, avec les etiquettes de l'implementation de reference (`event_type`,
-//! `camera_name` en ASCII, `camera_uuid`). Quota FIFO : les plus anciens segments sont evinces par ReductStore.
+//! Archive of the video segments in ReductStore (R6 lot 7, ADR 0049): bucket `surveillance`, one `cam_<uuid>` entry per camera,
+//! one record per fMP4 segment timestamped in microseconds, with the labels of the reference implementation (`event_type`,
+//! `camera_name` in ASCII, `camera_uuid`). FIFO quota: the oldest segments are evicted by ReductStore.
 
 use std::sync::Arc;
 
@@ -10,29 +10,29 @@ use dominet_domain::camera::{CameraUuid, RecordingEvent};
 use reduct_rs::{Bucket, QuotaType, ReductClient, ReductError};
 use tokio::sync::Mutex;
 
-/// Nom du bucket des segments (celui de la reference).
+/// Name of the segments bucket (the reference's).
 pub const VIDEO_BUCKET: &str = "surveillance";
 
-/// Nom de l'entree d'une camera.
+/// Name of a camera's entry.
 #[must_use]
 pub fn entry_name(uuid: CameraUuid) -> String {
     format!("cam_{uuid}")
 }
 
-/// Les etiquettes ReductStore n'acceptent que de l'ASCII : meme methode que reference (decomposition NFKD, puis on garde l'ASCII).
+/// ReductStore labels only accept ASCII: same method as the reference (NFKD decomposition, then we keep the ASCII).
 #[must_use]
 pub fn ascii_label(name: &str) -> String {
     use unicode_normalization::UnicodeNormalization;
     name.nfkd().filter(char::is_ascii).collect()
 }
 
-/// Horodatage d'un segment en microsecondes (cle de l'enregistrement dans ReductStore).
+/// Timestamp of a segment in microseconds (key of the record in ReductStore).
 #[must_use]
 pub fn timestamp_us(at: DateTime<Utc>) -> u64 {
     u64::try_from(at.timestamp_micros()).unwrap_or(0)
 }
 
-/// Acces au bucket des segments.
+/// Access to the segments bucket.
 pub struct ReductVideo {
     client: ReductClient,
     bucket_name: String,
@@ -50,10 +50,10 @@ impl std::fmt::Debug for ReductVideo {
 }
 
 impl ReductVideo {
-    /// Pas d'acces reseau ici : le bucket est cree au premier usage.
+    /// No network access here: the bucket is created at first use.
     ///
     /// # Errors
-    /// URL invalide, ou client HTTP impossible a construire.
+    /// Invalid URL, or HTTP client that cannot be built.
     pub fn new(
         url: &str,
         token: Option<&str>,
@@ -90,10 +90,10 @@ impl ReductVideo {
         Ok(bucket)
     }
 
-    /// Ecrit un segment.
+    /// Writes a segment.
     ///
     /// # Errors
-    /// Erreur si ReductStore est injoignable ou refuse l'ecriture (le segment local n'est alors pas supprime).
+    /// Error if ReductStore is unreachable or refuses the write (the local segment is then not deleted).
     pub async fn push(
         &self,
         camera: CameraUuid,
@@ -119,10 +119,10 @@ impl ReductVideo {
         result
     }
 
-    /// Lit un segment (`None` s'il n'existe pas ou plus : evince par le quota).
+    /// Reads a segment (`None` if it does not exist or no longer does: evicted by the quota).
     ///
     /// # Errors
-    /// Erreur si ReductStore est injoignable.
+    /// Error if ReductStore is unreachable.
     pub async fn read(
         &self,
         camera: CameraUuid,
@@ -141,10 +141,10 @@ impl ReductVideo {
         }
     }
 
-    /// Supprime un segment (sans erreur s'il n'existe plus).
+    /// Deletes a segment (no error if it no longer exists).
     ///
     /// # Errors
-    /// Erreur si ReductStore est injoignable.
+    /// Error if ReductStore is unreachable.
     pub async fn remove(&self, camera: CameraUuid, timestamp_us: u64) -> Result<(), ReductError> {
         let bucket = self.bucket().await?;
         match bucket
@@ -158,10 +158,10 @@ impl ReductVideo {
         }
     }
 
-    /// Le bucket (tests et diagnostic).
+    /// The bucket (tests and diagnostics).
     ///
     /// # Errors
-    /// Erreur si ReductStore est injoignable.
+    /// Error if ReductStore is unreachable.
     pub async fn open(&self) -> Result<Arc<Bucket>, ReductError> {
         self.bucket().await
     }
