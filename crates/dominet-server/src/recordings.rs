@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Enregistrements (R6 lot 7, ADR 0049) : MediaMTX ecrit des segments fMP4 dans `RECORDINGS_DIR` ; le role `video` les **indexe** (table
-//! `recording`), les **pousse** dans ReductStore avec les etiquettes de l'implementation de reference, puis **supprime le fichier local** (le volume ne
-//! grossit plus, ce que reference ne faisait pas). Le role `web` les sert : fichier local s'il existe encore, sinon ReductStore.
+//! Recordings (R6 lot 7, ADR 0049): MediaMTX writes fMP4 segments into `RECORDINGS_DIR`; the `video` role **indexes** them (`recording`
+//! table), **pushes** them into ReductStore with the reference implementation's labels, then **deletes the local file** (the volume no
+//! longer grows, which the reference did not do). The `web` role serves them: local file if it still exists, otherwise ReductStore.
 //!
-//! Type d'un segment : `manual` si la camera est en mode manuel, `motion` si un mouvement tombe dans sa fenetre, `continuous` sinon
-//! (comme la reference). Sans ReductStore configure, les segments restent sur le disque (`pending`) et sont servis depuis lui.
+//! Type of a segment: `manual` if the camera is in manual mode, `motion` if a motion falls in its window, `continuous` otherwise
+//! (like the reference). Without ReductStore configured, the segments stay on disk (`pending`) and are served from it.
 
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -21,7 +21,7 @@ use dominet_store::video::ReductVideo;
 use dominet_surveillance::MediaMtx;
 use dominet_surveillance::recording::finished_segments;
 
-/// Segments traites par passage d'archivage (le reste attend le passage suivant).
+/// Segments handled per archiving pass (the rest waits for the next pass).
 const ARCHIVE_BATCH: i64 = 50;
 
 #[derive(Debug, thiserror::Error)]
@@ -38,7 +38,7 @@ pub enum RecordingError {
     Repo(#[from] RepoError),
 }
 
-/// Bilan d'un passage.
+/// Outcome of a pass.
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
 pub struct ScanReport {
     pub indexed: usize,
@@ -46,7 +46,7 @@ pub struct ScanReport {
     pub failed: usize,
 }
 
-/// Le contenu d'un segment a servir.
+/// The content of a segment to serve.
 #[derive(Debug)]
 pub enum SegmentBody {
     Local(PathBuf),
@@ -94,16 +94,16 @@ impl RecordingService {
         }
     }
 
-    /// L'archive ReductStore est-elle configuree ?
+    /// Is the ReductStore archive configured?
     #[must_use]
     pub fn has_archive(&self) -> bool {
         self.video.is_some()
     }
 
-    /// Un passage complet : indexe les segments termines, puis archive ce qui ne l'est pas encore.
+    /// A full pass: indexes the finished segments, then archives what is not yet archived.
     ///
     /// # Errors
-    /// Erreur du depot (la liste des cameras ou des segments n'est pas lisible).
+    /// Repository error (the list of cameras or segments is not readable).
     pub async fn scan(&self) -> Result<ScanReport, RecordingError> {
         let indexed = self.index_new(SystemTime::now()).await?;
         let (archived, failed) = self.archive_pending().await?;
@@ -114,10 +114,10 @@ impl RecordingService {
         })
     }
 
-    /// Inscrit en base les segments termines des cameras actives qui enregistrent (comme la reference : une camera `none` ou inactive est ignoree).
+    /// Records in the database the finished segments of the active cameras that record (like the reference: a `none` or inactive camera is ignored).
     ///
     /// # Errors
-    /// Erreur du depot.
+    /// Repository error.
     pub async fn index_new(&self, now: SystemTime) -> Result<usize, RecordingError> {
         let (dir, grace) = (self.dir.clone(), self.grace);
         let found = tokio::task::spawn_blocking(move || finished_segments(&dir, now, grace))
@@ -125,7 +125,7 @@ impl RecordingService {
             .ok()
             .and_then(Result::ok);
         let Some(found) = found else {
-            // Une seule alerte (le scan revient toutes les minutes) ; l'information revient des que le dossier existe.
+            // A single alert (the scan comes back every minute); the information comes back as soon as the folder exists.
             if !self
                 .warned_dir
                 .swap(true, std::sync::atomic::Ordering::Relaxed)
@@ -160,7 +160,7 @@ impl RecordingService {
             };
             match self.store.recordings().create(camera.id, &new).await {
                 Ok(_) => created += 1,
-                // Indexe entre-temps par un autre passage : sans importance.
+                // Indexed meanwhile by another pass: of no importance.
                 Err(RepoError::Conflict { .. }) => {}
                 Err(e) => return Err(e.into()),
             }
@@ -194,11 +194,11 @@ impl RecordingService {
         })
     }
 
-    /// Pousse les segments non archives vers ReductStore puis supprime le fichier local. Un echec est note sur le segment (`error`) et
-    /// reessaye au passage suivant. Retourne (archives, echecs).
+    /// Pushes the unarchived segments to ReductStore then deletes the local file. A failure is noted on the segment (`error`) and
+    /// retried at the next pass. Returns (archived, failures).
     ///
     /// # Errors
-    /// Erreur du depot (liste illisible).
+    /// Repository error (unreadable list).
     pub async fn archive_pending(&self) -> Result<(usize, usize), RecordingError> {
         let Some(video) = &self.video else {
             return Ok((0, 0));
@@ -259,17 +259,17 @@ impl RecordingService {
             .await
             .map_err(|e| e.to_string())?;
         let _ = size;
-        // Archive sure : le fichier local n'a plus d'utilite (D10).
+        // Safe archive: the local file no longer has any use (D10).
         if let Err(e) = tokio::fs::remove_file(&path).await {
             tracing::warn!(path = %path.display(), error = %e, "local file not removed after archiving");
         }
         Ok(())
     }
 
-    /// Le contenu d'un segment : le fichier local s'il existe encore (et reste sous `RECORDINGS_DIR`), sinon ReductStore.
+    /// A segment's content: the local file if it still exists (and stays under `RECORDINGS_DIR`), otherwise ReductStore.
     ///
     /// # Errors
-    /// ReductStore injoignable.
+    /// ReductStore unreachable.
     pub async fn open(
         &self,
         camera: CameraUuid,
@@ -290,10 +290,10 @@ impl RecordingService {
             .map_err(|e| format!("ReductStore : {e}"))
     }
 
-    /// Supprime un segment : fichier local, archive et ligne en base.
+    /// Deletes a segment: local file, archive and database row.
     ///
     /// # Errors
-    /// ReductStore injoignable (rien n'est alors supprime) ou erreur du depot.
+    /// ReductStore unreachable (nothing is then deleted) or repository error.
     pub async fn delete(&self, camera: CameraUuid, rec: &Recording) -> Result<(), String> {
         if let (Some(video), Some(ts)) = (&self.video, rec.reduct_ts)
             && let Ok(ts) = u64::try_from(ts)
@@ -314,7 +314,7 @@ impl RecordingService {
             .map_err(|e| e.to_string())
     }
 
-    /// Enregistrement manuel en cours ? (`None` : MediaMTX ne le dit pas ou n'est pas configure.)
+    /// Manual recording in progress? (`None`: MediaMTX does not say or is not configured.)
     pub async fn manual_state(&self, camera: CameraUuid) -> Option<bool> {
         let conf = self
             .mediamtx
@@ -325,10 +325,10 @@ impl RecordingService {
         Some(conf["record"].as_bool().unwrap_or(false))
     }
 
-    /// Demarre ou arrete l'enregistrement d'une camera en mode manuel (`PATCH record` sur le path MediaMTX).
+    /// Starts or stops the recording of a camera in manual mode (`PATCH record` on the MediaMTX path).
     ///
     /// # Errors
-    /// Camera inconnue, pas en mode manuel, MediaMTX absent ou en panne.
+    /// Unknown camera, not in manual mode, MediaMTX absent or down.
     pub async fn set_manual(&self, id: CameraId, on: bool) -> Result<(), RecordingError> {
         let camera = self
             .store
@@ -348,7 +348,7 @@ impl RecordingService {
     }
 }
 
-/// Role `video` : indexe et archive les segments toutes les `RECORDINGS_SCAN_SECS`.
+/// `video` role: indexes and archives the segments every `RECORDINGS_SCAN_SECS`.
 pub fn spawn_role(state: &crate::AppState) {
     let state = state.clone();
     tokio::spawn(async move {
@@ -380,7 +380,7 @@ pub fn spawn_role(state: &crate::AppState) {
     });
 }
 
-/// `path` est-il sous `root` (sans `..`) ?
+/// Is `path` under `root` (without `..`)?
 fn is_under(path: &Path, root: &Path) -> bool {
     path.starts_with(root)
         && path

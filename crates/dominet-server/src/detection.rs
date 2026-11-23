@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Detection d'objets et de mouvement (R6 lot 8, ADR 0050), role `video`.
+//! Object and motion detection (R6 lot 8, ADR 0050), `video` role.
 //!
-//! - **Mouvement** : toutes les `MOTION_INTERVAL_SECS`, pour chaque camera active en mode `motion`, la premiere et la derniere image de la
-//!   fenetre glissante du `FrameHub` (20 images, ~10 s a 2 images/s) sont comparees comme le fait reference (`dominet_surveillance::motion`).
-//!   Au-dela de `MOTION_THRESHOLD` : un `MotionEvent`, un message MQTT `dominet/surveillance/<uuid>/motion`, une notification (delai par camera
-//!   `MOTION_ALERT_COOLDOWN`), puis YOLO si la camera l'active.
-//! - **YOLO** : une image (la plus recente de la camera), le detecteur global active dans `DetectorConfig`, filtre de classes et seuil de
-//!   confiance de la camera, image annotee si `save_frames`, `DetectionEvent`, message MQTT `.../detection`, notification (delai
-//!   `DETECTION_ALERT_COOLDOWN`). Le modele n'est charge qu'a la premiere detection.
+//! - **Motion**: every `MOTION_INTERVAL_SECS`, for each active camera in `motion` mode, the first and the last image of the
+//!   `FrameHub` sliding window (20 images, ~10 s at 2 images/s) are compared as the reference does (`dominet_surveillance::motion`).
+//!   Beyond `MOTION_THRESHOLD`: a `MotionEvent`, an MQTT message `dominet/surveillance/<uuid>/motion`, a notification (per-camera delay
+//!   `MOTION_ALERT_COOLDOWN`), then YOLO if the camera enables it.
+//! - **YOLO**: one image (the camera's most recent), the global detector enabled in `DetectorConfig`, the camera's class filter and
+//!   confidence threshold, annotated image if `save_frames`, `DetectionEvent`, MQTT message `.../detection`, notification (delay
+//!   `DETECTION_ALERT_COOLDOWN`). The model is only loaded at the first detection.
 
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
@@ -24,12 +24,12 @@ use dominet_surveillance::yolo::{self, YoloDetector};
 
 use crate::AppState;
 
-/// Une image plus vieille que cela n'est plus la camera : ni mouvement ni detection.
+/// An image older than this is no longer the camera: neither motion nor detection.
 const MAX_FRAME_AGE: Duration = Duration::from_secs(15);
-/// Images minimales dans la fenetre pour juger un mouvement (comme la reference : `len(frames) < 5`).
+/// Minimum images in the window to judge a motion (like the reference: `len(frames) < 5`).
 const MIN_WINDOW: usize = 5;
 
-/// Etat partage du detecteur : modele charge a la demande, delais de notification par camera.
+/// Shared detector state: model loaded on demand, per-camera notification delays.
 #[derive(Clone, Default)]
 pub struct Detector {
     inner: Arc<Inner>,
@@ -48,14 +48,14 @@ impl std::fmt::Debug for Detector {
     }
 }
 
-/// Resultat d'une evaluation de mouvement.
+/// Result of a motion evaluation.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum MotionOutcome {
-    /// Pas assez d'images recentes (flux absent, trop vieux, fenetre trop courte).
+    /// Not enough recent images (stream absent, too old, window too short).
     NoWindow,
-    /// Comparaison faite, sous le seuil.
+    /// Comparison done, below the threshold.
     Still(f64),
-    /// Mouvement : evenement enregistre.
+    /// Motion: event recorded.
     Moving(f64),
 }
 
@@ -67,7 +67,7 @@ fn publish(state: &AppState, camera: &Camera, kind: &str, payload: &serde_json::
     }
 }
 
-/// Notifie (e-mail et SMS) sauf si la camera l'a deja ete depuis `cooldown`.
+/// Notifies (e-mail and SMS) unless the camera already was within `cooldown`.
 async fn notify_unless_recent(
     state: &AppState,
     camera: &Camera,
@@ -93,7 +93,7 @@ async fn notify_unless_recent(
     }
 }
 
-/// Vrai (et le delai repart) si la camera n'a pas ete notifiee depuis `cooldown`.
+/// True (and the delay restarts) if the camera has not been notified within `cooldown`.
 fn cooldown_passed(
     map: &Mutex<HashMap<CameraUuid, Instant>>,
     camera: CameraUuid,
@@ -135,7 +135,7 @@ async fn locations(state: &AppState) -> HashMap<i64, String> {
 }
 
 impl Detector {
-    /// Evalue le mouvement d'une camera sur sa fenetre d'images ; si le seuil est depasse : evenement, MQTT, notification, YOLO.
+    /// Evaluates a camera's motion over its window of images; if the threshold is exceeded: event, MQTT, notification, YOLO.
     pub async fn check_motion(&self, state: &AppState, camera: &Camera) -> MotionOutcome {
         let frames = state.frames.recent(camera.uuid);
         let (Some(first), Some(last)) = (frames.first(), frames.last()) else {
@@ -200,7 +200,7 @@ impl Detector {
         MotionOutcome::Moving(ratio)
     }
 
-    /// Le detecteur charge (ou a charger) pour ce modele ; `None` si le modele est introuvable ou invalide.
+    /// The loaded (or to be loaded) detector for this model; `None` if the model is not found or invalid.
     async fn detector(&self, state: &AppState, model: PathBuf) -> Option<Arc<YoloDetector>> {
         let workers = usize::try_from(state.config.yolo_workers).unwrap_or(1);
         if let Some((path, w, d)) = self.inner.loaded.lock().unwrap().as_ref()
@@ -225,7 +225,7 @@ impl Detector {
         }
     }
 
-    /// Passe le modele sur la derniere image de la camera : reglage du detecteur, image recente, inference (hors du fil asynchrone).
+    /// Runs the model on the camera's last image: detector setting, recent image, inference (off the async thread).
     async fn infer(
         &self,
         state: &AppState,
@@ -270,7 +270,7 @@ impl Detector {
         Some((config, jpeg, found))
     }
 
-    /// Detection sur la derniere image de la camera. Renvoie l'evenement cree (`None` : detecteur coupe, pas d'image, rien de retenu).
+    /// Detection on the camera's last image. Returns the event created (`None`: detector off, no image, nothing kept).
     pub async fn detect(
         &self,
         state: &AppState,
@@ -347,7 +347,7 @@ impl Detector {
     }
 }
 
-/// Garde les detections demandees par la camera : confiance minimale et, si la liste n'est pas vide, classes voulues.
+/// Keeps the detections the camera asked for: minimum confidence and, if the list is not empty, wanted classes.
 #[must_use]
 pub fn filter<'a>(
     found: &'a [yolo::Det],
@@ -361,7 +361,7 @@ pub fn filter<'a>(
         .collect()
 }
 
-/// Ecrit l'image annotee `<uuid>_<AAAAMMJJ_HHMMSS>.jpg` ; renvoie son nom (vide en cas d'echec, la detection reste enregistree).
+/// Writes the annotated image `<uuid>_<YYYYMMDD_HHMMSS>.jpg`; returns its name (empty on failure, the detection stays recorded).
 async fn save_annotated(
     dir: &Path,
     camera: CameraUuid,
@@ -386,7 +386,7 @@ async fn save_annotated(
     name
 }
 
-/// Role `video` : evalue le mouvement de chaque camera en mode `motion`, toutes les `MOTION_INTERVAL_SECS`.
+/// `video` role: evaluates the motion of each camera in `motion` mode, every `MOTION_INTERVAL_SECS`.
 pub fn spawn_role(state: &AppState) {
     let state = state.clone();
     tokio::spawn(async move {
@@ -432,7 +432,7 @@ mod tests {
             ["car"]
         );
         assert_eq!(filter(&found, &[], 0.9).len(), 0);
-        // Le seuil est inclusif (>=), comme la reference.
+        // The threshold is inclusive (>=), like the reference.
         assert_eq!(filter(&[det("cat", 0.5)], &[], 0.5).len(), 1);
     }
 

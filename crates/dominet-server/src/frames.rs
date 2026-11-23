@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Role `video` (R6 lot 6, ADR 0048) : un `ffmpeg` supervise par camera **active**, qui lit le re-stream de MediaMTX et produit des images
-//! JPEG a faible cadence.
+//! `video` role (R6 lot 6, ADR 0048): one supervised `ffmpeg` per **active** camera, which reads MediaMTX's re-stream and produces low-rate
+//! JPEG images.
 //!
-//! - Les sources suivent la liste des cameras : ajout, desactivation, suppression (le role relit la base a chaque changement signale
-//!   par `AppState::cameras_changed`, et toutes les 30 s par precaution).
-//! - La **derniere image** de chaque camera est ecrite dans `<SNAPSHOTS_DIR>/latest/<uuid>.jpg` au plus une fois par seconde (ecriture
-//!   atomique : fichier temporaire puis renommage). C'est l'interface avec le role `web`, **qui peut etre un autre processus** : le
-//!   snapshot, la galerie et l'affichage de repli d'un navigateur sans H.264 en dependent. Le mouvement et YOLO (lots 7 et 8) lisent
-//!   les images en direct par [`FrameHub::source`].
+//! - The sources follow the list of cameras: addition, deactivation, deletion (the role re-reads the database at each change signalled
+//!   by `AppState::cameras_changed`, and every 30 s as a precaution).
+//! - The **last image** of each camera is written to `<SNAPSHOTS_DIR>/latest/<uuid>.jpg` at most once per second (atomic
+//!   write: temporary file then rename). It is the interface with the `web` role, **which may be another process**: the
+//!   snapshot, the gallery and the fallback display of a browser without H.264 depend on it. Motion and YOLO (lots 7 and 8) read
+//!   the live images through [`FrameHub::source`].
 
 use std::collections::{HashMap, VecDeque};
 use std::path::{Path, PathBuf};
@@ -21,15 +21,15 @@ use tokio::task::JoinHandle;
 use crate::AppState;
 use crate::config::Config;
 
-/// La derniere image n'est ecrite qu'une fois par seconde, meme si la source en donne plus.
+/// The last image is only written once per second, even if the source gives more.
 const WRITE_EVERY: Duration = Duration::from_secs(1);
 const RECONCILE_EVERY: Duration = Duration::from_secs(30);
-/// Images gardees par camera pour le mouvement : la fenetre glissante de la reference (~20 images).
+/// Images kept per camera for motion: the reference's sliding window (~20 images).
 pub const RECENT_FRAMES: usize = 20;
 
 type Recent = Arc<Mutex<VecDeque<Frame>>>;
 
-/// Comment lire une camera : les arguments d'entree de `ffmpeg` (`None` : pas de flux a decoder).
+/// How to read a camera: `ffmpeg`'s input arguments (`None`: no stream to decode).
 type Factory = Arc<dyn Fn(&Camera) -> Option<FrameConfig> + Send + Sync>;
 
 struct Running {
@@ -59,14 +59,14 @@ impl std::fmt::Debug for FrameHub {
     }
 }
 
-/// Dossier de la derniere image de chaque camera.
+/// Folder of each camera's last image.
 #[must_use]
 pub fn latest_dir(snapshots_dir: &Path) -> PathBuf {
     snapshots_dir.join("latest")
 }
 
 impl FrameHub {
-    /// Lit `<MEDIAMTX_RTSP_URL>/<uuid>` ; sans cette adresse, aucune source ne demarre.
+    /// Reads `<MEDIAMTX_RTSP_URL>/<uuid>`; without this address, no source starts.
     #[must_use]
     pub fn from_config(config: &Config) -> Self {
         let base = config.mediamtx_rtsp_url.clone();
@@ -87,7 +87,7 @@ impl FrameHub {
         Self::new(factory, latest_dir(Path::new(&config.snapshots_dir)))
     }
 
-    /// Fabrique choisie (tests : une source `lavfi` au lieu du re-stream).
+    /// Chosen factory (tests: a `lavfi` source instead of the re-stream).
     #[must_use]
     pub fn with_factory(
         factory: impl Fn(&Camera) -> Option<FrameConfig> + Send + Sync + 'static,
@@ -104,13 +104,13 @@ impl FrameHub {
         }
     }
 
-    /// Une source decode-t-elle cette camera ?
+    /// Does a source decode this camera?
     #[must_use]
     pub fn has(&self, uuid: CameraUuid) -> bool {
         self.sources.lock().unwrap().contains_key(&uuid)
     }
 
-    /// Les dernieres images d'une camera (au plus [`RECENT_FRAMES`]), de la plus ancienne a la plus recente : fenetre du mouvement.
+    /// A camera's last images (at most [`RECENT_FRAMES`]), from oldest to most recent: the motion window.
     #[must_use]
     pub fn recent(&self, uuid: CameraUuid) -> Vec<Frame> {
         let sources = self.sources.lock().unwrap();
@@ -120,7 +120,7 @@ impl FrameHub {
             .unwrap_or_default()
     }
 
-    /// La source d'une camera (mouvement, detection).
+    /// A camera's source (motion, detection).
     #[must_use]
     pub fn source(&self, uuid: CameraUuid) -> Option<Arc<FfmpegFrameSource>> {
         self.sources
@@ -130,12 +130,12 @@ impl FrameHub {
             .map(|r| r.source.clone())
     }
 
-    /// Fait correspondre les sources aux cameras : demarre celles des cameras actives qui n'en ont pas, arrete les autres.
+    /// Matches the sources to the cameras: starts those of the active cameras that have none, stops the others.
     pub fn reconcile(&self, cameras: &[Camera]) {
         let Some(factory) = &self.factory else { return };
         let mut sources = self.sources.lock().unwrap();
         let wanted: Vec<&Camera> = cameras.iter().filter(|c| c.config.active).collect();
-        // Arrete (et efface la derniere image de) ce qui n'est plus voulu.
+        // Stops (and erases the last image of) what is no longer wanted.
         let gone: Vec<CameraUuid> = sources
             .keys()
             .copied()
@@ -171,13 +171,13 @@ impl FrameHub {
         }
     }
 
-    /// Arrete toutes les sources.
+    /// Stops all the sources.
     pub fn stop_all(&self) {
         self.sources.lock().unwrap().clear();
     }
 }
 
-/// Ecrit la derniere image de la source dans `latest/<uuid>.jpg`, au plus une fois par seconde, de facon atomique.
+/// Writes the source's last image to `latest/<uuid>.jpg`, at most once per second, atomically.
 async fn write_latest(
     source: Arc<FfmpegFrameSource>,
     recent: Recent,
@@ -196,7 +196,7 @@ async fn write_latest(
     let mut last_write = tokio::time::Instant::now() - WRITE_EVERY;
     loop {
         let Ok(frame) = rx.recv().await else {
-            // Retard de lecture : on reprend a la prochaine image ; source fermee : fin.
+            // Read lag: we resume at the next image; source closed: end.
             if matches!(
                 rx.try_recv(),
                 Err(tokio::sync::broadcast::error::TryRecvError::Closed)
@@ -224,7 +224,7 @@ async fn write_latest(
     }
 }
 
-/// Role `video` : suit la liste des cameras jusqu'a l'arret du processus.
+/// `video` role: follows the list of cameras until the process stops.
 pub fn spawn_role(state: &AppState) {
     let state = state.clone();
     tokio::spawn(async move {

@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Decouverte ONVIF entre le role `discovery` et le role `web` (R6 lot 3, ADR 0045).
+//! ONVIF discovery between the `discovery` role and the `web` role (R6 lot 3, ADR 0045).
 //!
-//! Le role `discovery` tourne en reseau hote (le multicast ne traverse pas un reseau Docker ponte) ; le serveur web n'y a pas
-//! acces. Les deux se parlent **par PostgreSQL** (`LISTEN`/`NOTIFY`), sans nouveau port ni nouveau service :
+//! The `discovery` role runs on the host network (multicast does not cross a bridged Docker network); the web server has no
+//! access to it. The two talk **through PostgreSQL** (`LISTEN`/`NOTIFY`), with no new port or new service:
 //!
-//! - le navigateur demande (`request`) -> `NOTIFY onvif_discovery_request` ;
-//! - le role `discovery` ecoute, sonde le reseau et publie chaque etape sur `onvif_discovery_result` (JSON de [`DiscoveryEvent`]) ;
-//! - le role `web` ecoute les resultats, repere les cameras deja enregistrees et les diffuse sur le sujet `discovery`.
+//! - the browser asks (`request`) -> `NOTIFY onvif_discovery_request`;
+//! - the `discovery` role listens, probes the network and publishes each step on `onvif_discovery_result` (JSON of [`DiscoveryEvent`]);
+//! - the `web` role listens to the results, spots the cameras already registered and broadcasts them on the `discovery` subject.
 //!
-//! Une demande recue pendant une recherche est ignoree (une seule recherche a la fois).
+//! A request received during a search is ignored (a single search at a time).
 
 use std::net::{Ipv4Addr, SocketAddr};
 use std::time::Duration;
@@ -25,10 +25,10 @@ pub const REQUEST: &str = "onvif_discovery_request";
 pub const RESULT: &str = "onvif_discovery_result";
 const RETRY: Duration = Duration::from_secs(5);
 
-/// Demande une recherche (un role `discovery` doit l'ecouter).
+/// Requests a search (a `discovery` role must be listening).
 ///
 /// # Errors
-/// La base ne repond pas.
+/// The database does not answer.
 pub async fn request(pool: &PgPool) -> Result<(), sqlx::Error> {
     sqlx::query("SELECT pg_notify($1, 'start')")
         .bind(REQUEST)
@@ -51,7 +51,7 @@ async fn publish(pool: &PgPool, event: &DiscoveryEvent) {
     }
 }
 
-/// Comment sonder : le multicast en production, un repondeur de la boucle locale dans les tests.
+/// How to probe: multicast in production, a loopback responder in the tests.
 #[derive(Debug, Clone)]
 pub struct Probe {
     pub target: SocketAddr,
@@ -61,7 +61,7 @@ pub struct Probe {
 }
 
 impl Probe {
-    /// WS-Discovery sur le reseau local (3 sondes, 6 s d'ecoute).
+    /// WS-Discovery on the local network (3 probes, 6 s of listening).
     #[must_use]
     pub fn multicast() -> Self {
         Self {
@@ -83,7 +83,7 @@ fn dto(d: &Discovered) -> DiscoveredDto {
     }
 }
 
-/// Une recherche complete, publiee etape par etape.
+/// A complete search, published step by step.
 async fn scan(pool: &PgPool, probe: &Probe) {
     publish(pool, &DiscoveryEvent::Scanning).await;
     let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel();
@@ -121,12 +121,12 @@ async fn scan(pool: &PgPool, probe: &Probe) {
     }
 }
 
-/// Role `discovery` : ecoute les demandes jusqu'a l'arret du processus, se reconnecte si la base disparait.
+/// `discovery` role: listens to requests until the process stops, reconnects if the database disappears.
 pub fn spawn_role(state: &AppState) {
     spawn_role_with(state, Probe::multicast());
 }
 
-/// Comme [`spawn_role`], avec une sonde choisie (tests).
+/// Like [`spawn_role`], with a chosen probe (tests).
 pub fn spawn_role_with(state: &AppState, probe: Probe) {
     let pool = state.pool.clone();
     tokio::spawn(async move {
@@ -146,12 +146,12 @@ async fn serve_requests(pool: &PgPool, probe: &Probe) -> Result<(), sqlx::Error>
     loop {
         listener.recv().await?;
         scan(pool, probe).await;
-        // Les demandes arrivees pendant la recherche sont abandonnees.
+        // Requests that arrived during the search are dropped.
         while listener.try_recv().await?.is_some() {}
     }
 }
 
-/// Role `web` : diffuse les resultats aux navigateurs abonnes au sujet `discovery`.
+/// `web` role: broadcasts the results to the browsers subscribed to the `discovery` subject.
 pub fn spawn_relay(state: &AppState) {
     let state = state.clone();
     tokio::spawn(async move {

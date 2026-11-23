@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Service des cameras (R6, ADR 0043 et 0044) : enregistrement avec chiffrement des secrets, synchronisation avec MediaMTX.
+//! Camera service (R6, ADR 0043 and 0044): registration with secret encryption, synchronisation with MediaMTX.
 //!
-//! - Les mots de passe (RTSP, ONVIF, web) et la cle d'API web sont chiffres avec `SecretBox`, la **donnee associee** etant
-//!   `camera:<uuid>:<champ>` : un chiffre recopie dans une autre camera ou un autre champ ne se dechiffre pas.
-//! - A la modification, un secret **non fourni** reste inchange (l'interface ne renvoie jamais un secret).
-//! - Apres chaque ecriture, le path MediaMTX de la camera est cree, remplace ou supprime ; un echec de MediaMTX ne defait pas
-//!   l'enregistrement (la base fait foi, `sync_all` rattrape), il est rapporte.
+//! - The passwords (RTSP, ONVIF, web) and the web API key are encrypted with `SecretBox`, the **associated data** being
+//!   `camera:<uuid>:<field>`: a ciphertext copied to another camera or another field does not decrypt.
+//! - On modification, a secret that is **not supplied** stays unchanged (the interface never sends a secret back).
+//! - After each write, the camera's MediaMTX path is created, replaced or deleted; a MediaMTX failure does not undo
+//!   the registration (the database is authoritative, `sync_all` catches up), it is reported.
 
 use std::collections::BTreeMap;
 
@@ -22,7 +22,7 @@ use uuid::Uuid;
 
 use crate::secrets::SecretBox;
 
-/// Un secret de formulaire : `Keep` (champ laisse vide) ou une nouvelle valeur en clair.
+/// A form secret: `Keep` (field left empty) or a new value in clear.
 #[derive(Clone, PartialEq, Eq, Default)]
 pub enum SecretInput {
     #[default]
@@ -40,7 +40,7 @@ impl std::fmt::Debug for SecretInput {
 }
 
 impl SecretInput {
-    /// Une saisie vide veut dire « inchange ».
+    /// An empty input means "unchanged".
     #[must_use]
     pub fn from_form(s: &str) -> Self {
         if s.is_empty() {
@@ -51,7 +51,7 @@ impl SecretInput {
     }
 }
 
-/// Ce que l'administration envoie : les reglages (les secrets du brouillon sont ignores) et les secrets en clair.
+/// What the administration sends: the settings (the draft's secrets are ignored) and the secrets in clear.
 #[derive(Debug, Clone)]
 pub struct CameraInput {
     pub draft: CameraDraft,
@@ -71,10 +71,10 @@ pub enum CameraError {
     MasterKeyMissing,
     #[error("un secret de la camera est illisible (mauvaise DOMINET_MASTER_KEY ?)")]
     Unreadable,
-    /// La camera n'a pas ONVIF active.
+    /// The camera does not have ONVIF enabled.
     #[error("ONVIF n'est pas active sur cette camera")]
     OnvifDisabled,
-    /// Aucun service ONVIF n'a repondu sur les ports usuels.
+    /// No ONVIF service answered on the usual ports.
     #[error("aucun service ONVIF ne repond a cette adresse")]
     NoOnvifService,
     #[error(transparent)]
@@ -85,10 +85,10 @@ pub enum CameraError {
     Repo(#[from] RepoError),
 }
 
-/// Etat de la synchronisation MediaMTX apres une ecriture.
+/// State of the MediaMTX synchronisation after a write.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum SyncStatus {
-    /// `MEDIAMTX_API_URL` n'est pas renseignee.
+    /// `MEDIAMTX_API_URL` is not set.
     Disabled,
     Synced,
     Failed(String),
@@ -109,11 +109,11 @@ pub struct CameraService {
     store: PgStore,
     sealer: Option<SecretBox>,
     mediamtx: Option<MediaMtx>,
-    /// Dernier etat envoye a chaque bascule Thingino (la camera ne le relit pas).
+    /// Last state sent to each Thingino toggle (the camera does not read it back).
     night_state: NightState,
-    /// Prevenu a chaque creation, modification ou suppression (le role `video` relit ses flux).
+    /// Notified at every creation, modification or deletion (the `video` role re-reads its streams).
     changed: Option<std::sync::Arc<tokio::sync::Notify>>,
-    /// Dossier des snapshots : retire avec la camera.
+    /// Snapshots folder: removed with the camera.
     snapshots_dir: Option<std::path::PathBuf>,
     recordings_dir: Option<std::path::PathBuf>,
 }
@@ -136,21 +136,21 @@ impl CameraService {
         }
     }
 
-    /// Previent `changed` apres chaque ecriture.
+    /// Notifies `changed` after each write.
     #[must_use]
     pub fn with_changes(mut self, changed: std::sync::Arc<tokio::sync::Notify>) -> Self {
         self.changed = Some(changed);
         self
     }
 
-    /// Dossier des segments enregistres, dont le sous-dossier de la camera est supprime avec elle (apres l'arret de son path MediaMTX).
+    /// Folder of the recorded segments, whose camera subfolder is deleted with it (after its MediaMTX path is stopped).
     #[must_use]
     pub fn with_recordings_dir(mut self, dir: std::path::PathBuf) -> Self {
         self.recordings_dir = Some(dir);
         self
     }
 
-    /// Dossier des snapshots, dont le sous-dossier de la camera est supprime avec elle.
+    /// Snapshots folder, whose camera subfolder is deleted with it.
     #[must_use]
     pub fn with_snapshots_dir(mut self, dir: std::path::PathBuf) -> Self {
         self.snapshots_dir = Some(dir);
@@ -163,22 +163,22 @@ impl CameraService {
         }
     }
 
-    /// MediaMTX est-il configure ?
+    /// Is MediaMTX configured?
     #[must_use]
     pub fn has_mediamtx(&self) -> bool {
         self.mediamtx.is_some()
     }
 
-    /// Toutes les cameras, par priorite puis par nom.
+    /// All the cameras, by priority then by name.
     ///
     /// # Errors
-    /// Erreur du depot.
+    /// Repository error.
     pub async fn list(&self) -> Result<Vec<Camera>, CameraError> {
         Ok(self.store.cameras().list().await?)
     }
 
     /// # Errors
-    /// Erreur du depot.
+    /// Repository error.
     pub async fn get(&self, id: CameraId) -> Result<Option<Camera>, CameraError> {
         Ok(self.store.cameras().get(id).await?)
     }
@@ -191,10 +191,10 @@ impl CameraService {
         Ok(Sealed(sealer.seal(&aad(uuid, field), plain)))
     }
 
-    /// Secret en clair ; vide s'il n'est pas renseigne. A ne jamais journaliser ni renvoyer a l'interface.
+    /// Secret in clear; empty if it is not set. Never to be logged or sent back to the interface.
     ///
     /// # Errors
-    /// `Unreadable` si la cle maitresse manque ou a change.
+    /// `Unreadable` if the master key is missing or has changed.
     pub fn open(
         &self,
         uuid: CameraUuid,
@@ -223,10 +223,10 @@ impl CameraService {
         }
     }
 
-    /// Cree (`id` absent) ou remplace (`id` present) une camera, puis met son path MediaMTX a jour.
+    /// Creates (`id` absent) or replaces (`id` present) a camera, then updates its MediaMTX path.
     ///
     /// # Errors
-    /// `Invalid` champ par champ, `NotFound`, `MasterKeyMissing` si un secret est fourni sans cle maitresse, erreur du depot.
+    /// `Invalid` field by field, `NotFound`, `MasterKeyMissing` if a secret is supplied without a master key, repository error.
     pub async fn save(
         &self,
         id: Option<CameraId>,
@@ -270,17 +270,17 @@ impl CameraService {
             &input.web_api_key,
             current.map_or(&none, |c| &c.web_api_key),
         )?;
-        // Ce que la synchronisation ONVIF a appris n'est pas dans le formulaire : on le garde.
+        // What the ONVIF synchronisation learned is not in the form: we keep it.
         if let Some(c) = current {
             draft.manufacturer.clone_from(&c.manufacturer);
             draft.model.clone_from(&c.model);
             draft.firmware.clone_from(&c.firmware);
-            // Un jeton saisi dans le formulaire l'emporte ; vide : on garde celui de la synchronisation.
+            // A token entered in the form wins; empty: we keep the synchronisation's.
             if draft.main_token.is_empty() {
                 draft.main_token.clone_from(&c.main_token);
             }
         }
-        // Comme la reference : une camera ONVIF sans identifiants propres reprend ceux du flux RTSP.
+        // Like the reference: an ONVIF camera without its own credentials takes those of the RTSP stream.
         if draft.onvif {
             if draft.onvif_user.is_empty() {
                 draft.onvif_user.clone_from(&draft.rtsp_user);
@@ -303,17 +303,17 @@ impl CameraService {
         Ok((saved, status))
     }
 
-    /// Supprime la camera (et, en cascade, ce qui lui appartient) puis son path MediaMTX.
+    /// Deletes the camera (and, in cascade, what belongs to it) then its MediaMTX path.
     ///
     /// # Errors
-    /// `NotFound` ou erreur du depot.
+    /// `NotFound` or repository error.
     pub async fn delete(&self, id: CameraId) -> Result<SyncStatus, CameraError> {
         let camera = self.get(id).await?.ok_or(CameraError::NotFound)?;
         self.store.cameras().delete(id).await.map_err(|e| match e {
             RepoError::NotFound => CameraError::NotFound,
             other => CameraError::Repo(other),
         })?;
-        // Les fichiers de la camera partent avec elle (les lignes de la base sont supprimees en cascade).
+        // The camera's files go with it (the database rows are deleted in cascade).
         if let Some(dir) = &self.snapshots_dir {
             let _ = tokio::fs::remove_dir_all(dir.join(camera.uuid.to_string())).await;
             let _ = tokio::fs::remove_file(dir.join("latest").join(format!("{}.jpg", camera.uuid)))
@@ -331,7 +331,7 @@ impl CameraService {
                 SyncStatus::Failed(e.to_string())
             }
         };
-        // Le path est arrete : MediaMTX n'ecrit plus dans le dossier.
+        // The path is stopped: MediaMTX no longer writes into the folder.
         self.remove_recordings(camera.uuid).await;
         Ok(status)
     }
@@ -369,10 +369,10 @@ impl CameraService {
         }
     }
 
-    /// Synchronisation complete : un path par camera **active**, les paths de camera inconnus sont retires.
+    /// Full synchronisation: one path per **active** camera, the paths of unknown cameras are removed.
     ///
     /// # Errors
-    /// `Disabled` sans `MEDIAMTX_API_URL`, MediaMTX qui ne repond pas, erreur du depot.
+    /// `Disabled` without `MEDIAMTX_API_URL`, MediaMTX not answering, repository error.
     pub async fn sync_all(&self) -> Result<SyncReport, SyncError> {
         let api = self.mediamtx.as_ref().ok_or(SyncError::Disabled)?;
         let mut wanted = BTreeMap::new();
@@ -388,14 +388,14 @@ impl CameraService {
                 Err(e) => unreadable.push((camera.uuid.to_string(), e.to_string())),
             }
         }
-        // Une camera dont le mot de passe est illisible garde son path actuel : on ne le supprime pas par erreur.
+        // A camera whose password is unreadable keeps its current path: we do not delete it by mistake.
         let keep: Vec<String> = unreadable.iter().map(|(n, _)| n.clone()).collect();
         let mut report = api.sync_keeping(&wanted, &keep).await?;
         report.failed.extend(unreadable);
         Ok(report)
     }
 
-    /// Client ONVIF d'une camera : ses identifiants ONVIF, ou ceux du flux a defaut (comme la reference).
+    /// A camera's ONVIF client: its ONVIF credentials, or the stream's by default (like the reference).
     pub fn onvif_client(&self, camera: &Camera) -> Result<OnvifClient, CameraError> {
         let d = &camera.config;
         let (user, sealed, field) = if d.onvif_user.is_empty() {
@@ -412,10 +412,10 @@ impl CameraService {
         Ok(OnvifClient::new(&d.ip, port, creds)?)
     }
 
-    /// Bascule jour / nuit, IR-cut ou lumiere d'une camera **active** par la methode configuree (`night_mode_api`).
+    /// Day / night toggle, IR-cut or light of an **active** camera through the configured method (`night_mode_api`).
     ///
     /// # Errors
-    /// `NotFound` (inconnue ou inactive), `Night(NotConfigured)`, action inconnue, secret illisible, erreur de la camera.
+    /// `NotFound` (unknown or inactive), `Night(NotConfigured)`, unknown action, unreadable secret, camera error.
     pub async fn night(&self, id: CameraId, action: &str) -> Result<NightOutcome, CameraError> {
         use dominet_domain::camera::NightApi;
         let action: NightAction = action.parse()?;
@@ -427,7 +427,7 @@ impl CameraService {
         let d = &camera.config;
         let open = |field: &str, sealed: &Sealed| self.open(camera.uuid, field, sealed);
         let rtsp_pass = open("rtsp_pass", &d.rtsp_pass)?;
-        // Identifiants ONVIF, a defaut ceux du flux (comme la reference).
+        // ONVIF credentials, by default those of the stream (like the reference).
         let (onvif_user, onvif_pass) = if d.onvif_user.is_empty() {
             (d.rtsp_user.clone(), rtsp_pass.clone())
         } else {
@@ -435,7 +435,7 @@ impl CameraService {
         };
         let (mut web_user, mut web_pass) = (d.web_user.clone(), open("web_pass", &d.web_pass)?);
         if d.night_mode_api == NightApi::Goform && web_user.is_empty() {
-            // Goform : identifiants web, a defaut ceux du flux.
+            // Goform: web credentials, by default those of the stream.
             web_user = d.rtsp_user.clone();
             web_pass = rtsp_pass;
         }
@@ -462,10 +462,10 @@ impl CameraService {
         Ok(outcome)
     }
 
-    /// Synchronisation ONVIF : lit identite, profil principal et PTZ de la camera et les enregistre.
+    /// ONVIF synchronisation: reads the camera's identity, main profile and PTZ and records them.
     ///
     /// # Errors
-    /// `OnvifDisabled`, identifiants refuses, camera injoignable, erreur du depot.
+    /// `OnvifDisabled`, credentials refused, camera unreachable, repository error.
     pub async fn onvif_sync(&self, id: CameraId) -> Result<Inspection, CameraError> {
         let camera = self.get(id).await?.ok_or(CameraError::NotFound)?;
         if !camera.config.onvif {
@@ -481,7 +481,7 @@ impl CameraService {
                     model: inspection.info.model.clone(),
                     firmware: inspection.info.firmware.clone(),
                     main_token: inspection.main_token.clone(),
-                    // Le PTZ est une decision de l'administrateur : ONVIF ne le propose qu'a la premiere synchronisation.
+                    // PTZ is an administrator's decision: ONVIF only suggests it at the first synchronisation.
                     ptz: if camera.config.main_token.is_empty() {
                         inspection.ptz
                     } else {
@@ -494,12 +494,12 @@ impl CameraService {
         Ok(inspection)
     }
 
-    /// Ajout par adresse IP (decouverte, ou camera que le multicast n'atteint pas). Si une camera a deja cette adresse, elle est
-    /// renvoyee telle quelle (`false`). Sinon le port ONVIF est cherche (`onvif_port` fourni, ou les ports usuels), la camera est
-    /// creee avec ONVIF active et, si des identifiants sont fournis, synchronisee tout de suite (un echec n'annule pas l'ajout).
+    /// Adding by IP address (discovery, or a camera the multicast does not reach). If a camera already has this address, it is
+    /// returned as is (`false`). Otherwise the ONVIF port is searched (`onvif_port` supplied, or the usual ports), the camera is
+    /// created with ONVIF enabled and, if credentials are supplied, synchronised right away (a failure does not cancel the addition).
     ///
     /// # Errors
-    /// Adresse invalide, `NoOnvifService`, erreur du depot.
+    /// Invalid address, `NoOnvifService`, repository error.
     pub async fn add_by_ip(
         &self,
         ip: &str,
@@ -549,9 +549,9 @@ impl CameraService {
     }
 }
 
-/// Adresse WHEP d'une camera chez MediaMTX, telle que le navigateur doit l'appeler : schema et domaine des reglages
-/// (`MEDIAMTX_WEBRTC_SCHEME`, `MEDIAMTX_WEBRTC_DOMAIN`), l'hote etant celui de la requete si le domaine configure est un hote propre de
-/// l'instance (voir `dominet_domain::public_url`). Un schema autre que `http` / `https` est remplace par `http`.
+/// WHEP address of a camera at MediaMTX, as the browser must call it: scheme and domain from the settings
+/// (`MEDIAMTX_WEBRTC_SCHEME`, `MEDIAMTX_WEBRTC_DOMAIN`), the host being the request's if the configured domain is one of the
+/// instance's own hosts (see `dominet_domain::public_url`). A scheme other than `http` / `https` is replaced by `http`.
 pub async fn whep_url(
     state: &crate::AppState,
     uuid: CameraUuid,
@@ -578,7 +578,7 @@ pub async fn whep_url(
     )
 }
 
-/// Coeur de [`whep_url`], sans acces aux reglages.
+/// Core of [`whep_url`], without access to the settings.
 #[must_use]
 pub fn whep_url_from(
     scheme: Option<&str>,
@@ -622,12 +622,12 @@ mod tests {
             ),
             format!("http://192.168.1.2:8889/{id}/whep")
         );
-        // Sans requete ni reglage : les valeurs par defaut de la reference.
+        // Without a request or a setting: the reference's default values.
         assert_eq!(
             whep_url_from(None, None, None, &[], uuid()),
             format!("http://localhost:8889/{id}/whep")
         );
-        // Schema inconnu refuse, barre finale retiree.
+        // Unknown scheme refused, trailing slash removed.
         assert_eq!(
             whep_url_from(Some("javascript"), Some("h:1/"), None, &[], uuid()),
             format!("http://h:1/{id}/whep")

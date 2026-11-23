@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Snapshots (R6 lot 6, ADR 0048) : la **derniere image** de chaque camera (ecrite par le role `video`) et les snapshots **indexes** (galerie).
+//! Snapshots (R6 lot 6, ADR 0048): the **last image** of each camera (written by the `video` role) and the **indexed** snapshots (gallery).
 //!
-//! Le role `web` ne decode rien : il lit `<SNAPSHOTS_DIR>/latest/<uuid>.jpg`, que le role `video` renouvelle chaque seconde (les deux
-//! roles peuvent etre deux processus). Un snapshot indexe est copie dans `<SNAPSHOTS_DIR>/<uuid>/<horodatage>.jpg` et inscrit en base ;
-//! au-dela de `SNAPSHOTS_MAX_PER_CAMERA` par camera, les plus anciens sont supprimes (ajout par rapport a reference, qui n'avait aucune limite).
+//! The `web` role decodes nothing: it reads `<SNAPSHOTS_DIR>/latest/<uuid>.jpg`, which the `video` role renews every second (the two
+//! roles may be two processes). An indexed snapshot is copied to `<SNAPSHOTS_DIR>/<uuid>/<timestamp>.jpg` and recorded in the database;
+//! beyond `SNAPSHOTS_MAX_PER_CAMERA` per camera, the oldest are deleted (an addition compared with the reference, which had no limit).
 
 use std::path::{Component, Path, PathBuf};
 use std::time::{Duration, SystemTime};
@@ -14,9 +14,9 @@ use dominet_domain::camera::{Camera, CameraId, CameraUuid, Snapshot, SnapshotId}
 use dominet_domain::repo::SnapshotRepo;
 use dominet_store::PgStore;
 
-/// Une derniere image plus vieille que cela n'est plus la camera : on ne la sert pas.
+/// A last image older than this is no longer the camera: we do not serve it.
 pub const STALE_AFTER: Duration = Duration::from_secs(60);
-/// Un snapshot est un JPEG de quelques centaines de Kio ; 20 Mio est deja une erreur.
+/// A snapshot is a JPEG of a few hundred KiB; 20 MiB is already an error.
 const MAX_BYTES: usize = 20 * 1024 * 1024;
 
 #[derive(Debug, thiserror::Error)]
@@ -31,7 +31,7 @@ pub enum SnapshotError {
     Repo(#[from] RepoError),
 }
 
-/// Une image lue sur le disque et son age.
+/// An image read from disk and its age.
 #[derive(Debug, Clone)]
 pub struct LatestImage {
     pub bytes: Vec<u8>,
@@ -50,7 +50,7 @@ fn is_jpeg(bytes: &[u8]) -> bool {
     bytes.len() > 4 && bytes.starts_with(&[0xFF, 0xD8]) && bytes.ends_with(&[0xFF, 0xD9])
 }
 
-/// Un chemin relatif sans `..`, sans racine : celui qu'on a nous-memes ecrit en base.
+/// A relative path without `..`, without a root: the one we ourselves wrote in the database.
 fn safe_relative(file: &str) -> Option<&Path> {
     let p = Path::new(file);
     (!file.is_empty() && p.components().all(|c| matches!(c, Component::Normal(_)))).then_some(p)
@@ -83,13 +83,13 @@ impl SnapshotService {
         })
     }
 
-    /// Derniere image de la camera, si elle a moins de [`STALE_AFTER`].
+    /// The camera's last image, if it is less than [`STALE_AFTER`] old.
     pub async fn latest(&self, uuid: CameraUuid) -> Option<LatestImage> {
         self.read_latest(uuid).await.filter(|i| i.age < STALE_AFTER)
     }
 
-    /// Une image **posterieure a cet appel** (au plus `timeout` d'attente, le role `video` en ecrit une par seconde) ; a defaut, la
-    /// derniere image encore recente.
+    /// An image **later than this call** (waiting at most `timeout`, the `video` role writes one per second); failing that, the
+    /// last image that is still recent.
     pub async fn fresh(&self, uuid: CameraUuid, timeout: Duration) -> Option<LatestImage> {
         let asked = SystemTime::now();
         let deadline = tokio::time::Instant::now() + timeout;
@@ -104,10 +104,10 @@ impl SnapshotService {
         self.latest(uuid).await
     }
 
-    /// Inscrit un snapshot : fichier, ligne en base, puis suppression des plus anciens au-dela du plafond de la camera.
+    /// Records a snapshot: file, database row, then deletion of the oldest beyond the camera's cap.
     ///
     /// # Errors
-    /// `Invalid` (pas un JPEG, ou trop gros), `Io`, erreur du depot.
+    /// `Invalid` (not a JPEG, or too big), `Io`, repository error.
     pub async fn index(
         &self,
         camera: &Camera,
@@ -140,10 +140,10 @@ impl SnapshotService {
         Ok(snapshot)
     }
 
-    /// Capture : image fraiche (ou la derniere recente) puis [`Self::index`].
+    /// Capture: fresh image (or the last recent one) then [`Self::index`].
     ///
     /// # Errors
-    /// `NoImage` sans image recente, puis celles de [`Self::index`].
+    /// `NoImage` without a recent image, then those of [`Self::index`].
     pub async fn capture(&self, camera: &Camera) -> Result<Snapshot, SnapshotError> {
         let image = self
             .fresh(camera.uuid, Duration::from_secs(4))
@@ -166,10 +166,10 @@ impl SnapshotService {
         }
     }
 
-    /// Snapshots indexes, les plus recents d'abord.
+    /// Indexed snapshots, most recent first.
     ///
     /// # Errors
-    /// Erreur du depot.
+    /// Repository error.
     pub async fn list(
         &self,
         camera: Option<CameraId>,
@@ -184,10 +184,10 @@ impl SnapshotService {
             .await?)
     }
 
-    /// Un snapshot indexe et son fichier (`None` s'il est inconnu ou si son fichier a disparu).
+    /// An indexed snapshot and its file (`None` if it is unknown or if its file has disappeared).
     ///
     /// # Errors
-    /// Erreur du depot.
+    /// Repository error.
     pub async fn read(&self, id: SnapshotId) -> Result<Option<(Snapshot, Vec<u8>)>, SnapshotError> {
         let Some(s) = self.store.snapshots().get(id).await? else {
             return Ok(None);
@@ -201,10 +201,10 @@ impl SnapshotService {
             .map(|b| (s, b)))
     }
 
-    /// Supprime le snapshot (ligne et fichier). Un fichier deja absent n'est pas une erreur.
+    /// Deletes the snapshot (row and file). An already absent file is not an error.
     ///
     /// # Errors
-    /// `Repo(NotFound)` s'il n'existe pas.
+    /// `Repo(NotFound)` if it does not exist.
     pub async fn delete(&self, id: SnapshotId) -> Result<(), SnapshotError> {
         let s = self
             .store
@@ -220,21 +220,21 @@ impl SnapshotService {
     }
 }
 
-/// Le jour courant `AAAA-MM-JJ` dans le fuseau `tz`.
+/// The current day `YYYY-MM-DD` in time zone `tz`.
 #[must_use]
 pub fn local_today(tz: &str) -> String {
     let tz: chrono_tz::Tz = tz.parse().unwrap_or(chrono_tz::UTC);
     Utc::now().with_timezone(&tz).format("%Y-%m-%d").to_string()
 }
 
-/// Un instant ecrit en RFC 3339 dans le fuseau `tz` (heure locale du serveur, pour l'affichage des enregistrements).
+/// An instant written in RFC 3339 in time zone `tz` (server local time, for displaying the recordings).
 #[must_use]
 pub fn local_rfc3339(tz: &str, at: DateTime<Utc>) -> String {
     let tz: chrono_tz::Tz = tz.parse().unwrap_or(chrono_tz::UTC);
     at.with_timezone(&tz).to_rfc3339()
 }
 
-/// Bornes UTC d'un jour `AAAA-MM-JJ` lu dans le fuseau `tz` (de minuit a minuit) ; `(None, None)` si le texte n'est pas un jour.
+/// UTC bounds of a day `YYYY-MM-DD` read in time zone `tz` (from midnight to midnight); `(None, None)` if the text is not a day.
 #[must_use]
 pub fn day_bounds(tz: &str, day: &str) -> (Option<DateTime<Utc>>, Option<DateTime<Utc>>) {
     use chrono::{NaiveDate, TimeZone};
@@ -264,11 +264,11 @@ mod tests {
 
     #[test]
     fn a_day_is_read_in_the_servers_time_zone() {
-        // Paris en hiver : UTC+1, donc le 2 janvier commence le 1er a 23 h UTC.
+        // Paris in winter: UTC+1, so 2 January starts on the 1st at 23:00 UTC.
         let (from, to) = day_bounds("Europe/Paris", "2026-01-02");
         assert_eq!(from.unwrap().to_rfc3339(), "2026-01-01T23:00:00+00:00");
         assert_eq!(to.unwrap().to_rfc3339(), "2026-01-02T23:00:00+00:00");
-        // Changement d'heure : le jour dure 23 h.
+        // Clock change: the day lasts 23 h.
         let (from, to) = day_bounds("Europe/Paris", "2026-03-29");
         assert_eq!((to.unwrap() - from.unwrap()).num_hours(), 23);
         assert_eq!(day_bounds("Europe/Paris", "pas un jour"), (None, None));
