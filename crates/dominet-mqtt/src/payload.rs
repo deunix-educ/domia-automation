@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Decodage d'une charge utile MQTT, comme l'implementation de reference : UTF-8 (a defaut Latin-1), puis JSON (a defaut
-//! le texte tel quel).
+//! Decoding of an MQTT payload, like the reference implementation: UTF-8 (Latin-1 otherwise), then JSON (the text as is
+//! otherwise).
 
 use serde_json::Value;
 
-/// Charge utile decodee.
+/// Decoded payload.
 #[derive(Debug, Clone, PartialEq)]
 pub enum Payload {
     Json(Value),
@@ -12,7 +12,7 @@ pub enum Payload {
 }
 
 impl Payload {
-    /// L'objet JSON, si la charge en est un (les etats d'appareils sont toujours des objets).
+    /// The JSON object, if the payload is one (device states are always objects).
     #[must_use]
     pub fn as_object(&self) -> Option<&serde_json::Map<String, Value>> {
         match self {
@@ -21,7 +21,7 @@ impl Payload {
         }
     }
 
-    /// Le texte, qu'il vienne d'une chaine JSON (`"online"`) ou d'un texte brut (`online`).
+    /// The text, whether it comes from a JSON string (`"online"`) or from plain text (`online`).
     #[must_use]
     pub fn as_text(&self) -> Option<&str> {
         match self {
@@ -31,7 +31,7 @@ impl Payload {
     }
 }
 
-/// Decode des octets : UTF-8, sinon Latin-1 (chaque octet est un caractere) ; JSON si possible, sinon texte.
+/// Decodes bytes: UTF-8, otherwise Latin-1 (each byte is a character); JSON if possible, otherwise text.
 #[must_use]
 pub fn decode_payload(raw: &[u8]) -> Payload {
     let text = match std::str::from_utf8(raw) {
@@ -44,13 +44,13 @@ pub fn decode_payload(raw: &[u8]) -> Payload {
     }
 }
 
-/// Un message recu du broker.
+/// A message received from the broker.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Incoming {
     pub topic: String,
     pub payload: Payload,
     pub retain: bool,
-    /// QoS de livraison (0, 1 ou 2).
+    /// Delivery QoS (0, 1 or 2).
     pub qos: u8,
 }
 
@@ -87,7 +87,7 @@ mod tests {
 
     #[test]
     fn invalid_utf8_falls_back_to_latin_1() {
-        // « é » en Latin-1 (un seul octet 0xE9) n'est pas de l'UTF-8 valide.
+        // "é" in Latin-1 (a single byte 0xE9) is not valid UTF-8.
         assert_eq!(
             decode_payload(&[b'c', b'a', b'f', 0xE9]),
             Payload::Text("café".into())

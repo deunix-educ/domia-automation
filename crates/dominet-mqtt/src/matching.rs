@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Correspondance entre un filtre d'abonnement MQTT (`+` un niveau, `#` suffixe) et un topic. Code du spike 8 (ADR 0005), qui
-//! diverge volontairement de `rumqttc::matches` sur les topics `$SYS`.
+//! Matching between an MQTT subscription filter (`+` one level, `#` suffix) and a topic. Code from spike 8 (ADR 0005), which
+//! deliberately differs from `rumqttc::matches` on `$SYS` topics.
 
-/// Vrai si `topic` correspond a `filter`. Un topic `$…` ne correspond jamais a un filtre qui commence par un joker.
+/// True if `topic` matches `filter`. A `$…` topic never matches a filter that starts with a wildcard.
 #[must_use]
 pub fn topic_matches(filter: &str, topic: &str) -> bool {
     if topic.starts_with('$') && (filter.starts_with('+') || filter.starts_with('#')) {
@@ -20,7 +20,7 @@ pub fn topic_matches(filter: &str, topic: &str) -> bool {
     }
 }
 
-/// Vrai si `topic` correspond a au moins un des filtres.
+/// True if `topic` matches at least one of the filters.
 pub fn matches_any<'a>(filters: impl IntoIterator<Item = &'a str>, topic: &str) -> bool {
     filters.into_iter().any(|f| topic_matches(f, topic))
 }

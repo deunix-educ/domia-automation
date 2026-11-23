@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Client MQTT supervise (`rumqttc`, ADR 0005 et 0026), decodage des charges utiles et correspondance de topics.
+//! Supervised MQTT client (`rumqttc`, ADR 0005 and 0026), payload decoding and topic matching.
 //!
-//! Le client tourne dans une tache : il se (re)connecte tout seul, **resouscrit a chaque `ConnAck`** (la session du broker peut
-//! etre perdue), applique les changements d'abonnements demandes a chaud et remet les messages recus, deja decodes, au
-//! consommateur. Une publication echoue **tout de suite** si le lien est coupe : une commande en attente ne doit pas s'executer
-//! dix minutes plus tard.
+//! The client runs in a task: it (re)connects by itself, **resubscribes on every `ConnAck`** (the broker's session may
+//! be lost), applies the subscription changes requested at run time and hands the received messages, already decoded, to the
+//! consumer. A publication fails **immediately** if the link is down: a pending command must not run ten minutes later.
 
 mod client;
 mod matching;

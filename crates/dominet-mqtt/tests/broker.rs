@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Client MQTT contre un vrai broker : le Mosquitto de la stack de dev (`make dev-up`, port 11883, `MQTT_TEST_PORT` pour en
-//! changer) pour les echanges, et un **Mosquitto jetable** (conteneur nomme, supprime a la fin) pour les coupures. Le broker
-//! partage n'est jamais arrete. Chaque test a ses topics (prefixe unique) et ses identifiants de client.
+//! MQTT client against a real broker: the Mosquitto of the dev stack (`make dev-up`, port 11883, `MQTT_TEST_PORT` to change
+//! it) for the exchanges, and a **disposable Mosquitto** (named container, removed at the end) for the outages. The shared broker
+//! is never stopped. Each test has its own topics (unique prefix) and client identifiers.
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::net::TcpStream;
@@ -69,7 +69,7 @@ async fn expect_nothing(rx: &mut mpsc::Receiver<Incoming>) {
     assert!(recv(rx, 1).await.is_none(), "message inattendu");
 }
 
-// ------------------------------------------------------------------ Mosquitto jetable
+// ------------------------------------------------------------------ disposable Mosquitto
 
 struct Broker {
     name: String,
@@ -87,7 +87,7 @@ fn docker(args: &[&str]) -> bool {
 }
 
 impl Broker {
-    /// Conteneur nomme sur un port libre, avec persistance (les sessions et messages QoS 1 survivent a un arret propre).
+    /// Named container on a free port, with persistence (sessions and QoS 1 messages survive a clean stop).
     fn new() -> Self {
         let port = std::net::TcpListener::bind("127.0.0.1:0")
             .unwrap()
@@ -159,7 +159,7 @@ impl Drop for Broker {
     }
 }
 
-/// Le numero d'ordre porte par un message (un entier JSON, ou du texte).
+/// The sequence number carried by a message (a JSON integer, or text).
 fn sequence_of(payload: &Payload) -> Option<u32> {
     match payload {
         Payload::Json(v) => v.as_u64().and_then(|n| u32::try_from(n).ok()),
@@ -167,7 +167,7 @@ fn sequence_of(payload: &Payload) -> Option<u32> {
     }
 }
 
-// ------------------------------------------------------------------ broker de dev
+// ------------------------------------------------------------------ dev broker
 
 #[tokio::test]
 async fn messages_round_trip_decoded_with_topic_and_qos() {
@@ -180,7 +180,7 @@ async fn messages_round_trip_decoded_with_topic_and_qos() {
         wait_status(&sub.client, Status::Connected, 10).await
             && wait_status(&publ.client, Status::Connected, 10).await
     );
-    // Laisse le temps au SUBACK avant de publier.
+    // Leave time for the SUBACK before publishing.
     tokio::time::sleep(Duration::from_millis(300)).await;
 
     publ.client
@@ -236,7 +236,7 @@ async fn retained_messages_arrive_on_a_new_subscription_and_can_be_cleared() {
     let m = recv(&mut sub.messages, 10).await.expect("retenu");
     assert!(m.retain);
     assert_eq!(m.payload.as_object().unwrap()["permit_join"], false);
-    // Un message retenu vide l'efface (le broker partage n'en garde pas).
+    // An empty retained message clears it (the shared broker keeps none).
     publ.client
         .publish(&format!("{p}/info"), Vec::<u8>::new(), 1, true)
         .unwrap();
@@ -262,7 +262,7 @@ async fn subscriptions_change_while_connected() {
     assert_eq!(recv(&mut sub.messages, 5).await.unwrap().topic, a);
     expect_nothing(&mut sub.messages).await;
 
-    // On bascule de a vers b, a chaud.
+    // Switch from a to b, at run time.
     sub.client.set_subscriptions(subs(&[(&b, 1)]));
     tokio::time::sleep(Duration::from_millis(400)).await;
     publ.client.publish(&a, "2", 1, false).unwrap();
@@ -270,7 +270,7 @@ async fn subscriptions_change_while_connected() {
     assert_eq!(recv(&mut sub.messages, 5).await.unwrap().topic, b);
     expect_nothing(&mut sub.messages).await;
 
-    // Plus aucun abonnement : plus aucun message.
+    // No subscription left: no message.
     sub.client.set_subscriptions(BTreeMap::new());
     tokio::time::sleep(Duration::from_millis(400)).await;
     publ.client.publish(&b, "3", 1, false).unwrap();
@@ -295,7 +295,7 @@ async fn shutdown_ends_the_task_and_refuses_further_publications() {
     );
 }
 
-// ------------------------------------------------------------------ broker jetable : coupures
+// ------------------------------------------------------------------ disposable broker: outages
 
 #[tokio::test]
 async fn a_broker_that_comes_up_late_is_joined_with_the_subscriptions_set_before() {
@@ -310,7 +310,7 @@ async fn a_broker_that_comes_up_late_is_joined_with_the_subscriptions_set_before
         .set_subscriptions(subs(&[(&format!("{p}/#"), 1)]));
     tokio::time::sleep(Duration::from_millis(600)).await;
     assert_ne!(sub.client.status(), Status::Connected);
-    // Le broker n'existe pas encore : le conteneur reprend ce port.
+    // The broker does not exist yet: the container takes this port over.
     let name = unique("dominet-test-mosquitto");
     let dir = std::path::PathBuf::from(env!("CARGO_TARGET_TMPDIR")).join(&name);
     std::fs::create_dir_all(&dir).unwrap();
@@ -368,7 +368,7 @@ async fn no_acknowledged_message_is_lost_when_the_broker_goes_down_and_comes_bac
     );
     tokio::time::sleep(Duration::from_millis(500)).await;
 
-    // Observateur d'etat : le lien de l'abonne doit passer par « coupe » puis revenir.
+    // State observer: the subscriber's link must go through "down" and then come back.
     let seen_down = {
         let mut rx = sub.client.watch_status();
         tokio::spawn(async move {
@@ -388,13 +388,13 @@ async fn no_acknowledged_message_is_lost_when_the_broker_goes_down_and_comes_bac
         })
     };
 
-    // 100 messages/s pendant ~9 s ; le broker s'arrete 2 s apres le debut, pendant 3 s.
+    // 100 messages/s for ~9 s; the broker stops 2 s after the start, for 3 s.
     let total = 900u32;
     let mut accepted: BTreeSet<u32> = BTreeSet::new();
     let mut refused = 0u32;
     let mut tick = tokio::time::interval(Duration::from_millis(10));
-    // Les arrets / reprises du broker bloquent cette boucle : sans cela, les ticks manques partiraient en rafale juste apres,
-    // avant que le client n'ait pu se reconnecter (delai de reprise jusqu'a 5 s) et tout serait refuse sur une machine rapide.
+    // The broker stops / resumes block this loop: without that, the missed ticks would burst right afterwards,
+    // before the client could reconnect (reconnection delay up to 5 s) and everything would be refused on a fast machine.
     tick.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Delay);
     for seq in 1..=total {
         tick.tick().await;
@@ -405,7 +405,7 @@ async fn no_acknowledged_message_is_lost_when_the_broker_goes_down_and_comes_bac
         if seq == 500 {
             let b = &broker;
             tokio::task::block_in_place(|| b.resume());
-            // La reprise est le moment ou l'on cesse de refuser : on attend la reconnexion de l'editeur au lieu de la parier.
+            // The resumption is the moment we stop refusing: we wait for the publisher's reconnection instead of betting on it.
             assert!(
                 wait_status(&publ.client, Status::Connected, 15).await,
                 "l'editeur doit se reconnecter au broker revenu"
@@ -424,7 +424,7 @@ async fn no_acknowledged_message_is_lost_when_the_broker_goes_down_and_comes_bac
         }
     }
 
-    // Tout message accepte par l'API doit finir par arriver (au moins une fois).
+    // Every message accepted by the API must eventually arrive (at least once).
     let mut got: BTreeSet<u32> = BTreeSet::new();
     let deadline = Instant::now() + Duration::from_secs(20);
     while Instant::now() < deadline && !accepted.is_subset(&got) {

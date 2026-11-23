@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Tache de supervision du client MQTT (voir la documentation du crate).
+//! Supervision task of the MQTT client (see the crate documentation).
 
 use std::collections::BTreeMap;
 use std::fmt;
@@ -14,25 +14,25 @@ use tokio::task::JoinHandle;
 
 use crate::payload::{Incoming, decode_payload};
 
-/// Taille maximale d'un message recu (`bridge/devices` de Zigbee2MQTT peut depasser 100 Kio) et emis.
+/// Maximum size of a received message (`bridge/devices` of Zigbee2MQTT can exceed 100 KiB) and of a sent one.
 const MAX_INCOMING: usize = 1024 * 1024;
 const MAX_OUTGOING: usize = 256 * 1024;
-/// File de messages recus : quand elle est pleine, la lecture du reseau attend et le broker met en attente. Rien n'est perdu tant
-/// que la file du broker suffit : `max_queued_messages` (1 000 par defaut dans Mosquitto, 100 000 dans nos configurations).
+/// Queue of received messages: when it is full, reading from the network waits and the broker queues. Nothing is lost as long
+/// as the broker's queue is enough: `max_queued_messages` (1000 by default in Mosquitto, 100000 in our configurations).
 const INBOX: usize = 8192;
-/// File des requetes vers le broker.
+/// Queue of requests to the broker.
 const OUTBOX: usize = 4096;
 const BACKOFF_MIN: Duration = Duration::from_millis(250);
 const BACKOFF_MAX: Duration = Duration::from_secs(5);
 
-/// Reglages de connexion. Le mot de passe n'apparait jamais dans `Debug`.
+/// Connection settings. The password never appears in `Debug`.
 #[derive(Clone)]
 pub struct MqttSettings {
     pub host: String,
     pub port: u16,
     pub user: Option<String>,
     pub password: Option<String>,
-    /// Identifiant de client **stable** (session persistante) et distinct de celui d'un autre service.
+    /// **Stable** client identifier (persistent session), distinct from that of any other service.
     pub client_id: String,
     pub keep_alive: Duration,
 }
@@ -64,19 +64,19 @@ impl fmt::Debug for MqttSettings {
     }
 }
 
-/// Etat du lien avec le broker.
+/// State of the link with the broker.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Status {
-    /// Premiere connexion en cours.
+    /// First connection in progress.
     Connecting,
     Connected,
-    /// Lien coupe ; les reconnexions se poursuivent.
+    /// Link down; reconnections continue.
     Disconnected,
 }
 
 #[derive(Debug, thiserror::Error, PartialEq, Eq)]
 pub enum PublishError {
-    /// Pas de lien avec le broker : la publication est refusee plutot que mise en attente.
+    /// No link with the broker: the publication is refused rather than queued.
     #[error("MQTT broker unreachable")]
     NotConnected,
     #[error("topic de publication invalide")]
@@ -85,12 +85,12 @@ pub enum PublishError {
     TooLarge,
     #[error("QoS invalide")]
     InvalidQos,
-    /// La file vers le broker est pleine.
+    /// The queue to the broker is full.
     #[error("file d'envoi pleine")]
     Busy,
 }
 
-/// Poignee partageable du client.
+/// Shareable handle of the client.
 #[derive(Debug, Clone)]
 pub struct MqttClient {
     client: AsyncClient,
@@ -99,13 +99,13 @@ pub struct MqttClient {
     shutdown: Arc<watch::Sender<bool>>,
 }
 
-/// Ce que renvoie [`start`].
+/// What [`start`] returns.
 #[derive(Debug)]
 pub struct Started {
     pub client: MqttClient,
-    /// Messages recus, decodes, dans l'ordre d'arrivee.
+    /// Received messages, decoded, in order of arrival.
     pub messages: mpsc::Receiver<Incoming>,
-    /// Tache de supervision ; se termine apres [`MqttClient::shutdown`].
+    /// Supervision task; ends after [`MqttClient::shutdown`].
     pub task: JoinHandle<()>,
 }
 
@@ -126,34 +126,34 @@ fn level_of(qos: QoS) -> u8 {
     }
 }
 
-/// Un topic de publication n'a ni joker ni caractere nul et n'est pas vide.
+/// A publication topic has no wildcard and no null character and is not empty.
 fn valid_publish_topic(topic: &str) -> bool {
     !topic.is_empty() && topic.len() <= 65_535 && !topic.contains(['+', '#', '\0'])
 }
 
 impl MqttClient {
-    /// Etat courant du lien.
+    /// Current state of the link.
     #[must_use]
     pub fn status(&self) -> Status {
         *self.status.borrow()
     }
 
-    /// Suivre les changements d'etat.
+    /// Follow the state changes.
     #[must_use]
     pub fn watch_status(&self) -> watch::Receiver<Status> {
         self.status.clone()
     }
 
-    /// Remplace l'ensemble des abonnements voulus (filtre -> QoS). Les differences sont appliquees tout de suite si le lien est
-    /// etabli, sinon a la prochaine connexion ; apres une reconnexion, tout l'ensemble est souscrit de nouveau.
+    /// Replaces the whole set of wanted subscriptions (filter -> QoS). The differences are applied immediately if the link is
+    /// up, otherwise at the next connection; after a reconnection, the whole set is subscribed again.
     pub fn set_subscriptions(&self, filters: BTreeMap<String, u8>) {
         self.desired.send_replace(filters);
     }
 
-    /// Publie un message.
+    /// Publishes a message.
     ///
     /// # Errors
-    /// Voir [`PublishError`] : lien coupe, topic ou QoS invalide, message trop gros, file pleine.
+    /// See [`PublishError`]: link down, invalid topic or QoS, message too big, queue full.
     pub fn publish(
         &self,
         topic: &str,
@@ -177,14 +177,14 @@ impl MqttClient {
             .map_err(|_| PublishError::Busy)
     }
 
-    /// Demande l'arret : deconnexion propre puis fin de la tache.
+    /// Requests the stop: clean disconnection, then the end of the task.
     pub fn shutdown(&self) {
         self.shutdown.send_replace(true);
     }
 }
 
-/// Retire les doublons et calcule ce qu'il faut souscrire / resilier pour passer de `current` a `desired`. Un changement de QoS
-/// compte comme une nouvelle souscription.
+/// Removes duplicates and computes what to subscribe / unsubscribe to go from `current` to `desired`. A QoS change
+/// counts as a new subscription.
 #[must_use]
 pub fn diff_subscriptions(
     desired: &BTreeMap<String, u8>,
@@ -203,13 +203,13 @@ pub fn diff_subscriptions(
     (add, remove)
 }
 
-/// Demarre le client. Rien ne bloque : la connexion et ses reprises se font dans la tache.
+/// Starts the client. Nothing blocks: the connection and its retries happen in the task.
 #[must_use]
 pub fn start(settings: &MqttSettings) -> Started {
     let mut opts = MqttOptions::new(&settings.client_id, &settings.host, settings.port);
     opts.set_keep_alive(settings.keep_alive);
-    // Session persistante : le broker garde les abonnements et les messages QoS 1 pendant une coupure courte (et on
-    // resouscrit de toute facon a chaque connexion).
+    // Persistent session: the broker keeps the subscriptions and the QoS 1 messages during a short outage (and we
+    // resubscribe on every connection anyway).
     opts.set_clean_session(false);
     opts.set_max_packet_size(MAX_INCOMING, MAX_OUTGOING);
     if let (Some(user), password) = (&settings.user, &settings.password) {
@@ -278,7 +278,7 @@ async fn supervise(
 ) {
     let mut subscribed: BTreeMap<String, u8> = BTreeMap::new();
     let mut backoff = BACKOFF_MIN;
-    // Deuxieme poignee sur l'arret, pour les pauses (la premiere est empruntee par le `select!`).
+    // Second handle on the stop, for the pauses (the first one is borrowed by the `select!`).
     let mut pause_rx = shutdown.clone();
     loop {
         tokio::select! {
@@ -286,7 +286,7 @@ async fn supervise(
             () = stopped(&mut shutdown) => break,
             changed = desired.changed() => {
                 if changed.is_err() {
-                    break; // plus aucune poignee : personne n'attend ce client
+                    break; // no handle left: nobody is waiting for this client
                 }
                 if *status.borrow() == Status::Connected {
                     let wanted = desired.borrow_and_update().clone();
@@ -296,7 +296,7 @@ async fn supervise(
             event = eventloop.poll() => match event {
                 Ok(Event::Incoming(Packet::ConnAck(ConnAck { code: ConnectReturnCode::Success, .. }))) => {
                     backoff = BACKOFF_MIN;
-                    // Connexion neuve : on ne suppose rien de la session du broker.
+                    // Fresh connection: we assume nothing about the broker's session.
                     subscribed.clear();
                     let wanted = desired.borrow_and_update().clone();
                     sync_subscriptions(&client, &wanted, &mut subscribed);
@@ -333,7 +333,7 @@ async fn supervise(
             },
         }
     }
-    // Arret : deconnexion propre (courte attente de l'envoi du paquet), puis plus rien.
+    // Stop: clean disconnection (short wait for the packet to be sent), then nothing more.
     let _ = client.try_disconnect();
     let _ = tokio::time::timeout(Duration::from_secs(1), async {
         while eventloop.poll().await.is_ok() {}
@@ -342,13 +342,13 @@ async fn supervise(
     status.send_replace(Status::Disconnected);
 }
 
-/// Attend que l'arret soit demande (rend la main tout de suite s'il l'a deja ete). Le garde de lecture du canal reste dans cette
-/// fonction : il ne doit pas traverser un `await` d'une tache.
+/// Waits until the stop is requested (returns immediately if it already was). The channel's read guard stays inside this
+/// function: it must not cross an `await` of a task.
 async fn stopped(rx: &mut watch::Receiver<bool>) {
     let _ = rx.wait_for(|stop| *stop).await;
 }
 
-/// Attend avant de retenter une connexion (delai croissant), sauf si l'arret est demande.
+/// Waits before retrying a connection (growing delay), unless the stop is requested.
 async fn pause(shutdown: &mut watch::Receiver<bool>, backoff: &mut Duration) {
     tokio::select! {
         () = tokio::time::sleep(*backoff) => {}
@@ -373,7 +373,7 @@ mod tests {
         );
         assert_eq!(add, [("b/+".to_string(), 0)]);
         assert_eq!(remove, ["old/#".to_string()]);
-        // Rien a faire quand tout est deja souscrit ; un changement de QoS se resouscrit.
+        // Nothing to do when everything is already subscribed; a QoS change is resubscribed.
         assert_eq!(
             diff_subscriptions(&map(&[("a", 1)]), &map(&[("a", 1)])),
             (vec![], vec![])
@@ -382,7 +382,7 @@ mod tests {
             diff_subscriptions(&map(&[("a", 1)]), &map(&[("a", 0)])).0,
             [("a".to_string(), 1)]
         );
-        // Apres une reconnexion, `current` est vide : tout est a souscrire.
+        // After a reconnection, `current` is empty: everything is to be subscribed.
         assert_eq!(
             diff_subscriptions(&map(&[("a", 1), ("b", 0)]), &map(&[]))
                 .0
@@ -423,7 +423,7 @@ mod tests {
 
     #[tokio::test]
     async fn without_a_broker_publishing_fails_fast_and_status_stays_down() {
-        // Port ferme : la connexion echoue, aucune publication n'est mise en attente.
+        // Closed port: the connection fails, no publication is queued.
         let started = start(&MqttSettings::new("127.0.0.1", 1, "test-no-broker"));
         let c = started.client.clone();
         assert_eq!(
