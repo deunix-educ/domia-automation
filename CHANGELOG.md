@@ -8,6 +8,8 @@ All notable changes are listed here. Format based on [Keep a Changelog](https://
 - The installer and `make prod-up` warn when a Zigbee dongle is plugged in but the Zigbee2MQTT folder is empty (a new network would replace the one on the dongle), and `make prod-doctor` reports a failed network creation and says to stop the retries first.
 
 ### Fixed
+- On a 64-bit ARM machine (Raspberry Pi), `make prod-up` no longer replaces the image built locally with the published amd64 one ("exec format error", empty master key): the download is limited to the machine's architecture and the image is checked before it is used. An empty master key is now an error instead of being written to `.env`.
+- The Zigbee2MQTT example configuration generates its own network identifiers (`GENERATE`) and uses channel 25 instead of the default values shared by every installation and the channel that overlaps Wi-Fi channel 1.
 - `make prod-import` writes the Zigbee2MQTT folder even when the container left root-owned files in it, refuses (without `--yes`) when a database volume or services of the project already exist, removes them with `--yes`, and has `--no-zigbee` for a rehearsal next to a running production.
 
 ## [1.0.1] - 2026-11-22

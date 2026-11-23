@@ -106,18 +106,24 @@ pull_run() { # pull_run ENV-CONTENT -> output in $W/out, exit code in $RC, docke
   PATH="$W/bin:$PATH" ENV_FILE="$W/pull.env" tools/prod.sh pull-image > "$W/out" 2>&1
   RC=$?
 }
-stub docker 'echo "$*" >> '"$W"'/calls; exit 0'
+stub docker 'echo "$*" >> '"$W"'/calls; case "$1 $2" in "info "*) echo "${STUB_HOST_ARCH:-x86_64}";; "image inspect") echo "${STUB_IMAGE_ARCH:-amd64}";; esac; exit 0'
 pull_run 'DOMINET_TAG=local\n'
 [ "$RC" = 0 ];                                            check "pull works: exit 0 (no build needed)" $?
-grep -q "pull -q ghcr.io/deunix-educ/domia-automation:latest" "$W/calls"; check "pull works: default image and version" $?
+grep -q "pull -q --platform linux/amd64 ghcr.io/deunix-educ/domia-automation:latest" "$W/calls"; check "pull works: default image and version" $?
 grep -q "tag ghcr.io/deunix-educ/domia-automation:latest dominet:local" "$W/calls"; check "pull works: tagged for Compose as dominet:<tag>" $?
 pull_run 'DOMINET_REGISTRY_IMAGE=example.org/me/app\nDOMINET_IMAGE_VERSION=1.2\n'
-grep -q "pull -q example.org/me/app:1.2" "$W/calls";      check "registry and version come from .env" $?
+grep -q "pull -q --platform linux/amd64 example.org/me/app:1.2" "$W/calls";      check "registry and version come from .env" $?
 stub docker 'echo "$*" >> '"$W"'/calls; case "$1" in pull) exit 1;; esac; exit 0'
 pull_run 'DOMINET_TAG=local\n'
 [ "$RC" = 1 ];                                            check "pull fails: exit 1 so the caller builds" $?
 has "local build" ;                                       check "pull fails: says it builds locally" $?
 ! grep -q "^tag " "$W/calls";                             check "pull fails: nothing is tagged" $?
+stub docker 'echo "$*" >> '"$W"'/calls; case "$1 $2" in "info "*) echo "${STUB_HOST_ARCH:-x86_64}";; "image inspect") echo "${STUB_IMAGE_ARCH:-amd64}";; esac; exit 0'
+export STUB_HOST_ARCH=aarch64; pull_run 'DOMINET_TAG=local\n'
+[ "$RC" = 1 ] && ! grep -q "^tag " "$W/calls";            check "arm64 host, amd64-only image: refused, nothing tagged (a local build must not be overwritten)" $?
+export STUB_HOST_ARCH=aarch64 STUB_IMAGE_ARCH=arm64; pull_run 'DOMINET_TAG=local\n'
+grep -q "pull -q --platform linux/arm64" "$W/calls" && [ "$RC" = 0 ]; check "arm64 host, arm64 image: downloaded" $?
+unset STUB_HOST_ARCH STUB_IMAGE_ARCH
 pull_run 'DOMINET_PULL=0\n'
 [ "$RC" = 1 ] && ! grep -q "^pull" "$W/calls";            check "DOMINET_PULL=0: no network attempt" $?
 

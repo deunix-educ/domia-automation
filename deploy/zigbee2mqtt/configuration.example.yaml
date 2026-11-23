@@ -21,11 +21,14 @@ frontend:
 
 advanced:
   log_level: info
-  # Generer une fois puis fixer les valeurs pour eviter un nouvel appairage en cas de recreation
-  # pan_id: GENERATE
-  # ext_pan_id: GENERATE
-  # network_key: GENERATE
-  channel: 11
+  # GENERATE : Zigbee2MQTT tire des valeurs au hasard au premier demarrage puis les ecrit ici (ne pas
+  # les perdre : sans elles, tous les appareils sont a rappairer). Les valeurs par defaut de Zigbee2MQTT
+  # sont les memes pour tout le monde et peuvent entrer en collision avec un autre reseau.
+  pan_id: GENERATE
+  ext_pan_id: GENERATE
+  network_key: GENERATE
+  # Canal 25 : hors des canaux Wi-Fi 1/6/11 (le canal 11 de Zigbee recouvre le Wi-Fi canal 1).
+  channel: 25
   homeassistant_legacy_entity_attributes: false
   legacy_api: false
   legacy_availability_payload: false

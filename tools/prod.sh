@@ -183,7 +183,13 @@ cmd_pull_image() {
   local reg ver; reg="$(val DOMINET_REGISTRY_IMAGE)"; reg="${reg:-ghcr.io/deunix-educ/domia-automation}"
   ver="$(val DOMINET_IMAGE_VERSION)"; ver="${ver:-latest}"
   say "  Image: trying $reg:$ver ..."
-  if docker pull -q "$reg:$ver" >/dev/null 2>&1 && docker tag "$reg:$ver" "$(tag)"; then
+  # Only the image of THIS machine's architecture: without --platform, docker downloads an image of another
+  # architecture (warning only) and it would replace a locally built one ("exec format error" at start).
+  local arch; arch="$(docker info --format '{{.Architecture}}' 2>/dev/null || true)"
+  case "$arch" in aarch64|arm64) arch=arm64 ;; x86_64|amd64) arch=amd64 ;; *) arch="" ;; esac
+  if [ -n "$arch" ] && docker pull -q --platform "linux/$arch" "$reg:$ver" >/dev/null 2>&1 \
+     && [ "$(docker image inspect --format '{{.Architecture}}' "$reg:$ver" 2>/dev/null)" = "$arch" ] \
+     && docker tag "$reg:$ver" "$(tag)"; then
     say "  Image: downloaded (no build needed)."
     return 0
   fi
@@ -199,7 +205,9 @@ cmd_up() {
   [ -f models/yolov8n.onnx ] || make fetch-model
   cmd_pull_image || compose build dominet
   if [ -z "$(val DOMINET_MASTER_KEY)" ]; then
-    setvar DOMINET_MASTER_KEY "$(docker run --rm "$(tag)" gen-master-key | tail -1)"
+    local mk; mk="$(docker run --rm "$(tag)" gen-master-key 2>/dev/null | tail -1)"
+    [ -n "$mk" ] || die "impossible de generer DOMINET_MASTER_KEY avec l'image $(tag) (architecture differente de cette machine ? essayez DOMINET_PULL=0 pour la reconstruire)."
+    setvar DOMINET_MASTER_KEY "$mk"
     say "  DOMINET_MASTER_KEY generee dans $ENV_FILE : SAUVEGARDEZ-LA hors de cette machine."
   fi
   compose up -d --wait --wait-timeout 300
