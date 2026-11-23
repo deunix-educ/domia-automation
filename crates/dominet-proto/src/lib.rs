@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! DTO partages entre le serveur et le front WASM (et contrat Android a terme).
+//! DTOs shared between the server and the WASM front end (and, eventually, the Android contract).
 //!
-//! Aucune logique ici : des structures `serde` et leurs noms de champs, qui font office de contrat.
+//! No logic here: `serde` structures and their field names, which act as the contract.
 
 use serde::{Deserialize, Serialize};
 
@@ -12,7 +12,7 @@ pub enum RoleDto {
     User,
 }
 
-/// Compte tel que montre a l'interface : jamais de mot de passe ni de condensat.
+/// Account as shown to the interface: never a password or a hash.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct UserDto {
     pub id: i64,
@@ -22,7 +22,7 @@ pub struct UserDto {
     pub mobile: String,
     pub role: RoleDto,
     pub is_active: bool,
-    /// RFC 3339 (UTC), absent tant que le compte ne s'est jamais connecte.
+    /// RFC 3339 (UTC), absent as long as the account has never logged in.
     pub last_login_at: Option<String>,
 }
 
@@ -32,7 +32,7 @@ pub struct LoginRequest {
     pub password: String,
 }
 
-// `Debug` ne doit jamais montrer le mot de passe.
+// `Debug` must never show the password.
 impl std::fmt::Debug for LoginRequest {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("LoginRequest")
@@ -54,18 +54,18 @@ impl std::fmt::Debug for ChangePasswordRequest {
     }
 }
 
-/// Resultat d'une tentative de connexion depuis l'interface (les refus attendus sont des valeurs, pas des erreurs).
+/// Result of a login attempt from the interface (expected refusals are values, not errors).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum LoginOutcome {
     Success(UserDto),
-    /// Nom inconnu, mot de passe faux ou compte desactive : meme reponse pour ne rien reveler.
+    /// Unknown name, wrong password or deactivated account: same answer so as to reveal nothing.
     InvalidCredentials,
     Locked {
         retry_after_s: u64,
     },
 }
 
-/// Motif de refus d'un nouveau mot de passe.
+/// Reason a new password is refused.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum PasswordProblem {
     TooShort { min: u32 },
@@ -74,38 +74,38 @@ pub enum PasswordProblem {
     SameAsUsername,
 }
 
-/// Resultat d'un changement de mot de passe depuis l'interface.
+/// Result of a password change from the interface.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum ChangePasswordOutcome {
-    /// Mot de passe change ; toutes les sessions du compte sont fermees.
+    /// Password changed; all the sessions of the account are closed.
     Changed,
     WrongCurrent,
     Rejected(PasswordProblem),
-    /// Trop d'essais recents : meme blocage que la connexion.
+    /// Too many recent attempts: same lock-out as the login.
     Locked {
         retry_after_s: u64,
     },
 }
 
-/// Sujet auquel un navigateur peut s'abonner sur `/ws/notifications/` : `notifications`, `system`, `device:<id>`,
-/// `camera:<uuid>`. La meme ecriture sert sur le fil, dans le hub du serveur et dans le navigateur.
+/// Subject a browser can subscribe to on `/ws/notifications/`: `notifications`, `system`, `device:<id>`,
+/// `camera:<uuid>`. The same notation is used on the wire, in the server's hub and in the browser.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Topic {
-    /// Messages destines a l'interface (tous les comptes) : toujours abonne a l'ouverture.
+    /// Messages for the interface (all accounts): always subscribed to at opening.
     Notifications,
-    /// Statistiques de la machine (R2, lot 3).
+    /// Machine statistics (R2, lot 3).
     System,
-    /// Nombre d'alertes en cours (R4, lot 6) : pastille de la barre laterale et page des alertes.
+    /// Number of ongoing alerts (R4, lot 6): sidebar badge and alerts page.
     Alerts,
-    /// Etat d'un appareil (identifiant strictement positif).
+    /// State of a device (strictly positive identifier).
     Device(i64),
-    /// Evenements d'un appareil Android (R5) : presence, SMS, appels, accuses. Reserve a son proprietaire et aux administrateurs.
+    /// Events of an Android device (R5): presence, SMS, calls, acknowledgements. Reserved to its owner and to administrators.
     Android(i64),
-    /// Progression de l'envoi d'un message (R5 lot 5) : reserve a l'expediteur, aux destinataires et aux administrateurs.
+    /// Progress of a message being sent (R5 lot 5): reserved to the sender, the recipients and administrators.
     Message(i64),
-    /// Resultats de la decouverte ONVIF (R6 lot 3) : reserve aux administrateurs.
+    /// Results of the ONVIF discovery (R6 lot 3): reserved to administrators.
     Discovery,
-    /// Evenements d'une camera (R6) : refuse tant que la surveillance n'existe pas.
+    /// Events of a camera (R6): refused as long as surveillance does not exist.
     Camera(uuid::Uuid),
 }
 
@@ -124,15 +124,15 @@ impl std::fmt::Display for Topic {
     }
 }
 
-/// Texte qui n'est pas un sujet valide.
+/// Text that is not a valid subject.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct InvalidTopic;
 
 impl std::str::FromStr for Topic {
     type Err = InvalidTopic;
 
-    /// Strict : forme canonique uniquement (`device:7`, pas `device:07` ni `Device:7` ni d'espace), pour que deux ecritures
-    /// d'un meme sujet ne puissent pas creer deux abonnements.
+    /// Strict: canonical form only (`device:7`, not `device:07` nor `Device:7` nor a space), so that two spellings
+    /// of the same subject cannot create two subscriptions.
     fn from_str(s: &str) -> Result<Self, InvalidTopic> {
         let topic = match s {
             "notifications" => Self::Notifications,
@@ -158,24 +158,24 @@ impl std::str::FromStr for Topic {
     }
 }
 
-/// Etat d'un appareil tel que diffuse a chaque message d'etat (contrat de l'annexe A.1, repris de l'implementation de reference).
+/// State of a device as broadcast with each state message (contract of appendix A.1, taken from the reference implementation).
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct DeviceStateDto {
     pub device_id: i64,
     pub friendly_name: String,
-    /// Objet JSON des proprietes (`temperature`, `state`, `brightness`...).
+    /// JSON object of the properties (`temperature`, `state`, `brightness`...).
     pub state: serde_json::Value,
     pub available: bool,
 }
 
-/// Processeur : charge globale et nombre de coeurs logiques.
+/// Processor: overall load and number of logical cores.
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 pub struct CpuStats {
     pub percent: f64,
     pub count: u32,
 }
 
-/// Memoire vive (les tailles sont en Gio, arrondies a une decimale, comme l'implementation de reference).
+/// Memory (sizes are in GiB, rounded to one decimal, like the reference implementation).
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 pub struct MemoryStats {
     pub percent: f64,
@@ -184,7 +184,7 @@ pub struct MemoryStats {
     pub available_gb: f64,
 }
 
-/// Disque de la racine `/`.
+/// Disk of the root `/`.
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 pub struct DiskStats {
     pub percent: f64,
@@ -193,27 +193,27 @@ pub struct DiskStats {
     pub free_gb: f64,
 }
 
-/// Ressources de la machine (sujet `system`, `GET /api/system-stats/`). Format de l'implementation de reference (`cpu`, `memory`,
-/// `disk`, `updated_at`) augmente de `temperature` ; `disk` et `temperature` valent `null` quand la machine ne les
-/// expose pas (conteneur sans capteur, racine introuvable) : mieux vaut une valeur absente qu'une valeur fausse.
+/// Machine resources (subject `system`, `GET /api/system-stats/`). Format of the reference implementation (`cpu`, `memory`,
+/// `disk`, `updated_at`) extended with `temperature`; `disk` and `temperature` are `null` when the machine does not
+/// expose them (container without a sensor, root not found): better an absent value than a wrong one.
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 pub struct SystemStatsDto {
     pub cpu: CpuStats,
     pub memory: MemoryStats,
     pub disk: Option<DiskStats>,
-    /// Degres Celsius du processeur (ou du capteur le plus chaud a defaut).
+    /// Degrees Celsius of the processor (or of the hottest sensor otherwise).
     pub temperature: Option<f64>,
-    /// Secondes Unix (decimales) de la mesure.
+    /// Unix seconds (decimal) of the measurement.
     pub updated_at: f64,
 }
 
-/// SMS tel que montre a l'interface (champs de `to_dict` de l'implementation de reference).
+/// SMS as shown to the interface (fields of `to_dict` of the reference implementation).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct SmsDto {
     pub id: i64,
     #[serde(default)]
     pub device_id: i64,
-    /// `incoming` ou `outgoing`.
+    /// `incoming` or `outgoing`.
     pub direction: String,
     pub phone_number: String,
     pub contact_name: String,
@@ -221,45 +221,45 @@ pub struct SmsDto {
     pub is_read: bool,
     /// RFC 3339 (UTC).
     pub sent_at: String,
-    /// Ligne de la file d'envoi d'un SMS sortant (c'est le `message_id` de `sms_sent_ack`).
+    /// Row of the sending queue of an outgoing SMS (this is the `message_id` of `sms_sent_ack`).
     #[serde(default)]
     pub outbox_id: Option<i64>,
-    /// Etat d'envoi d'un SMS sortant : `pending`, `sent` ou `failed` ; vide pour un SMS recu.
+    /// Sending state of an outgoing SMS: `pending`, `sent` or `failed`; empty for a received SMS.
     #[serde(default)]
     pub delivery: String,
-    /// Raison de l'echec d'un SMS sortant.
+    /// Reason an outgoing SMS failed.
     #[serde(default)]
     pub error: String,
 }
 
-/// Entree du journal d'appels (champs de `to_dict` de l'implementation de reference).
+/// Entry of the call log (fields of `to_dict` of the reference implementation).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CallDto {
     pub id: i64,
     #[serde(default)]
     pub device_id: i64,
-    /// `incoming`, `outgoing` ou `missed`.
+    /// `incoming`, `outgoing` or `missed`.
     pub direction: String,
     pub phone_number: String,
     pub contact_name: String,
     pub started_at: String,
     pub ended_at: Option<String>,
-    /// Secondes.
+    /// Seconds.
     pub duration: i32,
 }
 
-/// Ce qui se passe sur un appareil Android (sujet `android:<id>`), au format des messages du navigateur de l'implementation de reference.
+/// What happens on an Android device (subject `android:<id>`), in the format of the reference implementation's browser messages.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "kind", rename_all = "snake_case")]
 pub enum AndroidEvent {
-    /// L'appareil se connecte ou se deconnecte ; le dernier etat est conserve par le hub.
+    /// The device connects or disconnects; the last state is kept by the hub.
     DeviceStatus {
         is_online: bool,
     },
     SmsReceived {
         sms: SmsDto,
     },
-    /// Un SMS vient d'etre confie a l'appareil depuis un navigateur (etat `pending` jusqu'a l'accuse).
+    /// An SMS has just been handed to the device from a browser (state `pending` until the acknowledgement).
     SmsQueued {
         sms: SmsDto,
     },
@@ -267,7 +267,7 @@ pub enum AndroidEvent {
         call: CallDto,
         state: String,
     },
-    /// Accuse d'envoi d'un SMS : `message_id` est l'identifiant de la file d'envoi (celui de `send_sms`).
+    /// Acknowledgement of an SMS send: `message_id` is the identifier of the sending queue (that of `send_sms`).
     SmsSentAck {
         message_id: i64,
         success: bool,
@@ -275,7 +275,7 @@ pub enum AndroidEvent {
     },
 }
 
-/// Appareil Android tel que montre a l'interface : jamais son jeton.
+/// Android device as shown to the interface: never its token.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct AndroidDeviceDto {
     pub id: i64,
@@ -283,11 +283,11 @@ pub struct AndroidDeviceDto {
     pub phone_number: String,
     pub owner: String,
     pub is_online: bool,
-    /// RFC 3339 (UTC), vide tant que l'appareil ne s'est jamais connecte.
+    /// RFC 3339 (UTC), empty as long as the device has never connected.
     pub last_seen: String,
 }
 
-/// Tableau de bord Android : appareils et activite recente (10 SMS et 10 appels au plus).
+/// Android dashboard: devices and recent activity (10 SMS and 10 calls at most).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct AndroidOverviewDto {
     pub devices: Vec<AndroidDeviceDto>,
@@ -296,7 +296,7 @@ pub struct AndroidOverviewDto {
     pub unread: u32,
 }
 
-/// Page des SMS d'un appareil (les 100 derniers) ; `device` est absent quand le compte n'a aucun appareil.
+/// SMS page of a device (the last 100); `device` is absent when the account has no device.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct AndroidSmsPageDto {
     pub device: Option<AndroidDeviceDto>,
@@ -304,7 +304,7 @@ pub struct AndroidSmsPageDto {
     pub sms: Vec<SmsDto>,
 }
 
-/// Journal d'appels d'un appareil (les 100 derniers).
+/// Call log of a device (the last 100).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct AndroidCallsPageDto {
     pub device: Option<AndroidDeviceDto>,
@@ -312,21 +312,21 @@ pub struct AndroidCallsPageDto {
     pub calls: Vec<CallDto>,
 }
 
-/// Enregistrement d'un appareil.
+/// Registration of a device.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct AndroidDeviceInput {
     pub name: String,
     pub phone_number: String,
 }
 
-/// Appareil qui vient d'etre cree : son jeton n'est montre **qu'ici**, une seule fois.
+/// A device that has just been created: its token is shown **only here**, once.
 #[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct NewAndroidDeviceDto {
     pub device: AndroidDeviceDto,
     pub token: String,
 }
 
-// `Debug` ne doit jamais montrer le jeton.
+// `Debug` must never show the token.
 impl std::fmt::Debug for NewAndroidDeviceDto {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("NewAndroidDeviceDto")
@@ -335,41 +335,41 @@ impl std::fmt::Debug for NewAndroidDeviceDto {
     }
 }
 
-/// Resultat de l'envoi d'un SMS depuis le navigateur.
+/// Result of sending an SMS from the browser.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum SendSmsOutcome {
-    /// Confie a l'appareil ; l'accuse arrivera en direct.
+    /// Handed to the device; the acknowledgement will arrive live.
     Queued(SmsDto),
     Invalid(Vec<FieldProblem>),
-    /// L'appareil n'est pas connecte : rien n'a ete enregistre.
+    /// The device is not connected: nothing was recorded.
     Offline,
-    /// Appareil inconnu ou qui n'est pas au compte.
+    /// Unknown device, or not on the account.
     NotFound,
 }
 
-// ------------------------------------------------------------------ messagerie (R5 lot 5)
+// ------------------------------------------------------------------ messaging (R5 lot 5)
 
-/// Une personne qu'on peut choisir comme destinataire d'un message.
+/// A person who can be chosen as a message recipient.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct RecipientChoiceDto {
     pub id: i64,
     pub username: String,
-    /// Prenom et nom, ou le nom d'utilisateur.
+    /// First and last name, or the username.
     pub display_name: String,
     pub has_email: bool,
     pub has_mobile: bool,
 }
 
-/// Donnees du formulaire de composition.
+/// Data of the composition form.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ComposeFormDto {
     pub users: Vec<RecipientChoiceDto>,
-    /// Reglages d'envoi manquants (aucun serveur SMTP, aucun appareil Android en ligne) : simple information avant l'envoi.
+    /// Missing sending settings (no SMTP server, no Android device online): simple information before sending.
     pub email_ready: bool,
     pub android_online: bool,
 }
 
-/// Ce que l'administrateur saisit : `channel` vaut `email`, `sms` ou `both` ; `audience` vaut `all`, `staff` ou vide (choix par compte).
+/// What the administrator enters: `channel` is `email`, `sms` or `both`; `audience` is `all`, `staff` or empty (choice per account).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ComposeInput {
     pub subject: String,
@@ -381,7 +381,7 @@ pub struct ComposeInput {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum ComposeOutcome {
-    /// Message enregistre, envoi en cours : `id` est celui de la page de detail.
+    /// Message recorded, sending in progress: `id` is that of the detail page.
     Sent {
         id: i64,
         recipients: u32,
@@ -389,7 +389,7 @@ pub enum ComposeOutcome {
     Invalid(Vec<FieldProblem>),
 }
 
-/// Message dans une liste (envoyes ou boite de reception).
+/// Message in a list (sent or inbox).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct MessageRowDto {
     pub id: i64,
@@ -400,23 +400,23 @@ pub struct MessageRowDto {
     pub recipients: i32,
     /// RFC 3339 (UTC).
     pub created_at: String,
-    /// Statuts du compte connecte pour ce message (boite de reception) ; vides ailleurs.
+    /// Statuses of the logged-in account for this message (inbox); empty elsewhere.
     pub my_email: String,
     pub my_sms: String,
 }
 
-/// Envoi d'un message a un destinataire.
+/// Sending of a message to a recipient.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct DeliveryDto {
     pub id: i64,
     pub recipient: String,
-    /// `pending`, `sent`, `failed` ou `na`.
+    /// `pending`, `sent`, `failed` or `na`.
     pub email: String,
     pub sms: String,
     pub error: String,
 }
 
-/// Page de detail : le tableau complet (`deliveries`) pour l'expediteur et les administrateurs, sinon seulement `mine`.
+/// Detail page: the full table (`deliveries`) for the sender and administrators, otherwise only `mine`.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct MessageDetailDto {
     pub message: MessageRowDto,
@@ -426,82 +426,82 @@ pub struct MessageDetailDto {
     pub mine: Option<DeliveryDto>,
 }
 
-/// Pourquoi une demande d'abonnement est refusee.
+/// Why a subscription request is refused.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum RefusalReason {
-    /// Sujet mal ecrit.
+    /// Badly written subject.
     Invalid,
-    /// Sujet non autorise a ce compte (ou pas encore disponible).
+    /// Subject not allowed for this account (or not yet available).
     Forbidden,
-    /// Trop d'abonnements sur cette connexion.
+    /// Too many subscriptions on this connection.
     Limit,
 }
 
-/// Message du serveur vers le navigateur sur `/ws/notifications/` (une valeur JSON par trame texte).
+/// Message from the server to the browser on `/ws/notifications/` (one JSON value per text frame).
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum WsServerMsg {
-    /// Premiere trame apres l'ouverture : la connexion est authentifiee.
+    /// First frame after opening: the connection is authenticated.
     Hello { username: String },
-    /// Battement de coeur : le navigateur doit repondre `pong` avant le suivant, sinon la connexion est fermee.
+    /// Heartbeat: the browser must answer `pong` before the next one, otherwise the connection is closed.
     Ping,
-    /// Message a afficher a l'utilisateur.
+    /// Message to show to the user.
     Notification {
         level: NotificationLevel,
         text: String,
     },
-    /// Etat d'un appareil (sujet `device:<id>`) ; le dernier etat connu est envoye des l'abonnement.
+    /// State of a device (subject `device:<id>`); the last known state is sent upon subscription.
     DeviceState(DeviceStateDto),
-    /// Ressources de la machine (sujet `system`), toutes les quelques secondes.
+    /// Machine resources (subject `system`), every few seconds.
     SystemStats(SystemStatsDto),
-    /// Nombre d'alertes en cours (sujet `alerts`) ; le dernier est conserve.
+    /// Number of ongoing alerts (subject `alerts`); the last one is kept.
     AlertCount { firing: u32 },
-    /// Evenement d'un appareil Android (sujet `android:<id>`).
+    /// Event of an Android device (subject `android:<id>`).
     Android { device_id: i64, event: AndroidEvent },
-    /// Un envoi de la messagerie a progresse (sujet `message:<id>`) : la page de detail recharge ses statuts. `complete` : plus rien
-    /// n'est en attente. Le dernier evenement est conserve par le hub.
+    /// A message send has progressed (subject `message:<id>`): the detail page reloads its statuses. `complete`: nothing
+    /// is pending any more. The last event is kept by the hub.
     MessageProgress { message_id: i64, complete: bool },
-    /// Progression de la decouverte ONVIF (sujet `discovery`, administrateurs).
+    /// Progress of the ONVIF discovery (subject `discovery`, administrators).
     Discovery { event: DiscoveryEvent },
-    /// Abonnement pris en compte (ou deja actif).
+    /// Subscription taken into account (or already active).
     Subscribed { topic: String },
-    /// Abonnement refuse.
+    /// Subscription refused.
     Refused {
         topic: String,
         reason: RefusalReason,
     },
 }
 
-/// Un appareil ONVIF qui a repondu a la decouverte.
+/// An ONVIF device that answered the discovery.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct DiscoveredDto {
     pub ip: String,
     pub port: u16,
     pub name: String,
     pub hardware: String,
-    /// Une camera enregistree a deja cette adresse.
+    /// A registered camera already has this address.
     pub known: bool,
 }
 
-/// Etape de la decouverte ONVIF.
+/// Step of the ONVIF discovery.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "kind", rename_all = "snake_case")]
 pub enum DiscoveryEvent {
-    /// Une recherche commence : la liste repart de zero.
+    /// A search starts: the list restarts from zero.
     Scanning,
     Found {
         device: DiscoveredDto,
     },
-    /// Fin de l'ecoute.
+    /// End of the listening.
     Done,
-    /// La recherche a echoue (message sans secret).
+    /// The search failed (message without a secret).
     Failed {
         message: String,
     },
 }
 
-/// Etat de la page de decouverte, reconstruit a partir des evenements.
+/// State of the discovery page, rebuilt from the events.
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct DiscoveryView {
     pub scanning: bool,
@@ -544,12 +544,12 @@ pub enum NotificationLevel {
     Error,
 }
 
-/// Message du navigateur vers le serveur.
+/// Message from the browser to the server.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum WsClientMsg {
     Pong,
-    /// S'abonner a un sujet (forme canonique, voir [`Topic`]).
+    /// Subscribe to a subject (canonical form, see [`Topic`]).
     Subscribe {
         topic: String,
     },
@@ -558,27 +558,27 @@ pub enum WsClientMsg {
     },
 }
 
-/// Resultat de la diffusion d'un message a tous les utilisateurs connectes.
+/// Result of broadcasting a message to all the connected users.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum BroadcastOutcome {
-    /// Nombre de connexions ouvertes qui ont recu le message.
+    /// Number of open connections that received the message.
     Sent { receivers: u32 },
-    /// Texte vide ou trop long.
+    /// Empty or too long text.
     Invalid,
 }
 
-/// Resultat de l'injection d'un etat d'appareil d'essai.
+/// Result of injecting a test device state.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum InjectOutcome {
-    /// Nombre d'abonnes qui l'ont recu.
+    /// Number of subscribers that received it.
     Sent { receivers: u32 },
-    /// Aucun appareil de ce numero.
+    /// No device with this number.
     InvalidDevice,
-    /// Pas un objet JSON, ou trop volumineux (4 Kio au plus).
+    /// Not a JSON object, or too big (4 KiB at most).
     InvalidState,
 }
 
-/// Un compte tel qu'affiche et edite dans l'administration (jamais de mot de passe ni de condensat).
+/// An account as shown and edited in the administration (never a password or a hash).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct UserAdminDto {
     pub id: i64,
@@ -592,8 +592,8 @@ pub struct UserAdminDto {
     pub last_login_at: Option<String>,
 }
 
-/// Creation (`id` absent) ou modification d'un compte. `username` est ignore en modification (immuable). `password` :
-/// obligatoire a la creation, facultatif ensuite (non vide = reinitialisation).
+/// Creation (`id` absent) or modification of an account. `username` is ignored on modification (immutable). `password`:
+/// mandatory at creation, optional afterwards (non-empty = reset).
 #[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct UserInput {
     pub id: Option<i64>,
@@ -607,7 +607,7 @@ pub struct UserInput {
     pub password: String,
 }
 
-// `Debug` ne doit jamais montrer le mot de passe.
+// `Debug` must never show the password.
 impl std::fmt::Debug for UserInput {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("UserInput")
@@ -617,7 +617,7 @@ impl std::fmt::Debug for UserInput {
     }
 }
 
-/// Un emplacement, tel qu'affiche et edite dans l'administration.
+/// A location, as shown and edited in the administration.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct LocationDto {
     pub id: i64,
@@ -626,7 +626,7 @@ pub struct LocationDto {
     pub active: bool,
 }
 
-/// Creation (`id` absent) ou remplacement (`id` present) d'un emplacement.
+/// Creation (`id` absent) or replacement (`id` present) of a location.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct LocationInput {
     pub id: Option<i64>,
@@ -635,7 +635,7 @@ pub struct LocationInput {
     pub active: bool,
 }
 
-/// Regle d'alerte Prometheus, telle qu'affichee et editee dans l'administration (R7, ADR 0052).
+/// Prometheus alert rule, as shown and edited in the administration (R7, ADR 0052).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct PrometheusRuleDto {
     pub id: i64,
@@ -650,7 +650,7 @@ pub struct PrometheusRuleDto {
     pub active: bool,
 }
 
-/// Creation (`id` absent) ou remplacement (`id` present) d'une regle Prometheus.
+/// Creation (`id` absent) or replacement (`id` present) of a Prometheus rule.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct PrometheusRuleInput {
     pub id: Option<i64>,
@@ -665,7 +665,7 @@ pub struct PrometheusRuleInput {
     pub active: bool,
 }
 
-/// Regle d'alerte Grafana, telle qu'affichee et editee dans l'administration (R7, ADR 0052).
+/// Grafana alert rule, as shown and edited in the administration (R7, ADR 0052).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct GrafanaRuleDto {
     pub id: i64,
@@ -686,7 +686,7 @@ pub struct GrafanaRuleDto {
     pub active: bool,
 }
 
-/// Creation (`id` absent) ou remplacement (`id` present) d'une regle Grafana. `uid` vide : tire du titre.
+/// Creation (`id` absent) or replacement (`id` present) of a Grafana rule. Empty `uid`: derived from the title.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct GrafanaRuleInput {
     pub id: Option<i64>,
@@ -707,23 +707,23 @@ pub struct GrafanaRuleInput {
     pub active: bool,
 }
 
-/// Resultat de l'ecriture des fichiers de regles et du rechargement d'un service.
+/// Result of writing the rule files and reloading a service.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct RuleSyncDto {
-    /// `disabled` (pas de fichier configure), `ok`, `no_url` (fichier ecrit, rechargement a faire a la main),
-    /// `reload_failed` (fichier ecrit, service injoignable ou refus) ou `failed` (ecriture impossible).
+    /// `disabled` (no file configured), `ok`, `no_url` (file written, reload to be done by hand),
+    /// `reload_failed` (file written, service unreachable or refusal) or `failed` (writing impossible).
     pub state: String,
     pub groups: u32,
     pub detail: String,
 }
 
-/// Une camera, telle qu'affichee et editee dans l'administration (R6, ADR 0043). Aucun secret : seulement s'il est renseigne.
-// Indicateurs independants du formulaire.
+/// A camera, as shown and edited in the administration (R6, ADR 0043). No secret: only whether it is set.
+// Independent flags of the form.
 #[allow(clippy::struct_excessive_bools)]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct CameraDto {
     pub id: i64,
-    /// Identifiant public (32 hexadecimaux) : nom du path MediaMTX.
+    /// Public identifier (32 hexadecimal digits): name of the MediaMTX path.
     pub uuid: String,
     pub name: String,
     pub location_id: Option<i64>,
@@ -751,22 +751,22 @@ pub struct CameraDto {
     pub has_onvif_pass: bool,
     pub ptz: bool,
     pub yolo_enabled: bool,
-    /// Classes separees par des virgules ; vide = toutes.
+    /// Comma-separated classes; empty = all.
     pub yolo_classes: String,
-    /// Confiance minimale en pourcentage (0 a 100).
+    /// Minimum confidence in percent (0 to 100).
     pub yolo_min_confidence_pct: i32,
     pub manufacturer: String,
     pub model: String,
     pub firmware: String,
-    /// Derniere connexion (RFC 3339), si connue.
+    /// Last connection (RFC 3339), if known.
     pub last_seen: Option<String>,
-    /// Jeton du profil ONVIF principal (appris par la synchronisation, modifiable).
+    /// Token of the main ONVIF profile (learned by the synchronisation, editable).
     #[serde(default)]
     pub main_token: String,
 }
 
-/// Creation (`id` absent) ou remplacement (`id` present) d'une camera. Un secret laisse vide reste inchange.
-// Indicateurs independants du formulaire.
+/// Creation (`id` absent) or replacement (`id` present) of a camera. A secret left empty stays unchanged.
+// Independent flags of the form.
 #[allow(clippy::struct_excessive_bools)]
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
 pub struct CameraInput {
@@ -795,17 +795,17 @@ pub struct CameraInput {
     pub onvif_port: i32,
     pub onvif_user: String,
     pub onvif_pass: String,
-    /// La camera se pilote en PTZ (coche a la main ; la premiere synchronisation ONVIF la propose).
+    /// The camera is PTZ-controllable (ticked by hand; the first ONVIF synchronisation suggests it).
     pub ptz: bool,
     pub yolo_enabled: bool,
     pub yolo_classes: String,
     pub yolo_min_confidence_pct: i32,
-    /// Jeton du profil ONVIF principal ; absent ou vide : la valeur apprise par la synchronisation est gardee.
+    /// Token of the main ONVIF profile; absent or empty: the value learned by the synchronisation is kept.
     #[serde(default)]
     pub main_token: Option<String>,
 }
 
-// `Debug` ne doit jamais montrer un mot de passe ni une cle d'API.
+// `Debug` must never show a password or an API key.
 impl std::fmt::Debug for CameraInput {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("CameraInput")
@@ -815,7 +815,7 @@ impl std::fmt::Debug for CameraInput {
     }
 }
 
-/// Une camera sur la page de consultation (tout compte connecte) : rien de la configuration du flux.
+/// A camera on the viewing page (any logged-in account): nothing of the stream configuration.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CameraCardDto {
     pub uuid: String,
@@ -826,33 +826,33 @@ pub struct CameraCardDto {
     pub last_seen: Option<String>,
 }
 
-/// Bilan d'une synchronisation MediaMTX demandee depuis l'administration.
+/// Outcome of a MediaMTX synchronisation requested from the administration.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum MediaMtxSyncDto {
-    /// `MEDIAMTX_API_URL` n'est pas renseignee.
+    /// `MEDIAMTX_API_URL` is not set.
     Disabled,
-    /// MediaMTX ne repond pas (message deja nettoye de tout secret).
+    /// MediaMTX does not answer (message already cleaned of any secret).
     Unreachable(String),
     Done {
         added: u32,
         replaced: u32,
         removed: u32,
-        /// (camera, message) pour ce qui a echoue.
+        /// (camera, message) for what failed.
         failed: Vec<(String, String)>,
     },
 }
 
-/// Ajout d'une camera par son adresse IP (R6 lot 3). Les identifiants servent au flux et a ONVIF.
+/// Adding a camera by its IP address (R6 lot 3). The credentials are used for the stream and for ONVIF.
 #[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct AddCameraByIp {
     pub ip: String,
-    /// Port ONVIF connu ; absent : les ports usuels sont essayes.
+    /// Known ONVIF port; absent: the usual ports are tried.
     pub onvif_port: Option<u16>,
     pub user: String,
     pub pass: String,
 }
 
-// `Debug` ne doit jamais montrer le mot de passe.
+// `Debug` must never show the password.
 impl std::fmt::Debug for AddCameraByIp {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("AddCameraByIp")
@@ -863,7 +863,7 @@ impl std::fmt::Debug for AddCameraByIp {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum AddByIpOutcome {
-    /// `created` : faux si une camera avait deja cette adresse.
+    /// `created`: false if a camera already had this address.
     Added {
         id: i64,
         name: String,
@@ -871,11 +871,11 @@ pub enum AddByIpOutcome {
         model: String,
     },
     Invalid(Vec<FieldProblem>),
-    /// Aucun service ONVIF sur les ports usuels.
+    /// No ONVIF service on the usual ports.
     NoOnvif,
 }
 
-/// Resultat d'une synchronisation ONVIF demandee depuis l'administration.
+/// Result of an ONVIF synchronisation requested from the administration.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum OnvifSyncOutcome {
     Done {
@@ -884,19 +884,19 @@ pub enum OnvifSyncOutcome {
         firmware: String,
         main_token: String,
         ptz: bool,
-        /// URL du flux, mot de passe masque.
+        /// Stream URL, password masked.
         stream_uri: String,
     },
-    /// ONVIF n'est pas active sur cette camera.
+    /// ONVIF is not enabled on this camera.
     Disabled,
-    /// Identifiants ONVIF refuses par la camera.
+    /// ONVIF credentials refused by the camera.
     NotAuthorized,
-    /// Camera injoignable ou reponse illisible (message sans secret).
+    /// Camera unreachable or unreadable response (message without a secret).
     Failed(String),
     NotFound,
 }
 
-/// Un snapshot indexe, tel que la galerie l'affiche.
+/// An indexed snapshot, as the gallery shows it.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct SnapshotDto {
     pub id: i64,
@@ -907,56 +907,56 @@ pub struct SnapshotDto {
     pub size_bytes: i32,
 }
 
-/// Un evenement de camera (mouvement ou detection d'objets), tel que la page des evenements l'affiche.
+/// A camera event (motion or object detection), as the events page shows it.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct CameraEventDto {
-    /// `motion` ou `detection`.
+    /// `motion` or `detection`.
     pub kind: String,
-    /// RFC 3339, heure du serveur.
+    /// RFC 3339, server time.
     pub at: String,
     pub camera_uuid: String,
     pub camera_name: String,
-    /// Part de l'image qui a bouge, en pourcent (mouvement).
+    /// Share of the image that moved, in percent (motion).
     pub motion_pct: Option<f64>,
-    /// Classes reconnues, separees par des virgules (detection).
+    /// Recognised classes, comma-separated (detection).
     pub classes: String,
-    /// Identifiant de la detection quand une image annotee existe.
+    /// Identifier of the detection when an annotated image exists.
     pub frame_id: Option<i64>,
 }
 
-/// Reglage global du detecteur d'objets.
+/// Global setting of the object detector.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct DetectorDto {
     pub enabled: bool,
     pub save_frames: bool,
 }
 
-/// Un segment enregistre, tel que la page des enregistrements l'affiche.
+/// A recorded segment, as the recordings page shows it.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct RecordingDto {
     pub id: i64,
     /// RFC 3339.
     pub started_at: String,
     pub duration_ms: Option<i64>,
-    /// `continuous`, `motion` ou `manual`.
+    /// `continuous`, `motion` or `manual`.
     pub event_type: String,
-    /// `pending`, `uploading`, `done` ou `error`.
+    /// `pending`, `uploading`, `done` or `error`.
     pub status: String,
     pub size_bytes: Option<i64>,
     pub error: String,
 }
 
-/// Les enregistrements d'une camera pour une journee.
+/// A camera's recordings for one day.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct RecordingsDayDto {
     pub camera_name: String,
     pub recording_mode: String,
-    /// Enregistrement manuel en cours (`None` : camera pas en mode manuel, ou MediaMTX ne le dit pas).
+    /// Manual recording in progress (`None`: camera not in manual mode, or MediaMTX does not say).
     pub manual_on: Option<bool>,
     pub items: Vec<RecordingDto>,
 }
 
-/// Resultat du demarrage / de l'arret de l'enregistrement manuel.
+/// Result of starting / stopping the manual recording.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum ManualRecordOutcome {
     Done {
@@ -964,20 +964,20 @@ pub enum ManualRecordOutcome {
     },
     NotFound,
     NotManual,
-    /// MediaMTX absent ou en panne.
+    /// MediaMTX absent or down.
     Unavailable(String),
 }
 
-/// Resultat d'une capture demandee depuis la page live (administrateurs).
+/// Result of a capture requested from the live page (administrators).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum CaptureOutcome {
     Saved(SnapshotDto),
-    /// Aucune image recente : le role `video` ne decode pas cette camera (camera eteinte, MediaMTX sans flux...).
+    /// No recent image: the `video` role does not decode this camera (camera off, MediaMTX without a stream...).
     NoImage,
     NotFound,
 }
 
-/// Une source MQTT, telle qu'affichee et editee dans l'administration (R3, ADR 0028).
+/// An MQTT source, as shown and edited in the administration (R3, ADR 0028).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct MqttSourceDto {
     pub id: i64,
@@ -987,14 +987,14 @@ pub struct MqttSourceDto {
     pub active: bool,
     pub log_messages: bool,
     pub auto_device: bool,
-    /// Identifiant technique du type d'appareil cree (`sensor`, `switch`...).
+    /// Technical identifier of the type of device created (`sensor`, `switch`...).
     pub auto_device_type: String,
     pub base_topic: String,
     pub handler_code: String,
     pub description: String,
 }
 
-/// Creation (`id` absent) ou remplacement (`id` present) d'une source MQTT.
+/// Creation (`id` absent) or replacement (`id` present) of an MQTT source.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct MqttSourceInput {
     pub id: Option<i64>,
@@ -1010,37 +1010,37 @@ pub struct MqttSourceInput {
     pub description: String,
 }
 
-/// Ce qui empeche une operation d'administration alors que les donnees sont valides.
+/// What prevents an administration operation although the data is valid.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Blocked {
-    /// Il doit rester au moins un administrateur actif.
+    /// At least one active administrator must remain.
     LastAdmin,
-    /// L'administrateur ne peut pas se supprimer, se desactiver ni se retrograder lui-meme.
+    /// An administrator cannot delete, deactivate or demote themselves.
     Yourself,
-    /// Son propre mot de passe se change dans « Mon compte » (la session serait fermee en pleine page).
+    /// Their own password is changed in "My account" (the session would be closed in the middle of the page).
     OwnPassword,
 }
 
-/// Motif de refus d'un champ de formulaire.
+/// Reason a form field is refused.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum ProblemKind {
     Required,
     TooLong {
         max: u32,
     },
-    /// Format ou valeur non admis (le champ affiche une aide sur la forme attendue).
+    /// Format or value not allowed (the field shows a hint about the expected form).
     Invalid,
     OutOfRange {
         min: i64,
         max: i64,
     },
-    /// Valeur deja prise (identifiant d'un compte).
+    /// Value already taken (identifier of an account).
     Taken,
-    /// L'emplacement d'un widget chevauche un autre widget du tableau.
+    /// The location of a widget overlaps another widget of the dashboard.
     Overlap,
-    /// Mot de passe refuse par la politique.
+    /// Password refused by the policy.
     Password(PasswordProblem),
-    /// Script qui ne se compile pas : le message de l'analyseur (ligne et colonne comprises).
+    /// Script that does not compile: the parser's message (line and column included).
     Syntax(String),
 }
 
@@ -1050,23 +1050,23 @@ pub struct FieldProblem {
     pub kind: ProblemKind,
 }
 
-/// Une entree de navigation telle qu'editee dans l'administration (l'icone y est un *nom*, pas un SVG).
+/// A navigation entry as edited in the administration (the icon is a *name* there, not an SVG).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct NavbarAdminDto {
     pub id: i64,
     pub icon_name: String,
     pub label: String,
     pub url: String,
-    /// `_self` ou `_blank`.
+    /// `_self` or `_blank`.
     pub url_target: String,
     pub admin_only: bool,
-    /// `top` ou `bottom`.
+    /// `top` or `bottom`.
     pub position: String,
     pub sort_order: i32,
 }
 
-/// Creation (`id` absent) ou remplacement (`id` present) d'une entree de navigation. `sort_order` est du texte :
-/// l'interface envoie ce que l'utilisateur a saisi et le serveur dit ce qui ne va pas.
+/// Creation (`id` absent) or replacement (`id` present) of a navigation entry. `sort_order` is text:
+/// the interface sends what the user typed and the server says what is wrong.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct NavbarInput {
     pub id: Option<i64>,
@@ -1079,24 +1079,24 @@ pub struct NavbarInput {
     pub sort_order: String,
 }
 
-/// Resultat de l'enregistrement d'un reglage.
+/// Result of saving a setting.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum SettingOutcome {
     Saved(SettingDto),
-    /// Valeur incompatible avec le type du reglage.
+    /// Value incompatible with the setting's type.
     Invalid,
-    /// Un secret ne peut pas etre enregistre sans `DOMINET_MASTER_KEY`.
+    /// A secret cannot be saved without `DOMINET_MASTER_KEY`.
     MasterKeyMissing,
-    /// Cle absente du registre.
+    /// Key absent from the registry.
     UnknownKey,
 }
 
-/// Resultat d'un enregistrement depuis l'administration (les refus attendus sont des valeurs).
+/// Result of a save from the administration (expected refusals are values).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum SaveOutcome<T> {
     Saved(T),
     Invalid(Vec<FieldProblem>),
-    /// L'element a ete supprime entre-temps.
+    /// The item was deleted in the meantime.
     NotFound,
     Blocked(Blocked),
 }
@@ -1118,12 +1118,12 @@ impl<T> SaveOutcome<T> {
 pub enum DeleteOutcome {
     Deleted,
     NotFound,
-    /// Encore reference ailleurs (contrainte de cle etrangere).
+    /// Still referenced elsewhere (foreign-key constraint).
     InUse,
     Blocked(Blocked),
 }
 
-/// Une entree de la navigation, prete a afficher : l'icone est deja un SVG rendu cote serveur.
+/// A navigation entry, ready to display: the icon is already an SVG rendered on the server side.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct NavItemDto {
     pub label: String,
@@ -1132,8 +1132,8 @@ pub struct NavItemDto {
     pub icon_svg: String,
 }
 
-/// Ce dont la mise en page a besoin : le compte connecte et les entrees de navigation **qu'il a le droit de voir**.
-/// Pour un visiteur anonyme, tout est vide (la navigation n'est pas divulguee).
+/// What the layout needs: the logged-in account and the navigation entries **it is allowed to see**.
+/// For an anonymous visitor, everything is empty (the navigation is not disclosed).
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct LayoutDto {
     pub user: Option<UserDto>,
@@ -1141,7 +1141,7 @@ pub struct LayoutDto {
     pub nav_bottom: Vec<NavItemDto>,
 }
 
-/// Un tableau de bord dans le selecteur.
+/// A dashboard in the selector.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct DashboardSummaryDto {
     pub id: i64,
@@ -1149,68 +1149,68 @@ pub struct DashboardSummaryDto {
     pub is_default: bool,
 }
 
-/// Un widget prepare pour l'affichage. Les champs `content_html` et `iframe_src` sont calcules par le serveur : le HTML est
-/// **deja assaini** et l'adresse d'iframe **deja verifiee** (origine autorisee) ; le navigateur n'a aucune decision de
-/// securite a prendre.
+/// A widget prepared for display. The `content_html` and `iframe_src` fields are computed by the server: the HTML is
+/// **already sanitised** and the iframe address **already verified** (allowed origin); the browser has no decision of
+/// security to make.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct WidgetDto {
     pub id: i64,
-    /// `camera`, `device`, `scene`, `grafana`, `text` ou `grille`.
+    /// `camera`, `device`, `scene`, `grafana`, `text` or `grille`.
     pub widget_type: String,
     pub title: String,
-    /// Presentation demandee (`""` = automatique), valeurs de l'implementation de reference.
+    /// Requested presentation (`""` = automatic), values of the reference implementation.
     pub presentation: String,
     pub device_id: Option<i64>,
     pub col: i16,
     pub row: i16,
     pub width: i16,
     pub height: i16,
-    /// HTML assaini du widget `text`.
+    /// Sanitised HTML of the `text` widget.
     pub content_html: String,
-    /// Adresse a charger dans l'iframe d'un widget Grafana, si elle est autorisee.
+    /// Address to load in the iframe of a Grafana widget, if it is allowed.
     pub iframe_src: Option<String>,
-    /// Pourquoi il n'y a pas d'iframe : `not_configured` ou `forbidden` (vide quand `iframe_src` existe).
+    /// Why there is no iframe: `not_configured` or `forbidden` (empty when `iframe_src` exists).
     pub iframe_problem: String,
-    /// Dernier etat connu de l'appareil au moment du rendu (le temps reel prend ensuite le relais).
+    /// Last known state of the device at render time (real time takes over afterwards).
     pub device: Option<DeviceStateDto>,
-    /// Ce que la table des appareils sait de l'appareil (type, libelles, cles masquees, commandes possibles).
+    /// What the devices table knows about the device (type, labels, hidden keys, possible commands).
     pub device_meta: Option<DeviceMetaDto>,
-    /// La scene d'un widget `scene` (absente si elle a ete supprimee ou si ce n'est pas un widget scene).
+    /// The scene of a `scene` widget (absent if it was deleted or if it is not a scene widget).
     pub scene: Option<SceneBriefDto>,
-    /// La camera d'un widget `camera` (absente si elle est inconnue ou inactive).
+    /// The camera of a `camera` widget (absent if unknown or inactive).
     pub camera: Option<CameraLiveDto>,
 }
 
-/// Ce qu'il faut pour afficher le live d'une camera : jamais d'adresse de flux source ni d'identifiants.
+/// What is needed to display a camera's live view: never a source stream address or credentials.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CameraLiveDto {
-    /// Identifiant public (32 hexadecimaux).
+    /// Public identifier (32 hexadecimal digits).
     pub uuid: String,
     pub name: String,
-    /// Adresse WHEP de MediaMTX, adaptee a l'hote par lequel le navigateur est arrive.
+    /// WHEP address of MediaMTX, adapted to the host the browser arrived through.
     pub whep_url: String,
     pub ptz: bool,
     pub recording_mode: String,
-    /// Une methode jour / nuit est configuree (les boutons n'ont de sens que dans ce cas ; ils ne sont montres qu'aux administrateurs).
+    /// A day / night method is configured (the buttons only make sense in that case; they are only shown to administrators).
     pub night: bool,
 }
 
-/// Resultat d'une bascule jour / nuit / lumiere demandee depuis la page live (administrateurs).
+/// Result of a day / night / light toggle requested from the live page (administrators).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum NightOutcomeDto {
-    /// `details` : ce que la camera a fait, en JSON (la forme de la reference : `mode`, `was`, `value`, `brightness`...).
+    /// `details`: what the camera did, in JSON (the reference's shape: `mode`, `was`, `value`, `brightness`...).
     Done { action: String, details: String },
-    /// Aucune methode jour / nuit n'est configuree pour cette camera.
+    /// No day / night method is configured for this camera.
     NotConfigured,
-    /// Camera inconnue ou inactive.
+    /// Unknown or inactive camera.
     NotFound,
-    /// Action autre que `daynight`, `ircut`, `light`.
+    /// Action other than `daynight`, `ircut`, `light`.
     InvalidAction,
-    /// La camera n'a pas obei (message sans secret).
+    /// The camera did not obey (message without a secret).
     Failed(String),
 }
 
-/// Ce qu'un widget scene affiche de sa scene.
+/// What a scene widget shows of its scene.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct SceneBriefDto {
     pub id: i64,
@@ -1221,7 +1221,7 @@ pub struct SceneBriefDto {
     pub active: bool,
 }
 
-/// Libelle d'une cle d'etat (nom lisible et unite), tel que l'interface l'affiche.
+/// Label of a state key (readable name and unit), as the interface shows it.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct LabelDto {
     pub key: String,
@@ -1229,28 +1229,28 @@ pub struct LabelDto {
     pub unit: String,
 }
 
-/// Informations d'un appareil utiles a l'affichage de son etat et de ses commandes.
+/// Information about a device useful for displaying its state and its commands.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
 pub struct DeviceMetaDto {
-    /// Type stocke (`sensor`, `light`...).
+    /// Stored type (`sensor`, `light`...).
     pub device_type: String,
     pub labels: Vec<LabelDto>,
-    /// Cles d'etat a ne pas afficher.
+    /// State keys not to display.
     pub hidden_keys: Vec<String>,
-    /// Vrai si le serveur sait publier des commandes (client MQTT demarre).
+    /// True if the server can publish commands (MQTT client started).
     pub commandable: bool,
 }
 
-/// Un appareil tel que l'administration l'affiche et l'edite (les listes de cles sont separees par des virgules).
+/// A device as the administration shows and edits it (the key lists are comma-separated).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct DeviceAdminDto {
     pub id: i64,
     pub friendly_name: String,
     pub description: String,
     pub device_type: String,
-    /// Numero du groupe, ou texte vide.
+    /// Group number, or empty text.
     pub group_id: String,
-    /// Numero de l'emplacement, ou texte vide.
+    /// Location number, or empty text.
     pub location_id: String,
     pub base_topic: String,
     pub active: bool,
@@ -1264,7 +1264,7 @@ pub struct DeviceAdminDto {
     pub ieee: String,
 }
 
-/// Creation (`id` absent) ou remplacement (`id` present) d'un appareil : seuls les parametres, pas l'etat ni la decouverte.
+/// Creation (`id` absent) or replacement (`id` present) of a device: only the parameters, not the state or the discovery.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct DeviceInput {
     pub id: Option<i64>,
@@ -1300,7 +1300,7 @@ pub struct DeviceGroupInput {
     pub icon: String,
 }
 
-/// Libelle d'une cle d'etat tel qu'edite dans l'administration.
+/// Label of a state key as edited in the administration.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct DeviceLabelDto {
     pub id: i64,
@@ -1319,7 +1319,7 @@ pub struct DeviceLabelInput {
     pub unit: String,
 }
 
-/// Choix des listes deroulantes des formulaires (numero, nom).
+/// Choices of the drop-down lists of the forms (number, name).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
 pub struct DeviceChoicesDto {
     pub groups: Vec<(i64, String)>,
@@ -1328,7 +1328,7 @@ pub struct DeviceChoicesDto {
     pub scenes: Vec<(i64, String)>,
 }
 
-/// Un appareil sur la page des appareils : identite, dernier etat connu et ce qu'il faut pour l'afficher.
+/// A device on the devices page: identity, last known state and what is needed to display it.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct DeviceCardDto {
     pub id: i64,
@@ -1337,37 +1337,37 @@ pub struct DeviceCardDto {
     pub device_type: String,
     pub group: String,
     pub location: String,
-    /// Dernier message recu, en RFC 3339 (texte vide si jamais).
+    /// Last message received, in RFC 3339 (empty text if never).
     pub last_seen: String,
-    /// Date de l'image televersee (secondes depuis 1970), pour l'adresse et le cache ; `None` sans image.
+    /// Date of the uploaded image (seconds since 1970), for the address and the cache; `None` without an image.
     pub image_version: Option<i64>,
     pub state: DeviceStateDto,
     pub meta: DeviceMetaDto,
 }
 
-/// Page `/automation/` : les appareils actifs filtres, et de quoi remplir les filtres.
+/// `/automation/` page: the filtered active devices, and what is needed to fill in the filters.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
 pub struct DevicesPageDto {
     pub devices: Vec<DeviceCardDto>,
     pub groups: Vec<(i64, String)>,
     pub locations: Vec<(i64, String)>,
-    /// Types presents (identifiants stockes).
+    /// Types present (stored identifiers).
     pub types: Vec<String>,
     pub permit_join: bool,
     pub commandable: bool,
 }
 
-/// Historique d'une cle suivie sur les dernieres 24 h.
+/// History of a tracked key over the last 24 h.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct SeriesDto {
     pub key: String,
     pub name: String,
     pub unit: String,
-    /// (instant en secondes depuis 1970, valeur), du plus ancien au plus recent.
+    /// (instant in seconds since 1970, value), from oldest to most recent.
     pub points: Vec<(i64, f64)>,
 }
 
-/// Page d'un appareil.
+/// Page of a device.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct DeviceDetailDto {
     pub card: DeviceCardDto,
@@ -1379,11 +1379,11 @@ pub struct DeviceDetailDto {
     pub tracked_keys: Vec<String>,
     pub active: bool,
     pub series: Vec<SeriesDto>,
-    /// Nom du fichier de tableau Grafana deja genere pour cet appareil (admin), s'il y en a un.
+    /// Name of the Grafana dashboard file already generated for this device (admin), if there is one.
     pub grafana_uid: String,
 }
 
-/// Une station meteo telle que l'administration l'affiche (latitude et longitude en texte : saisies et affichees telles quelles).
+/// A weather station as the administration shows it (latitude and longitude as text: entered and displayed as they are).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct WeatherStationDto {
     pub id: i64,
@@ -1398,7 +1398,7 @@ pub struct WeatherStationDto {
     pub description: String,
 }
 
-/// Creation (`id` absent) ou remplacement (`id` present) d'une station meteo ; les nombres arrivent en texte et sont lus par le serveur.
+/// Creation (`id` absent) or replacement (`id` present) of a weather station; the numbers arrive as text and are read by the server.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct WeatherStationInput {
     pub id: Option<i64>,
@@ -1413,55 +1413,55 @@ pub struct WeatherStationInput {
     pub description: String,
 }
 
-/// Resultat de la generation du tableau Grafana d'un appareil.
+/// Result of generating the Grafana dashboard of a device.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum GrafanaOutcome {
-    /// Fichier ecrit (Grafana le recharge en une dizaine de secondes).
+    /// File written (Grafana reloads it in about ten seconds).
     Written,
-    /// L'appareil n'a aucune cle suivie : rien a afficher.
+    /// The device has no tracked key: nothing to show.
     NoTrackedKeys,
-    /// `GRAFANA_DASHBOARDS_DIR` n'est pas renseigne, ou le dossier n'est pas inscriptible.
+    /// `GRAFANA_DASHBOARDS_DIR` is not set, or the folder is not writable.
     NotConfigured,
     NotFound,
 }
 
-/// Resultat de l'envoi d'une commande a un appareil.
+/// Result of sending a command to a device.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum CommandOutcome {
-    /// Publiee sur le broker.
+    /// Published on the broker.
     Sent,
-    /// Appareil inconnu ou inactif.
+    /// Unknown or inactive device.
     NotFound,
-    /// Commande qui n'est pas un objet JSON raisonnable.
+    /// Command that is not a reasonable JSON object.
     Invalid,
-    /// Pas de lien avec le broker (role `mqtt` absent, broker coupe, file pleine).
+    /// No link with the broker (`mqtt` role absent, broker down, queue full).
     Unavailable,
 }
 
-/// Une commande d'une scene, telle qu'affichee.
+/// A command of a scene, as shown.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct SceneActionDto {
     pub device_id: i64,
     pub device: String,
-    /// Commande JSON, compacte.
+    /// JSON command, compact.
     pub payload: String,
 }
 
-/// Une scene avec ses commandes dans l'ordre de publication (R4, ADR 0031).
+/// A scene with its commands in publication order (R4, ADR 0031).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct SceneDto {
     pub id: i64,
     pub name: String,
     pub icon: String,
     pub description: String,
-    /// Numero d'emplacement en texte (`""` = aucun), comme les autres formulaires.
+    /// Location number as text (`""` = none), like the other forms.
     pub location_id: String,
     pub location: String,
     pub active: bool,
     pub actions: Vec<SceneActionDto>,
 }
 
-/// Scene a creer ou remplacer, telle que saisie. `actions` : liste de `(numero d'appareil, commande JSON)` en texte.
+/// Scene to create or replace, as entered. `actions`: list of `(device number, JSON command)` as text.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct SceneInput {
     pub id: Option<i64>,
@@ -1477,35 +1477,35 @@ pub struct SceneInput {
     pub actions: Vec<(String, String)>,
 }
 
-/// Une commande de scene qui n'est pas partie.
+/// A scene command that did not go out.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct SceneFailureDto {
     pub device: String,
     pub outcome: CommandOutcome,
 }
 
-/// Resultat de l'activation d'une scene : les commandes sont publiees dans l'ordre, une en echec n'arrete pas les suivantes.
+/// Result of activating a scene: the commands are published in order, one that fails does not stop the following ones.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum SceneOutcome {
     Activated {
         sent: u32,
         failed: Vec<SceneFailureDto>,
     },
-    /// Scene inconnue ou inactive.
+    /// Unknown or inactive scene.
     NotFound,
 }
 
-/// Les champs d'une automation tels que le formulaire les saisit (tout en texte : le serveur dit ce qui ne va pas, champ par
-/// champ). Ceux qui ne concernent pas le type choisi sont ignores.
+/// The fields of an automation as the form enters them (all text: the server says what is wrong, field by
+/// field). Those that do not concern the chosen type are ignored.
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct AutomationFields {
     pub name: String,
     pub enabled: bool,
     pub description: String,
-    /// `mqtt_message`, `device_state`, `schedule` ou `solar`.
+    /// `mqtt_message`, `device_state`, `schedule` or `solar`.
     pub trigger_type: String,
     pub topic: String,
-    /// Objet JSON (facultatif).
+    /// JSON object (optional).
     pub payload_filter: String,
     pub friendly_name: String,
     pub key: String,
@@ -1516,10 +1516,10 @@ pub struct AutomationFields {
     pub longitude: String,
     pub condition_key: String,
     pub condition_value: String,
-    /// `mqtt_publish`, `scene`, `notification` ou `script`.
+    /// `mqtt_publish`, `scene`, `notification` or `script`.
     pub action_type: String,
     pub action_topic: String,
-    /// Objet JSON.
+    /// JSON object.
     pub action_payload: String,
     pub message: String,
     pub sms: bool,
@@ -1527,29 +1527,29 @@ pub struct AutomationFields {
     pub script: String,
 }
 
-/// Creation (`id` absent) ou remplacement (`id` present) d'une automation.
+/// Creation (`id` absent) or replacement (`id` present) of an automation.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct AutomationInput {
     pub id: Option<i64>,
     pub fields: AutomationFields,
 }
 
-/// Une automation avec ce que l'administration en montre.
+/// An automation with what the administration shows of it.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct AutomationDto {
     pub id: i64,
     pub fields: AutomationFields,
-    /// Resume lisible du declencheur et de l'action.
+    /// Readable summary of the trigger and of the action.
     pub trigger_summary: String,
     pub action_summary: String,
     pub trigger_count: i32,
-    /// RFC 3339, vide si jamais declenchee.
+    /// RFC 3339, empty if never triggered.
     pub last_triggered: String,
-    /// Prochain passage du planificateur (horaire ou soleil), RFC 3339 ; vide sinon.
+    /// Next pass of the scheduler (time or sun), RFC 3339; empty otherwise.
     pub next_run: String,
 }
 
-/// Une ligne du journal d'execution des automations.
+/// A row of the automations' execution log.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct AutomationRunDto {
     pub automation_id: i64,
@@ -1557,71 +1557,71 @@ pub struct AutomationRunDto {
     /// RFC 3339.
     pub at: String,
     pub trigger: String,
-    /// `ok`, `error`, `skipped` ou `limited`.
+    /// `ok`, `error`, `skipped` or `limited`.
     pub status: String,
     pub duration_ms: i32,
     pub message: String,
 }
 
-/// Resultat d'un essai a blanc d'un script : rien n'a ete publie, active ni enregistre.
+/// Result of a dry run of a script: nothing was published, enabled or saved.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct DryRunDto {
-    /// Erreur de syntaxe ou d'execution ; vide si le script s'est bien termine.
+    /// Syntax or execution error; empty if the script ended well.
     pub error: String,
-    /// Ce que le script aurait fait, dans l'ordre.
+    /// What the script would have done, in order.
     pub effects: Vec<String>,
-    /// Lignes de `print` et de `log`.
+    /// Lines of `print` and `log`.
     pub logs: Vec<String>,
     pub elapsed_ms: u64,
 }
 
-/// Une alerte telle que la page `/alerts` l'affiche.
+/// An alert as the `/alerts` page shows it.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct AlertDto {
     pub id: i64,
-    /// Vide si la regle a ete supprimee depuis.
+    /// Empty if the rule was deleted since.
     pub rule: String,
     pub device_id: i64,
     pub device: String,
-    /// `info`, `warning` ou `critical`.
+    /// `info`, `warning` or `critical`.
     pub severity: String,
-    /// `firing`, `resolved` ou `acknowledged`.
+    /// `firing`, `resolved` or `acknowledged`.
     pub status: String,
     pub value: String,
     /// RFC 3339.
     pub fired_at: String,
     pub resolved_at: String,
     pub acknowledged_at: String,
-    /// Nom d'utilisateur de qui a acquitte.
+    /// Username of whoever acknowledged.
     pub acknowledged_by: String,
 }
 
-/// La page des alertes : le filtre retenu, le nombre d'alertes en cours et les 200 dernieres alertes.
+/// The alerts page: the chosen filter, the number of ongoing alerts and the last 200 alerts.
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct AlertsPageDto {
     pub status: String,
     pub firing: u32,
     pub alerts: Vec<AlertDto>,
-    /// Les alertes de la plateforme (Prometheus et Grafana), en lecture seule.
+    /// The platform's alerts (Prometheus and Grafana), read-only.
     pub platform: PlatformAlertsDto,
 }
 
-/// Une alerte en cours chez Prometheus ou Grafana.
+/// An ongoing alert at Prometheus or Grafana.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct PlatformAlertDto {
-    /// `prometheus` ou `grafana`.
+    /// `prometheus` or `grafana`.
     pub source: String,
     pub name: String,
-    /// `info`, `warning` ou `critical`.
+    /// `info`, `warning` or `critical`.
     pub severity: String,
     pub summary: String,
     pub description: String,
-    /// RFC 3339, vide si la source ne le donne pas.
+    /// RFC 3339, empty if the source does not give it.
     pub since: String,
 }
 
-/// Ce que la page sait de la plateforme : l'etat de chaque source (`off` : non surveillee, `down` : injoignable, `ok` : lue) et les
-/// alertes en cours, les plus graves d'abord.
+/// What the page knows about the platform: the state of each source (`off`: not monitored, `down`: unreachable, `ok`: read) and the
+/// ongoing alerts, the most serious first.
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct PlatformAlertsDto {
     pub prometheus: String,
@@ -1629,8 +1629,8 @@ pub struct PlatformAlertsDto {
     pub alerts: Vec<PlatformAlertDto>,
 }
 
-/// Une regle d'alerte telle que l'administration l'affiche et l'edite (tout en texte).
-// Reflet d'une ligne de formulaire : les canaux et l'activation sont independants.
+/// An alert rule as the administration shows and edits it (all text).
+// Mirror of a form row: the channels and the activation are independent.
 #[allow(clippy::struct_excessive_bools)]
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct AlertRuleDto {
@@ -1649,11 +1649,11 @@ pub struct AlertRuleDto {
     pub notify_android: bool,
     pub enabled: bool,
     pub description: String,
-    /// Alertes en cours de cette regle.
+    /// Ongoing alerts of this rule.
     pub firing: u32,
 }
 
-/// Creation (`id` absent) ou remplacement d'une regle d'alerte.
+/// Creation (`id` absent) or replacement of an alert rule.
 #[allow(clippy::struct_excessive_bools)]
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct AlertRuleInput {
@@ -1673,15 +1673,15 @@ pub struct AlertRuleInput {
     pub description: String,
 }
 
-/// Resultat de l'acquittement d'une alerte.
+/// Result of acknowledging an alert.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum AckOutcome {
     Acknowledged,
-    /// Alerte inconnue ou deja resolue / acquittee.
+    /// Unknown alert, or already resolved / acknowledged.
     NotFiring,
 }
 
-/// Un jour du bilan d'energie tel que la page l'affiche (Wh).
+/// A day of the energy summary as the page shows it (Wh).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct EnergyRowDto {
     pub date: String,
@@ -1691,7 +1691,7 @@ pub struct EnergyRowDto {
     pub net_wh: i32,
 }
 
-/// Un appareil du bilan avec son dernier etat connu (le temps reel prend ensuite le relais par `device:<id>`).
+/// A device of the summary with its last known state (real time takes over afterwards through `device:<id>`).
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct EnergyLiveDto {
     pub id: i64,
@@ -1700,19 +1700,19 @@ pub struct EnergyLiveDto {
     pub available: bool,
 }
 
-/// La page d'energie : jours (du plus ancien au plus recent), graphique SVG deja calcule, et les trois appareils du bilan.
+/// The energy page: days (oldest to most recent), an already computed SVG chart, and the summary's three devices.
 #[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
 pub struct EnergyPageDto {
     pub days: u32,
     pub rows: Vec<EnergyRowDto>,
-    /// SVG complet (calcule cote serveur, sans script) ; vide sans donnee.
+    /// Full SVG (computed on the server side, without script); empty without data.
     pub svg: String,
     pub linky: Option<EnergyLiveDto>,
     pub solar: Option<EnergyLiveDto>,
     pub pac: Option<EnergyLiveDto>,
 }
 
-/// Ce que la page d'accueil affiche : les tableaux du compte, celui qui est ouvert et ses widgets.
+/// What the home page shows: the account's dashboards, the open one and its widgets.
 #[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
 pub struct DashboardPageDto {
     pub dashboards: Vec<DashboardSummaryDto>,
@@ -1720,18 +1720,18 @@ pub struct DashboardPageDto {
     pub widgets: Vec<WidgetDto>,
 }
 
-/// Un tableau tel que l'administration le montre (tous les comptes).
+/// A dashboard as the administration shows it (all accounts).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct DashboardAdminDto {
     pub id: i64,
     pub name: String,
-    /// Nom d'utilisateur du proprietaire.
+    /// Username of the owner.
     pub owner: String,
     pub is_default: bool,
 }
 
-/// Tableau a creer ou renommer. Le proprietaire se designe par son nom d'utilisateur (il ne change plus apres la creation) ;
-/// `is_default` ne peut qu'etre active.
+/// Dashboard to create or rename. The owner is designated by their username (it no longer changes after creation);
+/// `is_default` can only be enabled.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct DashboardInput {
     pub id: Option<i64>,
@@ -1740,7 +1740,7 @@ pub struct DashboardInput {
     pub is_default: bool,
 }
 
-/// Un widget tel que l'administration l'edite : les nombres et le JSON voyagent en texte (validation par le serveur).
+/// A widget as the administration edits it: the numbers and the JSON travel as text (validation by the server).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct WidgetAdminDto {
     pub id: i64,
@@ -1751,7 +1751,7 @@ pub struct WidgetAdminDto {
     pub device_id: String,
     pub scene_id: String,
     pub camera_uuid: String,
-    /// Objet JSON, en texte (`{}` si vide).
+    /// JSON object, as text (`{}` if empty).
     pub config: String,
     pub content: String,
     pub col: i16,
@@ -1760,7 +1760,7 @@ pub struct WidgetAdminDto {
     pub height: i16,
 }
 
-/// Widget a creer ou a remplacer, tel que saisi (tout en texte : le serveur dit ce qui ne va pas, champ par champ).
+/// Widget to create or replace, as entered (all text: the server says what is wrong, field by field).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct WidgetInput {
     pub id: Option<i64>,
@@ -1790,47 +1790,47 @@ pub struct WidgetInput {
     pub height: String,
 }
 
-/// Ce que la page d'administration des widgets affiche : le tableau retenu (celui demande s'il existe, sinon le premier) et ses widgets.
+/// What the widgets administration page shows: the chosen dashboard (the requested one if it exists, otherwise the first) and its widgets.
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct WidgetsPageDto {
     pub current: Option<i64>,
     pub widgets: Vec<WidgetAdminDto>,
 }
 
-/// Resultat d'un deplacement de widget.
+/// Result of moving a widget.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum MoveOutcome {
     Moved,
-    /// L'emplacement chevauche un autre widget : le widget reste ou il etait.
+    /// The location overlaps another widget: the widget stays where it was.
     Overlap,
-    /// Hors de la grille.
+    /// Outside the grid.
     Invalid,
-    /// Le widget a ete supprime entre-temps.
+    /// The widget was deleted in the meantime.
     NotFound,
 }
 
-/// Un reglage tel que montre a l'interface : la valeur d'un secret n'est **jamais** transmise.
-// Quatre indicateurs independants : c'est la forme voulue du contrat JSON.
+/// A setting as shown to the interface: a secret's value is **never** transmitted.
+// Four independent flags: this is the intended shape of the JSON contract.
 #[allow(clippy::struct_excessive_bools)]
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct SettingDto {
     pub key: String,
-    /// `str`, `int`, `float` ou `bool`.
+    /// `str`, `int`, `float` or `bool`.
     pub value_type: String,
     pub category: String,
     pub description: String,
     pub is_secret: bool,
-    /// Valeur affichable (`********` pour un secret renseigne, vide s'il ne l'est pas).
+    /// Displayable value (`********` for a secret that is set, empty if it is not).
     pub value: String,
     pub is_set: bool,
-    /// Vrai si la valeur par defaut s'applique (rien n'est enregistre en base).
+    /// True if the default value applies (nothing is saved in the database).
     pub from_default: bool,
-    /// Faux si un secret enregistre ne peut pas etre dechiffre (cle maitresse changee).
+    /// False if a saved secret cannot be decrypted (master key changed).
     pub readable: bool,
     pub updated_at: Option<String>,
 }
 
-/// Nouvelle valeur d'un reglage (en clair, y compris pour un secret : ecriture seule).
+/// New value of a setting (in clear text, including for a secret: write-only).
 #[derive(Clone, PartialEq, Eq, Deserialize)]
 pub struct SettingUpdate {
     pub value: String,
@@ -2118,7 +2118,7 @@ mod tests {
         assert_eq!(v.found.len(), 2, "une adresse n'est listee qu'une fois");
         v.apply(DiscoveryEvent::Done);
         assert!(!v.scanning && v.done);
-        // Une nouvelle recherche repart de zero.
+        // A new search restarts from zero.
         v.apply(DiscoveryEvent::Scanning);
         assert!(v.found.is_empty() && !v.done && v.scanning);
         v.apply(DiscoveryEvent::Failed {
@@ -2135,7 +2135,7 @@ mod tests {
             state: serde_json::json!({"temperature": 22.5, "humidity": 48}),
             available: true,
         });
-        // Contrat de l'annexe A.1 : champs a plat a cote de `type`.
+        // Contract of appendix A.1: flat fields next to `type`.
         assert_eq!(
             serde_json::to_value(&state).unwrap(),
             serde_json::json!({"type": "device_state", "device_id": 42, "friendly_name": "Bureau",
