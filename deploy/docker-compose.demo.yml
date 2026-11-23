@@ -1,8 +1,8 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-# Surcouche de DEMO (avec `docker-compose.yml`) : stack complete sur un VPS ou un poste, sans Zigbee ni camera reelle, en HTTP, avec une camera
-# factice (mire ffmpeg poussee dans MediaMTX). Projet Compose `dominet-demo` : volumes et reseau a part, rien n'est partage avec la dev ni la prod.
-#   make demo-up    # construit et demarre      make demo-down    # arrete (volumes conserves)
-# Acces : http://<hote>:${DEMO_PORT:-8080} (application), :3001 (Grafana), rtsp://<hote>:8555, WebRTC http://<hote>:8890.
+# DEMO overlay (with `docker-compose.yml`): complete stack on a VPS or a workstation, without Zigbee or a real camera, over HTTP, with a
+# fake camera (an ffmpeg test pattern pushed into MediaMTX). Compose project `dominet-demo`: separate volumes and network, nothing is shared with dev or production.
+#   make demo-up    # builds and starts      make demo-down    # stops (volumes kept)
+# Access: http://<host>:${DEMO_PORT:-8080} (application), :3001 (Grafana), rtsp://<host>:8555, WebRTC http://<host>:8890.
 name: dominet-demo
 
 services:
@@ -11,7 +11,7 @@ services:
     ports: ["${DEMO_PORT:-8080}:8000"]
     environment:
       COOKIE_SECURE: "false"
-      # Les reglages applicatifs (adresse WebRTC, Grafana) sont lus de l'environnement par `dominet seed` s'ils sont definis.
+      # The application settings (WebRTC address, Grafana) are read from the environment by `dominet seed` if they are defined.
       MEDIAMTX_WEBRTC_DOMAIN: ${LAN_DOMAIN:-localhost}:8890
       MEDIAMTX_WEBRTC_SCHEME: http
       GRAFANA_PUBLIC_URL: http://${LAN_DOMAIN:-localhost}:3001/grafana
@@ -55,8 +55,8 @@ services:
       GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:?GRAFANA_PASSWORD requis}
       GF_SERVER_ROOT_URL: http://${LAN_DOMAIN:-localhost}:3001/grafana/
 
-  # Camera factice : ffmpeg (deja dans l'image de l'application) pousse une mire H.264 dans MediaMTX, qui la sert en RTSP/WebRTC.
-  # Declarer ensuite une camera rtsp://mediamtx:8554/demo-cam-1 dans l'interface (voir DEPLOY.md, section demo).
+  # Fake camera: ffmpeg (already in the application image) pushes an H.264 test pattern into MediaMTX, which serves it over RTSP/WebRTC.
+  # Then declare a camera rtsp://mediamtx:8554/demo-cam-1 in the interface (see DEPLOY.md, demo section).
   fake-camera:
     image: dominet:${DOMINET_TAG:-local}
     pull_policy: never

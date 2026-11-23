@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-# MediaMTX de dev (spikes 3 et 4). Acces ouvert : ports publies sur 127.0.0.1 uniquement.
+# Dev MediaMTX (spikes 3 and 4). Open access: ports published on 127.0.0.1 only.
 logLevel: info
 logDestinations: [stdout]
 api: true
@@ -22,11 +22,11 @@ webrtc: true
 webrtcAddress: :8889
 webrtcLocalTCPAddress: :8189
 webrtcLocalUDPAddress: :8189
-# Adresses annoncees comme candidats ICE (le navigateur de dev tourne sur l'hote).
+# Addresses announced as ICE candidates (the dev browser runs on the host).
 webrtcAdditionalHosts: [127.0.0.1]
 record: no
-# Enregistrement (R6 lot 7) : un segment fMP4 toutes les 10 s en dev (60 s en production), un dossier par camera.
-# Un path de camera n'enregistre que si DomiNet lui met `record: true` (mode continu ou sur mouvement, ou demarrage manuel).
+# Recording (R6 lot 7): one fMP4 segment every 10 s in dev (60 s in production), one folder per camera.
+# A camera path only records if DomiNet sets `record: true` on it (continuous or motion mode, or manual start).
 recordFormat: fmp4
 recordPath: /recordings/%path/%Y-%m-%d_%H-%M-%S-%f
 recordPartDuration: 1s

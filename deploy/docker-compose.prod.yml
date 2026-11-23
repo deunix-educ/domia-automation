@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-# Surcouche de PRODUCTION (avec `docker-compose.yml`) : nginx en TLS devant l'application, ports du LAN, redemarrage automatique,
-# profils `zigbee` (dongle USB) et `vpn` (wg-easy), Adminer en loopback. Utiliser `make prod-deploy` (jamais sur la machine de dev
-# sans projet et ports decales : voir DEPLOY.md).
+# PRODUCTION overlay (with `docker-compose.yml`): nginx in TLS in front of the application, LAN ports, automatic restart,
+# `zigbee` (USB dongle) and `vpn` (wg-easy) profiles, Adminer on loopback. Use `make prod-deploy` (never on the dev machine
+# without a project and shifted ports: see DEPLOY.md).
 services:
   nginx:
     image: nginx:1.27-alpine
@@ -20,16 +20,16 @@ services:
 
   dominet:
     restart: unless-stopped
-    # Le client d'une requete est celui que nginx annonce ; seul le reseau Docker est cru (TRUSTED_PROXIES).
+    # A request's client is the one nginx announces; only the Docker network is trusted (TRUSTED_PROXIES).
     environment:
       COOKIE_SECURE: "true"
       CUSTOM_CSS: /custom/custom.css
-    # Personnalisation de l'apparence : `deploy/custom/custom.css` (a creer a partir de `custom.css.example`, ignore par git), relu a chaque chargement.
+    # Appearance customisation: `deploy/custom/custom.css` (to create from `custom.css.example`, ignored by git), re-read at each load.
     volumes:
       - ./custom:/custom:ro
-    # Decodage video materiel (VAAPI) : `make prod-init` (ou `make prod-video` sur une installation existante) ecrit VIDEO_DEVICE=/dev/dri
-    # et RENDER_GID (groupe proprietaire de /dev/dri/renderD128 sur l'hote). Sans cela, /dev/null est monte a la place : /dev/dri/renderD128
-    # n'existe pas dans le conteneur et le decodage reste logiciel (un compose ne sait pas ignorer un peripherique absent).
+    # Hardware video decoding (VAAPI): `make prod-init` (or `make prod-video` on an existing installation) writes VIDEO_DEVICE=/dev/dri
+    # and RENDER_GID (group owning /dev/dri/renderD128 on the host). Without them, /dev/null is mounted instead: /dev/dri/renderD128
+    # does not exist in the container and decoding stays in software (a compose file cannot ignore an absent device).
     devices:
       - ${VIDEO_DEVICE:-/dev/null}:/dev/dri
     group_add:
@@ -52,7 +52,7 @@ services:
     restart: unless-stopped
     environment:
       MQTT_PASSWORD: ${MQTT_PASSWORD:?MQTT_PASSWORD requis (make prod-init)}
-    # 1883 de l'hote = le listener unique (mot de passe obligatoire, jamais anonyme) : les clients du LAN se connectent avec leur compte.
+    # Host port 1883 = the single listener (mandatory password, never anonymous): LAN clients connect with their account.
     ports:
       - "${MQTT_LAN_PORT:-1883}:1883"
 
@@ -63,7 +63,7 @@ services:
       - "8189:8189/udp"    # WebRTC ICE
       - "8189:8189/tcp"
     environment:
-      # Hotes annonces au navigateur pour le flux video (candidats ICE) : nom LAN + IP(s) joignables par les clients VPN.
+      # Hosts announced to the browser for the video stream (ICE candidates): LAN name + IP(s) reachable by the VPN clients.
       MTX_WEBRTCADDITIONALHOSTS: ${WEBRTC_ADDITIONAL_HOSTS:-${LAN_DOMAIN:-localhost}}
 
   prometheus:
@@ -74,7 +74,7 @@ services:
     environment:
       GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:?GRAFANA_PASSWORD requis (make prod-init)}
 
-  # Administration de la base, joignable uniquement depuis la machine. A distance : ssh -L 8181:127.0.0.1:8181 <utilisateur>@<serveur>.
+  # Database administration, reachable only from the machine. Remotely: ssh -L 8181:127.0.0.1:8181 <user>@<server>.
   adminer:
     image: adminer:4.8.1
     profiles: [adminer]
@@ -87,7 +87,7 @@ services:
       postgres: {condition: service_healthy}
     networks: [dominet-net]
 
-  # Profil `zigbee` : actif si le dongle (ZIGBEE_DEVICE) est present. Interface sur 8080, protegee par jeton.
+  # `zigbee` profile: active if the dongle (ZIGBEE_DEVICE) is present. Interface on 8080, protected by a token.
   zigbee2mqtt:
     image: koenkk/zigbee2mqtt:2.1.1
     profiles: [zigbee]
@@ -97,7 +97,7 @@ services:
       TZ: ${TZ:-Europe/Paris}
       ZIGBEE2MQTT_CONFIG_MQTT_USER: ${MQTT_USER:-dominet}
       ZIGBEE2MQTT_CONFIG_MQTT_PASSWORD: ${MQTT_PASSWORD}
-      # Les variables des profils zigbee et vpn sont verifiees par `make prod-guard` (un compose ne refuse pas une variable d un profil inactif).
+      # The variables of the zigbee and vpn profiles are checked by `make prod-guard` (a compose file does not refuse a variable of an inactive profile).
       ZIGBEE2MQTT_CONFIG_FRONTEND_AUTH_TOKEN: ${ZIGBEE_AUTH_TOKEN:-}
     volumes:
       - ./zigbee2mqtt:/app/data
@@ -108,7 +108,7 @@ services:
       mosquitto: {condition: service_healthy}
     networks: [dominet-net]
 
-  # Profil `vpn` : acces distant par WireGuard (reseau hote, iptables-nft). Active si WG_ADMIN_HASH est renseigne.
+  # `vpn` profile: remote access through WireGuard (host network, iptables-nft). Active if WG_ADMIN_HASH is set.
   wg-easy:
     image: ghcr.io/wg-easy/wg-easy:14
     profiles: [vpn]
@@ -123,12 +123,12 @@ services:
       PASSWORD_HASH: ${WG_ADMIN_HASH:-}
       WG_DEFAULT_DNS: "1.1.1.1"
       WG_DEFAULT_ADDRESS: ${WG_DEFAULT_ADDRESS:-10.20.0.x}
-      # Routes envoyees aux clients : tunnel + LAN pour joindre DomiNet. Distinct de WG_SUBNET.
+      # Routes sent to the clients: tunnel + LAN to reach DomiNet. Distinct from WG_SUBNET.
       WG_ALLOWED_IPS: ${WG_ALLOWED_IPS:-10.20.0.0/24}
       WG_MTU: "1420"
       WG_PERSISTENT_KEEPALIVE: "25"
       UI_TRAFFIC_STATS: "true"
-      # iptables-nft (nf_tables) fonctionne sur tous les noyaux modernes, contrairement a iptables-legacy.
+      # iptables-nft (nf_tables) works on all modern kernels, unlike iptables-legacy.
       WG_POST_UP: "/usr/sbin/iptables-nft -t nat -A POSTROUTING -s ${WG_SUBNET:-10.20.0.0/24} -j MASQUERADE; /usr/sbin/iptables-nft -A FORWARD -i wg0 -j ACCEPT; /usr/sbin/iptables-nft -A FORWARD -o wg0 -j ACCEPT"
       WG_POST_DOWN: "/usr/sbin/iptables-nft -t nat -D POSTROUTING -s ${WG_SUBNET:-10.20.0.0/24} -j MASQUERADE; /usr/sbin/iptables-nft -D FORWARD -i wg0 -j ACCEPT; /usr/sbin/iptables-nft -D FORWARD -o wg0 -j ACCEPT"
 

@@ -9,27 +9,27 @@
 *.log
 .DS_Store
 
-# Python (scripts E2E et outils)
+# Python (E2E scripts and tools)
 __pycache__/
 *.pyc
 
-# Segments enregistres par le MediaMTX de dev
+# Segments recorded by the dev MediaMTX
 /deploy/recordings-dev/
 
-# Modele YOLO (make fetch-model)
+# YOLO model (make fetch-model)
 /models/*.onnx
 /models/*.pt
 
-# Fichiers de deploiement propres a une installation
+# Deployment files specific to an installation
 /certs/
 /deploy/zigbee2mqtt/*
 !/deploy/zigbee2mqtt/configuration.example.yaml
 
-# Personnalisation locale de l'apparence (copie de deploy/custom/custom.css.example)
+# Local appearance customisation (copy of deploy/custom/custom.css.example)
 /deploy/custom/custom.css
 
-# Donnees locales (images de detection, etc.) : jamais versionnees
+# Local data (detection images, etc.): never versioned
 /data/
 
-# Notes privees de l'agent (jamais commitees)
+# The agent's private notes (never committed)
 /CLAUDE.local.md

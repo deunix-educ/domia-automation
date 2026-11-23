@@ -16,7 +16,7 @@ thiserror.workspace = true
 uuid.workspace = true
 
 [features]
-# Scenarios de test tires du `context.yaml` de la production Python (R4) : le JSON est embarque seulement pour les tests.
+# Test scenarios drawn from the production Python `context.yaml` (R4): the JSON is only embedded for the tests.
 scenarios = []
 
 [lints]

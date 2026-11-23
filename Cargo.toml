@@ -24,7 +24,7 @@ dominet-server = { path = "crates/dominet-server" }
 dominet-mcp = { path = "crates/dominet-mcp" }
 dominet-agent = { path = "crates/dominet-agent" }
 
-# Dependances externes communes (versions verifiees le 2026-10-31). Cargo.lock fait foi.
+# Common external dependencies (versions checked on 2026-10-31). Cargo.lock is authoritative.
 axum = { version = "0.8.9", features = ["macros", "ws", "multipart"] }
 image = { version = "0.25", default-features = false, features = ["jpeg", "png", "webp", "gif"] }
 tokio-tungstenite = { version = "0.29", default-features = false, features = ["connect"] }
@@ -63,10 +63,10 @@ serde_json = { version = "1", features = ["float_roundtrip", "preserve_order"] }
 reduct-rs = "1.21"
 unicode-normalization = "0.1"
 ndarray = "0.17"
-# ONNX Runtime (YOLO, ADR 0009 et 0050) : version candidate epinglee exactement ; montee de version = tache explicite avec relance du test de parite.
+# ONNX Runtime (YOLO, ADR 0009 and 0050): candidate version pinned exactly; a version bump = an explicit task with a rerun of the parity test.
 ort = { version = "=2.0.0-rc.15", default-features = false, features = ["std", "ndarray", "download-binaries", "tls-rustls", "copy-dylibs", "api-31"] }
 lettre = { version = "0.11", default-features = false, features = ["builder", "smtp-transport", "tokio1-rustls-tls"] }
-# Serveur MCP (R11, ADR 0058) : version epinglee ; montee de version = tache explicite (le protocole evolue vite).
+# MCP server (R11, ADR 0058): pinned version; a version bump = an explicit task (the protocol evolves fast).
 rmcp = { version = "=3.10.0", default-features = false, features = ["server", "macros", "schemars", "transport-streamable-http-server"] }
 schemars = "1"
 reqwest = { version = "0.13", default-features = false, features = ["json", "rustls", "query"] }
@@ -81,8 +81,8 @@ sha1 = "0.11"
 md-5 = "0.10"
 getrandom = "0.4"
 socket2 = "0.6"
-# Metriques Prometheus (ADR 0051) : facade + exporteur sans ecouteur integre (le serveur expose lui-meme /metrics).
-# Sauvegardes (ADR 0054) : archives tar.gz du volume ReductStore, somme de controle, adresse de la base.
+# Prometheus metrics (ADR 0051): facade + exporter without a built-in listener (the server itself exposes /metrics).
+# Backups (ADR 0054): tar.gz archives of the ReductStore volume, checksum, database address.
 flate2 = "1"
 tar = "0.4"
 sha2 = "0.11"
@@ -101,7 +101,7 @@ module_name_repetitions = "allow"
 missing_errors_doc = "allow"
 missing_panics_doc = "allow"
 
-# Les mots de passe sont haches avec argon2 : sans optimisation, un login en debug prend plusieurs secondes.
+# Passwords are hashed with argon2: without optimisation, a login in debug takes several seconds.
 [profile.dev.package.argon2]
 opt-level = 3
 [profile.dev.package.blake2]
@@ -112,14 +112,14 @@ lto = "thin"
 codegen-units = 1
 strip = "symbols"
 
-# Profil du WASM de l'interface (cargo-leptos) : petit et optimise.
+# Profile of the interface's WASM (cargo-leptos): small and optimised.
 [profile.wasm-release]
 inherits = "release"
 opt-level = "z"
 lto = true
 codegen-units = 1
 
-# Build de l'interface par `cargo leptos build` (voir `make front`).
+# Interface build by `cargo leptos build` (see `make front`).
 [[workspace.metadata.leptos]]
 name = "dominet"
 bin-package = "dominet"

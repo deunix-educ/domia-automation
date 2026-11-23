@@ -20,14 +20,14 @@ leptos_router.workspace = true
 leptos-fluent.workspace = true
 serde.workspace = true
 serde_json.workspace = true
-# Cote serveur seulement (feature `ssr`).
+# Server side only (`ssr` feature).
 dominet-server = { workspace = true, optional = true }
 dominet-agent = { workspace = true, optional = true }
 dominet-automation = { workspace = true, optional = true }
 tower-sessions = { workspace = true, optional = true }
 leptos_axum = { workspace = true, optional = true }
 axum = { workspace = true, optional = true }
-# Cote navigateur seulement (feature `hydrate`).
+# Browser side only (`hydrate` feature).
 wasm-bindgen = { workspace = true, optional = true }
 wasm-bindgen-futures = { workspace = true, optional = true }
 console_error_panic_hook = { workspace = true, optional = true }

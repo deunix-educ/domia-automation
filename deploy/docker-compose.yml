@@ -1,12 +1,12 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-# DomiNet : fichier Compose de BASE (ROADMAP §2.5). Il decrit les services et leurs liens, sans port publie (sauf PostgreSQL en
-# loopback) ni politique de redemarrage : ceux-ci viennent des surcouches `docker-compose.dev.yml`, `docker-compose.prod.yml` et
-# `docker-compose.demo.yml`. Les secrets ne sont JAMAIS ici : ils viennent du `.env` (voir `.env.example.prod`).
-# Tout passe par le Makefile (`make prod-deploy`...).
+# DomiNet: BASE Compose file (ROADMAP §2.5). It describes the services and their links, without a published port (except PostgreSQL on
+# loopback) or a restart policy: those come from the overlays `docker-compose.dev.yml`, `docker-compose.prod.yml` and
+# `docker-compose.demo.yml`. The secrets are NEVER here: they come from `.env` (see `.env.example.prod`).
+# Everything goes through the Makefile (`make prod-deploy`...).
 name: dominet
 
 x-app-env: &app-env
-  # Tout le reste (EMAIL_*, SOLARMAX_*, ...) vient de `.env` ; ce bloc relie l'application aux services du reseau Docker.
+  # Everything else (EMAIL_*, SOLARMAX_*, ...) comes from `.env`; this block links the application to the Docker network's services.
   DATABASE_URL: postgres://${DB_USER:-dominet}:${DB_PASSWORD}@postgres:5432/${DB_NAME:-dominet}
   REDUCTSTORE_URL: http://reductstore:8383
   REDUCTSTORE_TOKEN: ${REDUCTSTORE_TOKEN}
@@ -28,13 +28,13 @@ x-app-env: &app-env
   RECORDINGS_DIR: /recordings
   TZ: ${TZ:-Europe/Paris}
 
-# Une seule image pour tous les roles ; seul `dominet` la construit (`docker compose build dominet`), les autres la reutilisent.
+# A single image for all the roles; only `dominet` builds it (`docker compose build dominet`), the others reuse it.
 x-app-image: &app-image
   image: dominet:${DOMINET_TAG:-local}
   pull_policy: never
 
 services:
-  # Un seul passage, root : donne les volumes partages a l'utilisateur de l'application (uid 10001) avant tout demarrage.
+  # A single run, root: gives the shared volumes to the application's user (uid 10001) before anything starts.
   init:
     <<: *app-image
     user: "0"
@@ -50,7 +50,7 @@ services:
     restart: "no"
     networks: [dominet-net]
 
-  # Un seul passage : applique les migrations AVANT les services applicatifs (D11).
+  # A single run: applies the migrations BEFORE the application services (D11).
   migrate:
     <<: *app-image
     command: ["migrate"]
@@ -101,8 +101,8 @@ services:
       mediamtx: {condition: service_started}
     networks: [dominet-net]
 
-  # Reseau hote : le multicast WS-Discovery ne traverse pas un reseau ponte. Il parle a `dominet` par PostgreSQL (LISTEN/NOTIFY),
-  # publie en loopback sur l'hote ; pas de DNS Docker en reseau hote. Pas d'ecouteur /metrics (le port 9100 serait celui de l'hote).
+  # Host network: WS-Discovery multicast does not cross a bridge network. It talks to `dominet` through PostgreSQL (LISTEN/NOTIFY),
+  # published on loopback on the host; no Docker DNS on the host network. No /metrics listener (port 9100 would be the host's).
   dominet-discovery:
     <<: *app-image
     command: ["serve", "--only", "discovery"]
@@ -122,7 +122,7 @@ services:
       POSTGRES_USER: ${DB_USER:-dominet}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
     command: ["postgres", "-c", "max_connections=200"]
-    # Loopback seulement : sert a `dominet-discovery` (reseau hote) et aux outils locaux (Adminer passe par le reseau Docker).
+    # Loopback only: serves `dominet-discovery` (host network) and the local tools (Adminer goes through the Docker network).
     ports: ["127.0.0.1:${POSTGRES_HOST_PORT:-5432}:5432"]
     volumes: [postgres-data:/var/lib/postgresql/data]
     healthcheck:
@@ -132,7 +132,7 @@ services:
       retries: 10
     networks: [dominet-net]
 
-  # Version figee (pas `latest`). Utilisateur non-root (uid 10001), jeton obligatoire.
+  # Pinned version (not `latest`). Non-root user (uid 10001), mandatory token.
   reductstore:
     image: reduct/store:v1.21.5
     environment:
@@ -141,14 +141,14 @@ services:
     depends_on:
       init: {condition: service_completed_successfully}
     healthcheck:
-      # L'image n'a ni wget ni curl : sonde HTTP via /dev/tcp (bash).
+      # The image has neither wget nor curl: HTTP probe through /dev/tcp (bash).
       test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/8383 && printf 'GET /api/v1/alive HTTP/1.0\\r\\n\\r\\n' >&3 && head -n1 <&3 | grep -q ' 200 '"]
       interval: 5s
       timeout: 3s
       retries: 10
     networks: [dominet-net]
 
-  # Un seul listener, 1883 : mot de passe obligatoire, droits par compte (ADR 0057). Comptes externes : `make prod-mqtt-user`.
+  # A single listener, 1883: mandatory password, per-account rights (ADR 0057). External accounts: `make prod-mqtt-user`.
   mosquitto:
     image: eclipse-mosquitto:2.0
     environment:
@@ -168,7 +168,7 @@ services:
       retries: 10
     networks: [dominet-net]
 
-  # Utilisateur non-root (uid 10001) : c'est lui qui possede les segments que `dominet` relit puis supprime apres archivage.
+  # Non-root user (uid 10001): it owns the segments that `dominet` re-reads then deletes after archiving.
   mediamtx:
     image: bluenviron/mediamtx:1.21.3
     user: "10001:10001"
@@ -179,7 +179,7 @@ services:
       init: {condition: service_completed_successfully}
     networks: [dominet-net]
 
-  # Les regles (`rules.yml`) sont ecrites par DomiNet dans le volume partage puis rechargees par `POST /-/reload`.
+  # The rules (`rules.yml`) are written by DomiNet into the shared volume then reloaded by `POST /-/reload`.
   prometheus:
     image: prom/prometheus:v2.52.0
     command:
@@ -199,8 +199,8 @@ services:
       retries: 6
     networks: [dominet-net]
 
-  # Provisionnement : sources, tableaux, points de contact et politiques en fichiers du depot ; regles d'alerte et tableaux d'appareils
-  # ecrits par DomiNet dans des volumes. Sous-chemin /grafana/ derriere nginx, lecteur anonyme, integrable (D4).
+  # Provisioning: sources, dashboards, contact points and policies as files of the repository; alert rules and device dashboards
+  # written by DomiNet into volumes. Sub-path /grafana/ behind nginx, anonymous viewer, embeddable (D4).
   grafana:
     image: grafana/grafana:11.0.0
     environment:
@@ -225,7 +225,7 @@ services:
       GF_SMTP_PASSWORD: ${EMAIL_HOST_PASSWORD:-}
       GF_SMTP_FROM_ADDRESS: ${DEFAULT_FROM_EMAIL:-dominet@dominet.local}
       GF_SMTP_FROM_NAME: DomiNet Grafana
-      # Sans destinataire, Grafana refuse le point de contact et ne demarre pas : adresse de repli (make prod-guard previent).
+      # Without a recipient, Grafana refuses the contact point and does not start: fallback address (make prod-guard warns).
       EMAIL_RECIPIENT: ${EMAIL_RECIPIENT:-alertes@dominet.local}
     volumes:
       - ./grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro

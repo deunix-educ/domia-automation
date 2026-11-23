@@ -1,8 +1,8 @@
 /* SPDX-License-Identifier: AGPL-3.0-or-later */
-/* Reprise a l'identique de static/core/css/main.css du projet DomiNet (Python). */
+/* Taken over unchanged from static/core/css/main.css of the DomiNet project (Python). */
 /* ============================================================
-   Feuille de style principale — DomiNet
-   Thème sombre, zéro dépendance externe
+   Main stylesheet — DomiNet
+   Dark theme, no external dependency
    ============================================================ */
 
 /* --- Variables -------------------------------------------- */
@@ -244,7 +244,7 @@ button.vc-nav-link {
 }
 .vc-sidebar-collapse-btn:hover { color: var(--text-primary); background: var(--bg-hover); }
 
-/* Bouton flottant pour ré-ouvrir le sidebar (desktop) */
+/* Floating button to reopen the sidebar (desktop) */
 .vc-sidebar-open-btn {
     display        : none;
     position       : fixed;
@@ -293,7 +293,7 @@ button.vc-nav-link {
 .vc-container--narrow { max-width: 900px; }
 .vc-grid-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
 
-/* --- En-tête de page -------------------------------------- */
+/* --- Page header -------------------------------------- */
 .vc-page-header {
     display        : flex;
     align-items    : center;
@@ -306,7 +306,7 @@ button.vc-nav-link {
 .vc-page-header h2 svg { color: var(--accent); }
 .vc-header-actions { display: flex; gap: 8px; }
 
-/* --- Cartes ----------------------------------------------- */
+/* --- Cards ----------------------------------------------- */
 .vc-card {
     background     : var(--bg-surface);
     border         : 1px solid var(--border);
@@ -324,7 +324,7 @@ button.vc-nav-link {
 }
 .vc-card-title svg { color: var(--accent); }
 
-/* --- Boutons ---------------------------------------------- */
+/* --- Buttons ---------------------------------------------- */
 .vc-btn {
     display        : inline-flex;
     align-items    : center;
@@ -351,7 +351,7 @@ button.vc-nav-link {
 .vc-btn--block { width: 100%; }
 .vc-btn--sm { padding: 5px 10px; font-size: .82rem; }
 
-/* --- Formulaires ------------------------------------------ */
+/* --- Forms ------------------------------------------ */
 .vc-form-group { margin-bottom: 18px; }
 .vc-form-group label {
     display        : flex;
@@ -413,7 +413,7 @@ button.vc-nav-link {
 .vc-badge--info    { background: rgba(56,139,253,.15); color: var(--info); }
 .vc-badge--warning { background: rgba(210,153,34,.15); color: var(--warning); }
 
-/* --- Messages système ------------------------------------- */
+/* --- System messages ------------------------------------- */
 .vc-messages {
     position       : fixed;
     top            : 12px;
@@ -442,7 +442,7 @@ button.vc-nav-link {
 .vc-alert button { background: none; border: none; color: var(--text-muted); font-size: .9rem; padding: 2px; flex-shrink: 0; }
 .vc-alert button:hover { color: var(--text-primary); }
 
-/* --- Authentification ------------------------------------- */
+/* --- Authentication ------------------------------------- */
 .vc-auth-wrap {
     min-height     : 100vh;
     display        : flex;
@@ -475,7 +475,7 @@ button.vc-nav-link {
 .vc-auth-header h1 { font-size: 1.6rem; margin-bottom: 6px; }
 .vc-auth-header p  { color: var(--text-secondary); font-size: .88rem; }
 
-/* --- Table générique -------------------------------------- */
+/* --- Generic table -------------------------------------- */
 .vc-table { width: 100%; border-collapse: collapse; font-size: .9rem; }
 .vc-table th {
     text-align: left; padding: 10px 12px;
@@ -487,13 +487,13 @@ button.vc-nav-link {
 .vc-table tr:last-child td { border-bottom: none; }
 .vc-table tr:hover td { background: var(--bg-elevated); }
 
-/* --- État vide -------------------------------------------- */
+/* --- Empty state -------------------------------------------- */
 .vc-empty-state { text-align: center; padding: 72px 24px; }
 .vc-empty-state svg { color: var(--bg-elevated); display: block; margin: 0 auto 16px; }
 .vc-empty-state h3 { color: var(--text-secondary); margin-bottom: 8px; }
 .vc-empty-state p  { color: var(--text-muted); margin-bottom: 16px; }
 
-/* --- Dashboard grille ------------------------------------- */
+/* --- Dashboard grid ------------------------------------- */
 .vc-dashboard-grid {
     display        : grid;
     grid-template-columns: repeat(12, 1fr);
@@ -541,7 +541,7 @@ button.vc-nav-link {
     overflow       : hidden;
 }
 
-/* Widget : texte / boîte */
+/* Widget: text / box */
 .vc-widget-text {
     font-size      : .9rem;
     line-height    : 1.7;
@@ -560,7 +560,7 @@ button.vc-nav-link {
     padding        : 0;
 }
 
-/* Widget : placeholder (caméra / device) */
+/* Widget: placeholder (camera / device) */
 .vc-widget-placeholder {
     height         : 100%;
     display        : flex;
@@ -573,7 +573,7 @@ button.vc-nav-link {
 }
 .vc-widget-placeholder svg { color: var(--bg-elevated); }
 
-/* Widget : grille imbriquée */
+/* Widget: nested grid */
 .vc-widget-grid {
     display        : grid;
     grid-template-columns: 1fr 1fr;
@@ -604,12 +604,12 @@ button.vc-nav-link {
 .vc-footer a { color: var(--text-muted); }
 .vc-footer a:hover { color: var(--accent); }
 
-/* --- Texte utilitaire ------------------------------------- */
+/* --- Utility text ------------------------------------- */
 .vc-text-muted { color: var(--text-muted); font-size: .88rem; display: flex; align-items: center; gap: 6px; }
 .vc-section-title { font-size: 1rem; font-weight: 600; color: var(--text-secondary); margin: 0 0 16px; display: flex; align-items: center; gap: 8px; }
 .vc-section-title svg { color: var(--accent); }
 
-/* --- Stats système sidebar --------------------------------- */
+/* --- System stats sidebar --------------------------------- */
 .vc-sidebar-stats {
     padding        : 10px 12px 8px;
     border-bottom  : 1px solid var(--border);
@@ -690,26 +690,26 @@ button.vc-nav-link {
 
 
 /* ============================================================
-   ADAPTATIONS LEPTOS (DomiNet) -- le reste du fichier est repris a l'identique du projet Python
+   LEPTOS ADAPTATIONS (DomiNet) -- the rest of the file is taken over unchanged from the Python project
    ============================================================ */
-/* Le decalage du contenu se deduit de la fraternite barre laterale / contenu (aucune classe posee par du JS) :
-   le HTML rendu par le serveur est deja correct. */
+/* The content offset is deduced from the sibling relationship sidebar / content (no class set by JS):
+   the HTML rendered by the server is already correct. */
 .vc-sidebar + .vc-main-wrap { margin-left: var(--sidebar-w); }
 .vc-sidebar--collapsed + .vc-main-wrap { margin-left: 0; }
 @media (max-width: 768px) {
     .vc-sidebar + .vc-main-wrap,
     .vc-sidebar--collapsed + .vc-main-wrap { margin-left: 0; }
 }
-/* Lien actif : `leptos_router` pose aria-current="page" (equivalent de .vc-nav-link--active). */
+/* Active link: `leptos_router` sets aria-current="page" (equivalent of .vc-nav-link--active). */
 .vc-nav-link[aria-current="page"] { background: var(--bg-hover); color: var(--accent); }
 .vc-nav-icon { display: inline-flex; flex-shrink: 0; }
 .vc-brand svg, .vc-nav-link svg, .vc-sidebar-user svg, .vc-logout-btn svg, .vc-sidebar-collapse-btn svg { flex-shrink: 0; }
-/* Selecteur de langue */
+/* Language selector */
 .vc-lang { display: flex; gap: 6px; padding: 4px 12px; }
 .vc-lang .vc-btn { padding: 3px 10px; font-size: .78rem; background: transparent; border: 1px solid var(--border); color: var(--text-secondary); border-radius: var(--radius-sm); }
 .vc-lang .vc-btn[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }
 .vc-muted { color: var(--text-muted); font-size: .85rem; }
-/* Pages d'authentification et de compte */
+/* Authentication and account pages */
 .vc-page-title { font-size: 1.4rem; margin-bottom: 20px; }
 .vc-container > .vc-card { margin-bottom: 20px; }
 .vc-def-list { display: grid; grid-template-columns: max-content 1fr; gap: 8px 24px; margin: 0; }
@@ -719,7 +719,7 @@ button.vc-nav-link {
 .vc-auth-card .vc-lang { justify-content: center; margin-top: 18px; }
 a.vc-sidebar-user { color: inherit; text-decoration: none; }
 a.vc-sidebar-user:hover { background: var(--bg-hover); }
-/* Administration : tableau, formulaire, recherche */
+/* Administration: table, form, search */
 .vc-nav-heading { padding: 14px 16px 4px; font-size: .72rem; letter-spacing: .08em; text-transform: uppercase; color: var(--text-muted); }
 .vc-search { padding: 7px 12px; background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text-primary); min-width: 200px; }
 .vc-row-actions { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
@@ -740,10 +740,10 @@ a.vc-sidebar-user:hover { background: var(--bg-hover); }
     border-radius: var(--radius-sm); color: var(--text-primary);
 }
 .vc-setting .vc-alert { margin-top: 8px; }
-/* Affiche le bouton de reouverture quand la barre est repliee (remplace un style en ligne, interdit par la CSP) */
+/* Shows the reopen button when the bar is collapsed (replaces an inline style, forbidden by the CSP) */
 .vc-sidebar-open-btn.vc-sidebar-open-btn--shown { display: flex; }
 @media (max-width: 768px) { .vc-sidebar-open-btn.vc-sidebar-open-btn--shown { display: none !important; } }
-/* Temps reel : indicateur et notifications */
+/* Real time: indicator and notifications */
 .vc-rt { display: flex; align-items: center; gap: 8px; padding: 4px 16px; font-size: .78rem; color: var(--text-muted); }
 .vc-rt-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--text-muted); flex-shrink: 0; }
 .vc-rt[data-state="online"] .vc-rt-dot { background: var(--success); }
@@ -757,10 +757,10 @@ a.vc-sidebar-user:hover { background: var(--bg-hover); }
 .vc-toast-close { background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 0 4px; font-size: 1rem; }
 .vc-toast-close:hover { color: var(--text-primary); }
 
-/* --- Tableau de bord (R2 lot 4) ----------------------------
-   Position et taille d'un widget par CLASSES (la CSP interdit l'attribut `style`) : .vc-c-N = colonne N (1..12),
-   .vc-r-N = ligne N (1..100), .vc-w-N / .vc-h-N = largeur / hauteur en cellules. Les classes posent des variables ;
-   --w8 et --w4 sont la largeur ramenee a 8 puis 4 colonnes pour les ecrans moyens et etroits. */
+/* --- Dashboard (R2 lot 4) ----------------------------
+   Position and size of a widget by CLASSES (the CSP forbids the `style` attribute): .vc-c-N = column N (1..12),
+   .vc-r-N = row N (1..100), .vc-w-N / .vc-h-N = width / height in cells. The classes set variables;
+   --w8 and --w4 are the width brought down to 8 then 4 columns for medium and narrow screens. */
 .vc-widget {
     grid-column    : var(--c, 1) / span var(--w, 2);
     grid-row       : var(--r, 1) / span var(--h, 2);
@@ -914,7 +914,7 @@ a.vc-sidebar-user:hover { background: var(--bg-hover); }
     .vc-widget { grid-column: 1 / -1; }
 }
 
-/* Widget : en-tete, corps, etats */
+/* Widget: header, body, states */
 .vc-widget-header-title { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-left: 8px; }
 .vc-widget-header .vc-widget-icon { display: inline-flex; color: var(--accent); }
 .vc-widget--on { border-color: rgba(86,211,100,.35); box-shadow: 0 0 0 1px rgba(86,211,100,.06); }
@@ -928,7 +928,7 @@ a.vc-sidebar-user:hover { background: var(--bg-hover); }
 .vc-widget-text table { border-collapse: collapse; }
 .vc-widget-text td, .vc-widget-text th { border: 1px solid var(--border); padding: 2px 6px; }
 
-/* Widget : appareil */
+/* Widget: device */
 .vc-widget-body--dev { padding: 10px 14px; display: flex; flex-direction: column; gap: 8px; overflow: hidden; flex: 1; }
 .vc-dev-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-left: 8px; }
 .vc-dev-dot--on { background: var(--success); box-shadow: 0 0 5px var(--success); }
@@ -962,7 +962,7 @@ a.vc-sidebar-user:hover { background: var(--bg-hover); }
 .vc-dev-primary-key { font-size: .68rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: .07em; }
 .vc-dev-primary-line { display: flex; align-items: baseline; gap: 5px; }
 
-/* Selecteur de tableau (details/summary : aucun script) */
+/* Dashboard selector (details/summary: no script) */
 .vc-dash-picker { position: relative; }
 .vc-dash-picker summary {
     list-style: none; display: inline-flex; align-items: center; gap: 7px; padding: 8px 18px; border-radius: var(--radius-sm);
@@ -986,7 +986,7 @@ a.vc-sidebar-user:hover { background: var(--bg-hover); }
 .vc-dash-empty form { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
 .vc-sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 
-/* Edition : deplacement des widgets (administrateurs, ecrans larges) */
+/* Editing: moving the widgets (administrators, wide screens) */
 .vc-drop-ghost {
     display: none; pointer-events: none; border: 2px dashed var(--accent); border-radius: var(--radius-lg);
     background: var(--accent-glow); z-index: 1;
@@ -998,7 +998,7 @@ a.vc-sidebar-user:hover { background: var(--bg-hover); }
 .vc-widget--dragging .vc-widget-header { cursor: grabbing; }
 .vc-widget--dragging iframe { pointer-events: none; }
 
-/* Pages des appareils (R3) : filtres, grille de cartes, detail, courbes */
+/* Device pages (R3): filters, card grid, detail, curves */
 .vc-filters { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 16px; }
 .vc-filters select { min-width: 10rem; }
 .vc-device-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; }
@@ -1046,7 +1046,7 @@ textarea.vc-code { width: 100%; min-height: 14em; white-space: pre; overflow: au
 .vc-tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
 .vc-tabs a[aria-current="page"] { border-color: var(--accent, currentColor); font-weight: 600; }
 
-/* Energie (R4 lot 7) */
+/* Energy (R4 lot 7) */
 .vc-energy-live { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin-bottom: 16px; }
 .vc-energy-card { display: flex; flex-direction: column; gap: 4px; }
 .vc-energy-card--solar { border-top: 3px solid #22c55e; }
@@ -1065,7 +1065,7 @@ textarea.vc-code { width: 100%; min-height: 14em; white-space: pre; overflow: au
 .vc-energy-key--net { color: #60a5fa; }
 .vc-energy-chart svg { display: block; width: 100%; height: auto; }
 
-/* --- Pages decouverte / ONVIF (R6) ------------------------- */
+/* --- Discovery / ONVIF pages (R6) ------------------------- */
 .vc-btn-row { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 18px; }
 .vc-list { list-style: none; margin: 14px 0 0; padding: 0; }
 .vc-list li {
@@ -1080,13 +1080,13 @@ textarea.vc-code { width: 100%; min-height: 14em; white-space: pre; overflow: au
 .vc-list .vc-alert { flex-basis: 100%; margin: 4px 0 0; }
 #manual-add form { max-width: 460px; }
 
-/* --- Passe de presentation (R6) : espacements et formulaires -------------------------------------------------------------- */
-/* Un paragraphe d'une carte respire avant le champ ou le bouton qui le suit. */
+/* --- Presentation pass (R6): spacing and forms -------------------------------------------------------------- */
+/* A card's paragraph breathes before the field or button that follows it. */
 .vc-card p { margin: 0 0 14px; line-height: 1.55; }
 .vc-card p:last-child { margin-bottom: 0; }
 .vc-card-title { margin-bottom: 18px; }
 
-/* Groupes de choix (canal, destinataires...) : un cadre, des libelles lisibles, cases alignees sur leur texte. */
+/* Choice groups (channel, recipients...): a frame, readable labels, checkboxes aligned with their text. */
 fieldset.vc-form-group {
     border         : 1px solid var(--border);
     border-radius  : var(--radius);
@@ -1116,7 +1116,7 @@ fieldset.vc-form-group .vc-list label { margin: 0; }
 fieldset.vc-form-group p.vc-muted { margin: 4px 0 8px; }
 .vc-form-group textarea { resize: vertical; min-height: 120px; line-height: 1.5; }
 
-/* Case a cocher : la case, son libelle, puis l'aide dessous (le libelle precede la case dans le DOM). */
+/* Checkbox: the box, its label, then the help below (the label precedes the box in the DOM). */
 .vc-form-group--check {
     display               : grid;
     grid-template-columns : 18px 1fr;
@@ -1131,7 +1131,7 @@ fieldset.vc-form-group p.vc-muted { margin: 4px 0 8px; }
 .vc-form-group--check .vc-hint,
 .vc-form-group--check .vc-field-error { grid-column: 2; margin-top: 0; }
 
-/* Formulaires du composant d'administration : deux colonnes quand la place le permet, champs longs sur toute la largeur. */
+/* Forms of the administration component: two columns when space allows, long fields across the full width. */
 @media (min-width: 960px) {
     #crud-form {
         display               : grid;
@@ -1144,12 +1144,12 @@ fieldset.vc-form-group p.vc-muted { margin: 4px 0 8px; }
     #crud-form > .vc-alert,
     #crud-form > :not(.vc-form-group) { grid-column: 1 / -1; }
     #crud-form { align-items: start; }
-    /* Une case seule, a cote d'un champ : alignee sur la ligne du champ, pas sur son libelle. */
+    /* A lone checkbox next to a field: aligned with the field's line, not its label. */
     #crud-form > .vc-form-group--check { padding-top: 30px; }
 }
 .vc-hint { line-height: 1.45; }
 
-/* --- Live d'une camera (R6 lot 4) ---------------------------------------------------------------------------------------- */
+/* --- Live view of a camera (R6 lot 4) ---------------------------------------------------------------------------------------- */
 .vc-live {
     position       : relative;
     width          : 100%;
@@ -1187,7 +1187,7 @@ fieldset.vc-form-group p.vc-muted { margin: 4px 0 8px; }
 .vc-widget-body--live { padding: 0; }
 .vc-widget-body--live .vc-live { height: 100%; aspect-ratio: auto; border-radius: 0; }
 
-/* --- Commandes d'une camera : PTZ et jour / nuit (R6 lot 5) -------------------------------------------------------------- */
+/* --- Camera controls: PTZ and day / night (R6 lot 5) -------------------------------------------------------------- */
 .vc-live-layout { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 20px; align-items: start; }
 .vc-live-layout .vc-live-card { max-width: none; }
 .vc-controls { display: grid; gap: 20px; align-items: start; }
@@ -1199,7 +1199,7 @@ fieldset.vc-form-group p.vc-muted { margin: 4px 0 8px; }
 .vc-ptz input[type="range"] { width: 100%; accent-color: var(--accent); }
 .vc-night .vc-btn-row { margin-bottom: 12px; }
 
-/* --- Snapshots et affichage de repli (R6 lot 6) ------------------------------------------------------------------------------ */
+/* --- Snapshots and fallback display (R6 lot 6) ------------------------------------------------------------------------------ */
 .vc-live-fallback { position: absolute; inset: 0; }
 .vc-live-message--notice { inset: auto 0 0 0; padding: 6px 12px; font-size: .8rem; background: rgba(0, 0, 0, .7); justify-content: flex-start; text-align: left; }
 .vc-snap-filters { display: flex; flex-wrap: wrap; gap: 0 24px; }
@@ -1209,12 +1209,12 @@ fieldset.vc-form-group p.vc-muted { margin: 4px 0 8px; }
 .vc-snap-grid img { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: var(--radius-sm); background: #000; display: block; }
 .vc-snap-caption { font-size: .8rem; color: var(--text-secondary); }
 
-/* --- Tableaux d'administration : jamais plus larges que leur cadre -------------------------------------------------------- */
+/* --- Administration tables: never wider than their frame -------------------------------------------------------- */
 .vc-table-wrap { overflow-x: auto; }
 .vc-table-wrap .vc-table td { max-width: 16ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .vc-table-wrap .vc-table td:last-child { max-width: none; overflow: visible; white-space: nowrap; }
 
-/* --- Liste des cameras : vignettes (R6) ----------------------------------------------------------------------------------- */
+/* --- Camera list: thumbnails (R6) ----------------------------------------------------------------------------------- */
 .vc-camera-list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 18px; }
 .vc-camera { background: var(--bg-card, var(--bg-elevated)); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
 .vc-camera-link { display: block; color: inherit; text-decoration: none; }
@@ -1226,11 +1226,11 @@ fieldset.vc-form-group p.vc-muted { margin: 4px 0 8px; }
 .vc-camera-place { display: block; padding: 2px 12px 10px; color: var(--text-muted); font-size: .85rem; }
 .vc-camera-name:last-child { padding-bottom: 10px; }
 
-/* Lecteur des enregistrements : jamais plus large que la page, quelle que soit la definition de la camera. */
+/* Recordings player: never wider than the page, whatever the camera's resolution. */
 #rec-player { display: block; width: 100%; max-width: 100%; max-height: 70vh; background: #000; object-fit: contain; }
 .vc-card video, .vc-card img { max-width: 100%; height: auto; }
 
-/* --- Menu d'administration : tiroir masquable a droite ------ */
+/* --- Administration menu: hideable drawer on the right ------ */
 .vc-admin-toggle {
     position       : fixed;
     top            : 50%;
@@ -1278,7 +1278,7 @@ fieldset.vc-form-group p.vc-muted { margin: 4px 0 8px; }
     visibility     : hidden;
     transition     : transform .25s ease, visibility 0s linear .25s;
 }
-/* Ferme : `visibility: hidden` retire les liens de l'ordre de tabulation sans les retirer du DOM. */
+/* Closed: `visibility: hidden` removes the links from the tab order without removing them from the DOM. */
 .vc-admin-drawer--open { transform: none; visibility: visible; transition: transform .25s ease; }
 .vc-admin-drawer-head {
     display        : flex;
@@ -1300,14 +1300,14 @@ fieldset.vc-form-group p.vc-muted { margin: 4px 0 8px; }
     cursor         : pointer;
 }
 .vc-admin-close:hover { color: var(--text-primary); background: var(--bg-hover); }
-/* Laisse la languette libre sur le bord droit : les actions de fin de ligne restent cliquables. */
+/* Leaves the tab free on the right edge: the end-of-row actions stay clickable. */
 .vc-main { padding-right: 0; }
 @media (min-width: 1px) { body:has(.vc-admin-toggle) .vc-main { padding-right: 30px; } }
 
-/* Identifiant (numero en base) affiche sur les cartes d'appareils. */
+/* Identifier (database number) shown on the device cards. */
 .vc-dev-id { font-size: .72rem; margin-left: auto; padding-right: 8px; font-variant-numeric: tabular-nums; }
 
-/* --- Journaux de l'application (/admin/logs) --------------- */
+/* --- Application logs (/admin/logs) --------------- */
 .vc-logs-filters { display: flex; flex-wrap: wrap; gap: 12px 16px; align-items: end; }
 .vc-logs-filters label { display: flex; flex-direction: column; gap: 4px; font-size: .78rem; color: var(--text-muted); }
 .vc-logs-filters .vc-logs-auto { flex-direction: row; align-items: center; gap: 6px; }

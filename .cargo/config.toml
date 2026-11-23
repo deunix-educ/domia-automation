@@ -1,15 +1,15 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 #
-# Le serveur (rendu HTML) et le WebAssembly (hydratation) DOIVENT etre compiles de la meme facon, sinon le HTML ne
-# contient pas les marqueurs que le WASM attend, l'hydratation echoue et l'interface reste inerte (boutons inactifs). Deux
-# reglages de compilation sont concernes ; `cargo leptos` les impose a ses propres compilations, un `cargo build` ou
-# `cargo test` ordinaire (donc `make ci`, qui recompile `target/debug/dominet`) ne les avait pas :
+# The server (HTML rendering) and the WebAssembly (hydration) MUST be compiled the same way, otherwise the HTML does not
+# contain the markers the WASM expects, hydration fails and the interface stays inert (inactive buttons). Two
+# compilation settings are concerned; `cargo leptos` imposes them on its own builds, an ordinary `cargo build` or
+# `cargo test` (hence `make ci`, which recompiles `target/debug/dominet`) did not have them:
 #
-#  * `--cfg erase_components` (RUSTFLAGS) : change le HTML rendu. `cargo leptos` l'ajoute en dev ; on le fixe pour tout.
-#  * `LEPTOS_OUTPUT_NAME` : nom du fichier WASM demande par la page (`dominet.wasm`, sinon `dominet_bg.wasm` : 404). Doit
-#    rester egal a `output-name` de `[[workspace.metadata.leptos]]` (Cargo.toml).
+#  * `--cfg erase_components` (RUSTFLAGS): changes the rendered HTML. `cargo leptos` adds it in dev; we set it for everything.
+#  * `LEPTOS_OUTPUT_NAME`: name of the WASM file requested by the page (`dominet.wasm`, otherwise `dominet_bg.wasm`: 404). Must
+#    stay equal to `output-name` of `[[workspace.metadata.leptos]]` (Cargo.toml).
 #
-# Un test (`crates/dominet/tests/ui.rs`) verifie le nom du WASM et la presence des marqueurs d'hydratation.
+# A test (`crates/dominet/tests/ui.rs`) checks the WASM name and the presence of the hydration markers.
 [build]
 rustflags = ["--cfg", "erase_components"]
 

@@ -52,13 +52,13 @@ uuid = { workspace = true, features = ["v4"] }
 
 [dev-dependencies]
 http-body-util.workspace = true
-# Acces direct au bucket de test de ReductStore.
+# Direct access to ReductStore's test bucket.
 reduct-rs.workspace = true
-# Faux serveurs SMTP et Free Mobile : aucun envoi reel dans les tests.
+# Fake SMTP and Free Mobile servers: nothing is really sent in the tests.
 dominet-notify = { workspace = true, features = ["testing"] }
-# Faux MediaMTX.
+# Fake MediaMTX.
 dominet-surveillance = { workspace = true, features = ["testing"] }
-# Jeux d'essai de la production (scenes) pour les tests d'activation.
+# Production test data (scenes) for the activation tests.
 dominet-domain = { workspace = true, features = ["scenarios"] }
 
 [lints]

@@ -1,6 +1,6 @@
-# Configuration de Zigbee2MQTT (profil `zigbee`) : copiee en `deploy/zigbee2mqtt/configuration.yaml` par `make prod-init`
-# si elle n'existe pas. Le dossier est monte en ecriture (Zigbee2MQTT y garde ses appareils et ses cles reseau).
-# Le mot de passe MQTT et le jeton de l'interface viennent du .env (variables ZIGBEE2MQTT_CONFIG_* du compose), pas d'ici.
+# Zigbee2MQTT configuration (`zigbee` profile): copied to `deploy/zigbee2mqtt/configuration.yaml` by `make prod-init`
+# if it does not exist. The folder is mounted writable (Zigbee2MQTT keeps its devices and network keys there).
+# The MQTT password and the interface token come from .env (ZIGBEE2MQTT_CONFIG_* variables of the compose), not from here.
 homeassistant: false
 permit_join: false
 
@@ -9,10 +9,10 @@ mqtt:
   server: mqtt://mosquitto:1883
 
 serial:
-  # Port tel qu'il apparait DANS le conteneur (le compose lie ZIGBEE_DEVICE a /dev/ttyUSB0)
+  # Port as it appears INSIDE the container (the compose binds ZIGBEE_DEVICE to /dev/ttyUSB0)
   port: /dev/ttyUSB0
-  # adapter: ezsp  # decommenter pour une cle Sonoff Zigbee 3.0 USB (firmware EZSPv8)
-  # adapter: zstack  # decommenter pour une cle CC2652/CC1352
+  # adapter: ezsp  # uncomment for a Sonoff Zigbee 3.0 USB dongle (EZSPv8 firmware)
+  # adapter: zstack  # uncomment for a CC2652/CC1352 dongle
 
 frontend:
   enabled: true
@@ -21,13 +21,13 @@ frontend:
 
 advanced:
   log_level: info
-  # GENERATE : Zigbee2MQTT tire des valeurs au hasard au premier demarrage puis les ecrit ici (ne pas
-  # les perdre : sans elles, tous les appareils sont a rappairer). Les valeurs par defaut de Zigbee2MQTT
-  # sont les memes pour tout le monde et peuvent entrer en collision avec un autre reseau.
+  # GENERATE: Zigbee2MQTT draws random values at first start then writes them here (do not
+  # lose them: without them, all the devices have to be re-paired). Zigbee2MQTT's default values
+  # are the same for everyone and may collide with another network.
   pan_id: GENERATE
   ext_pan_id: GENERATE
   network_key: GENERATE
-  # Canal 25 : hors des canaux Wi-Fi 1/6/11 (le canal 11 de Zigbee recouvre le Wi-Fi canal 1).
+  # Channel 25: outside the Wi-Fi channels 1/6/11 (Zigbee channel 11 overlaps Wi-Fi channel 1).
   channel: 25
   homeassistant_legacy_entity_attributes: false
   legacy_api: false

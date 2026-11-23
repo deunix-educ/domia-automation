@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-# Documentation DomiNet : MkDocs Material, anglais par defaut, francais en suffixe `.fr.md`.
-# Construite par `make docs` et, dans l'image, par l'etape `docs` du Dockerfile ; servie par l'application sur /docs/, derriere la connexion.
+# DomiNet documentation: MkDocs Material, English by default, French with the `.fr.md` suffix.
+# Built by `make docs` and, in the image, by the `docs` stage of the Dockerfile; served by the application on /docs/, behind the login.
 site_name: DomiNet
 site_description: Domotique et videosurveillance auto-hebergees (Rust)
 docs_dir: docs

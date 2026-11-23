@@ -31,5 +31,5 @@ dominet-mqtt.workspace = true
 dominet-notify = { workspace = true, features = ["testing"] }
 dominet-store.workspace = true
 reqwest.workspace = true
-# Vrai client MCP pour les tests de bout en bout (le meme protocole que Claude Code).
+# Real MCP client for the end-to-end tests (the same protocol as Claude Code).
 rmcp = { workspace = true, features = ["client", "reqwest", "transport-streamable-http-client", "transport-streamable-http-client-reqwest"] }

@@ -9,7 +9,7 @@ license.workspace = true
 publish.workspace = true
 
 [features]
-# Faux MediaMTX (tests, demonstration) : aucun contact avec un vrai serveur.
+# Fake MediaMTX (tests, demonstration): no contact with a real server.
 testing = ["dep:axum"]
 
 [dependencies]

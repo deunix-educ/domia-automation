@@ -11,7 +11,7 @@ publish.workspace = true
 [dependencies]
 serde.workspace = true
 serde_json.workspace = true
-# Sans `v4` : pas de generateur aleatoire, donc rien a configurer pour wasm32 (on n'analyse et n'affiche que des UUID).
+# Without `v4`: no random generator, hence nothing to configure for wasm32 (we only parse and display UUIDs).
 uuid = { version = "1", default-features = false }
 
 [dev-dependencies]

@@ -9,7 +9,7 @@ license.workspace = true
 publish.workspace = true
 
 [features]
-# Faux serveurs SMTP et Free Mobile (tests, demonstration) : aucun envoi reel.
+# Fake SMTP and Free Mobile servers (tests, demonstration): nothing is really sent.
 testing = []
 
 [dependencies]

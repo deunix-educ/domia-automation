@@ -1,9 +1,9 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-# Exceptions de `cargo audit` (lit Cargo.lock en entier, y compris les dependances optionnelles jamais compilees).
+# `cargo audit` exceptions (reads the whole Cargo.lock, including optional dependencies that are never compiled).
 [advisories]
 ignore = [
-    # libsqlite3-sys 0.37 : present seulement dans Cargo.lock (pilote SQLite optionnel de sqlx-macros) ; absent de tous les graphes compiles
-    # (`cargo tree -i libsqlite3-sys --target all` ne l'affiche pas) et DomiNet n'utilise que PostgreSQL. `cargo deny` (graphe reel) est vert.
-    # A lever a la prochaine montee de sqlx qui releve libsqlite3-sys >= 0.39.
+    # libsqlite3-sys 0.37: only present in Cargo.lock (sqlx-macros's optional SQLite driver); absent from all the compiled graphs
+    # (`cargo tree -i libsqlite3-sys --target all` does not show it) and DomiNet only uses PostgreSQL. `cargo deny` (real graph) is green.
+    # To lift at the next sqlx bump that raises libsqlite3-sys >= 0.39.
     "RUSTSEC-2026-0459",
 ]

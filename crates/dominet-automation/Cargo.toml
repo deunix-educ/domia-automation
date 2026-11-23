@@ -20,7 +20,7 @@ tracing.workspace = true
 
 [dev-dependencies]
 dominet-store.workspace = true
-# Jeux d'essai de la production (automations) pour les tests du moteur.
+# Production test data (automations) for the engine tests.
 dominet-domain = { workspace = true, features = ["scenarios"] }
 sqlx.workspace = true
 tokio = { workspace = true, features = ["test-util"] }
