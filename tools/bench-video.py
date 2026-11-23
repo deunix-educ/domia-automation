@@ -46,7 +46,7 @@ def ensure_image(name):
         run(["docker", "pull", name])
 
 
-# ------------------------------------------------------------------------------------------------------------------------ mesure des processus
+# ------------------------------------------------------------------------------------------------------------------------- process measurement
 def proc_table():
     table = {}
     for pid in filter(str.isdigit, os.listdir("/proc")):
@@ -114,7 +114,7 @@ def docker_stats():
     return stats
 
 
-# ------------------------------------------------------------------------------------------------------------------------ environnement
+# -------------------------------------------------------------------------------------------------------------------------- environment
 class Bench:
     def __init__(self, a):
         self.a = a
@@ -266,7 +266,7 @@ paths:
         for name in ("pg", "mediamtx", "reduct"):
             subprocess.run(["docker", "rm", "-f", f"{PREFIX}-{name}"], capture_output=True)
 
-    # -------------------------------------------------------------------------------------------------------------------- un essai
+    # ------------------------------------------------------------------------------------------------------------------- one trial
     def trial(self, scenario, n, clip):
         mode, yolo, interval = {"decode": ("none", False, 30), "full": ("motion", True, 30), "stress": ("motion", True, 5)}[scenario]
         self.start_server(interval)
@@ -284,7 +284,7 @@ paths:
                 cmd = ["nice", "-n", "19"] + cmd
             pubs.append(subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL))
         try:
-            # Attend que chaque camera ait sa derniere image (preuve que le decodage tourne).
+            # Waits until each camera has its last image (proof that decoding is running).
             ok = False
             for _ in range(120):
                 have = sum(os.path.exists(f"{self.work}/snapshots/latest/{c['uuid']}.jpg") for c in uuids)
@@ -337,7 +337,7 @@ paths:
             tree = descendants(table, self.server.pid)
             ff = {p: table[p]["ticks"] for p in tree if table.get(p, {}).get("comm") == "ffmpeg"}
             pubs = {p: table[p]["ticks"] for p in publisher_pids if p in table}
-            # Les `ffmpeg` du role video et les cameras simulees changent parfois de pid (relance) : on additionne les ecarts par pid.
+            # The video role's `ffmpeg`s and the simulated cameras sometimes change pid (restart): we add up the differences per pid.
             now = time.time()
             total, idle = cpu_total()
             cur = {"t": now, "total": total, "idle": idle, "dominet": table[self.server.pid]["ticks"], "ff": ff, "pubs": pubs}

@@ -36,15 +36,15 @@ class Phone:
         self.path = f"/ws/android/device/{token}/"
         self.ping_interval = ping_interval
         self.ack = ack
-        self.frames = []  # trames JSON recues du serveur
-        self.pings = 0  # trames de controle recues
-        self.close_code = None  # code de fermeture annonce par le serveur
+        self.frames = []  # JSON frames received from the server
+        self.pings = 0  # control frames received
+        self.close_code = None  # close code announced by the server
         self.connected = False
         self._sock = None
         self._lock = threading.Lock()
         self._cond = threading.Condition()
 
-    # -- connexion ----------------------------------------------------------------------------------------------------------------------------------
+    # -- connection ---------------------------------------------------------------------------------------------------------------------------------
     def connect(self, timeout=10):
         s = socket.create_connection((self.host, self.port), timeout=timeout)
         key = base64.b64encode(os.urandom(16)).decode()
@@ -91,7 +91,7 @@ class Phone:
         with self._cond:
             self._cond.notify_all()
 
-    # -- ce que l'application envoie ---------------------------------------------------------------------------------------------------------
+    # -- what the application sends ----------------------------------------------------------------------------------------------------------
     def send(self, obj):
         self._write(0x1, json.dumps(obj).encode())
 
@@ -104,7 +104,7 @@ class Phone:
     def sms_ack(self, message_id, success=True, error=""):
         self.send({"type": "sms_sent_ack", "message_id": message_id, "success": success, "error": error})
 
-    # -- ce que le serveur envoie ------------------------------------------------------------------------------------------------------------
+    # -- what the server sends ---------------------------------------------------------------------------------------------------------------
     def wait_frame(self, predicate, timeout=10):
         """Premiere trame (deja recue ou a venir) qui satisfait `predicate`, ou None apres `timeout` secondes."""
         end = time.time() + timeout
@@ -127,7 +127,7 @@ class Phone:
                 self._cond.wait(0.2)
         return not self.connected
 
-    # -- trames -----------------------------------------------------------------------------------------------------------------------------------------
+    # -- frames -----------------------------------------------------------------------------------------------------------------------------------------
     def _write(self, opcode, payload):
         mask = os.urandom(4)
         n = len(payload)
@@ -169,12 +169,12 @@ class Phone:
                         self.frames.append(frame)
                         self._cond.notify_all()
                     self._on_frame(frame)
-                elif opcode == 0x9:  # ping du serveur : OkHttp repond tout seul
+                elif opcode == 0x9:  # server ping: OkHttp answers by itself
                     self.pings += 1
                     self._write(0xA, payload)
                 elif opcode == 0x8:
                     self.close_code = struct.unpack(">H", payload[:2])[0] if len(payload) >= 2 else 1005
-                    self._write(0x8, payload[:2])  # OkHttp rend le meme code
+                    self._write(0x8, payload[:2])  # OkHttp returns the same code
                     break
         except (OSError, ConnectionError, ValueError):
             pass

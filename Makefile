@@ -1,9 +1,9 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-# Cibles de developpement. Les cibles prod-* (prod-init, prod-deploy...) arrivent en R7.
+# Development targets. The prod-* targets (prod-init, prod-deploy...) arrive in R7.
 SHELL := /bin/bash
 .DEFAULT_GOAL := help
 
-# Base des tests d'integration : la stack de dev (make dev-up). #[sqlx::test] cree une base isolee par test.
+# Base of the integration tests: the dev stack (make dev-up). #[sqlx::test] creates one isolated database per test.
 export DATABASE_URL ?= postgres://dominet:dominet-dev@127.0.0.1:15432/dominet
 export SQLX_OFFLINE ?= true
 
@@ -15,8 +15,8 @@ help: ## Affiche cette aide
 build: ## Compile le workspace
 	cargo build --workspace
 
-# Les tests `#[sqlx::test]` creent chacun une base : un `CREATE DATABASE` force un checkpoint, et avec ~20 tests en parallele (machine
-# de 20 coeurs) la file depasse le delai de connexion de sqlx (`PoolTimedOut`). 8 fils suffisent ; `make test TEST_THREADS=20` pour voir.
+# The `#[sqlx::test]` tests each create a database: a `CREATE DATABASE` forces a checkpoint, and with ~20 tests in parallel (20-core
+# machine) the queue exceeds sqlx's connection timeout (`PoolTimedOut`). 8 threads are enough; `make test TEST_THREADS=20` to see.
 TEST_THREADS ?= 8
 
 test: ## Lance les tests (TEST_THREADS fils, 8 par defaut)
@@ -64,10 +64,10 @@ image: ## Construit l'image Docker (architecture de la machine ; le modele YOLO 
 image-smoke: ## Construit l'image et verifie /healthz, /readyz, non-root, arret propre
 	IMAGE=dominet:dev ci/image-smoke.sh
 
-# Modele de detection YOLOv8n (12,9 Mo) : non commite (ADR 0050). Export officiel d'Ultralytics (licence AGPL-3.0) dans un conteneur
-# jetable, avec la version et les options relevees dans les metadonnees du fichier de reference (ultralytics 8.4.82, opset 12, simplify).
-# L'empreinte du fichier de reference est YOLO_SHA256 ; un autre export peut differer d'un octet : ce sont alors les tests de parite
-# (`cargo test -p dominet-surveillance --test yolo_parity`) qui disent si les detections restent les memes.
+# YOLOv8n detection model (12.9 MB): not committed (ADR 0050). Official Ultralytics export (AGPL-3.0 licence) in a throw-away
+# container, with the version and options taken from the reference file's metadata (ultralytics 8.4.82, opset 12, simplify).
+# The reference file's fingerprint is YOLO_SHA256; another export may differ by a byte: the parity tests
+# (`cargo test -p dominet-surveillance --test yolo_parity`) then tell whether the detections stay the same.
 ULTRALYTICS_VERSION := 8.4.82
 YOLO_SHA256 := c74cfeb94d6fe7f4ee7b4c450932e97f3bc28e53461f9fd1f4b5baa3e60e20af
 
@@ -132,8 +132,8 @@ sqlx-check: db-migrate ## Verifie que .sqlx/ est a jour
 	SQLX_OFFLINE=false cargo sqlx prepare --workspace --check -- --all-targets
 
 # ---------------------------------------------------------------------------------------------------------------------------------
-# Exploitation (R7 lot 6) : tout passe par tools/prod.sh. Ne JAMAIS lancer ces cibles sur une machine que l'on ne veut pas deployer.
-# Variables : ENV_FILE (.env), PROJECT (dominet), CERTS_DIR (certs). Installation vierge : prod-init, relire .env, prod-deploy.
+# Operation (R7 lot 6): everything goes through tools/prod.sh. NEVER run these targets on a machine you do not want to deploy.
+# Variables: ENV_FILE (.env), PROJECT (dominet), CERTS_DIR (certs). Fresh installation: prod-init, review .env, prod-deploy.
 # ---------------------------------------------------------------------------------------------------------------------------------
 check-installer: ## Teste l'assistant d'installation (install.sh --dry-run avec des programmes factices : rien n'est installe)
 	tools/check-installer.sh

@@ -1,7 +1,7 @@
-// Volet-SB-est ← gauche (open/stop) : bouton gauche de l'interrupteur du volet.
-// Si le volet est en mouvement, on l'arrête ; sinon on l'ouvre.
-// Le relais n'a ni clé `moving` ni état `STOP` : il publie environ un message par seconde tant qu'il bouge, puis se tait.
-// « En mouvement » = son dernier message a moins de 2 secondes (`age_secs`).
+// Volet-SB-est ← left (open/stop): the shutter switch's left button.
+// If the shutter is moving, we stop it; otherwise we open it.
+// The relay has neither a `moving` key nor a `STOP` state: it publishes about one message per second while it moves, then goes quiet.
+// "Moving" = its last message is less than 2 seconds old (`age_secs`).
 let volet = get_device("Relais-SB-est");
 if volet == () {
     throw "appareil Relais-SB-est introuvable";

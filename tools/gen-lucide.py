@@ -93,15 +93,15 @@ def to_markup(nodes):
     return "".join(parts)
 
 
-# 1. Definitions : NOM=[["path",{...}],...]
+# 1. Definitions: NAME=[["path",{...}],...]
 defs = {}
 for m in re.finditer(r'(?:[,;]|\bconst |\blet |\bvar )([A-Za-z_$][\w$]*)=\[\["', src):
-    start = m.end() - 3  # sur le "[" interieur du groupe externe
+    start = m.end() - 3  # on the inner "[" of the outer group
     start = src.index("[[", m.start())
     end = span(src, start)
     defs[m.group(1)] = json.loads(js_to_json(src[start:end]))
 
-# 2. Exports : a.NomPascal=variable
+# 2. Exports: a.PascalName=variable
 exports = {}
 for m in re.finditer(r"\ba\.([A-Za-z0-9_$]+)=([A-Za-z_$][\w$]*)(?=[,;])", src):
     if m.group(2) in defs:

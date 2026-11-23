@@ -82,8 +82,8 @@ def cmd_status(args: argparse.Namespace) -> int:
         missing = sorted(set(ref) - set(msgs))
         extra = sorted(set(msgs) - set(ref))
         bad_vars = sorted(k for k in msgs if k in ref and set(VAR.findall(msgs[k])) != set(VAR.findall(ref[k])))
-        # Identique a l'anglais alors que le francais differe : tres probablement pas encore traduit. Les textes que
-        # le francais partage avec l'anglais (« OK », « Grafana »...) sont neutres et ne comptent pas.
+        # Identical to English while French differs: most probably not translated yet. The texts that
+        # French shares with English ("OK", "Grafana"...) are neutral and do not count.
         todo = sorted(k for k in msgs if k in ref and msgs[k] == ref[k] and fr.get(k) != ref[k])
         print(f"{code}: {len(msgs)} messages, a traduire (identiques a l'anglais) : {len(todo)}"
               f", cles manquantes : {len(missing)}, en trop : {len(extra)}, variables differentes : {len(bad_vars)}")

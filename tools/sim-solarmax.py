@@ -46,7 +46,7 @@ class Handler(socketserver.BaseRequestHandler):
                 inverter = int(header.split(";")[1])
                 keys = body[3:].split(";")
                 self.request.sendall(answer(inverter, keys).encode())
-            except Exception:  # noqa: BLE001 - requete illisible : pas de reponse, comme un onduleur silencieux
+            except Exception:  # noqa: BLE001 - unreadable request: no answer, like a silent inverter
                 pass
 
 
