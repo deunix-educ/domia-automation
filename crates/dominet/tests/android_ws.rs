@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Point d'acces `/ws/android/device/<jeton>/` (R5 lot 3) : un vrai serveur TCP et un client qui se comporte comme l'application
-//! Kotlin (memes trames JSON, trames de controle d'`OkHttp`). Le sujet `android:<id>` est suivi par un navigateur simule.
+//! Endpoint `/ws/android/device/<token>/` (R5 lot 3): a real TCP server and a client that behaves like the Kotlin application
+//! (same JSON frames, `OkHttp` control frames). The subject `android:<id>` is followed by a simulated browser.
 
 use std::net::SocketAddr;
 use std::sync::Arc;
@@ -89,7 +89,7 @@ impl Server {
             .unwrap()
     }
 
-    /// Ce que fait l'application : ouvre `/ws/android/device/<jeton>/` sans cookie ni `Origin`.
+    /// What the application does: opens `/ws/android/device/<token>/` without cookie or `Origin`.
     async fn app(&self, token: &str) -> Ws {
         let req = format!("ws://{}/ws/android/device/{token}/", self.addr)
             .into_client_request()
@@ -147,7 +147,7 @@ impl Server {
             .is_online
     }
 
-    /// Attend (au plus 5 s) qu'une condition sur la base soit vraie.
+    /// Waits (at most 5 s) for a condition on the database to be true.
     async fn until<F: AsyncFn() -> bool>(&self, what: &str, f: F) {
         for _ in 0..100 {
             if f().await {
@@ -309,7 +309,7 @@ async fn what_the_app_sends_is_stored_and_shown_to_browsers(pool: PgPool) {
         ("+33699999999", "Bob", SmsDirection::Incoming)
     );
 
-    // Appel : ringing cree, ended ferme avec sa duree.
+    // Call: ringing created, ended closed with its duration.
     say(&mut ws, &json!({"type": "call_event", "state": "ringing", "number": "0612", "contact_name": "", "timestamp": "2026-01-02T10:00:00+01:00", "duration": 0})).await;
     let ev = seen.recv().await.unwrap();
     let WsServerMsg::Android {
@@ -368,7 +368,7 @@ async fn junk_frames_are_ignored_and_the_connection_survives(pool: PgPool) {
     ] {
         ws.send(Message::Text(junk.into())).await.unwrap();
     }
-    // Un `ping` JSON recoit `pong` : la connexion repond toujours, rien n'a ete enregistre.
+    // A JSON `ping` receives `pong`: the connection always answers, nothing was recorded.
     say(&mut ws, &json!({"type": "ping"})).await;
     assert_eq!(json_next(&mut ws).await, Some(json!({"type": "pong"})));
     assert_eq!(
@@ -428,7 +428,7 @@ async fn very_long_fields_are_clipped_not_refused(pool: PgPool) {
         (30, 100, 5000)
     );
 
-    // Une trame de plus de 64 Kio coupe la connexion (pas de memoire gaspillee).
+    // A frame larger than 64 KiB cuts the connection (no wasted memory).
     ws.send(Message::Text("x".repeat(70_000).into()))
         .await
         .unwrap();
@@ -460,7 +460,7 @@ async fn a_sms_order_reaches_the_app_and_its_ack_settles_the_queue(pool: PgPool)
             .unwrap()
             .id,
     );
-    // Hors ligne : refuse, rien n'est mis en file.
+    // Offline: refused, nothing is queued.
     assert!(matches!(
         s.state
             .android
@@ -523,7 +523,7 @@ async fn a_sms_order_reaches_the_app_and_its_ack_settles_the_queue(pool: PgPool)
         OutboxStatus::Sent
     );
 
-    // Un second accuse du meme identifiant n'est pas rediffuse.
+    // A second acknowledgement with the same identifier is not rebroadcast.
     say(&mut ws, &json!({"type": "sms_sent_ack", "message_id": item.id.0, "success": false, "error": "tard"})).await;
     say(&mut ws, &json!({"type": "ping"})).await;
     json_next(&mut ws).await;
@@ -728,7 +728,7 @@ async fn sms_without_an_ack_expire_after_the_deadline(pool: PgPool) {
             .status,
         MessageStatus::Sent
     );
-    // Un accuse tardif est sans effet.
+    // A late acknowledgement has no effect.
     say(
         &mut ws,
         &json!({"type": "sms_sent_ack", "message_id": item.id.0, "success": true}),
@@ -781,7 +781,7 @@ async fn a_silent_line_is_cut_after_the_idle_delay_and_a_live_one_is_kept(pool: 
     .await;
     let owner = s.user("alice", Role::User).await;
     let (d, token) = s.device(owner, "Pixel").await;
-    // Ligne vivante : on lit (le client repond donc aux trames de controle) bien au-dela du delai.
+    // Live line: we read (so the client answers the control frames) well beyond the delay.
     let mut live = s.app(&token).await;
     json_next(&mut live).await;
     let _ = tokio::time::timeout(Duration::from_millis(1500), live.next()).await;
@@ -792,11 +792,11 @@ async fn a_silent_line_is_cut_after_the_idle_delay_and_a_live_one_is_kept(pool: 
     drop(live);
     s.until("hors ligne", async || !s.is_online(&d).await).await;
 
-    // Ligne muette : le client ne lit plus, aucun pong ne part.
+    // Silent line: the client no longer reads, no pong goes out.
     let mut silent = s.app(&token).await;
     json_next(&mut silent).await;
     s.until("coupee", async || !s.is_online(&d).await).await;
-    // Le client voit la fermeture 4408 ou, si la ligne est deja tombee, une fin de connexion : jamais une ligne encore ouverte.
+    // The client sees the closing 4408 or, if the line has already dropped, an end of connection: never a line still open.
     assert!(matches!(
         close_code(&mut silent).await,
         Some(CLOSE_IDLE) | None
@@ -862,7 +862,7 @@ async fn a_browser_follows_only_its_own_devices_unless_admin(pool: PgPool) {
                 },
                 "{who}"
             );
-            // Le dernier etat de presence est retenu : il arrive tout de suite.
+            // The last presence state is kept: it arrives immediately.
             let retained: WsServerMsg =
                 serde_json::from_value(json_next(&mut ws).await.unwrap()).unwrap();
             assert_eq!(
@@ -883,7 +883,7 @@ async fn a_browser_follows_only_its_own_devices_unless_admin(pool: PgPool) {
             );
         }
     }
-    // Un appareil qui n'existe pas est refuse de la meme facon.
+    // A device that does not exist is refused the same way.
     let cookie = s.login("root").await;
     let mut ws = s.browser(&cookie).await;
     json_next(&mut ws).await;
@@ -906,7 +906,7 @@ async fn a_browser_follows_only_its_own_devices_unless_admin(pool: PgPool) {
     ));
 }
 
-/// Appelle une fonction serveur de l'interface (sans reseau, sur le meme etat que le serveur TCP) avec la session `cookie`.
+/// Calls a server function of the interface (without network, on the same state as the TCP server) with the session `cookie`.
 async fn server_fn(s: &Server, cookie: &str, path: &str, form: &str) -> Value {
     let ui = dominet_web::ssr::ui_service(
         s.state.clone(),
@@ -965,7 +965,7 @@ async fn a_sms_written_in_the_browser_reaches_the_app_and_its_delivery_follows_t
         ),
         (Some("pending"), Some("outgoing"), Some("Bonjour"))
     );
-    // L'application recoit l'ordre avec l'identifiant de la file.
+    // The application receives the order with the queue identifier.
     let order = json_next(&mut app).await.unwrap();
     assert_eq!(
         (
@@ -976,7 +976,7 @@ async fn a_sms_written_in_the_browser_reaches_the_app_and_its_delivery_follows_t
         (Some("send_sms"), Some("+33600000000"), Some("Bonjour"))
     );
     assert_eq!(order["message_id"], sms["outbox_id"]);
-    // Les autres onglets sont prevenus.
+    // The other tabs are notified.
     let ev = seen.recv().await.unwrap();
     assert!(
         matches!(
@@ -992,11 +992,11 @@ async fn a_sms_written_in_the_browser_reaches_the_app_and_its_delivery_follows_t
     assert_eq!(page["sms"][0]["delivery"], "pending");
 
     say(&mut app, &json!({"type": "sms_sent_ack", "message_id": order["message_id"], "success": true, "error": ""})).await;
-    seen.recv().await.unwrap(); // l'accuse
+    seen.recv().await.unwrap(); // the acknowledgement
     let page = server_fn(&s, &cookie, "android/sms", &format!("device={id}")).await;
     assert_eq!(page["sms"][0]["delivery"], "sent");
 
-    // Un second SMS, en echec : la raison est montree.
+    // A second SMS, failed: the reason is shown.
     server_fn(
         &s,
         &cookie,

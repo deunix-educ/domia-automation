@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Tests d'integration du routeur complet (API + interface Leptos) : rendu serveur, traductions, en-tetes de
-//! securite, fonctions serveur avec session, et non-regression de l'API (base isolee par test).
+//! Integration tests of the full router (API + Leptos interface): server rendering, translations, security
+//! headers, server functions with a session, and API non-regression (isolated database per test).
 
 use std::net::SocketAddr;
 use std::sync::Arc;
@@ -26,18 +26,18 @@ struct Resp {
     text: String,
 }
 
-/// Les tests de ce fichier s'executent un par un. Chacun monte sa propre application Leptos dans son propre runtime
-/// tokio (`#[sqlx::test]`), et plusieurs applications rendues en parallele dans un meme processus se perturbent
-/// (rendu fige, ou contexte `AppState` introuvable dans une fonction serveur : ~15 % des executions en parallele,
-/// 0 sur 25 en serie). En production il n'y a qu'une application par processus ; la concurrence de requetes sur
-/// une meme application est verifiee a part sur le vrai serveur (voir `docs/interface.md`).
+/// The tests of this file run one at a time. Each one mounts its own Leptos application in its own tokio runtime
+/// (`#[sqlx::test]`), and several applications rendered in parallel in the same process disturb each other
+/// (frozen rendering, or `AppState` context not found in a server function: ~15% of the parallel runs,
+/// 0 out of 25 in series). In production there is only one application per process; the concurrency of requests on
+/// a single application is checked separately on the real server (see `docs/interface.md`).
 static ONE_AT_A_TIME: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
 
 async fn app(pool: PgPool) -> (Router, AppState, tokio::sync::MutexGuard<'static, ()>) {
     app_with_key(pool, None).await
 }
 
-/// Cle maitresse de test (32 octets nuls en base64) : permet d'enregistrer des secrets.
+/// Test master key (32 null bytes in base64): allows saving secrets.
 const TEST_MASTER_KEY: &str = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=";
 
 async fn app_with_key(
@@ -47,7 +47,7 @@ async fn app_with_key(
     app_with_vars(pool, master_key, &[]).await
 }
 
-/// Comme `app_with_key`, avec des variables d'environnement supplementaires.
+/// Like `app_with_key`, with extra environment variables.
 async fn app_with_vars(
     pool: PgPool,
     master_key: Option<&'static str>,
@@ -77,8 +77,8 @@ async fn app_with_vars(
     (web::router_with_ui(state.clone(), ui), state, guard)
 }
 
-/// Les tests ecrits en francais demandent le francais par defaut (`Accept-Language: fr`) ; l'interface, elle, est en anglais
-/// sans en-tete ni cookie (voir `the_default_language_is_english_without_any_hint`).
+/// Tests written in French ask for French by default (`Accept-Language: fr`); the interface itself is in English
+/// without a header or cookie (see `the_default_language_is_english_without_any_hint`).
 async fn send(
     app: &Router,
     method: Method,
@@ -115,7 +115,7 @@ async fn send_with(
         .unwrap();
     req.extensions_mut()
         .insert(ConnectInfo(SocketAddr::from(([192, 168, 1, 50], 40_000))));
-    // Garde-fou : un blocage du rendu doit echouer vite et clairement, pas figer toute la suite.
+    // Safeguard: a rendering hang must fail fast and clearly, not freeze the whole suite.
     let resp = tokio::time::timeout(std::time::Duration::from_secs(20), app.clone().oneshot(req))
         .await
         .expect("la requete est restee bloquee plus de 20 s")
@@ -178,7 +178,7 @@ async fn the_login_page_is_server_rendered_in_french_when_french_is_requested(po
     );
     assert!(r.text.contains("Connectez-vous à votre espace"));
     assert!(r.text.contains("Se connecter"));
-    // Tant que l'interface n'est pas hydratee le bouton est inactif : pas de soumission HTML ordinaire.
+    // As long as the interface is not hydrated the button is inactive: no ordinary HTML submission.
     let button = &r.text[r.text.find(r#"id="login-submit""#).unwrap()..];
     assert!(
         button[..button.find('>').unwrap()].contains("disabled"),
@@ -189,17 +189,17 @@ async fn the_login_page_is_server_rendered_in_french_when_french_is_requested(po
         r.text.contains("/pkg/dominet.js") && r.text.contains("/pkg/dominet.css"),
         "scripts d'hydratation et style"
     );
-    // Le fichier WebAssembly demande doit etre celui que `cargo leptos` produit (`dominet.wasm`). Son nom depend d'une
-    // variable lue a la compilation (voir `.cargo/config.toml`) : un binaire compile autrement reclame `dominet_bg.wasm`
-    // (404) et l'interface ne s'hydrate jamais.
+    // The requested WebAssembly file must be the one `cargo leptos` produces (`dominet.wasm`). Its name depends on a
+    // variable read at compile time (see `.cargo/config.toml`): a binary compiled otherwise asks for `dominet_bg.wasm`
+    // (404) and the interface never hydrates.
     assert!(
         r.text.contains(r#"href="/pkg/dominet.wasm""#),
         "fichier WASM demande : {}",
         &r.text[..r.text.len().min(900)]
     );
     assert!(!r.text.contains("dominet_bg.wasm"));
-    // Marqueurs d'hydratation (`<!>` apres un texte reactif) : ils n'existent que si le serveur est compile comme le WASM
-    // (`--cfg erase_components`, voir `.cargo/config.toml`) ; sans eux l'hydratation echoue et les boutons restent inertes.
+    // Hydration markers (`<!>` after reactive text): they only exist if the server is compiled like the WASM
+    // (`--cfg erase_components`, see `.cargo/config.toml`); without them hydration fails and the buttons stay inert.
     assert!(
         r.text.contains("espace<!>"),
         "marqueurs d'hydratation absents du HTML rendu"
@@ -216,7 +216,7 @@ async fn the_default_language_is_english_without_any_hint(pool: PgPool) {
         "{}",
         &r.text[..r.text.len().min(300)]
     );
-    // Un navigateur francais recoit le francais.
+    // A French browser receives French.
     let fr = send_with(
         &app,
         Method::GET,
@@ -318,7 +318,7 @@ async fn the_whoami_server_function_sees_the_session(pool: PgPool) {
     );
     assert!(!known.text.contains("password"), "{}", known.text);
 
-    // La page rendue cote serveur voit elle aussi la session.
+    // The server-rendered page sees the session too.
     let page = get(&app, "/", &[("cookie", &cookie)]).await;
     assert!(
         page.text.contains(r#"id="vc-user-name""#) && page.text.contains("bob"),
@@ -379,7 +379,7 @@ async fn a_closed_session_is_no_longer_seen_by_the_ui(pool: PgPool) {
     assert_eq!(after.text, "null");
 }
 
-/// Cree un compte `username` du role `role` et renvoie son cookie de session.
+/// Creates an account `username` with the role `role` and returns its session cookie.
 async fn session_for(app: &Router, state: &AppState, username: &str, role: Role) -> String {
     state
         .auth
@@ -476,7 +476,7 @@ async fn an_unknown_icon_falls_back_to_a_generic_one(pool: PgPool) {
     let admin = session_for(&app, &state, "alice", Role::Admin).await;
     let mut draft = dominet_domain::registry::default_navbar().remove(0);
     draft.icon_name = "no-such-icon\"><script>".into();
-    // Le depot ne valide pas le nom d'icone : la defense est au rendu.
+    // The repository does not validate the icon name: the defence is at render time.
     state.store.navbar().create(&draft).await.unwrap();
     let v = layout(&app, Some(&admin)).await;
     let svg = v["nav_top"][0]["icon_svg"].as_str().unwrap();
@@ -501,7 +501,7 @@ async fn the_sidebar_has_empty_system_gauges_rendered_by_the_server(pool: PgPool
     ] {
         assert!(page.text.contains(&format!(r#"id="{id}""#)), "{id} absent");
     }
-    // Sans mesure : pas de valeur inventee, et aucune largeur en ligne (la CSP interdit `style=`).
+    // Without a measurement: no invented value, and no inline width (the CSP forbids `style=`).
     assert!(page.text.contains("…"), "valeurs vides attendues");
     let body = &page.text[page.text.find("<body").unwrap()..];
     assert!(
@@ -547,8 +547,8 @@ async fn the_page_contains_the_sidebar_for_a_signed_in_user(pool: PgPool) {
         "entree reservee aux admins"
     );
 
-    // Rendu complet cote serveur, dans l'ordre : pas de gabarit differe (`<template>`) que du JS replacerait, sinon le
-    // contenu glisserait de la gauche a l'arrivee de la barre.
+    // Full server-side render, in order: no deferred template (`<template>`) that JS would put back in place, otherwise the
+    // content would slide from the left when the bar arrives.
     let body = &page.text[page.text.find("<body").unwrap()..];
     let (aside, main) = (
         body.find("<aside").unwrap(),
@@ -589,10 +589,10 @@ async fn logging_out_through_the_server_function_closes_the_session(pool: PgPool
     assert!(layout(&app, Some(&cookie)).await["user"].is_null());
 }
 
-// ---------------------------------------------------------------- 7c : connexion, gardes, compte
+// ---------------------------------------------------------------- 7c: login, guards, account
 
 const FORM: (&str, &str) = ("content-type", "application/x-www-form-urlencoded");
-/// Un navigateur annonce `text/html` ; c'est ce qui fait de la redirection une vraie reponse 302.
+/// A browser announces `text/html`; that is what makes the redirect a real 302 response.
 const HTML: (&str, &str) = ("accept", "text/html");
 
 fn form(pairs: &[(&str, &str)]) -> String {
@@ -690,7 +690,7 @@ async fn anonymous_visitors_are_redirected_to_the_login_page(pool: PgPool) {
         !acc.text.contains("Changer le mot de passe"),
         "la page protegee n'est pas rendue"
     );
-    // La page de connexion, elle, reste accessible.
+    // The login page, for its part, stays accessible.
     assert_eq!(get(&app, "/login", &[HTML]).await.status, StatusCode::OK);
 }
 
@@ -708,7 +708,7 @@ async fn the_login_page_sends_signed_in_users_on_their_way(pool: PgPool) {
     );
     let next = get(&app, "/login?next=%2Faccount", &[HTML, c]).await;
     assert_eq!(to(&next), "/account");
-    // Pas de redirection ouverte : une cible hors du site est ignoree.
+    // No open redirect: a target outside the site is ignored.
     for evil in [
         "%2F%2Fevil.example",
         "https%3A%2F%2Fevil.example",
@@ -788,7 +788,7 @@ async fn changing_the_password_checks_the_old_one_and_the_policy(pool: PgPool) {
     assert_eq!(digits.text, r#"{"Rejected":"AllDigits"}"#);
     let same = change_fn(&app, Some(&cookie), PASSWORD, "BOB").await;
     assert!(same.text.contains("Rejected"), "{}", same.text);
-    // Aucun refus n'a ferme la session ni change le mot de passe.
+    // No refusal closed the session or changed the password.
     assert_eq!(layout(&app, Some(&cookie)).await["user"]["username"], "bob");
     assert_eq!(login_fn(&app, "bob", PASSWORD).await.status, StatusCode::OK);
 }
@@ -856,7 +856,7 @@ async fn the_ui_password_change_is_locked_after_repeated_failures(pool: PgPool) 
     );
 }
 
-// ---------------------------------------------------------------- 7d : administration des emplacements
+// ---------------------------------------------------------------- 7d: locations administration
 
 const JSON: (&str, &str) = ("content-type", "application/json");
 
@@ -929,7 +929,7 @@ async fn an_administrator_manages_locations(pool: PgPool) {
     let admin = session_for(&app, &state, "alice", Role::Admin).await;
     let c = Some(admin.as_str());
 
-    // Creation (le nom est rogne) puis liste triee par nom.
+    // Creation (the name is trimmed) then list sorted by name.
     let saved = sf(
         &app,
         c,
@@ -965,7 +965,7 @@ async fn an_administrator_manages_locations(pool: PgPool) {
         (Some("Salon TV"), Some(false))
     );
 
-    // Element disparu : ni creation ni erreur 500.
+    // Vanished item: neither creation nor a 500 error.
     let gone = sf(
         &app,
         c,
@@ -975,7 +975,7 @@ async fn an_administrator_manages_locations(pool: PgPool) {
     .await;
     assert_eq!(gone, "NotFound");
 
-    // Suppression, puis suppression d'un element deja supprime.
+    // Deletion, then deletion of an already deleted item.
     assert_eq!(
         sf(&app, c, "delete", Some(&format!("id={id}"))).await,
         "Deleted"
@@ -1093,7 +1093,7 @@ async fn the_admin_menu_is_only_shown_to_administrators(pool: PgPool) {
     assert!(a.text.contains("vc-nav-admin") && a.text.contains(r#"href="/admin/locations""#));
 }
 
-// ---------------------------------------------------------------- sources MQTT (R3 lot 4)
+// ---------------------------------------------------------------- MQTT sources (R3 lot 4)
 
 fn source_input(id: Option<i64>, name: &str, topic: &str, qos: u8) -> String {
     serde_json::json!({"input": {
@@ -1189,7 +1189,7 @@ async fn an_administrator_manages_mqtt_sources_and_the_listener_is_told(pool: Pg
 async fn invalid_mqtt_sources_are_reported_field_by_field(pool: PgPool) {
     let (app, state, _guard) = app(pool).await;
     let admin = session_for(&app, &state, "alice", Role::Admin).await;
-    // `#` au milieu du filtre, QoS 3, nom vide.
+    // `#` in the middle of the filter, QoS 3, empty name.
     let bad = sf_json(
         &app,
         &admin,
@@ -1243,7 +1243,7 @@ async fn the_mqtt_sources_page_is_for_administrators_and_escapes_content(pool: P
     assert!(en.text.contains("Add a source"));
 }
 
-// ---------------------------------------------------------------- 7e : navigation et reglages
+// ---------------------------------------------------------------- 7e: navigation and settings
 
 async fn sf_at(app: &Router, cookie: Option<&str>, path: &str, body: &str) -> Resp {
     let mut extra = vec![if body.starts_with('{') { JSON } else { FORM }];
@@ -1309,7 +1309,7 @@ async fn only_administrators_can_use_the_navigation_and_settings_functions(pool:
             );
         }
     }
-    // Rien n'a ete modifie.
+    // Nothing was modified.
     let admin = session_for(&app, &state, "alice", Role::Admin).await;
     let items = sf_json(&app, &admin, "navbar/list", "").await;
     assert_eq!(items.as_array().unwrap().len(), 7);
@@ -1353,13 +1353,13 @@ async fn an_administrator_manages_the_navigation_and_the_sidebar_follows(pool: P
         ),
         (Some("Maison"), Some(5))
     );
-    // Visible tout de suite dans la navigation de n'importe quel compte.
+    // Immediately visible in the navigation of any account.
     assert_eq!(
         labels(&layout(&app, Some(&user)).await["nav_top"]),
         ["Maison"]
     );
 
-    // Reservee aux administrateurs : disparait pour un compte ordinaire.
+    // Reserved to administrators: disappears for an ordinary account.
     sf_json(
         &app,
         &admin,
@@ -1380,7 +1380,7 @@ async fn an_administrator_manages_the_navigation_and_the_sidebar_follows(pool: P
     let a = layout(&app, Some(&admin)).await;
     assert_eq!(labels(&a["nav_bottom"]), ["Maison"]);
     assert_eq!(a["nav_bottom"][0]["url_target"], "_blank");
-    // Une entree interne en nouvel onglet est un lien HTML ordinaire qui garde sa cible.
+    // An internal entry in a new tab is an ordinary HTML link that keeps its target.
     let page = get(&app, "/", &[("cookie", &admin)]).await;
     assert!(page.text.contains(r#"target="_blank""#) && page.text.contains("/maison/"));
 
@@ -1426,7 +1426,7 @@ async fn invalid_navigation_entries_are_reported_field_by_field(pool: PgPool) {
             .collect()
     };
 
-    // Plusieurs champs a la fois ; une URL "javascript:" est refusee.
+    // Several fields at once; a "javascript:" URL is refused.
     let r = sf_json(
         &app,
         &admin,
@@ -1454,7 +1454,7 @@ async fn invalid_navigation_entries_are_reported_field_by_field(pool: PgPool) {
     ] {
         assert!(fields.contains(&f.to_string()), "{f} : {fields:?}");
     }
-    // Icone bien formee mais inconnue de Lucide.
+    // Well-formed icon but unknown to Lucide.
     let r = sf_json(
         &app,
         &admin,
@@ -1466,7 +1466,7 @@ async fn invalid_navigation_entries_are_reported_field_by_field(pool: PgPool) {
         problems(&r),
         [("icon_name".to_string(), "\"Invalid\"".to_string())]
     );
-    // Ordre hors bornes.
+    // Order out of bounds.
     let r = sf_json(
         &app,
         &admin,
@@ -1560,7 +1560,7 @@ async fn settings_are_validated_by_type_and_applied_immediately(pool: PgPool) {
         "0.25",
         "cache serveur a jour"
     );
-    // La valeur est dans le HTML rendu par le serveur (attribut), pas seulement posee apres l'hydratation.
+    // The value is in the HTML rendered by the server (attribute), not only set after hydration.
     let page = get(&app, "/admin/settings", &[("cookie", &admin)]).await;
     assert!(
         page.text.contains(r#"value="0.25""#),
@@ -1590,7 +1590,7 @@ async fn settings_are_validated_by_type_and_applied_immediately(pool: PgPool) {
         sf_json(&app, &admin, "settings/save", &save("NOPE", "x")).await,
         "UnknownKey"
     );
-    // Une valeur refusee n'a rien change.
+    // A refused value changed nothing.
     let list = sf_json(&app, &admin, "settings/list", "").await;
     let thr = list
         .as_array()
@@ -1629,13 +1629,13 @@ async fn a_secret_setting_never_reaches_the_browser(pool: PgPool) {
     let page = get(&app, "/admin/settings", &[("cookie", &admin)]).await;
     assert!(!page.text.contains(secret), "la page non plus");
     assert!(page.text.contains("Défini"), "seul l'etat est affiche");
-    // Le serveur, lui, le relit.
+    // The server, for its part, reads it back.
     assert_eq!(
         state.settings.get_string("SMS_FREE_KEY").await.unwrap(),
         secret
     );
 
-    // Effacer : valeur vide.
+    // Clear: empty value.
     let cleared = sf_json(
         &app,
         &admin,
@@ -1669,7 +1669,7 @@ async fn a_secret_cannot_be_saved_without_the_master_key(pool: PgPool) {
     assert_eq!(key["is_set"], false);
 }
 
-// ---------------------------------------------------------------- 7f : utilisateurs
+// ---------------------------------------------------------------- 7f: users
 
 #[allow(clippy::too_many_arguments)]
 fn user_input(
@@ -1729,7 +1729,7 @@ async fn an_administrator_creates_edits_and_deletes_accounts(pool: PgPool) {
     let (app, state, _guard) = app(pool).await;
     let admin = session_for(&app, &state, "alice", Role::Admin).await;
 
-    // Creation : l'identifiant est rogne, le mobile normalise, le compte peut se connecter.
+    // Creation: the identifier is trimmed, the mobile number normalised, the account can log in.
     let made = sf_json(
         &app,
         &admin,
@@ -1754,7 +1754,7 @@ async fn an_administrator_creates_edits_and_deletes_accounts(pool: PgPool) {
             .contains("Success")
     );
 
-    // Identifiant deja pris, casse ignoree.
+    // Identifier already taken, case ignored.
     let dup = sf_json(
         &app,
         &admin,
@@ -1767,7 +1767,7 @@ async fn an_administrator_creates_edits_and_deletes_accounts(pool: PgPool) {
         serde_json::json!({"Invalid": [{"field": "username", "kind": "Taken"}]})
     );
 
-    // Modification : role, e-mail ; l'identifiant envoye est ignore (immuable) ; le mot de passe reste valable.
+    // Modification: role, e-mail; the identifier sent is ignored (immutable); the password stays valid.
     let upd = sf_json(
         &app,
         &admin,
@@ -1829,7 +1829,7 @@ async fn invalid_accounts_are_reported_field_by_field(pool: PgPool) {
     for f in ["username", "email", "mobile", "role", "password"] {
         assert!(fields.contains(&f.to_string()), "{f} : {fields:?}");
     }
-    // Mot de passe obligatoire a la creation, motif de la politique sinon.
+    // Password mandatory at creation, the policy's reason otherwise.
     let r = sf_json(
         &app,
         &admin,
@@ -1880,7 +1880,7 @@ async fn deactivating_or_resetting_a_password_cuts_the_targets_sessions(pool: Pg
             .unwrap()
     };
 
-    // Desactivation : effet immediat sur la session ouverte, et plus de connexion possible.
+    // Deactivation: immediate effect on the open session, and no more login possible.
     sf_json(
         &app,
         &admin,
@@ -1896,7 +1896,7 @@ async fn deactivating_or_resetting_a_password_cuts_the_targets_sessions(pool: Pg
             .contains("InvalidCredentials")
     );
 
-    // Reinitialisation : toutes les sessions du compte sont fermees ; l'ancien mot de passe ne vaut plus.
+    // Reset: all the sessions of the account are closed; the old password is no longer valid.
     sf_json(
         &app,
         &admin,
@@ -1967,7 +1967,7 @@ async fn an_administrator_cannot_cut_their_own_access(pool: PgPool) {
     )
     .await;
     assert_eq!(r, serde_json::json!({"Blocked": "OwnPassword"}));
-    // Modifier son propre profil sans toucher au role ni a l'activation reste possible.
+    // Editing one's own profile without touching the role or the activation remains possible.
     let ok = sf_json(
         &app,
         &alice,
@@ -2000,8 +2000,8 @@ async fn two_administrators_demoting_each_other_never_leave_the_system_without_o
     };
     let (ida, idb) = (id_of("alice"), id_of("bob"));
 
-    // Chacun retrograde l'autre au meme instant. Au plus une requete reussit ; l'autre est refusee (403 car son
-    // auteur n'est plus administrateur, ou « dernier administrateur » si elle etait deja admise).
+    // Each demotes the other at the same instant. At most one request succeeds; the other is refused (403 because its
+    // author is no longer an administrator, or "last administrator" if it had already been admitted).
     for round in 0..5 {
         let (body_a, body_b) = (
             user_input(Some(idb), "bob", "", "user", true, ""),
@@ -2018,7 +2018,7 @@ async fn two_administrators_demoting_each_other_never_leave_the_system_without_o
         assert_eq!(saved, 1, "tour {round} : {} / {}", r1.text, r2.text);
         let n = state.store.users().count_active_admins().await.unwrap();
         assert_eq!(n, 1, "tour {round}");
-        // Rearme pour le tour suivant.
+        // Re-armed for the next round.
         for id in [ida, idb] {
             state
                 .store
@@ -2086,9 +2086,9 @@ async fn the_users_page_is_for_administrators_and_escapes_content(pool: PgPool) 
     assert!(menu.text.contains(r#"href="/admin/users""#));
 }
 
-// ---------------------------------------------------------------- lot 8 : CSP, cache, compression
+// ---------------------------------------------------------------- lot 8: CSP, cache, compression
 
-/// Valeur du nonce annoncee par l'en-tete CSP.
+/// Nonce value announced by the CSP header.
 fn csp_nonce(r: &Resp) -> String {
     let csp = r.headers[header::CONTENT_SECURITY_POLICY].to_str().unwrap();
     let from = csp.find("'nonce-").expect("nonce dans la CSP") + "'nonce-".len();
@@ -2116,7 +2116,7 @@ async fn every_html_page_carries_a_csp_whose_nonce_matches_its_scripts(pool: PgP
         let nonce = csp_nonce(&r);
         assert!(nonce.len() >= 16, "{path}: nonce trop court");
         nonces.insert(nonce.clone());
-        // Tout script en ligne porte le nonce de CETTE reponse.
+        // Every inline script carries the nonce of THIS response.
         for (i, _) in r.text.match_indices("<script") {
             let tag = &r.text[i..i + r.text[i..].find('>').unwrap()];
             assert!(
@@ -2124,7 +2124,7 @@ async fn every_html_page_carries_a_csp_whose_nonce_matches_its_scripts(pool: PgP
                 "{path}: script sans nonce : {tag}"
             );
         }
-        // Aucun attribut interdit par la politique (style en ligne, gestionnaires d'evenements).
+        // No attribute forbidden by the policy (inline style, event handlers).
         let body = &r.text[r.text.find("<body").unwrap()..];
         assert!(!body.contains(r#" style=""#), "{path}: attribut style");
         assert!(
@@ -2141,14 +2141,14 @@ async fn every_html_page_carries_a_csp_whose_nonce_matches_its_scripts(pool: PgP
         assert_eq!(r.headers[header::CACHE_CONTROL], "no-store", "{path}");
     }
     assert_eq!(nonces.len(), 8, "un nonce different a chaque reponse");
-    // La CSP n'autorise ni script en ligne sans nonce, ni eval, ni source tierce.
+    // The CSP allows neither inline script without a nonce, nor eval, nor a third-party source.
     let csp = get(&app, "/login", &[]).await.headers[header::CONTENT_SECURITY_POLICY]
         .to_str()
         .unwrap()
         .to_string();
-    // Seule exception voulue : les iframes vers l'origine de Grafana (reglage GRAFANA_PUBLIC_URL, `http://localhost:3000` par defaut).
+    // Only intended exception: iframes to Grafana's origin (setting GRAFANA_PUBLIC_URL, `http://localhost:3000` by default).
     assert!(csp.contains("; frame-src http://localhost:3000"), "{csp}");
-    // Et l'origine de MediaMTX (signalisation WHEP du live, reglage MEDIAMTX_WEBRTC_DOMAIN, `localhost:8889` par defaut) pour `connect-src`.
+    // And MediaMTX's origin (WHEP signalling of the live view, setting MEDIAMTX_WEBRTC_DOMAIN, `localhost:8889` by default) for `connect-src`.
     assert!(
         csp.contains("connect-src 'self' http://localhost:8889;"),
         "{csp}"
@@ -2166,7 +2166,7 @@ async fn every_html_page_carries_a_csp_whose_nonce_matches_its_scripts(pool: PgP
     assert!(csp.contains("frame-ancestors 'none'") && csp.contains("object-src 'none'"));
 }
 
-/// Vrai si le HTML contient un attribut `onxxx="..."`.
+/// True if the HTML contains an `onxxx="..."` attribute.
 fn regex_like_inline_handler(html: &str) -> bool {
     html.match_indices(" on").any(|(i, _)| {
         let rest = &html[i + 3..];
@@ -2183,14 +2183,14 @@ async fn pages_are_compressed_on_request_and_never_cached(pool: PgPool) {
     assert_eq!(r.headers[header::CACHE_CONTROL], "no-store");
     let plain = get(&app, "/login", &[]).await;
     assert!(!plain.headers.contains_key(header::CONTENT_ENCODING));
-    // Les fonctions serveur (reponses privees) ne sont pas non plus mises en cache.
+    // Server functions (private responses) are not cached either.
     let sf = send(&app, Method::POST, "/sf/layout", &[], None).await;
     assert_eq!(sf.headers[header::CACHE_CONTROL], "no-store");
 }
 
-// ---------------------------------------------------------------- journaux : aucune donnee sensible
+// ---------------------------------------------------------------- logs: no sensitive data
 
-/// Collecte tout ce que `tracing` ecrit pendant le test.
+/// Collects everything `tracing` writes during the test.
 #[derive(Clone, Default)]
 struct LogSink(Arc<std::sync::Mutex<Vec<u8>>>);
 
@@ -2208,7 +2208,7 @@ impl std::io::Write for LogSink {
 async fn passwords_secrets_and_session_tokens_never_reach_the_logs(pool: PgPool) {
     let (app, state, _guard) = app_with_key(pool, Some(TEST_MASTER_KEY)).await;
     seed(&state).await;
-    // Niveau maximal (TRACE) : on veut aussi ce que `sqlx` et `tower-http` ecrivent a bas niveau.
+    // Maximum level (TRACE): we also want what `sqlx` and `tower-http` write at a low level.
     let sink = LogSink::default();
     let writer = sink.clone();
     let subscriber = tracing_subscriber::fmt()
@@ -2218,7 +2218,7 @@ async fn passwords_secrets_and_session_tokens_never_reach_the_logs(pool: PgPool)
         .finish();
     let logging = tracing::subscriber::set_default(subscriber);
 
-    // Valeurs « appats » : si l'une d'elles apparait dans les journaux, c'est un defaut.
+    // Bait values: if one of them appears in the logs, it is a defect.
     let canaries = [
         "wrong-pw-LOG-CANARY-1",
         "new-pw-LOG-CANARY-2",
@@ -2233,7 +2233,7 @@ async fn passwords_secrets_and_session_tokens_never_reach_the_logs(pool: PgPool)
         .map(|c| c.split('=').nth(1).unwrap().to_string())
         .collect();
 
-    // Connexion ratee, changement de mot de passe, secret, creation et reinitialisation de compte, diffusion.
+    // Failed login, password change, secret, account creation and reset, broadcast.
     assert!(
         login_fn(&app, "bob", canaries[0])
             .await
@@ -2268,7 +2268,7 @@ async fn passwords_secrets_and_session_tokens_never_reach_the_logs(pool: PgPool)
 
     drop(logging);
     let logs = String::from_utf8(sink.0.lock().unwrap().clone()).unwrap();
-    // La capture fonctionne : on y voit bien les evenements attendus.
+    // The capture works: the expected events are indeed seen there.
     for expected in [
         "login succeeded",
         "password changed",
@@ -2298,16 +2298,16 @@ async fn passwords_secrets_and_session_tokens_never_reach_the_logs(pool: PgPool)
             "jeton de session dans les journaux"
         );
     }
-    // Ni condensat (`$argon2id$...`) ni mot de passe. (Le NOM de la colonne `password_hash` peut figurer dans le texte SQL
-    // journalise par `sqlx` a bas niveau, avec des parametres `$1` : les valeurs ne le sont pas.)
+    // Neither a hash (`$argon2id$...`) nor a password. (The NAME of the `password_hash` column may appear in the SQL text
+    // logged by `sqlx` at a low level, with `$1` parameters: the values are not.)
     for needle in ["$argon2", PASSWORD] {
         assert!(!logs.contains(needle), "{needle} dans les journaux");
     }
 }
 
-// ---------------------------------------------------------------- R2 lot 2 : etat d'appareil d'essai
+// ---------------------------------------------------------------- R2 lot 2: test device state
 
-/// Encodage pourcent minimal d'une valeur de formulaire.
+/// Minimal percent-encoding of a form value.
 fn urlenc(v: &str) -> String {
     use std::fmt::Write;
     v.bytes().fold(String::new(), |mut out, b| {
@@ -2327,7 +2327,7 @@ fn inject_body(device: i64, state: &str, available: bool) -> String {
     )
 }
 
-/// Cree un appareil et renvoie son numero (le simulateur et les widgets n'acceptent plus de numero fictif).
+/// Creates a device and returns its number (the simulator and the widgets no longer accept a fictitious number).
 async fn make_device(state: &AppState, name: &str) -> i64 {
     use dominet_domain::device::DeviceDraft;
     use dominet_domain::repo::DeviceRepo;
@@ -2367,7 +2367,7 @@ async fn an_injected_device_state_is_retained_for_late_subscribers_and_replaced_
     let id = make_device(&state, "Sonde salon").await;
     let t = Topic::Device(id);
 
-    // Un abonne deja present recoit l'etat en direct et le decompte le dit.
+    // An already present subscriber receives the state live and the count says so.
     let mut rx = state.hub.subscribe(&t);
     let first = sf_json(
         &app,
@@ -2388,7 +2388,7 @@ async fn an_injected_device_state_is_retained_for_late_subscribers_and_replaced_
     assert_eq!(dto.state["temperature"], 21.5);
     drop(rx);
 
-    // Le dernier etat est retenu et remplace par le suivant (c'est ce que verront un nouvel abonne et le rendu serveur).
+    // The last state is kept and replaced by the next one (this is what a new subscriber and the server render will see).
     sf_json(
         &app,
         &admin,
@@ -2418,7 +2418,7 @@ async fn an_invalid_injected_state_is_refused_and_retains_nothing(pool: PgPool) 
     let (app, state, _guard) = app(pool).await;
     let admin = session_for(&app, &state, "alice", Role::Admin).await;
     let real = make_device(&state, "Sonde cave").await;
-    // Numero invalide, ou qui ne designe aucun appareil : le simulateur n'invente plus d'appareil.
+    // Invalid number, or one that designates no device: the simulator no longer invents a device.
     for id in [0, -1, real + 1000] {
         let r = sf_json(&app, &admin, "devices/inject", &inject_body(id, "{}", true)).await;
         assert_eq!(r, "InvalidDevice", "{id}");
@@ -2444,12 +2444,12 @@ async fn an_invalid_injected_state_is_refused_and_retains_nothing(pool: PgPool) 
         assert_eq!(r, "InvalidState", "{:?}", &bad[..bad.len().min(20)]);
     }
     assert!(state.hub.retained(&Topic::Device(real)).is_none());
-    // La page d'administration propose l'outil.
+    // The administration page offers the tool.
     let page = get(&app, "/admin/settings", &[("cookie", &admin)]).await;
     assert!(page.text.contains("sim-device") && page.text.contains("Simuler un appareil"));
 }
 
-// ------------------------------------------------------------------ commandes d'appareils (R3 lot 5)
+// ------------------------------------------------------------------ device commands (R3 lot 5)
 
 fn command_body(device: i64, command: &str) -> String {
     format!("device_id={device}&command={}", urlenc(command))
@@ -2463,7 +2463,7 @@ async fn commands_need_a_session_a_valid_object_and_an_existing_active_device(po
     let user = session_for(&app, &state, "bob", Role::User).await;
     let id = make_device(&state, "Lampe salon").await;
 
-    // Sans session : refuse. Tout compte connecte peut commander (parite avec l'implementation de reference).
+    // Without a session: refused. Any logged-in account can command (parity with the reference implementation).
     let anon = sf_at(
         &app,
         None,
@@ -2473,7 +2473,7 @@ async fn commands_need_a_session_a_valid_object_and_an_existing_active_device(po
     .await;
     assert_eq!(anon.status, StatusCode::UNAUTHORIZED);
 
-    // Pas de client MQTT dans ce serveur de test : une commande valide est annoncee « indisponible », jamais « envoyee ».
+    // No MQTT client in this test server: a valid command is announced "unavailable", never "sent".
     let ok = sf_json(
         &app,
         &user,
@@ -2502,7 +2502,7 @@ async fn commands_need_a_session_a_valid_object_and_an_existing_active_device(po
     .await;
     assert_eq!(gone, "NotFound");
 
-    // Un appareil desactive ne recoit plus de commande.
+    // A deactivated device no longer receives commands.
     let mut draft = DeviceDraft::new("Lampe salon");
     draft.active = false;
     state
@@ -2530,7 +2530,7 @@ async fn only_administrators_open_the_pairing_window(pool: PgPool) {
         let r = sf_at(&app, cookie, "devices/permit-join", "enabled=true").await;
         assert_eq!(r.status, StatusCode::FORBIDDEN);
     }
-    // Sans client MQTT : indisponible, et l'etat memorise ne bouge pas.
+    // Without an MQTT client: unavailable, and the stored state does not move.
     assert_eq!(
         sf_json(&app, &admin, "devices/permit-join", "enabled=true").await,
         "Unavailable"
@@ -2547,7 +2547,7 @@ async fn only_administrators_open_the_pairing_window(pool: PgPool) {
     );
 }
 
-// ------------------------------------------------------------------ administration des appareils (R3 lot 5)
+// ------------------------------------------------------------------ devices administration (R3 lot 5)
 
 fn device_input(id: Option<i64>, name: &str, kind: &str, group: &str, tracked: &str) -> String {
     serde_json::json!({"input": {
@@ -2583,7 +2583,7 @@ async fn an_administrator_manages_devices_groups_and_labels(pool: PgPool) {
     let (app, state, _guard) = app(pool).await;
     let admin = session_for(&app, &state, "alice", Role::Admin).await;
 
-    // Groupe, puis appareil rattache a ce groupe.
+    // Group, then a device attached to that group.
     let g = sf_json(
         &app,
         &admin,
@@ -2610,7 +2610,7 @@ async fn an_administrator_manages_devices_groups_and_labels(pool: PgPool) {
     assert_eq!(d["Saved"]["tracked_keys"], "temperature, humidity");
     let id = d["Saved"]["id"].as_i64().unwrap();
 
-    // Nom deja pris, type inconnu, cle invalide, groupe disparu : refus champ par champ, rien n'est cree.
+    // Name already taken, unknown type, invalid key, vanished group: refused field by field, nothing is created.
     let taken = sf_json(
         &app,
         &admin,
@@ -2661,12 +2661,12 @@ async fn an_administrator_manages_devices_groups_and_labels(pool: PgPool) {
         1
     );
 
-    // Les listes deroulantes proposent groupes, emplacements et appareils.
+    // The drop-down lists offer groups, locations and devices.
     let choices = sf_json(&app, &admin, "devices-admin/choices", "").await;
     assert_eq!(choices["groups"][0][1], "Salon");
     assert_eq!(choices["devices"][0][1], "Sonde");
 
-    // Libelle : cle unique.
+    // Label: unique key.
     let label = |key: &str| {
         serde_json::json!({"input": {"id": null, "key": key, "name": "Temperature", "icon_name": "thermometer", "unit": "C"}}).to_string()
     };
@@ -2677,7 +2677,7 @@ async fn an_administrator_manages_devices_groups_and_labels(pool: PgPool) {
     let dup = sf_json(&app, &admin, "device-labels/save", &label("temperature")).await;
     assert_eq!(dup["Invalid"][0]["kind"], "Taken");
 
-    // La page propose les groupes dans une liste deroulante et le menu d'administration.
+    // The page offers the groups in a drop-down list and the administration menu.
     let page = get(&app, "/admin/devices", &[("cookie", &admin)]).await;
     assert_eq!(page.status, StatusCode::OK);
     assert!(
@@ -2696,7 +2696,7 @@ async fn an_administrator_manages_devices_groups_and_labels(pool: PgPool) {
             .contains("Ajouter un libellé")
     );
 
-    // Suppression d'un groupe : l'appareil reste, sans groupe.
+    // Deleting a group: the device stays, without a group.
     assert_eq!(
         sf_json(&app, &admin, "device-groups/delete", &format!("id={gid}")).await,
         "Deleted"
@@ -2713,7 +2713,7 @@ async fn an_administrator_manages_devices_groups_and_labels(pool: PgPool) {
     );
 }
 
-// ------------------------------------------------------------------ pages des appareils (R3 lot 5)
+// ------------------------------------------------------------------ devices pages (R3 lot 5)
 
 #[sqlx::test(migrator = "dominet_store::MIGRATOR")]
 async fn the_devices_page_lists_active_devices_with_filters_and_admin_tools(pool: PgPool) {
@@ -2751,7 +2751,7 @@ async fn the_devices_page_lists_active_devices_with_filters_and_admin_tools(pool
         .await
         .unwrap();
 
-    // Les deux ecritures de l'adresse (l'entree de navigation amorcee est `/automation/`) menent a la meme page.
+    // The two spellings of the address (the seeded navigation entry is `/automation/`) lead to the same page.
     for p in ["/automation", "/automation/"] {
         assert_eq!(
             get(&app, p, &[("cookie", &user)]).await.status,
@@ -2776,7 +2776,7 @@ async fn the_devices_page_lists_active_devices_with_filters_and_admin_tools(pool
         "appairage reserve aux administrateurs"
     );
 
-    // Filtres en GET : type, puis groupe.
+    // Filters in GET: type, then group.
     let by_type = get(&app, "/automation/?type=sensor", &[("cookie", &user)]).await;
     assert!(by_type.text.contains("Sonde cave") && !by_type.text.contains("Lampe"));
     let by_group = get(
@@ -2904,7 +2904,7 @@ async fn the_grafana_dashboard_of_a_device_is_written_by_administrators_only(poo
         serde_json::from_str(&std::fs::read_to_string(dir.join("device_Sonde.json")).unwrap())
             .unwrap();
     assert_eq!(written["uid"], format!("dominet-device-{}", with_keys.id.0));
-    // L'appareil porte maintenant la case « tableau Grafana ».
+    // The device now carries the "Grafana dashboard" checkbox.
     assert!(
         state
             .store
@@ -2939,7 +2939,7 @@ async fn without_a_dashboards_folder_the_generation_says_so(pool: PgPool) {
     );
 }
 
-// ------------------------------------------------------------------ stations meteo (R3 lot 6)
+// ------------------------------------------------------------------ weather stations (R3 lot 6)
 
 fn station_input(
     id: Option<i64>,
@@ -2984,7 +2984,7 @@ async fn only_administrators_manage_weather_stations_and_the_publisher_is_woken(
         .is_ok()
     };
 
-    // Virgule decimale acceptee (saisie francaise) ; l'altitude et l'intervalle sont lus comme des nombres.
+    // Decimal comma accepted (French input); the altitude and the interval are read as numbers.
     let saved = sf_json(
         &app,
         &admin,
@@ -2998,7 +2998,7 @@ async fn only_administrators_manage_weather_stations_and_the_publisher_is_woken(
     assert!(told().await, "creation signalee au publisher");
     let id = saved["Saved"]["id"].as_i64().unwrap();
 
-    // Refus champ par champ, rien n'est cree : latitude hors plage, longitude non numerique, intervalle nul, suffixe invalide.
+    // Refusal field by field, nothing is created: latitude out of range, non-numeric longitude, zero interval, invalid suffix.
     let bad = sf_json(
         &app,
         &admin,
@@ -3061,7 +3061,7 @@ async fn only_administrators_manage_weather_stations_and_the_publisher_is_woken(
     );
 }
 
-// ------------------------------------------------------------------ tableau de bord (R2 lot 4)
+// ------------------------------------------------------------------ dashboard (R2 lot 4)
 
 mod dash {
     use super::*;
@@ -3111,7 +3111,7 @@ mod dash {
         state.store.widgets().create(board, &d).await.unwrap();
     }
 
-    /// Cree un appareil et renvoie son numero.
+    /// Creates a device and returns its number.
     pub async fn device(state: &AppState, name: &str) -> i64 {
         use dominet_domain::device::DeviceDraft;
         use dominet_domain::repo::DeviceRepo;
@@ -3182,7 +3182,7 @@ async fn the_dashboard_page_places_widgets_with_classes_and_never_with_inline_st
     seed(&state).await;
     let cookie = session_for(&app, &state, "bob", Role::User).await;
     let b = dash::board(&state, "bob", "Salon").await;
-    // Depuis R3, un widget ne peut viser qu'un appareil qui existe (cle etrangere).
+    // Since R3, a widget can only target a device that exists (foreign key).
     let sonde = dash::device(&state, "Sonde salon").await;
     dash::widget(&state, b, T::Text, "Note", (2, 1, 4, 2), |d| {
         d.content = r#"<p>Bonjour <b>vous</b></p><script>alert(1)</script><a href="javascript:x()">piege</a>"#.into();
@@ -3244,7 +3244,7 @@ async fn the_dashboard_page_places_widgets_with_classes_and_never_with_inline_st
     let page = get(&app, "/", &[("cookie", &cookie)]).await;
     assert_eq!(page.status, StatusCode::OK);
     let t = &page.text;
-    // Position et taille par classes : colonne 3 (col 2 + 1), ligne 2 (row 1 + 1), 4 de large, 2 de haut.
+    // Position and size by classes: column 3 (col 2 + 1), row 2 (row 1 + 1), 4 wide, 2 high.
     assert!(
         t.contains("vc-c-3 vc-r-2 vc-w-4 vc-h-2"),
         "classes de position absentes"
@@ -3254,18 +3254,18 @@ async fn the_dashboard_page_places_widgets_with_classes_and_never_with_inline_st
         !t.contains(r#" style=""#),
         "attribut style interdit par la CSP"
     );
-    // Texte assaini : la mise en forme reste, script et lien javascript: disparaissent.
+    // Sanitised text: the formatting stays, script and javascript: link disappear.
     assert!(t.contains("<b>vous</b>"));
     assert!(
         !t.contains("alert(1)") && !t.contains("javascript:"),
         "HTML non assaini"
     );
-    // Appareil : dernier etat rendu par le serveur (valeur principale unique + unite).
+    // Device: last state rendered by the server (single main value + unit).
     assert!(
         t.contains("21.5") && t.contains("Sonde salon"),
         "etat de l'appareil absent"
     );
-    // Grafana : panneau par uid sur l'URL publique par defaut ; adresse d'une autre origine refusee.
+    // Grafana: panel by uid on the default public URL; address from another origin refused.
     assert!(
         t.contains("http://localhost:3000/d/abc?viewPanel=2"),
         "iframe Grafana absente"
@@ -3275,13 +3275,13 @@ async fn the_dashboard_page_places_widgets_with_classes_and_never_with_inline_st
         "adresse etrangere repercutee dans la page"
     );
     assert!(t.contains("grafana-problem-"), "message de refus absent");
-    // Camera inconnue : le widget le dit (R6). Scene : nom et bouton d'activation (R4).
+    // Unknown camera: the widget says so (R6). Scene: name and activation button (R4).
     assert!(t.contains("widget-camera-missing-"));
     assert!(
         t.contains("scene-body-") && t.contains("Ambiance") && t.contains("scene-activate-w"),
         "widget scene absent"
     );
-    // La CSP autorise l'iframe vers cette origine seulement.
+    // The CSP allows the iframe to this origin only.
     let csp = page.headers["content-security-policy"].to_str().unwrap();
     assert!(csp.contains("frame-src http://localhost:3000"), "{csp}");
 }
@@ -3304,7 +3304,7 @@ async fn any_account_lists_and_activates_scenes_but_only_administrators_edit_the
     let lamp = make_device(&state, "Lampe salon").await;
     let body = scene_input(None, "Soiree", &[(lamp, r#"{"state":"ON"}"#)]);
 
-    // Sans session : tout est refuse. Compte ordinaire : lecture et activation seulement.
+    // Without a session: everything is refused. Ordinary account: read and activation only.
     for (path, payload) in [("scenes/list", ""), ("scenes/activate", "id=1")] {
         let r = sf_at(&app, None, path, payload).await;
         assert_eq!(r.status, StatusCode::UNAUTHORIZED, "{path}");
@@ -3325,7 +3325,7 @@ async fn any_account_lists_and_activates_scenes_but_only_administrators_edit_the
     assert_eq!(saved["Saved"]["actions"][0]["device"], "Lampe salon");
     assert_eq!(saved["Saved"]["actions"][0]["payload"], r#"{"state":"ON"}"#);
 
-    // L'activation sans client MQTT est annoncee, commande par commande, comme « indisponible ».
+    // Activation without an MQTT client is announced, command by command, as "unavailable".
     let done = sf_json(&app, &user, "scenes/activate", &format!("id={id}")).await;
     assert_eq!(done["Activated"]["sent"], 0, "{done}");
     assert_eq!(done["Activated"]["failed"][0]["device"], "Lampe salon");
@@ -3333,7 +3333,7 @@ async fn any_account_lists_and_activates_scenes_but_only_administrators_edit_the
     let gone = sf_json(&app, &user, "scenes/activate", "id=9999").await;
     assert_eq!(gone, "NotFound");
 
-    // La page des scenes liste les scenes actives avec leurs commandes ; une scene desactivee disparait de la liste simple.
+    // The scenes page lists the active scenes with their commands; a deactivated scene disappears from the simple list.
     let page = get(&app, "/automation/scenes", &[("cookie", &user)]).await;
     assert_eq!(page.status, StatusCode::OK);
     assert!(
@@ -3360,7 +3360,7 @@ async fn any_account_lists_and_activates_scenes_but_only_administrators_edit_the
         "une scene desactivee ne s'active plus"
     );
 
-    // Suppression : le widget qui la visait perd sa scene.
+    // Deletion: the widget that targeted it loses its scene.
     assert_eq!(
         sf_json(&app, &admin, "scenes-admin/delete", &format!("id={id}")).await,
         "Deleted"
@@ -3414,7 +3414,7 @@ async fn invalid_scenes_are_reported_field_by_field(pool: PgPool) {
             "{bad}"
         );
     }
-    // Appareil inconnu : refuse par la base, rapporte sur le champ des commandes.
+    // Unknown device: refused by the database, reported on the commands field.
     let r = sf_json(
         &app,
         &admin,
@@ -3426,7 +3426,7 @@ async fn invalid_scenes_are_reported_field_by_field(pool: PgPool) {
         problems(&r),
         [("actions".to_string(), r#""Invalid""#.to_string())]
     );
-    // Nom deja pris.
+    // Name already taken.
     sf_json(
         &app,
         &admin,
@@ -3445,7 +3445,7 @@ async fn invalid_scenes_are_reported_field_by_field(pool: PgPool) {
         problems(&r),
         [("name".to_string(), r#""Taken""#.to_string())]
     );
-    // Mise a jour d'une scene disparue.
+    // Update of a vanished scene.
     let r = sf_json(
         &app,
         &admin,
@@ -3454,7 +3454,7 @@ async fn invalid_scenes_are_reported_field_by_field(pool: PgPool) {
     )
     .await;
     assert_eq!(r, "NotFound");
-    // La page d'administration est reservee aux administrateurs.
+    // The administration page is reserved to administrators.
     let page = get(&app, "/admin/scenes", &[("cookie", &admin)]).await;
     assert_eq!(page.status, StatusCode::OK);
     let user = session_for(&app, &state, "bob", Role::User).await;
@@ -3489,16 +3489,16 @@ async fn the_dashboard_selector_only_offers_and_opens_the_accounts_own_dashboard
     })
     .await;
 
-    // Sans parametre : le tableau par defaut (le premier cree), selecteur visible car il y en a deux.
+    // Without a parameter: the default dashboard (the first created), selector visible because there are two.
     let home = get(&app, "/", &[("cookie", &bob)]).await;
     assert!(home.text.contains("contenu-alpha") && !home.text.contains("contenu-beta"));
     assert!(home.text.contains(r#"id="vc-dash-picker""#));
     assert!(home.text.contains(&format!("/?d={}", second.0)));
     assert!(!home.text.contains("Secret"));
-    // ?d= ouvre l'autre tableau du compte.
+    // ?d= opens the account's other dashboard.
     let other = get(&app, &format!("/?d={}", second.0), &[("cookie", &bob)]).await;
     assert!(other.text.contains("contenu-beta") && !other.text.contains("contenu-alpha"));
-    // Le tableau d'un autre compte, une valeur absurde ou un tableau inexistant : retour au tableau par defaut, sans fuite.
+    // Another account's dashboard, an absurd value or a non-existent dashboard: back to the default dashboard, without a leak.
     for d in [
         secret.0.to_string(),
         "abc".into(),
@@ -3530,7 +3530,7 @@ async fn the_dashboard_server_function_is_empty_for_anonymous_visitors(pool: PgP
     );
 }
 
-// ------------------------------------------------------------------ edition des tableaux (R2 lot 5)
+// ------------------------------------------------------------------ dashboards editing (R2 lot 5)
 
 fn widget_input(board: i64, kind: &str, extra: &serde_json::Value) -> String {
     let mut input = serde_json::json!({
@@ -3611,7 +3611,7 @@ async fn administrators_manage_dashboards_for_any_owner(pool: PgPool) {
     );
     let all = sf_json(&app, &admin, "dashboards/list", "").await;
     assert_eq!(all.as_array().unwrap().len(), 1);
-    // Le tableau cree pour bob est bien celui que bob voit sur sa page d'accueil.
+    // The dashboard created for bob is indeed the one bob sees on the home page.
     let home = get(&app, "/", &[("cookie", &login_cookie(&app, "bob").await)]).await;
     assert!(home.text.contains("Cuisine"));
     let gone = sf_json(&app, &admin, "dashboards/delete", &format!("id={id}")).await;
@@ -3645,7 +3645,7 @@ async fn saving_a_widget_validates_each_field_and_sanitizes_text(pool: PgPool) {
     let mut got = fields(&bad);
     got.sort();
     assert_eq!(got, ["col", "config", "device_id", "presentation"], "{bad}");
-    // Regles du domaine : un appareil est obligatoire, la largeur ne doit pas deborder de la grille.
+    // Domain rules: a device is mandatory, the width must not overflow the grid.
     let missing = sf_json(
         &app,
         &admin,
@@ -3679,7 +3679,7 @@ async fn saving_a_widget_validates_each_field_and_sanitizes_text(pool: PgPool) {
     .await;
     assert_eq!(fields(&uuid), ["camera_uuid"], "{uuid}");
 
-    // Texte : assaini a l'enregistrement, pas seulement a l'affichage.
+    // Text: sanitised at save time, not only at display time.
     let ok = sf_json(
         &app,
         &admin,
@@ -3718,7 +3718,7 @@ async fn widgets_cannot_overlap_and_moves_report_why_they_fail(pool: PgPool) {
     let b = sf_json(&app, &admin, "widgets/save", &mk("4", "0")).await["Saved"]["id"]
         .as_i64()
         .unwrap();
-    // Chevauchement a la creation : signale sur le champ `col`.
+    // Overlap at creation: reported on the `col` field.
     let clash = sf_json(&app, &admin, "widgets/save", &mk("1", "1")).await;
     assert_eq!(
         clash["Invalid"][0],
@@ -3750,7 +3750,7 @@ async fn widgets_cannot_overlap_and_moves_report_why_they_fail(pool: PgPool) {
         "au-dela de la derniere ligne"
     );
     assert_eq!(mv(999_999, 0, 0).await, "NotFound");
-    // Les refus n'ont rien deplace ; des cases contigues passent.
+    // The refusals moved nothing; contiguous cells go through.
     let now = sf_json(
         &app,
         &admin,
@@ -3773,7 +3773,7 @@ async fn widgets_cannot_overlap_and_moves_report_why_they_fail(pool: PgPool) {
         "Moved",
         "contigu a droite de b (colonnes 4-5)"
     );
-    // Modifier un widget sans le deplacer ne s'oppose pas a lui-meme.
+    // Editing a widget without moving it does not conflict with itself.
     let same = widget_input(
         board,
         "grille",
@@ -3839,7 +3839,7 @@ async fn the_widgets_page_picks_the_requested_dashboard_or_the_first_one(pool: P
 
 // ------------------------------------------------------------------ automations (R4 lot 3)
 
-/// Formulaire d'automation par defaut : `device_state` qui active la scene, avec les remplacements donnes.
+/// Default automation form: `device_state` that activates the scene, with the given overrides.
 fn automation_input(id: Option<i64>, changes: &serde_json::Value) -> String {
     let mut f = serde_json::json!({
         "name": "Bouton salon", "enabled": true, "description": "", "trigger_type": "device_state", "topic": "",
@@ -3908,7 +3908,7 @@ async fn only_administrators_manage_automations_and_the_engine_is_woken(pool: Pg
         "{\"state\":\"OPEN\"}"
     );
 
-    // Modification : condition, puis relecture fidele.
+    // Modification: condition, then faithful read-back.
     let upd = automation_input(
         Some(id),
         &serde_json::json!({"condition_key": "battery", "condition_value": "100", "value": "28", "description": "essai"}),
@@ -3941,7 +3941,7 @@ async fn only_administrators_manage_automations_and_the_engine_is_woken(pool: Pg
     .await;
     assert_eq!(gone, "NotFound");
 
-    // Page d'administration : admin seulement.
+    // Administration page: admin only.
     let page = get(&app, "/admin/automations", &[("cookie", &admin)]).await;
     assert_eq!(page.status, StatusCode::OK);
     assert!(page.text.contains("Automations"));
@@ -4037,7 +4037,7 @@ async fn invalid_automations_are_reported_field_by_field(pool: PgPool) {
         invalid(json!({"action_type": "notification", "message": "x".repeat(501)})).await,
         [("message".to_string(), json!({"TooLong": {"max": 500}}))]
     );
-    // Latitude avec virgule decimale : acceptee.
+    // Latitude with a decimal comma: accepted.
     let ok = sf_json(
         &app,
         &admin,
@@ -4049,7 +4049,7 @@ async fn invalid_automations_are_reported_field_by_field(pool: PgPool) {
     )
     .await;
     assert_eq!(ok["Saved"]["fields"]["latitude"], "43.3");
-    // Une scene inexistante est refusee par la cle etrangere.
+    // A non-existent scene is refused by the foreign key.
     let r = sf_json(
         &app,
         &admin,
@@ -4089,7 +4089,7 @@ async fn the_dry_run_is_for_administrators_shows_the_effects_and_contains_hostil
         assert_eq!(r.status, StatusCode::FORBIDDEN);
     }
 
-    // Les effets sont decrits, rien n'est publie (ce serveur n'a d'ailleurs pas de client MQTT).
+    // The effects are described, nothing is published (this server has no MQTT client anyway).
     let out = sf_json(
         &app,
         &admin,
@@ -4112,7 +4112,7 @@ async fn the_dry_run_is_for_administrators_shows_the_effects_and_contains_hostil
     );
     assert_eq!(out["logs"], serde_json::json!(["vu"]));
 
-    // Erreurs : syntaxe, execution, reference, script hostile (borne dans le temps).
+    // Errors: syntax, execution, reference, hostile script (time-bounded).
     for (code, needle) in [
         ("let x = ;", "Unexpected"),
         ("def f():\n  pass", "Python"),
@@ -4132,7 +4132,7 @@ async fn the_dry_run_is_for_administrators_shows_the_effects_and_contains_hostil
             "{code}"
         );
     }
-    // Le serveur repond encore.
+    // The server still answers.
     assert_eq!(
         get(&app, "/admin/automations", &[("cookie", &admin)])
             .await
@@ -4181,7 +4181,7 @@ async fn scripts_and_source_handlers_must_compile_and_python_code_is_refused(poo
     .await;
     assert_eq!(ok["Saved"]["fields"]["script"], "publish(\"a/b\", 1);");
 
-    // Meme regle pour le code de traitement d'une source.
+    // Same rule for a source's processing code.
     let source = |code: &str| {
         serde_json::json!({"input": {
             "id": null, "name": "Linky", "topic_pattern": "linky/#", "qos": 0, "active": true, "log_messages": false,
@@ -4199,14 +4199,14 @@ async fn scripts_and_source_handlers_must_compile_and_python_code_is_refused(poo
     assert!(syntax(&bad).unwrap().1.contains("Python"));
     let ok = sf_json(&app, &admin, "mqtt-sources/save", &source("print(payload)")).await;
     assert!(ok["Saved"]["id"].as_i64().is_some());
-    // Sans code : accepte.
+    // Without code: accepted.
     let mut empty = serde_json::from_str::<serde_json::Value>(&source("")).unwrap();
     empty["input"]["name"] = json!("Vide");
     let ok = sf_json(&app, &admin, "mqtt-sources/save", &empty.to_string()).await;
     assert!(ok["Saved"]["id"].as_i64().is_some());
 }
 
-// ------------------------------------------------------------------ alertes (R4 lot 6)
+// ------------------------------------------------------------------ alerts (R4 lot 6)
 
 fn rule_input(id: Option<i64>, device: i64, changes: &serde_json::Value) -> String {
     let mut r = serde_json::json!({
@@ -4255,7 +4255,7 @@ async fn alert_rules_are_for_administrators_and_validated_field_by_field(pool: P
     let id = saved["Saved"]["id"].as_i64().unwrap();
     assert_eq!(saved["Saved"]["device"], "meteo_locale");
     assert_eq!(saved["Saved"]["threshold_num"], "35");
-    // Virgule decimale, modification, relecture.
+    // Decimal comma, modification, read-back.
     let upd = rule_input(
         Some(id),
         device,
@@ -4390,7 +4390,7 @@ async fn any_account_lists_and_acknowledges_alerts_and_the_sidebar_links_to_them
     assert_eq!(page["alerts"].as_array().unwrap().len(), 2);
     assert_eq!(page["alerts"][0]["rule"], "Canicule");
     assert_eq!(page["alerts"][0]["device"], "meteo_locale");
-    // Un filtre inconnu retombe sur « en cours ».
+    // An unknown filter falls back on "ongoing".
     assert_eq!(
         sf_json(&app, &user, "alerts/page", "status=nimporte").await["status"],
         "firing"
@@ -4404,7 +4404,7 @@ async fn any_account_lists_and_acknowledges_alerts_and_the_sidebar_links_to_them
         sf_json(&app, &user, "alerts/acknowledge", &format!("id={}", ids[0])).await,
         "NotFiring"
     );
-    // La pastille est rediffusee (dernier etat retenu).
+    // The badge is rebroadcast (last state kept).
     let retained = state.hub.retained(&Topic::Alerts).expect("compte diffuse");
     assert!(
         matches!(&*retained, WsServerMsg::AlertCount { firing: 1 }),
@@ -4417,7 +4417,7 @@ async fn any_account_lists_and_acknowledges_alerts_and_the_sidebar_links_to_them
     assert_eq!(all["alerts"].as_array().unwrap().len(), 2);
     assert_eq!(all["firing"], 0);
 
-    // La page et le lien de la barre laterale (avec sa pastille) sont rendus par le serveur.
+    // The page and the sidebar link (with its badge) are rendered by the server.
     let html = get(&app, "/alerts", &[("cookie", &user)]).await;
     assert_eq!(html.status, StatusCode::OK);
     assert!(
@@ -4434,7 +4434,7 @@ async fn any_account_lists_and_acknowledges_alerts_and_the_sidebar_links_to_them
 #[sqlx::test(migrator = "dominet_store::MIGRATOR")]
 async fn the_alerts_page_lists_platform_alerts_and_the_badge_counts_them(pool: PgPool) {
     use dominet_proto::{Topic, WsServerMsg};
-    // Un faux Prometheus : une alerte en cours et une en attente (ignoree).
+    // A fake Prometheus: one ongoing alert and one pending (ignored).
     let fake = axum::Router::new().route(
         "/api/v1/alerts",
         axum::routing::get(|| async {
@@ -4452,7 +4452,7 @@ async fn the_alerts_page_lists_platform_alerts_and_the_badge_counts_them(pool: P
     let (app, state, _guard) = app_with_vars(pool, None, &[("PROMETHEUS_URL", url.as_str())]).await;
     let user = session_for(&app, &state, "bob", Role::User).await;
 
-    // Avant la premiere lecture, la source est dite injoignable (on ne sait rien) et rien n'est compte.
+    // Before the first read, the source is said to be unreachable (nothing is known) and nothing is counted.
     let before = sf_json(&app, &user, "alerts/page", "status=firing").await;
     assert_eq!(before["platform"]["prometheus"], "down");
     assert_eq!(before["platform"]["grafana"], "off");
@@ -4521,7 +4521,7 @@ async fn android_devices_are_per_account_with_a_token_shown_once(pool: PgPool) {
         );
     }
 
-    // Validation champ par champ.
+    // Field-by-field validation.
     let bad = sf_json(
         &app,
         &bob,
@@ -4537,7 +4537,7 @@ async fn android_devices_are_per_account_with_a_token_shown_once(pool: PgPool) {
         .collect();
     assert_eq!(fields, ["name", "phone_number"]);
 
-    // Creation : le jeton est rendu une fois, jamais par les listes.
+    // Creation: the token is returned once, never by the lists.
     let made = sf_json(
         &app,
         &bob,
@@ -4565,7 +4565,7 @@ async fn android_devices_are_per_account_with_a_token_shown_once(pool: PgPool) {
             .is_some()
     );
 
-    // Chacun voit les siens ; l'administrateur voit tout.
+    // Each person sees their own; the administrator sees everything.
     assert_eq!(
         sf_json(&app, &eve, "android/devices", "")
             .await
@@ -4583,7 +4583,7 @@ async fn android_devices_are_per_account_with_a_token_shown_once(pool: PgPool) {
         1
     );
 
-    // Activite : SMS recus (non lus) et appels.
+    // Activity: received SMS (unread) and calls.
     let device = dominet_domain::android::AndroidDeviceId(id);
     let now = chrono::Utc::now();
     for n in 0..3 {
@@ -4625,7 +4625,7 @@ async fn android_devices_are_per_account_with_a_token_shown_once(pool: PgPool) {
         0
     );
 
-    // La page des SMS marque les SMS recus comme lus (comme la reference) ; un appareil d'autrui est introuvable.
+    // The SMS page marks the received SMS as read (like the reference); another person's device is not found.
     let page = sf_json(&app, &bob, "android/sms", &format!("device={id}")).await;
     assert_eq!(page["sms"].as_array().unwrap().len(), 3);
     assert_eq!(page["sms"][0]["body"], "sms 2", "les plus recents d'abord");
@@ -4641,7 +4641,7 @@ async fn android_devices_are_per_account_with_a_token_shown_once(pool: PgPool) {
         sf_json(&app, &eve, "android/calls", &format!("device={id}")).await,
         serde_json::Value::Null
     );
-    // Sans parametre : le premier appareil du compte, ou aucun.
+    // Without a parameter: the account's first device, or none.
     assert_eq!(
         sf_json(&app, &bob, "android/calls", "").await["device"]["id"],
         id
@@ -4651,7 +4651,7 @@ async fn android_devices_are_per_account_with_a_token_shown_once(pool: PgPool) {
         serde_json::Value::Null
     );
 
-    // Envoi : refuse hors ligne, invalide, ou sur l'appareil d'autrui ; rien n'est enregistre.
+    // Sending: refused when offline, invalid, or on another person's device; nothing is recorded.
     let send = |who: String, to: &str, body: &str| {
         let form = format!("device={id}&to={to}&body={body}");
         let app = app.clone();
@@ -4684,7 +4684,7 @@ async fn android_devices_are_per_account_with_a_token_shown_once(pool: PgPool) {
         3
     );
 
-    // Jeton : regenere par le proprietaire (l'ancien cesse de marcher) ou l'administrateur, pas par un tiers.
+    // Token: regenerated by the owner (the old one stops working) or the administrator, not by a third party.
     assert_eq!(
         sf_json(&app, &eve, "android/devices/token", &format!("id={id}")).await,
         serde_json::Value::Null
@@ -4711,7 +4711,7 @@ async fn android_devices_are_per_account_with_a_token_shown_once(pool: PgPool) {
             .is_some()
     );
 
-    // Suppression : refusee a un tiers, permise au proprietaire (les SMS et appels partent avec).
+    // Deletion: refused to a third party, allowed to the owner (the SMS and calls go with it).
     assert_eq!(
         sf_json(&app, &eve, "android/devices/delete", &format!("id={id}")).await,
         "NotFound"
@@ -4771,7 +4771,7 @@ async fn the_android_pages_are_rendered_for_signed_in_accounts_only(pool: PgPool
     );
 }
 
-// ------------------------------------------------------------------ energie (R4 lot 7)
+// ------------------------------------------------------------------ energy (R4 lot 7)
 
 #[sqlx::test(migrator = "dominet_store::MIGRATOR")]
 async fn the_energy_api_returns_the_last_days_in_the_reference_format_and_the_page_draws_them(
@@ -4781,7 +4781,7 @@ async fn the_energy_api_returns_the_last_days_in_the_reference_format_and_the_pa
     use dominet_domain::repo::EnergyRepo;
     let (app, state, _guard) = app(pool).await;
     let user = session_for(&app, &state, "bob", Role::User).await;
-    // 40 jours : l'API rend les DERNIERS (reference rendait les premiers et se figeait au bout de trente jours).
+    // 40 days: the API returns the LAST ones (the reference returned the first ones and froze after thirty days).
     let first = chrono::NaiveDate::from_ymd_opt(2026, 1, 1).unwrap();
     for i in 0..40 {
         state
@@ -4826,7 +4826,7 @@ async fn the_energy_api_returns_the_last_days_in_the_reference_format_and_the_pa
         40
     );
 
-    // Fonction serveur et page : graphique SVG, tableau, plage choisie.
+    // Server function and page: SVG chart, table, chosen range.
     let page = sf_json(&app, &user, "energy/page", "days=14").await;
     assert_eq!(page["days"], 14);
     assert_eq!(page["rows"].as_array().unwrap().len(), 14);
@@ -4948,7 +4948,7 @@ async fn cameras_are_managed_by_administrators_and_secrets_never_come_back(pool:
     assert!(list.text.contains("Entree") && list.text.contains("\"has_rtsp_pass\":true"));
     assert!(!list.text.contains("mot-de-passe-secret") && !list.text.contains("v1:"));
 
-    // Champs invalides renvoyes un par un ; rien n'est enregistre.
+    // Invalid fields returned one by one; nothing is saved.
     let bad = camera_input(None, "", "").replace("\"port\":554", "\"port\":0");
     let refused = camera_fn(&app, Some(&admin), "save", &bad).await;
     assert!(
@@ -4998,7 +4998,7 @@ async fn the_cameras_admin_page_and_the_surveillance_page_follow_the_rights(pool
         "le nom est echappe"
     );
 
-    // Tout compte connecte voit les cameras actives, sans rien de leur configuration.
+    // Any logged-in account sees the active cameras, with nothing of their configuration.
     let view = get(&app, "/surveillance", &[("cookie", &user)]).await;
     assert_eq!(view.status, StatusCode::OK);
     assert!(view.text.contains("surveillance-list") && view.text.contains("Entr\u{e9}e &lt;b&gt;"));
@@ -5072,7 +5072,7 @@ async fn onvif_functions_are_for_administrators_and_add_by_ip_works(pool: PgPool
             .text
             .contains("Invalid")
     );
-    // La demande de decouverte ne touche que la base (NOTIFY) : elle aboutit meme sans role `discovery`.
+    // The discovery request only touches the database (NOTIFY): it succeeds even without the `discovery` role.
     assert_eq!(
         camera_fn(&app, Some(&admin), "discovery", "").await.status,
         StatusCode::OK
@@ -5160,10 +5160,10 @@ async fn the_live_page_shows_a_player_for_any_account_and_nothing_for_an_unknown
         page.text.contains("Entr\u{e9}e &lt;b&gt;"),
         "le nom est echappe"
     );
-    // Rien de la configuration du flux n'est envoye.
+    // Nothing of the stream configuration is sent.
     assert!(!page.text.contains("192.168.1.29") && !page.text.contains("rtsp://"));
 
-    // La politique de contenu laisse la page appeler MediaMTX (reglage par defaut : http://localhost:8889).
+    // The content policy lets the page call MediaMTX (default setting: http://localhost:8889).
     let csp = page.headers[header::CONTENT_SECURITY_POLICY]
         .to_str()
         .unwrap()
@@ -5191,7 +5191,7 @@ async fn the_live_page_shows_a_player_for_any_account_and_nothing_for_an_unknown
 
 #[sqlx::test(migrator = "dominet_store::MIGRATOR")]
 async fn the_live_function_builds_the_whep_address_from_the_settings_and_the_host(pool: PgPool) {
-    // L'hote des requetes de ce harnais est `dominet.test`.
+    // The host of this harness's requests is `dominet.test`.
     let (app, state, _guard) = app_with_vars(
         pool,
         None,
@@ -5212,7 +5212,7 @@ async fn the_live_function_builds_the_whep_address_from_the_settings_and_the_hos
         .await
     };
 
-    // Domaine configure = un hote propre de l'instance : le navigateur appelle MediaMTX par l'hote par lequel il est arrive.
+    // Configured domain = a host of the instance itself: the browser calls MediaMTX through the host it arrived by.
     state
         .settings
         .set("MEDIAMTX_WEBRTC_DOMAIN", "dominet.local:8889")
@@ -5225,7 +5225,7 @@ async fn the_live_function_builds_the_whep_address_from_the_settings_and_the_hos
         "{}",
         own.text
     );
-    // Domaine externe : garde tel quel.
+    // External domain: kept as is.
     state
         .settings
         .set("MEDIAMTX_WEBRTC_DOMAIN", "cdn.exemple.com:8889")
@@ -5239,9 +5239,9 @@ async fn the_live_function_builds_the_whep_address_from_the_settings_and_the_hos
         "{}",
         external.text
     );
-    // Aucune adresse du flux source, aucun secret.
+    // No source stream address, no secret.
     assert!(!external.text.contains("192.168.1.29") && !external.text.contains("rtsp"));
-    // Sans session : refuse.
+    // Without a session: refused.
     let anon = send(&app, Method::POST, "/sf/cameras/live", &[FORM], Some(&body)).await;
     assert_eq!(anon.status, StatusCode::UNAUTHORIZED);
 }
@@ -5267,7 +5267,7 @@ async fn a_camera_widget_shows_the_live_player_and_an_unknown_camera_says_so(poo
     }
     let page = get(&app, "/", &[("cookie", &cookie)]).await;
     assert_eq!(page.status, StatusCode::OK);
-    // Une seule camera est active : un seul lecteur, avec son flux WHEP ; les deux autres disent pourquoi il n'y en a pas.
+    // Only one camera is active: a single player, with its WHEP stream; the other two say why there is none.
     assert_eq!(
         page.text.matches("data-live-state").count(),
         1,
@@ -5370,7 +5370,7 @@ async fn the_camera_controls_are_shown_to_administrators_only_and_only_for_what_
     let user = session_for(&app, &state, "bob", Role::User).await;
     let admin = session_for(&app, &state, "alice", Role::Admin).await;
 
-    // Une camera qui pivote et a une methode jour / nuit ; une autre qui ne fait ni l'un ni l'autre.
+    // A camera that pans and has a day / night method; another that does neither.
     let rich = live_camera(&state, "Salon", true).await;
     state
         .store
@@ -5473,7 +5473,7 @@ async fn the_snapshot_route_serves_the_latest_image_to_any_account_and_indexes_o
     let cam = live_camera(&state, "Garage", true).await;
     let path = format!("/surveillance/camera/{}/snapshot/", cam.uuid);
 
-    // Sans session : refus. Camera inconnue : 404. Pas d'image : 204.
+    // Without a session: refused. Unknown camera: 404. No image: 204.
     assert_eq!(get(&app, &path, &[]).await.status, StatusCode::UNAUTHORIZED);
     assert_eq!(
         get(
@@ -5500,7 +5500,7 @@ async fn the_snapshot_route_serves_the_latest_image_to_any_account_and_indexes_o
         StatusCode::NO_CONTENT
     );
 
-    // Une image recente : servie, jamais mise en cache, avec son age.
+    // A recent image: served, never cached, with its age.
     write_latest(&dir, cam.uuid, &TEST_JPEG);
     let r = get(&app, &path, &[("cookie", &user)]).await;
     assert_eq!(r.status, StatusCode::OK);
@@ -5508,7 +5508,7 @@ async fn the_snapshot_route_serves_the_latest_image_to_any_account_and_indexes_o
     assert_eq!(r.headers[header::CACHE_CONTROL], "no-store");
     assert!(r.headers.contains_key("x-frame-age"));
 
-    // `?save=1` : administrateurs seulement ; la galerie recoit l'image.
+    // `?save=1`: administrators only; the gallery receives the image.
     assert_eq!(
         get(&app, &format!("{path}?save=1"), &[("cookie", &user)])
             .await
@@ -5537,7 +5537,7 @@ async fn the_snapshot_route_serves_the_latest_image_to_any_account_and_indexes_o
     let listed = state.snapshots.list(None, None, None, 10).await.unwrap();
     assert_eq!(listed.len(), 1);
 
-    // Le fichier du snapshot indexe.
+    // The indexed snapshot's file.
     let file = get(
         &app,
         &format!("/surveillance/snapshots/{}/file/", listed[0].id.0),
@@ -5604,7 +5604,7 @@ async fn snapshot_functions_follow_the_rights_and_filter_the_gallery(pool: PgPoo
         }
     };
 
-    // Capture et suppression : administrateurs ; liste : tout compte connecte.
+    // Capture and deletion: administrators; list: any logged-in account.
     for who in [None, Some(user.as_str())] {
         assert_eq!(
             ask(who, "capture", &body_a).await.status,
@@ -5626,7 +5626,7 @@ async fn snapshot_functions_follow_the_rights_and_filter_the_gallery(pool: PgPoo
         "{}",
         saved.text
     );
-    // Camera sans image : le dit ; inconnue : le dit aussi.
+    // Camera without an image: says so; unknown: says so too.
     assert!(
         ask(Some(&admin), "capture", &format!("uuid={}", b.uuid))
             .await
@@ -5642,7 +5642,7 @@ async fn snapshot_functions_follow_the_rights_and_filter_the_gallery(pool: PgPoo
 
     let all = ask(Some(&user), "list", "camera=&day=").await;
     assert!(all.text.contains("Garage"), "{}", all.text);
-    // Filtres : une autre camera, une camera inconnue, un autre jour, aujourd'hui.
+    // Filters: another camera, an unknown camera, another day, today.
     assert!(
         !ask(Some(&user), "list", &format!("camera={}&day=", b.uuid))
             .await
@@ -5739,7 +5739,7 @@ async fn the_gallery_lists_snapshots_for_everyone_and_offers_deletion_to_adminis
     let as_admin = get(&app, "/surveillance/snapshots", &[("cookie", &admin)]).await;
     assert!(as_admin.text.contains("snapshot-delete"));
 
-    // La page live propose la capture aux administrateurs seulement.
+    // The live page offers the capture to administrators only.
     let live = format!("/surveillance/live/{}", cam.uuid);
     assert!(
         get(&app, &live, &[("cookie", &admin)])
@@ -5763,7 +5763,7 @@ async fn the_application_logs_are_listed_to_administrators_only(pool: PgPool) {
     let (app, state, _guard) = app(pool).await;
     let user = session_for(&app, &state, "bob", Role::User).await;
     let admin = session_for(&app, &state, "alice", Role::Admin).await;
-    // Les lignes viennent du tampon du processus (la couche `tracing` n'est pas installee dans les tests : on y pose les notres).
+    // The lines come from the process's buffer (the `tracing` layer is not installed in the tests: we put ours there).
     let marker = format!("essai-journaux-{}", std::process::id());
     for (rank, target, message) in [
         (3, "dominet_test::alpha", format!("information {marker}")),
@@ -5799,7 +5799,7 @@ async fn the_application_logs_are_listed_to_administrators_only(pool: PgPool) {
     assert_eq!(all.status, StatusCode::OK, "{}", all.text);
     let v: serde_json::Value = serde_json::from_str(&all.text).unwrap();
     assert_eq!(v["matched"], 3);
-    // Les plus recentes d'abord : l'erreur a ete posee en dernier.
+    // Most recent first: the error was set last.
     assert!(
         v["lines"][0]["message"]
             .as_str()
@@ -5859,7 +5859,7 @@ async fn mcp_tokens_are_managed_by_administrators_and_their_value_is_shown_once(
     let audit = || serde_json::json!({"filter": {"kind": "", "limit": 50}}).to_string();
     let token_count = || async { state.store.mcp_tokens().list().await.unwrap().len() };
 
-    // Visiteur et compte simple : refus sur les quatre points, rien n'est cree.
+    // Visitor and simple account: refused on the four points, nothing is created.
     for cookie in [None, Some(user.clone())] {
         for (name, body) in [
             ("page", None),
@@ -5873,7 +5873,7 @@ async fn mcp_tokens_are_managed_by_administrators_and_their_value_is_shown_once(
     }
     assert_eq!(token_count().await, 0);
 
-    // Un formulaire invalide est refuse champ par champ, sans rien creer.
+    // An invalid form is refused field by field, without creating anything.
     let bad = call(
         Some(admin.clone()),
         "tokens/create",
@@ -5891,7 +5891,7 @@ async fn mcp_tokens_are_managed_by_administrators_and_their_value_is_shown_once(
     assert_eq!(fields, ["name", "scopes", "lifetime_days"]);
     assert_eq!(token_count().await, 0);
 
-    // Creation : la valeur est dans cette reponse, la commande aussi, et elle marche.
+    // Creation: the value is in this response, the command too, and it works.
     let ok = call(
         Some(admin.clone()),
         "tokens/create",
@@ -5920,7 +5920,7 @@ async fn mcp_tokens_are_managed_by_administrators_and_their_value_is_shown_once(
         .expect("le jeton cree authentifie");
     assert_eq!(token.name, "Claude Code");
 
-    // Ni la liste, ni le journal d'audit ne revelent la valeur ; la liste ne montre que son debut.
+    // Neither the list nor the audit log reveals the value; the list only shows its beginning.
     let page = call(Some(admin.clone()), "page", None).await;
     assert_eq!(page.status, StatusCode::OK, "{}", page.text);
     assert!(
@@ -5938,7 +5938,7 @@ async fn mcp_tokens_are_managed_by_administrators_and_their_value_is_shown_once(
     assert_eq!(lines[0]["actor"], "alice");
     assert_eq!(lines[0]["actor_kind"], "web");
 
-    // Revocation : refusee des l'appel suivant, ecrite au journal, sans effet la seconde fois.
+    // Revocation: refused from the next call, written to the log, without effect the second time.
     let id = saved["token"]["id"].as_i64().unwrap();
     for expected in ["true", "false"] {
         let r = call(
@@ -5970,8 +5970,8 @@ async fn mcp_tokens_are_managed_by_administrators_and_their_value_is_shown_once(
 #[sqlx::test(migrator = "dominet_store::MIGRATOR")]
 async fn the_custom_style_sheet_is_served_empty_or_from_the_configured_file(pool: PgPool) {
     {
-        // Sans CUSTOM_CSS : feuille vide, jamais une erreur (la page de connexion la charge aussi, sans session).
-        // Bloc : `app_with_vars` prend un verrou global, libere ici avant le second appel.
+        // Without CUSTOM_CSS: empty stylesheet, never an error (the login page loads it too, without a session).
+        // Block: `app_with_vars` takes a global lock, released here before the second call.
         let (app, _state, _guard) = app_with_vars(pool.clone(), None, &[]).await;
         let none = get(&app, "/custom.css", &[]).await;
         assert_eq!(none.status, StatusCode::OK);
@@ -5981,7 +5981,7 @@ async fn the_custom_style_sheet_is_served_empty_or_from_the_configured_file(pool
         );
         assert_eq!(none.headers[header::CACHE_CONTROL], "no-cache");
         assert_eq!(none.text, "");
-        // L'interface la charge apres la feuille principale.
+        // The interface loads it after the main stylesheet.
         let login = get(&app, "/login", &[]).await;
         let main = login
             .text
@@ -5997,7 +5997,7 @@ async fn the_custom_style_sheet_is_served_empty_or_from_the_configured_file(pool
         );
     }
 
-    // Avec un fichier : son contenu, relu a chaque requete.
+    // With a file: its content, re-read on every request.
     let file = std::env::temp_dir().join(format!("dominet-custom-test-{}.css", std::process::id()));
     std::fs::write(&file, ":root { --accent: #ff9f1a; }").unwrap();
     let (app, _state, _guard) =
@@ -6008,7 +6008,7 @@ async fn the_custom_style_sheet_is_served_empty_or_from_the_configured_file(pool
     std::fs::write(&file, ":root { --accent: #123456; }").unwrap();
     let second = get(&app, "/custom.css", &[]).await;
     assert!(second.text.contains("#123456"), "{}", second.text);
-    // Fichier disparu : feuille vide.
+    // Vanished file: empty stylesheet.
     std::fs::remove_file(&file).unwrap();
     let gone = get(&app, "/custom.css", &[]).await;
     assert_eq!(gone.status, StatusCode::OK);
@@ -6024,7 +6024,7 @@ async fn the_documentation_is_served_only_to_logged_in_users(pool: PgPool) {
     let (app, state, _guard) =
         app_with_vars(pool, None, &[("DOCS_ROOT", root.to_str().unwrap())]).await;
 
-    // Visiteur anonyme : renvoye vers la connexion, sans une ligne de la documentation.
+    // Anonymous visitor: sent back to the login, without a line of the documentation.
     for path in ["/docs/", "/docs", "/docs/en/page/"] {
         let r = get(&app, path, &[]).await;
         assert_eq!(r.status, StatusCode::SEE_OTHER, "{path}: {}", r.text);
@@ -6065,7 +6065,7 @@ async fn the_documentation_is_served_only_to_logged_in_users(pool: PgPool) {
         get(&app, "/docs/absent/", &h).await.status,
         StatusCode::NOT_FOUND
     );
-    // Pas d'evasion hors du dossier.
+    // No escape out of the folder.
     let r = get(&app, "/docs/../Cargo.toml", &h).await;
     assert_ne!(r.status, StatusCode::OK);
     assert!(!r.text.contains("[workspace]"));

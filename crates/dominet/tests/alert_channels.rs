@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Alertes et notifications d'automation servies sur les vrais canaux (R5 lot 6) : le **vrai moteur d'alertes** declenche une alerte,
-//! le notifieur du serveur envoie un e-mail (faux SMTP), un SMS (faux Free Mobile) et pousse l'alerte a un telephone connecte
-//! (client WebSocket qui parle comme l'application). Aucun envoi reel.
+//! Alerts and automation notifications served on the real channels (R5 lot 6): the **real alert engine** raises an alert,
+//! the server's notifier sends an e-mail (fake SMTP), an SMS (fake Free Mobile) and pushes the alert to a connected phone
+//! (WebSocket client that speaks like the application). Nothing is really sent.
 
 use std::net::SocketAddr;
 use std::sync::Arc;
@@ -94,7 +94,7 @@ async fn rig(pool: PgPool) -> Rig {
 }
 
 impl Rig {
-    /// Une regle « temperature > 35 » aux canaux demandes, et le moteur reel branche sur le notifieur du serveur.
+    /// A rule "temperature > 35" on the requested channels, and the real engine plugged into the server's notifier.
     async fn engine(
         &self,
         email: bool,
@@ -202,7 +202,7 @@ async fn a_fired_alert_is_served_on_the_three_channels_of_its_rule(pool: PgPool)
     r.heat(&engine).await;
     assert!(r.notified().await, "notified passe a vrai apres l'essai");
 
-    // E-mail : au destinataire des alertes, sujet de la reference, texte long.
+    // E-mail: to the alerts recipient, the reference's subject, long text.
     let mail = &r.smtp.mails()[0];
     assert_eq!(
         (mail.from.as_str(), mail.to[0].as_str()),
@@ -219,7 +219,7 @@ async fn a_fired_alert_is_served_on_the_three_channels_of_its_rule(pool: PgPool)
     );
     assert!(mail.body().contains("Value: 36.2"));
 
-    // SMS : texte court, identifiants des reglages.
+    // SMS: short text, identifiers from the settings.
     let sms = &r.sms.requests()[0];
     assert_eq!(
         (sms.user.as_str(), sms.pass.as_str()),
@@ -227,14 +227,14 @@ async fn a_fired_alert_is_served_on_the_three_channels_of_its_rule(pool: PgPool)
     );
     assert_eq!(sms.msg, "[DomiNet] Canicule — meteo_locale : 36.2");
 
-    // Android : l'application recoit `alert_notification` (qu'elle ignore aujourd'hui).
+    // Android: the application receives `alert_notification` (which it ignores today).
     let push = next_json(&mut phone).await;
     assert_eq!(push["type"], "alert_notification");
     assert_eq!(push["rule_name"], "Canicule");
     assert_eq!(push["severity"], "critical");
     assert_eq!(push["message"], "[DomiNet] Canicule — meteo_locale : 36.2");
 
-    // Bandeau de l'interface, comme en R4.
+    // Interface banner, as in R4.
     let WsServerMsg::Notification { level, text } = &*banner.recv().await.unwrap() else {
         panic!("bandeau attendu")
     };
@@ -308,7 +308,7 @@ async fn an_automation_notification_sends_an_email_and_an_sms_only_when_asked(po
     assert_eq!(r.smtp.mails().len(), 2);
     assert_eq!(r.sms.requests()[0].msg, "Fuite d'eau");
 
-    // Un e-mail refuse est rapporte, et le SMS part quand meme.
+    // A refused e-mail is reported, and the SMS goes out anyway.
     r.smtp.set_behavior(SmtpBehavior::RejectRecipients);
     let failed = r.state.channels.notify("Encore", true).await;
     assert_eq!(failed.len(), 1);

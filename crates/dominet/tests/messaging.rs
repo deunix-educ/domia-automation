@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Messagerie asynchrone (R5 lot 5) : e-mails vers un faux SMTP, SMS confies a un faux telephone (client WebSocket qui parle comme
-//! l'application Kotlin), statuts par destinataire, evenements `message:<id>` et droits d'abonnement. Aucun envoi reel.
+//! Asynchronous messaging (R5 lot 5): e-mails to a fake SMTP, SMS handed to a fake phone (WebSocket client that speaks like
+//! the Kotlin application), per-recipient statuses, `message:<id>` events and subscription rights. Nothing is really sent.
 
 use std::net::SocketAddr;
 use std::sync::Arc;
@@ -111,7 +111,7 @@ impl Server {
             .unwrap()
     }
 
-    /// Un telephone connecte, comme l'application Kotlin.
+    /// A connected phone, like the Kotlin application.
     async fn phone(&self, owner: UserId) -> Ws {
         let (_, token) = self
             .state
@@ -260,14 +260,14 @@ async fn emails_and_sms_are_sent_and_statuses_follow_the_phone_ack(pool: PgPool)
     assert_eq!(status(&initial, alice.id).0, Pending);
     assert_eq!(status(&initial, carl.id), (Na, Na, String::new()));
 
-    // Le telephone recoit l'ordre d'envoi, avec le numero du destinataire et un identifiant a lui.
+    // The phone receives the send order, with the recipient's number and an identifier of its own.
     let order = next_json(&mut phone).await;
     assert_eq!(order["type"], "send_sms");
     assert_eq!(order["to"], "+33611111111");
     assert_eq!(order["body"], "Demain de 9h a 12h.");
     let id = order["message_id"].as_i64().unwrap();
 
-    // Les e-mails sont partis avant l'accuse ; le message n'est pas termine tant que le SMS attend.
+    // The e-mails went out before the acknowledgement; the message is not finished as long as the SMS is waiting.
     s.until("deux e-mails", async || s.smtp.mails().len() == 2)
         .await;
     let mails = s.smtp.mails();
@@ -311,7 +311,7 @@ async fn failures_are_recorded_per_recipient_and_the_message_still_finishes(pool
         .await;
     s.smtp.set_behavior(SmtpBehavior::RejectRecipients);
 
-    // Serveur SMTP qui refuse + aucun telephone connecte : tout echoue, avec la raison.
+    // SMTP server that refuses + no phone connected: everything fails, with the reason.
     let (m, _) = s.compose(&admin, Channel::Both, &[&alice]).await;
     s.until("message termine", async || {
         s.message(m.id).await.status == MessageStatus::Sent
@@ -331,7 +331,7 @@ async fn an_sms_without_ack_fails_after_the_delay(pool: PgPool) {
     let mut phone = s.phone(admin.id).await;
     let (m, _) = s.compose(&admin, Channel::Sms, &[&alice]).await;
     assert_eq!(next_json(&mut phone).await["type"], "send_sms");
-    // Le telephone ne repond jamais : une minute plus tard le balayage declare l'echec.
+    // The phone never answers: a minute later the sweep declares the failure.
     s.until("ordre en file", async || {
         s.deliveries(m.id).await[0].sms == DeliveryStatus::Pending
     })
@@ -384,7 +384,7 @@ async fn browsers_follow_the_progress_of_their_own_messages_only(pool: PgPool) {
             }
         }
     }
-    // Un message inconnu est refuse comme celui d'un autre.
+    // An unknown message is refused like another person's.
     let mut ws = s.browser("alice").await;
     next_msg(&mut ws).await;
     say(
@@ -406,7 +406,7 @@ async fn progress_events_reach_a_subscribed_browser_until_complete(pool: PgPool)
     let admin = s.user("root", Role::Admin, "root@example.com", "").await;
     let alice = s.user("alice", Role::User, "alice@example.com", "").await;
     let mut hub = {
-        // Base neuve : le premier message aura l'identifiant 1 (on s'abonne avant l'envoi pour ne rien manquer).
+        // Fresh database: the first message will have the identifier 1 (we subscribe before sending so as not to miss anything).
         let next = s
             .state
             .store
@@ -443,7 +443,7 @@ async fn a_message_interrupted_by_a_restart_is_closed_with_its_pending_sends_fai
     let s = start(pool).await;
     let admin = s.user("root", Role::Admin, "root@example.com", "").await;
     let alice = s.user("alice", Role::User, "alice@example.com", "").await;
-    // Un message `sending` dont personne ne s'occupe (le serveur s'est arrete avant l'envoi).
+    // A `sending` message that nobody is handling (the server stopped before sending).
     let (m, _) = s
         .state
         .store

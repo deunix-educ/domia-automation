@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Tests du WebSocket `/ws/notifications/` : un vrai serveur TCP et un vrai client WebSocket.
+//! Tests of the `/ws/notifications/` WebSocket: a real TCP server and a real WebSocket client.
 
 use std::net::SocketAddr;
 use std::sync::Arc;
@@ -28,7 +28,7 @@ use tower::ServiceExt;
 const PASSWORD: &str = "correct horse battery";
 type Client = WebSocketStream<MaybeTlsStream<TcpStream>>;
 
-/// Serveur de test ecoutant sur un port libre ; `heartbeat` en secondes.
+/// Test server listening on a free port; `heartbeat` in seconds.
 struct Server {
     app: Router,
     state: AppState,
@@ -68,7 +68,7 @@ impl Server {
             .unwrap();
     }
 
-    /// Connexion HTTP (sans reseau) ; renvoie le cookie de session.
+    /// HTTP login (without network); returns the session cookie.
     async fn login(&self, name: &str) -> String {
         let body = format!(r#"{{"username":"{name}","password":"{PASSWORD}"}}"#);
         let mut req = Request::builder()
@@ -95,7 +95,7 @@ impl Server {
             .to_string()
     }
 
-    /// Poignee de main WebSocket avec les en-tetes donnes.
+    /// WebSocket handshake with the given headers.
     async fn connect(
         &self,
         cookie: Option<&str>,
@@ -120,7 +120,7 @@ impl Server {
     }
 }
 
-/// Prochain message JSON du serveur (ignore les trames de controle), avec delai maximal.
+/// Next JSON message from the server (ignores the control frames), with a maximum delay.
 async fn next(ws: &mut Client) -> Option<WsServerMsg> {
     loop {
         match tokio::time::timeout(Duration::from_secs(10), ws.next())
@@ -134,7 +134,7 @@ async fn next(ws: &mut Client) -> Option<WsServerMsg> {
     }
 }
 
-/// Code de fermeture annonce par le serveur, `None` si la connexion s'est terminee sans trame de fermeture.
+/// Closing code announced by the server, `None` if the connection ended without a closing frame.
 async fn close_code(ws: &mut Client) -> Option<u16> {
     loop {
         match tokio::time::timeout(Duration::from_secs(10), ws.next())
@@ -206,7 +206,7 @@ async fn a_foreign_origin_cannot_hijack_the_connection(pool: PgPool) {
         0,
         "aucune connexion ouverte"
     );
-    // Sans en-tete Origin (client hors navigateur), la session suffit.
+    // Without an Origin header (non-browser client), the session is enough.
     assert!(s.connect(Some(&cookie), None).await.is_ok());
 }
 
@@ -229,7 +229,7 @@ async fn connections_per_account_are_limited(pool: PgPool) {
         .unwrap_err();
     assert_eq!(http_status(&err), 429);
     drop(open.pop());
-    // Le compteur redescend quand le serveur constate la fermeture.
+    // The counter goes down when the server notices the closing.
     for _ in 0..50 {
         if s.state.hub.connection_count() < dominet_server::hub::MAX_CONNECTIONS_PER_USER {
             break;
@@ -261,7 +261,7 @@ async fn a_client_that_answers_pings_stays_connected_and_a_silent_one_is_dropped
         Some(WsServerMsg::Hello { .. })
     ));
 
-    // 4 battements : le bon client repond a chaque ping, l'autre jamais.
+    // 4 heartbeats: the right client answers every ping, the other never.
     let mut pings = 0;
     while pings < 4 {
         match next(&mut good).await {
@@ -297,7 +297,7 @@ async fn losing_the_session_cuts_the_realtime_connection(pool: PgPool) {
         .await
         .unwrap();
 
-    // Bob se deconnecte (session supprimee) ; la connexion de Carol n'est pas touchee.
+    // Bob logs out (session deleted); Carol's connection is not touched.
     let mut req = Request::builder()
         .method("POST")
         .uri("/api/auth/logout")
@@ -379,7 +379,7 @@ async fn deactivating_or_resetting_the_account_cuts_the_connection(pool: PgPool)
     );
 }
 
-// ---------------------------------------------------------------- sujets, abonnements, dernier etat retenu
+// ---------------------------------------------------------------- subjects, subscriptions, last state kept
 
 fn device(id: i64, v: i64) -> WsServerMsg {
     WsServerMsg::DeviceState(DeviceStateDto {
@@ -406,7 +406,7 @@ async fn subscribe(ws: &mut Client, topic: &str) {
     .await;
 }
 
-// Renvoient un `Option` pour se comparer directement au resultat de `next`.
+// Return an `Option` so as to compare directly with the result of `next`.
 #[allow(clippy::unnecessary_wraps)]
 fn subscribed(topic: &str) -> Option<WsServerMsg> {
     Some(WsServerMsg::Subscribed {
@@ -422,7 +422,7 @@ fn refused(topic: &str, reason: RefusalReason) -> Option<WsServerMsg> {
     })
 }
 
-/// Connexion authentifiee, `Hello` deja lu.
+/// Authenticated connection, `Hello` already read.
 async fn open(s: &Server, user: &str) -> Client {
     let cookie = s.login(user).await;
     let mut ws = s
@@ -436,7 +436,7 @@ async fn open(s: &Server, user: &str) -> Client {
     ws
 }
 
-/// Un message temoin sur les notifications : s'il arrive en premier, rien d'autre n'etait en attente avant lui.
+/// A witness message on the notifications: if it arrives first, nothing else was waiting before it.
 async fn assert_nothing_pending(s: &Server, ws: &mut Client) {
     let marker = WsServerMsg::Notification {
         level: NotificationLevel::Info,
@@ -455,7 +455,7 @@ async fn subscribing_gives_an_ack_then_the_last_retained_state_then_live_updates
     let s = start(pool, 25).await;
     s.user("bob", Role::User).await;
     let t = Topic::Device(7);
-    s.state.hub.publish_retained(&t, device(7, 1)); // publie AVANT l'abonnement
+    s.state.hub.publish_retained(&t, device(7, 1)); // published BEFORE the subscription
     let mut ws = open(&s, "bob").await;
 
     subscribe(&mut ws, "device:7").await;
@@ -468,7 +468,7 @@ async fn subscribing_gives_an_ack_then_the_last_retained_state_then_live_updates
     assert_eq!(s.state.hub.publish_retained(&t, device(7, 2)), 1);
     assert_eq!(next(&mut ws).await, Some(device(7, 2)));
 
-    // Un autre appareil, non demande, n'arrive pas.
+    // Another device, not requested, does not arrive.
     s.state
         .hub
         .publish_retained(&Topic::Device(8), device(8, 1));
@@ -520,7 +520,7 @@ async fn unsubscribing_stops_delivery_and_resubscribing_is_idempotent(pool: PgPo
     let mut ws = open(&s, "bob").await;
     subscribe(&mut ws, "device:7").await;
     assert_eq!(next(&mut ws).await, subscribed("device:7"));
-    // Deux fois le meme abonnement : un seul abonnement, donc une seule copie de chaque message.
+    // The same subscription twice: a single subscription, hence a single copy of each message.
     subscribe(&mut ws, "device:7").await;
     assert_eq!(next(&mut ws).await, subscribed("device:7"));
     assert_eq!(
@@ -538,12 +538,12 @@ async fn unsubscribing_stops_delivery_and_resubscribing_is_idempotent(pool: PgPo
         },
     )
     .await;
-    // Barriere : une demande suivante, traitee apres la precedente, prouve que le desabonnement est pris en compte.
+    // Barrier: a following request, handled after the previous one, proves that the unsubscription has been taken into account.
     subscribe(&mut ws, "system").await;
     assert_eq!(next(&mut ws).await, subscribed("system"));
     s.state.hub.publish_retained(&t, device(7, 2));
     assert_nothing_pending(&s, &mut ws).await;
-    // Se reabonner redonne le dernier etat.
+    // Subscribing again gives back the last state.
     subscribe(&mut ws, "device:7").await;
     assert_eq!(next(&mut ws).await, subscribed("device:7"));
     assert_eq!(next(&mut ws).await, Some(device(7, 2)));
@@ -568,7 +568,7 @@ async fn notifications_cannot_be_unsubscribed_and_junk_is_ignored(pool: PgPool) 
     ws.send(Message::Binary(vec![1, 2, 3].into()))
         .await
         .unwrap();
-    assert_nothing_pending(&s, &mut ws).await; // les notifications arrivent toujours, la connexion vit
+    assert_nothing_pending(&s, &mut ws).await; // the notifications still arrive, the connection lives
 }
 
 #[sqlx::test(migrator = "dominet_store::MIGRATOR")]
@@ -591,7 +591,7 @@ async fn invalid_forbidden_and_excessive_subscriptions_are_refused(pool: PgPool)
         refused(cam, RefusalReason::Forbidden),
         "camera inconnue : refus, comme une camera inactive"
     );
-    // Texte tres long : tronque dans la reponse.
+    // Very long text: truncated in the answer.
     let long = "x".repeat(500);
     subscribe(&mut ws, &long).await;
     let Some(WsServerMsg::Refused { topic, .. }) = next(&mut ws).await else {
@@ -599,7 +599,7 @@ async fn invalid_forbidden_and_excessive_subscriptions_are_refused(pool: PgPool)
     };
     assert!(topic.len() <= 80);
 
-    // 128 abonnements au plus, notifications comprises : 127 appareils passent, le suivant est refuse.
+    // 128 subscriptions at most, notifications included: 127 devices go through, the next one is refused.
     for id in 1..=127 {
         subscribe(&mut ws, &format!("device:{id}")).await;
         assert_eq!(
@@ -613,7 +613,7 @@ async fn invalid_forbidden_and_excessive_subscriptions_are_refused(pool: PgPool)
         next(&mut ws).await,
         refused("device:128", RefusalReason::Limit)
     );
-    // Se desabonner libere de la place.
+    // Unsubscribing frees up room.
     tell(
         &mut ws,
         &WsClientMsg::Unsubscribe {
@@ -653,7 +653,7 @@ async fn closing_a_connection_releases_its_hub_subscriptions(pool: PgPool) {
     assert_eq!(next(&mut ws).await, subscribed("device:7"));
     assert_eq!(s.state.hub.publish(&Topic::Device(7), device(7, 1)), 1);
     drop(ws);
-    // Le serveur s'en apercoit, ses taches d'abonnement s'arretent : plus aucun abonne, ni sur l'appareil ni aux notifications.
+    // The server notices, its subscription tasks stop: no subscriber left, neither on the device nor on the notifications.
     for _ in 0..100 {
         if s.state.hub.publish(&Topic::Device(7), device(7, 2)) == 0
             && s.state

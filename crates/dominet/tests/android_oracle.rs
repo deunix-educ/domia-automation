@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Le relais Rust rejoue les sessions de l'application executees par le **vrai** consommateur reference
-//! (`tests/fixtures/android/oracle.json`) et doit laisser la meme base, repondre les memes trames a
-//! l'application et diffuser les memes evenements aux navigateurs.
+//! The Rust relay replays the application sessions run by the **real** reference consumer
+//! (`tests/fixtures/android/oracle.json`) and must leave the same database, answer the same frames to
+//! the application and broadcast the same events to the browsers.
 //!
-//! Ecarts voulus, absents de ces sessions : appel ouvert le plus **recent** ferme (Reference : le plus ancien), numero vide ignore,
-//! JSON non objet ignore (le consommateur reference plante), accuses relies a la file d'envoi (identifiants propres), jeton hache.
+//! Intended differences, absent from these sessions: the most **recent** open call is closed (reference: the oldest), empty number ignored,
+//! non-object JSON ignored (the reference consumer crashes), acknowledgements tied to the sending queue (own identifiers), hashed token.
 
 use std::net::SocketAddr;
 use std::sync::Arc;
@@ -24,7 +24,7 @@ use sqlx::PgPool;
 use tokio_tungstenite::tungstenite::client::IntoClientRequest;
 use tokio_tungstenite::tungstenite::protocol::Message;
 
-/// Entier d'un JSON de la reference : une duree recue en `75.0` est rediffusee telle quelle (flottant), l'enregistrement la tronque.
+/// Integer of a reference JSON: a duration received as `75.0` is rebroadcast as is (float), the record truncates it.
 #[allow(clippy::cast_possible_truncation)]
 fn whole(v: &Value) -> i64 {
     v.as_i64().unwrap_or_else(|| v.as_f64().unwrap() as i64)
@@ -38,7 +38,7 @@ fn rfc3339_micros(text: &str) -> i64 {
     micros(DateTime::parse_from_rfc3339(text).unwrap().to_utc())
 }
 
-/// Instant attendu : `"NOW"` quand la trame n'avait pas de date lisible (reception, a deux minutes pres), sinon identique.
+/// Expected instant: `"NOW"` when the frame had no readable date (reception, to within two minutes), otherwise identical.
 fn same_instant(got: i64, want: &Value, what: &str) {
     if want == "NOW" {
         assert!(
@@ -81,7 +81,7 @@ async fn the_rust_relay_agrees_with_the_reference_consumer(pool: PgPool) {
         .unwrap()
         .id;
 
-    // Jeton inconnu : meme code de fermeture (4001).
+    // Unknown token: same closing code (4001).
     assert_eq!(
         oracle["unknown_token"],
         json!({"connected": false, "close_code": 4001})
@@ -139,7 +139,7 @@ async fn the_rust_relay_agrees_with_the_reference_consumer(pool: PgPool) {
                 .await
                 .unwrap();
         }
-        // Rien de plus a attendre que ce que reference a repondu a l'application.
+        // Nothing more to wait for than what the reference answered to the application.
         let mut app_frames = vec![];
         while let Some(v) = next_json(&mut ws, Duration::from_millis(400)).await {
             app_frames.push(v);
@@ -177,7 +177,7 @@ async fn the_rust_relay_agrees_with_the_reference_consumer(pool: PgPool) {
             "{name}"
         );
 
-        // Base.
+        // Database.
         let want = &sc["state"];
         let sms = state
             .store
@@ -243,7 +243,7 @@ async fn the_rust_relay_agrees_with_the_reference_consumer(pool: PgPool) {
             }
         }
 
-        // Evenements diffuses aux navigateurs (hors presence).
+        // Events broadcast to the browsers (excluding presence).
         let mut got_events = vec![];
         while let Ok(ev) = events.try_recv() {
             if let WsServerMsg::Android { event, .. } = &*ev

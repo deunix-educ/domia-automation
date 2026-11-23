@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! WebSocket de pilotage PTZ (R6 lot 5) : un vrai client WebSocket pilote une camera ONVIF simulee (faux serveur qui verifie l'authentification).
+//! PTZ control WebSocket (R6 lot 5): a real WebSocket client drives a simulated ONVIF camera (fake server that checks the authentication).
 
 use std::net::SocketAddr;
 use std::sync::Arc;
@@ -81,7 +81,7 @@ async fn rig(pool: PgPool, dead_man: &'static str) -> Rig {
         )
         .await
         .unwrap();
-    // `ptz` est une information lue par la synchronisation ONVIF : on la fixe comme elle le ferait.
+    // `ptz` is information read by the ONVIF synchronisation: we set it as it would.
     state.cameras.onvif_sync(camera.id).await.unwrap();
     Rig {
         app,
@@ -176,7 +176,7 @@ async fn tell(ws: &mut Client, v: Value) {
     ws.send(Message::Text(v.to_string().into())).await.unwrap();
 }
 
-/// Attend que l'etat PTZ de la camera simulee satisfasse `ok` (les ordres arrivent de facon asynchrone).
+/// Waits until the simulated camera's PTZ state satisfies `ok` (the orders arrive asynchronously).
 async fn until(
     onvif: &FakeOnvif,
     ok: impl Fn(&dominet_surveillance::testing::onvif::PtzState) -> bool,
@@ -195,7 +195,7 @@ async fn only_administrators_with_the_right_origin_reach_an_active_ptz_camera(po
     let r = rig(pool, "8").await;
     let user = r.user("bob", Role::User).await;
     let origin = format!("http://{}", r.addr);
-    // Sans session, compte ordinaire, mauvaise origine, camera inconnue : refus avant l'ouverture du WebSocket.
+    // No session, ordinary account, wrong origin, unknown camera: refused before the WebSocket opens.
     assert!(r.connect(&r.uuid, None, Some(&origin)).await.is_err());
     assert!(
         r.connect(&r.uuid, Some(&user), Some(&origin))
@@ -222,7 +222,7 @@ async fn only_administrators_with_the_right_origin_reach_an_active_ptz_camera(po
         r.onvif.ptz_state().log.is_empty(),
         "aucun ordre n'est parti"
     );
-    // Le bon compte entre.
+    // The right account gets in.
     let mut ws = r
         .connect(&r.uuid, Some(&admin), Some(&origin))
         .await
@@ -244,7 +244,7 @@ async fn move_zoom_and_stop_follow_the_reference_protocol_and_scale_by_speed(poo
         "{:?}",
         r.onvif.ptz_state()
     );
-    // Vitesse hors limites ramenee dans 0.05..1 ; texte numerique accepte comme `float()` de la reference.
+    // Out-of-range speed brought back into 0.05..1; numeric text accepted like `float()` of the reference.
     tell(
         &mut ws,
         json!({"action": "move", "pan": "1", "tilt": 0, "speed_pt": 9}),
@@ -255,7 +255,7 @@ async fn move_zoom_and_stop_follow_the_reference_protocol_and_scale_by_speed(poo
     assert!(until(&r.onvif, |s| s.velocity == Some((0.0, 0.0, -0.5))).await);
     tell(&mut ws, json!({"action": "stop"})).await;
     assert!(until(&r.onvif, |s| s.velocity.is_none()).await);
-    // Un message illisible ou une action inconnue ne fait rien et ne ferme pas la connexion.
+    // An unreadable message or an unknown action does nothing and does not close the connection.
     ws.send(Message::Text("pas du json".into())).await.unwrap();
     tell(&mut ws, json!({"action": "danse"})).await;
     tell(&mut ws, json!({"action": "get_presets"})).await;
@@ -267,7 +267,7 @@ async fn move_zoom_and_stop_follow_the_reference_protocol_and_scale_by_speed(poo
 
 #[sqlx::test(migrator = "dominet_store::MIGRATOR")]
 async fn closing_the_socket_and_a_forgotten_move_both_stop_the_camera(pool: PgPool) {
-    // Arret automatique apres 1 s sans rafraichissement.
+    // Automatic stop after 1 s without refresh.
     let r = rig(pool, "1").await;
     let mut ws = r.admin().await;
     tell(&mut ws, json!({"action": "move", "pan": 1, "tilt": 0})).await;
@@ -276,7 +276,7 @@ async fn closing_the_socket_and_a_forgotten_move_both_stop_the_camera(pool: PgPo
         until(&r.onvif, |s| s.velocity.is_none()).await,
         "arret automatique"
     );
-    // Fermeture : un mouvement en cours est arrete.
+    // Closing: a movement in progress is stopped.
     tell(&mut ws, json!({"action": "move", "pan": 1, "tilt": 0})).await;
     assert!(until(&r.onvif, |s| s.velocity.is_some()).await);
     ws.close(None).await.unwrap();
@@ -305,7 +305,7 @@ async fn presets_live_in_the_database_and_in_the_camera(pool: PgPool) {
         "le preset est aussi dans la camera"
     );
 
-    // Le meme nom remplace (upsert) : un seul preset en base.
+    // The same name replaces (upsert): a single preset in the database.
     tell(&mut ws, json!({"action": "set_preset", "name": "Porte"})).await;
     assert_eq!(next(&mut ws).await["presets"].as_array().unwrap().len(), 1);
 
@@ -315,7 +315,7 @@ async fn presets_live_in_the_database_and_in_the_camera(pool: PgPool) {
         "l'ancien jeton n'est pas reste orphelin dans la camera"
     );
 
-    // Nom vide ou trop long : refuse, rien n'est enregistre.
+    // Empty or too long name: refused, nothing is recorded.
     tell(&mut ws, json!({"action": "set_preset", "name": "  "})).await;
     assert_eq!(next(&mut ws).await["type"], "error");
     tell(
@@ -325,7 +325,7 @@ async fn presets_live_in_the_database_and_in_the_camera(pool: PgPool) {
     .await;
     assert_eq!(next(&mut ws).await["type"], "error");
 
-    // Aller au preset (la camera repond MOVING puis IDLE : la commande attend la fin).
+    // Go to the preset (the camera answers MOVING then IDLE: the command waits for the end).
     tell(&mut ws, json!({"action": "goto_preset", "id": id})).await;
     assert!(
         until(&r.onvif, |s| s
@@ -335,11 +335,11 @@ async fn presets_live_in_the_database_and_in_the_camera(pool: PgPool) {
         .await
     );
 
-    // Position d'origine : `GotoHomePosition`.
+    // Home position: `GotoHomePosition`.
     tell(&mut ws, json!({"action": "home"})).await;
     assert!(until(&r.onvif, |s| s.log.iter().any(|l| l == "GotoHomePosition")).await);
 
-    // Un preset nomme « Home » dans la camera fait office d'origine.
+    // A preset named "Home" in the camera acts as the home position.
     tell(&mut ws, json!({"action": "set_preset", "name": "Home"})).await;
     assert_eq!(next(&mut ws).await["type"], "presets");
     let before = r
@@ -360,13 +360,13 @@ async fn presets_live_in_the_database_and_in_the_camera(pool: PgPool) {
         .await
     );
 
-    // Definir l'origine ecrase le preset « Home » de la camera au lieu d'en creer un second.
+    // Setting the home position overwrites the camera's "Home" preset instead of creating a second one.
     let known = r.onvif.ptz_state().presets.len();
     tell(&mut ws, json!({"action": "set_home"})).await;
     assert_eq!(next(&mut ws).await["type"], "home_set");
     assert_eq!(r.onvif.ptz_state().presets.len(), known);
 
-    // Un preset inconnu ou d'une autre camera : erreur, pas de mouvement.
+    // An unknown preset, or one from another camera: error, no movement.
     tell(&mut ws, json!({"action": "goto_preset", "id": 999_999})).await;
     assert_eq!(
         next(&mut ws).await,
@@ -374,7 +374,7 @@ async fn presets_live_in_the_database_and_in_the_camera(pool: PgPool) {
     );
 
     tell(&mut ws, json!({"action": "remove_preset", "id": id})).await;
-    // Reste « Home », cree plus haut.
+    // Stays "Home", created above.
     assert_eq!(next(&mut ws).await["presets"].as_array().unwrap().len(), 1);
     assert_eq!(
         r.onvif.ptz_state().presets.len(),

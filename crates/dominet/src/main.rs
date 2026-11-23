@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Point d'entree du binaire `dominet` : CLI, puis serveur HTTP avec l'interface Leptos.
+//! Entry point of the `dominet` binary: CLI, then HTTP server with the Leptos interface.
 
 use std::process::ExitCode;
 
@@ -12,12 +12,12 @@ use dominet_server::{commands, server, telemetry};
 #[tokio::main]
 async fn main() -> ExitCode {
     let cli = Cli::parse();
-    // Cette commande n'a besoin ni de base de donnees ni de configuration.
+    // This command needs neither a database nor a configuration.
     if matches!(cli.command, Command::GenMasterKey) {
         commands::gen_master_key();
         return ExitCode::SUCCESS;
     }
-    // Idem : la sonde de sante ne lit que HTTP_ADDR (le healthcheck de Docker ne doit pas dependre de la base).
+    // Same: the health probe only reads HTTP_ADDR (Docker's healthcheck must not depend on the database).
     if let Command::Healthcheck(args) = &cli.command {
         return if commands::healthcheck(args.addr.as_deref()) {
             ExitCode::SUCCESS
@@ -25,7 +25,7 @@ async fn main() -> ExitCode {
             ExitCode::FAILURE
         };
     }
-    // La configuration d'abord : une erreur doit etre lisible meme sans journal.
+    // Configuration first: an error must be readable even without a log.
     let config = match Config::from_env() {
         Ok(c) => c,
         Err(e) => {
@@ -47,10 +47,10 @@ async fn main() -> ExitCode {
 async fn run(cli: Cli, config: Config) -> anyhow::Result<()> {
     match cli.command {
         Command::Serve(args) => {
-            // Sans `--only` : le web et le planificateur, plus le client MQTT si un broker est configure.
+            // Without `--only`: the web and the scheduler, plus the MQTT client if a broker is configured.
             let roles = if args.only.is_empty() {
                 let mut r = vec![Role::Web, Role::Scheduler];
-                // Le role video decode des flux : il demarre tout seul quand on lui dit ou est le re-stream de MediaMTX.
+                // The video role decodes streams: it starts on its own when told where the MediaMTX re-stream is.
                 if config.mediamtx_rtsp_url.is_some() {
                     r.push(Role::Video);
                 }

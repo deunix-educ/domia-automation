@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Charge du WebSocket `/ws/notifications/` (R8 lot 3) : beaucoup de navigateurs abonnes a des appareils pendant que les etats arrivent
-//! en continu. Un vrai serveur TCP, de vrais clients WebSocket, de vraies sessions.
+//! Load test of the `/ws/notifications/` WebSocket (R8 lot 3): many browsers subscribed to devices while the states arrive
+//! continuously. A real TCP server, real WebSocket clients, real sessions.
 //!
-//! Reglable par l'environnement : `WS_LOAD_USERS` (10), `WS_LOAD_PER_USER` (8, maximum du serveur), `WS_LOAD_RATE` (messages par seconde,
-//! 200), `WS_LOAD_MESSAGES` (1000), `WS_LOAD_P99_MS` (borne du p99 en millisecondes, 3000). Exemple lourd, sur la machine cible :
+//! Adjustable through the environment: `WS_LOAD_USERS` (10), `WS_LOAD_PER_USER` (8, server maximum), `WS_LOAD_RATE` (messages per second,
+//! 200), `WS_LOAD_MESSAGES` (1000), `WS_LOAD_P99_MS` (p99 bound in milliseconds, 3000). Heavy example, on the target machine:
 //! `WS_LOAD_USERS=125 WS_LOAD_RATE=500 cargo test --release -p dominet --test ws_load -- --nocapture`.
 //!
-//! Garanties verifiees : toutes les connexions s'ouvrent ; chaque client recoit le **dernier etat** de chaque appareil auquel il est
-//! abonne (un client lent peut sauter des etats intermediaires, jamais le dernier) ; le p99 de la latence (envoi dans le concentrateur
-//! -> reception par le client) reste sous la borne.
+//! Guarantees checked: all the connections open; each client receives the **last state** of every device it is
+//! subscribed to (a slow client may skip intermediate states, never the last one); the p99 of the latency (send into the hub
+//! -> reception by the client) stays under the bound.
 #![allow(
     clippy::cast_precision_loss,
     clippy::cast_possible_truncation,
@@ -64,7 +64,7 @@ fn state(device: i64, seq: u64, sent_us: u64) -> WsServerMsg {
     })
 }
 
-/// Un client : ouvre la connexion, s'abonne aux appareils, lit jusqu'au dernier etat de chacun ; renvoie (latences en microsecondes, etats recus).
+/// A client: opens the connection, subscribes to the devices, reads up to the last state of each; returns (latencies in microseconds, states received).
 async fn client(
     addr: SocketAddr,
     cookie: String,
@@ -80,7 +80,7 @@ async fn client(
     req.headers_mut()
         .insert(header::ORIGIN, format!("http://{addr}").parse().unwrap());
     let connected = tokio_tungstenite::connect_async(req).await.ok();
-    // Tout le monde attend tout le monde : la publication ne commence qu'une fois les `N` connexions etablies.
+    // Everyone waits for everyone: publication only starts once the `N` connections are established.
     let ok = connected.is_some();
     ready.wait().await;
     let (mut ws, _) = connected?;
@@ -155,7 +155,7 @@ async fn many_browsers_follow_a_stream_of_device_states(pool: PgPool) {
         .into_make_service_with_connect_info::<SocketAddr>();
     tokio::spawn(async move { axum::serve(listener, serve).await.unwrap() });
 
-    // Comptes et sessions : un compte porte au plus 8 connexions (limite du serveur).
+    // Accounts and sessions: an account carries at most 8 connections (server limit).
     let rss_before = rss_mb();
     let mut cookies = Vec::new();
     for u in 0..users {
@@ -192,7 +192,7 @@ async fn many_browsers_follow_a_stream_of_device_states(pool: PgPool) {
 
     let clients = users * per_user;
     let t0 = Instant::now();
-    // Dernier numero envoye a chaque appareil (tourniquet : l'appareil `d` recoit les messages i tels que i % DEVICES == d - 1).
+    // Last number sent to each device (round robin: device `d` receives the messages i such that i % DEVICES == d - 1).
     let last_seq: Vec<u64> = (1..=DEVICES as u64)
         .map(|d| {
             (0..total)
@@ -215,7 +215,7 @@ async fn many_browsers_follow_a_stream_of_device_states(pool: PgPool) {
         }
     }
     ready.wait().await;
-    // Laisser les abonnements s'etablir, puis diffuser a cadence reguliere.
+    // Let the subscriptions establish, then broadcast at a steady rate.
     tokio::time::sleep(Duration::from_millis(500)).await;
     let connected = state_app.hub.connection_count();
     let rss_connected = rss_mb();
