@@ -93,7 +93,7 @@ try:
     r.check("avant la coupure : l'etat arrive et la commande est possible",
             m.wait_for(f"(() => {{ const b = {on}; return !!b && !b.disabled; }})()", 15), m.text(f"#device-card-{dev}"))
 
-    # --- coupure du broker ---------------------------------------------------------------------------------------------------------------
+    # --- broker cut ----------------------------------------------------------------------------------------------------------------------
     docker("stop", "-t", "1", broker)
     time.sleep(2.0)
     m.js(f"{on}.click()")
@@ -103,7 +103,7 @@ try:
     r.check("le serveur reste joignable pendant la coupure", m.js_async(
         "const cb = arguments[arguments.length-1]; fetch('/healthz').then(x => cb(x.status));") == 200)
 
-    # --- retour du broker : reprise sans redemarrer le serveur --------------------------------------------------------------------------
+    # --- broker back: resumes without restarting the server -----------------------------------------------------------------------------
     docker("start", broker)
     ok = wait_until(lambda: (pub(f"{base}/{name}", {"state": "ON", "marqueur": int(time.time())}) or True)
                     and scalar(f"SELECT state->>'state' FROM device WHERE id = {dev}") == "ON", seconds=40, step=1.0)

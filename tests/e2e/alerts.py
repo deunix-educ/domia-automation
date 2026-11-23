@@ -109,7 +109,7 @@ r.check("prefixe Zigbee2MQTT propre au script", res["status"] == 200 and "Saved"
 sql(f"INSERT INTO device (friendly_name, base_topic) VALUES ('{dev}', '{z2m}');")
 time.sleep(1.5)
 
-# --- administration : une regle ---------------------------------------------------------------------------------------------------------
+# --- administration: a rule -------------------------------------------------------------------------------------------------------------
 m.goto(url + "admin/alert-rules")
 r.check("page des regles d'alerte", m.wait_for("document.querySelector('#crud-add') !== null", 10))
 open_form()
@@ -126,9 +126,9 @@ fill("#crud-field-cooldown_minutes", "60")
 m.click("#crud-save")
 r.check("regle creee", m.wait_for("[...document.querySelectorAll('#crud-table tbody tr td')].some(t => t.textContent === 'E2E Canicule')", 10))
 r.check("... seuil a virgule lu : 35.5 en base", scalar("SELECT threshold_num FROM alert_rule WHERE name = 'E2E Canicule'") == "35.5")
-time.sleep(1.5)  # l'evaluation relit les regles
+time.sleep(1.5)  # the evaluation re-reads the rules
 
-# --- etat chaud -> alerte, bandeau, pastille ------------------------------------------------------------------------------------------------
+# --- hot state -> alert, banner, badge ------------------------------------------------------------------------------------------------------
 m.goto(url + "alerts")
 r.check("page des alertes", m.wait_for("document.querySelector('#alerts-filters') !== null", 10))
 m.wait_for("document.querySelector('#vc-rt-state')?.dataset.state === 'online'", 20)
@@ -155,7 +155,7 @@ pub({"temperature": 41.0})
 time.sleep(1.5)
 r.check("cooldown de 60 min : pas de seconde alerte", scalar("SELECT count(*) FROM alert") == "1")
 
-# --- acquittement : l'alerte sort du cooldown (particularite de la reference) --------------------------------------------------------------------
+# --- acknowledgement: the alert leaves the cooldown (a quirk of the reference) -------------------------------------------------------------------
 m.wait_for("document.querySelector('.alert-ack') && !document.querySelector('.alert-ack').disabled", 15)
 m.click(".alert-ack")
 r.check("acquittee : la pastille disparait", m.wait_for("(() => { const b = document.querySelector('#vc-alert-badge'); return !b || b.hidden; })()", 15), str(badge()))
@@ -164,12 +164,12 @@ pub({"temperature": 42.0})
 r.check("etat chaud suivant : nouvelle alerte aussitot (reference)", wait_until(lambda: scalar("SELECT count(*) FROM alert") == "2"), scalar("SELECT count(*) FROM alert"))
 r.check("... pastille = 1", m.wait_for("(() => { const b = document.querySelector('#vc-alert-badge'); return b && !b.hidden && b.textContent.trim() === '1'; })()", 15))
 
-# --- retour a la normale : resolue ---------------------------------------------------------------------------------------------------------------
+# --- return to normal: resolved ------------------------------------------------------------------------------------------------------------------
 pub({"temperature": 20.0})
 r.check("retour a la normale : resolue", wait_until(lambda: scalar("SELECT count(*) FROM alert WHERE status = 'resolved'") == "1"), scalar("SELECT string_agg(status, ',') FROM alert"))
 r.check("... pastille cachee", m.wait_for("(() => { const b = document.querySelector('#vc-alert-badge'); return !b || b.hidden; })()", 15))
 
-# --- filtres ----------------------------------------------------------------------------------------------------------------------------------------------
+# --- filters ----------------------------------------------------------------------------------------------------------------------------------------------
 m.click("#alerts-filter-all")
 r.check("filtre « toutes » : deux alertes", m.wait_for("document.querySelectorAll('#alerts-table tbody tr').length === 2", 10), rows())
 m.click("#alerts-filter-resolved")
@@ -180,7 +180,7 @@ r.check("filtre « acquittees » : une alerte, avec qui l'a acquittee",
 m.click("#alerts-filter-firing")
 r.check("filtre « en cours » : vide", m.wait_for("document.querySelector('#alerts-empty') !== null", 10))
 
-# --- tout acquitter --------------------------------------------------------------------------------------------------------------------------------------------
+# --- acknowledge all -------------------------------------------------------------------------------------------------------------------------------------------
 pub({"temperature": 43.0})
 r.check("nouvelle alerte apres la resolution", wait_until(lambda: scalar("SELECT count(*) FROM alert WHERE status = 'firing'") == "1"))
 m.wait_for("document.querySelectorAll('#alerts-table tbody tr[data-status=firing]').length === 1", 15)
@@ -189,7 +189,7 @@ m.click("#alerts-ack-all")
 r.check("tout acquitter : plus rien en cours", wait_until(lambda: scalar("SELECT count(*) FROM alert WHERE status = 'firing'") == "0"))
 r.check("... la pastille disparait", m.wait_for("(() => { const b = document.querySelector('#vc-alert-badge'); return !b || b.hidden; })()", 15))
 
-# --- suppression de la regle : les alertes restent ---------------------------------------------------------------------------------------------------
+# --- rule deletion: the alerts stay ------------------------------------------------------------------------------------------------------------------
 m.goto(url + "admin/alert-rules")
 m.wait_for("document.querySelector('#crud-add') !== null", 10)
 m.wait_for("document.querySelectorAll('#crud-table tbody tr').length > 0", 10)
@@ -201,6 +201,6 @@ m.click(".crud-confirm-yes")
 r.check("regle supprimee", m.wait_for("document.querySelectorAll('#crud-table tbody tr').length === 0", 10))
 r.check("... les alertes deja creees restent, sans regle", scalar("SELECT count(*) FROM alert WHERE rule_id IS NULL") == "3", scalar("SELECT count(*) FROM alert"))
 
-# Nettoyage : la base jetable est partagee avec les scripts suivants.
+# Cleanup: the throw-away database is shared with the following scripts.
 sql(f"DELETE FROM device WHERE friendly_name = '{dev}';")
 sys.exit(r.finish())

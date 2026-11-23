@@ -100,10 +100,10 @@ def add_widget(board, kind, title, col, row, width, height, **extra):
     fill("#crud-field-title", title)
     for name, value in extra.items():
         m.wait_for(f"document.querySelector('#crud-field-{name}') !== null", 10)
-        if name == "device_id":  # liste deroulante des appareils, remplie depuis la base
+        if name == "device_id":  # drop-down list of devices, filled from the database
             m.wait_for(f"[...document.querySelector('#crud-field-device_id').options].some(o => o.value === {value!r})", 10)
             choose("#crud-field-device_id", value)
-        elif name == "scene_id":  # liste deroulante des scenes (R4)
+        elif name == "scene_id":  # drop-down list of scenes (R4)
             m.wait_for(f"[...document.querySelector('#crud-field-scene_id').options].some(o => o.value === {value!r})", 10)
             choose("#crud-field-scene_id", value)
         else:
@@ -125,14 +125,14 @@ login = m.js_async(
 r.check("connexion administrateur", login == 200)
 m.cmd("WebDriver:SetWindowRect", {"width": 1400, "height": 1000})
 
-# Etat de depart : un compte sans tableau (les scripts precedents du meme serveur en ont cree). Nettoyage par les fonctions serveur.
+# Starting state: an account without a dashboard (the previous scripts on the same server created some). Cleanup through the server functions.
 for d in json.loads(post("/sf/dashboards/list", "")["text"]):
     if d["owner"] == admin:
         post("/sf/dashboards/delete", f"id={d['id']}")
 
 dev = int(re.search(r"^\s*(\d+)\s*$", sql("INSERT INTO device (friendly_name) VALUES ('E2E Sonde parcours') RETURNING id;"), re.M).group(1))
 
-# 1. Premier tableau, depuis l'invitation ------------------------------------------------------------------------------------
+# 1. First dashboard, from the invitation ------------------------------------------------------------------------------------
 m.goto(url)
 r.check("invitation a creer un tableau", m.wait_for("document.querySelector('#vc-dash-empty') !== null", 20))
 r.check("hydratation terminee", online())
@@ -141,7 +141,7 @@ m.click("#vc-dash-create")
 r.check("tableau Maison cree", m.wait_for("document.querySelector('#vc-dash-name')?.textContent === 'Maison'", 15))
 board = int(m.js("return new URLSearchParams(location.search).get('d')"))
 
-# 2. Un widget de chaque type, par l'administration ---------------------------------------------------------------------------
+# 2. One widget of each type, through the administration ----------------------------------------------------------------------
 r.check("widget texte", add_widget(board, "text", "Note", 0, 0, 4, 2, content="<p>Bienvenue <b>chez vous</b></p><script>alert(1)</script>"))
 r.check("widget appareil", add_widget(board, "device", "Sonde", 4, 0, 3, 2, device_id=str(dev)))
 r.check("widget Grafana", add_widget(board, "grafana", "Courbe", 7, 0, 4, 3, config='{"dashboard_uid": "abc", "panel_id": 2}'))
@@ -150,7 +150,7 @@ scene = int(re.search(r"^\s*(\d+)\s*$", sql("INSERT INTO scene (name) VALUES ('E
 r.check("widget scene", add_widget(board, "scene", "Ambiance", 2, 2, 2, 2, scene_id=str(scene)))
 r.check("widget grille", add_widget(board, "grille", "Grille", 4, 3, 2, 2))
 
-# 3. Le tableau -----------------------------------------------------------------------------------------------------------------
+# 3. The dashboard --------------------------------------------------------------------------------------------------------------
 m.goto(url + f"?d={board}")
 r.check("six widgets affiches", m.wait_for("document.querySelectorAll('#vc-dashboard-grid > .vc-widget').length === 6", 20))
 r.check("un widget de chaque type", set(m.js("return [...document.querySelectorAll('#vc-dashboard-grid > .vc-widget')].map(e => e.dataset.widgetType)")) == TYPES)
@@ -159,7 +159,7 @@ r.check("texte assaini (mise en forme gardee, pas de script)", m.js("return docu
 r.check("Grafana : iframe vers l'URL publique", (m.js("return document.querySelector('[data-widget-type=grafana] iframe')?.getAttribute('src')") or "").startswith("http://localhost:3000/d/abc"))
 r.check("appareil en attente d'un etat", m.js("return document.querySelector('[data-widget-type=device] #dev-waiting') !== null"))
 
-# 4. Outils d'essai des Reglages : message diffuse, etat d'appareil -------------------------------------------------------------
+# 4. The Settings test tools: broadcast message, device state -------------------------------------------------------------------
 m.goto(url + "admin/settings")
 online()
 m.wait_for("document.querySelector('#broadcast-send') && !document.querySelector('#broadcast-send').disabled", 15)
@@ -172,7 +172,7 @@ m.click("#sim-send")
 r.check("etat d'appareil diffuse", m.wait_for("document.querySelector('#sim-status') !== null", 10))
 r.check("... et recu par ce navigateur", m.wait_for("document.querySelector('#sim-received').textContent.includes('19.5')", 10))
 
-# 5. Le tableau voit l'etat retenu, puis le suit en direct -----------------------------------------------------------------------
+# 5. The dashboard sees the retained state, then follows it live -----------------------------------------------------------------
 m.goto(url + f"?d={board}")
 r.check("l'appareil affiche le dernier etat des l'arrivee (humidite et temperature)",
         m.wait_for("document.querySelector('[data-widget-type=device] .vc-dev-state') !== null", 15)
@@ -182,7 +182,7 @@ m.js("window.__no_reload = 7")
 post("/sf/devices/inject", f"device_id={dev}&state=%7B%22temperature%22%3A22.0%2C%22humidity%22%3A48%7D&available=true")
 r.check("suivi en direct sans recharger (22)", m.wait_for("document.querySelector('[data-widget-type=device]').textContent.includes('22')", 15) and m.js("return window.__no_reload") == 7)
 
-# 6. Deplacement au pointeur, puis rechargement ------------------------------------------------------------------------------------
+# 6. Pointer move, then reload -----------------------------------------------------------------------------------------------------
 geo = json.loads(m.js(
     "const w = t => [...document.querySelectorAll('#vc-dashboard-grid > .vc-widget')].find(e => e.querySelector('.vc-widget-header-title').textContent === t).getBoundingClientRect();"
     "return JSON.stringify({a: w('Note').left, b: w('Sonde').left})"
@@ -190,16 +190,16 @@ geo = json.loads(m.js(
 pitch = (geo["b"] - geo["a"]) / 4
 before = positions()
 r.check("position de depart de la grille : colonne 5, ligne 4", before["Grille"] == [5, 4], str(before))
-drag("Grille", 5 * pitch, 0)   # colonnes 4 -> 9 (sous Grafana, ligne 3 libre)
+drag("Grille", 5 * pitch, 0)   # columns 4 -> 9 (under Grafana, row 3 free)
 r.check("la grille est deplacee a la colonne 10", m.wait_for("(() => { const e = [...document.querySelectorAll('#vc-dashboard-grid > .vc-widget')].find(e => e.querySelector('.vc-widget-header-title').textContent === 'Grille'); return e && getComputedStyle(e).gridColumnStart === '10'; })()", 15), str(positions()))
 m.goto(url + f"?d={board}")
 r.check("apres rechargement : la position est conservee", m.wait_for("document.querySelectorAll('#vc-dashboard-grid > .vc-widget').length === 6", 20) and positions()["Grille"] == [10, 4], str(positions()))
 r.check("... et les autres n'ont pas bouge", all(positions()[t] == before[t] for t in before if t != "Grille"), str(positions()))
 online()
-drag("Note", 6 * pitch, 0)   # sur Sonde (colonne 4) : occupe
+drag("Note", 6 * pitch, 0)   # on Sonde (column 4): occupied
 r.check("emplacement occupe : refus expliqué, la note reste", m.wait_for("document.querySelector('#vc-dash-notice') !== null", 15) and positions()["Note"] == before["Note"], str(positions()))
 
-# 7. Isolation : un second compte ne voit pas ce tableau -----------------------------------------------------------------------------
+# 7. Isolation: a second account does not see this dashboard -------------------------------------------------------------------------
 res = post("/sf/dashboard", f"requested={board}")
 r.check("la fonction serveur ne renvoie que les tableaux du compte connecte", res["status"] == 200 and json.loads(res["text"])["current"]["name"] == "Maison")
 

@@ -34,7 +34,7 @@ segment_s = int(os.environ.get("SOAK_SEGMENT_SECONDS", "10"))
 rtsp_port = os.environ.get("MEDIAMTX_RTSP_PORT", "18554")
 internal_rtsp_port = os.environ.get("MEDIAMTX_INTERNAL_RTSP_PORT", "8554")
 
-m = Marionette()  # (pour Report uniquement : pas de navigateur utilise)
+m = Marionette()  # (for Report only: no browser used)
 r = Report()
 if not shutil.which("ffmpeg"):
     print("NOTE : ffmpeg absent, l'endurance n'est PAS verifiee ici.")
@@ -126,8 +126,8 @@ try:
     published = time.time() - t0
     ff.terminate()
     ff.wait(10)
-    # Laisse les derniers segments se terminer (delai de refroidissement du role video), s'indexer puis s'archiver : on s'arrete quand plus rien
-    # de nouveau n'apparait depuis 30 s et que tout est archive.
+    # Lets the last segments finish (the video role's cool-down delay), get indexed then archived: we stop when nothing
+    # new has appeared for 30 s and everything is archived.
     deadline, last_count, last_change = time.time() + 120, -1, time.time()
     while time.time() < deadline:
         items = all_items()
@@ -150,7 +150,7 @@ try:
     r.check("aucun segment en erreur ni en attente", all(i["status"] == "done" for i in items),
             str([(i["id"], i["status"], i["error"]) for i in items if i["status"] != "done"][:5]))
     r.check("duree cumulee >= 97 % de la duree publiee", total_ms / 1000 >= 0.97 * published - segment_s, f"{total_ms / 1000:.0f} s sur {published:.0f} s")
-    # Relecture de tous les segments depuis ReductStore (les fichiers locaux sont supprimes apres archivage).
+    # Re-reading of all the segments from ReductStore (the local files are deleted after archiving).
     bad = []
     for i in items:
         status, headers, body = call("GET", f"/surveillance/recordings/{uuid}/{i['id']}/stream/")

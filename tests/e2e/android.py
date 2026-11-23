@@ -64,7 +64,7 @@ res = m.js_async(
 )
 r.check("connexion administrateur", res == 200, str(res))
 
-# --- ajout depuis l'interface -------------------------------------------------------------------------------------------------------------------
+# --- adding from the interface ------------------------------------------------------------------------------------------------------------------
 m.goto(url + "android/devices")
 r.check("page des appareils", m.wait_for("document.querySelector('#android-add-form') !== null", 10))
 live()
@@ -90,7 +90,7 @@ m.goto(url + "android/devices")
 m.wait_for("document.querySelector('#android-devices-table') !== null", 10)
 r.check("... et jamais reaffiche apres rechargement", token not in m.js("return document.body.innerText") and m.js("return document.querySelector('#android-token') === null"))
 
-# --- presence en direct ------------------------------------------------------------------------------------------------------------------------------
+# --- live presence -----------------------------------------------------------------------------------------------------------------------------------
 m.goto(url + "android")
 r.check("tableau de bord", m.wait_for("document.querySelector('#android-unread') !== null", 10))
 live()
@@ -101,7 +101,7 @@ r.check("le serveur repond auth_ok", phone.wait_frame(lambda f: f.get("type") ==
 r.check("en ligne, sans recharger la page", m.wait_for("document.querySelector('#android-devices-table tbody tr .vc-badge[data-online=true]') !== null", 15))
 r.check("... et en base", scalar("SELECT is_online FROM android_device") == "t")
 
-# --- SMS recus : tableau de bord puis page ---------------------------------------------------------------------------------------------------------
+# --- received SMS: dashboard then page -------------------------------------------------------------------------------------------------------------
 phone.sms("+33699999999", "Salut depuis le telephone", contact="Alice")
 r.check("SMS recu : non lu en direct", m.wait_for("document.querySelector('#android-unread')?.dataset.unread === '1'", 15), m.text("#android-unread"))
 r.check("... dans les derniers SMS", m.wait_for("document.querySelector('#android-recent-sms li')?.textContent.includes('Salut depuis le telephone')", 10))
@@ -113,8 +113,8 @@ r.check("... marque lu a l'affichage (comme la reference)", scalar("SELECT is_re
 phone.sms("+33688888888", "Second SMS en direct")
 r.check("autre SMS : ajoute en direct", m.wait_for("document.querySelectorAll('#android-sms-list li[data-direction=incoming]').length === 2", 15))
 
-# --- SMS ecrit dans le navigateur ------------------------------------------------------------------------------------------------------------------------
-phone.ack = None  # l'application ne repond pas encore : l'envoi reste « en attente »
+# --- SMS written in the browser --------------------------------------------------------------------------------------------------------------------------
+phone.ack = None  # the application does not answer yet: the sending stays "pending"
 ready("#android-send")
 fill("#android-to", "x")
 m.click("#android-send")
@@ -138,7 +138,7 @@ r.check("accuse d'echec : « echec » et sa raison en direct",
         m.wait_for("[...document.querySelectorAll('#android-sms-list li[data-delivery=failed]')].some(l => l.textContent.includes('pas de reseau'))", 15))
 r.check("... la file d'envoi garde les deux etats", scalar("SELECT string_agg(status, ',' ORDER BY id) FROM sms_outbox") == "sent,failed")
 
-# --- appels --------------------------------------------------------------------------------------------------------------------------------------------------------------
+# --- calls ---------------------------------------------------------------------------------------------------------------------------------------------------------------
 m.goto(url + "android/calls")
 r.check("journal d'appels vide", m.wait_for("document.querySelector('#android-calls-empty') !== null", 10))
 live()
@@ -151,7 +151,7 @@ phone.call("missed", "0699")
 r.check("appel manque", m.wait_for("document.querySelector('#android-calls-table tbody tr[data-direction=missed]') !== null", 15))
 r.check("... deux appels au journal, un seul ouvert jamais", scalar("SELECT count(*) FROM call_log") == "2" and scalar("SELECT count(*) FROM call_log WHERE ended_at IS NULL") == "0")
 
-# --- hors ligne : l'envoi est refuse -----------------------------------------------------------------------------------------------------------------------
+# --- offline: sending is refused ---------------------------------------------------------------------------------------------------------------------------
 phone.close()
 m.goto(url + "android/sms")
 m.wait_for("document.querySelector('#android-presence') !== null", 10)
@@ -163,7 +163,7 @@ m.click("#android-send")
 r.check("envoi refuse : « l'appareil n'est pas connecte »", m.wait_for("document.querySelector('#android-notice[data-notice=offline]') !== null", 10))
 r.check("... rien n'est enregistre", scalar("SELECT count(*) FROM sms_message WHERE direction = 'outgoing'") == "2")
 
-# --- nouveau jeton : l'ancien est coupe ----------------------------------------------------------------------------------------------------------------------
+# --- new token: the old one is cut ---------------------------------------------------------------------------------------------------------------------------
 m.goto(url + "android/devices")
 m.wait_for("document.querySelector('.android-regenerate') !== null", 10)
 ready(".android-regenerate")
@@ -179,7 +179,7 @@ new.connect()
 r.check("le nouveau jeton marche", new.wait_frame(lambda f: f.get("type") == "auth_ok") is not None)
 new.close()
 
-# --- suppression ------------------------------------------------------------------------------------------------------------------------------------------------------
+# --- deletion ---------------------------------------------------------------------------------------------------------------------------------------------------------
 m.goto(url + "android/devices")
 m.wait_for("document.querySelector('.android-delete') !== null", 10)
 ready(".android-delete")

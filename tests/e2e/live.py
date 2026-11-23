@@ -28,8 +28,8 @@ if len(sys.argv) < 4:
 url, user, password = sys.argv[1], sys.argv[2], sys.argv[3]
 base = url.rstrip("/")
 api = os.environ.get("MEDIAMTX_API_URL", "http://127.0.0.1:19997")
-rtsp_port = os.environ.get("MEDIAMTX_RTSP_PORT", "18554")  # vu de la machine (publication par ffmpeg)
-internal_rtsp_port = os.environ.get("MEDIAMTX_INTERNAL_RTSP_PORT", "8554")  # vu de MediaMTX lui-meme (la camera tire le flux de test)
+rtsp_port = os.environ.get("MEDIAMTX_RTSP_PORT", "18554")  # seen from the machine (publication by ffmpeg)
+internal_rtsp_port = os.environ.get("MEDIAMTX_INTERNAL_RTSP_PORT", "8554")  # seen from MediaMTX itself (the camera pulls the test stream)
 whep_domain = os.environ.get("MEDIAMTX_WHEP_DOMAIN", "127.0.0.1:18889")
 
 m = Marionette()
@@ -44,7 +44,7 @@ have_chrome = bool(browser and shutil.which("ffmpeg") and ws_connect)
 if not have_chrome:
     print("NOTE : chromium, ffmpeg ou python3-websockets absent : le live H.264 n'est PAS verifie ici.")
 
-# ---------------------------------------------------------------------------------------------------------------- HTTP (session admin)
+# ---------------------------------------------------------------------------------------------------------------- HTTP (admin session)
 jar = http.cookiejar.CookieJar()
 opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(jar))
 
@@ -63,7 +63,7 @@ def call(method, path, body=None):
 status, _ = call("POST", "/api/auth/login", {"username": user, "password": password})
 r.check("connexion administrateur", status == 200, str(status))
 
-# MediaMTX de dev : le navigateur l'appelle sur ce domaine (reglage de l'interface, comme en production).
+# Dev MediaMTX: the browser calls it on this domain (interface setting, as in production).
 status, _ = call("PUT", "/api/settings/MEDIAMTX_WEBRTC_DOMAIN", {"value": whep_domain})
 r.check("reglage du domaine WebRTC", status == 200, str(status))
 
@@ -152,12 +152,12 @@ chrome = None
 profile = tempfile.mkdtemp(prefix="dominet-live-")
 try:
     if have_chrome:
-        # ------------------------------------------------------------------------------------------- flux de test et navigateur capable
+        # ---------------------------------------------------------------------------------------------- test stream and capable browser
         ff = start_ffmpeg()
         r.check("flux H.264 de test publie dans MediaMTX", mediamtx_ready(source), "ffmpeg ou MediaMTX")
         r.check("MediaMTX relaie la camera sous son identifiant public", mediamtx_ready(uuid, 25))
 
-    # ----------------------------------------------------------------------------------------------- Firefox : message explicite sans H.264
+    # ---------------------------------------------------------------------------------------------- Firefox: explicit message without H.264
     m.goto(url)
     m.cmd("WebDriver:DeleteAllCookies")
     m.js_async(
@@ -174,7 +174,7 @@ try:
                 m.text(".vc-live-message") or "")
         r.check("le message dit quoi faire", "H.264" in (m.text(".vc-live-message") or ""))
         if have_chrome:
-            # Repli : une image fixe rafraichie chaque seconde, tiree du flux decode par le role video (ADR 0048).
+            # Fallback: a still image refreshed every second, taken from the stream decoded by the video role (ADR 0048).
             r.check("repli : une image apparait pour le navigateur sans H.264",
                     m.wait_for("(() => { const i = document.querySelector('.vc-live-fallback'); return !!i && i.complete && i.naturalWidth === 640; })()", 40),
                     str(m.js("const i = document.querySelector('.vc-live-fallback'); return i ? [i.complete, i.naturalWidth, i.src] : null")))
@@ -192,7 +192,7 @@ try:
              "--no-first-run", "--no-default-browser-check", "about:blank"],
             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         ws_url = None
-        for _ in range(120):  # un premier lancement a froid peut depasser 30 s sur une machine chargee
+        for _ in range(120):  # a first cold start can exceed 30 s on a loaded machine
             try:
                 req = urllib.request.Request(f"http://127.0.0.1:{port}/json/new?about:blank", method="PUT")
                 with urllib.request.urlopen(req, timeout=2) as resp:
@@ -214,7 +214,7 @@ try:
 
         cdp.call("Page.navigate", url=f"{url}surveillance/live/{uuid}")
         r.check("page live rendue (Chromium)", cdp.wait("document.querySelector('.vc-live') !== null", 20))
-        # Le WASM de developpement pese ~48 Mo : l'hydratation peut prendre quelques dizaines de secondes.
+        # The development WASM weighs ~48 MB: hydration can take a few tens of seconds.
         live = cdp.wait("document.querySelector('.vc-live')?.dataset.liveState === 'live'", 90)
         state = cdp.eval("document.querySelector('.vc-live')?.dataset.liveState")
         r.check("le flux H.264 passe a l'etat « live »", live, f"etat : {state} ; {cdp.eval('document.querySelector(\".vc-live-message\")?.textContent')}")
@@ -225,7 +225,7 @@ try:
         r.check("les statistiques s'affichent", cdp.wait("/640×360/.test(document.querySelector('.vc-live-stats')?.textContent || '')", 15),
                 str(cdp.eval("document.querySelector('.vc-live-stats')?.textContent")))
 
-        # ------------------------------------------------------------------------------------------- images decodees : derniere image, snapshots
+        # ------------------------------------------------------------------------------------------------- decoded images: last image, snapshots
         def fetch(path):
             try:
                 with opener.open(urllib.request.Request(base + path, headers={"Origin": base}), timeout=15) as resp:
@@ -270,7 +270,7 @@ try:
         cdp.call("Page.navigate", url=f"{url}surveillance/live/{uuid}")
         cdp.wait("document.querySelector('.vc-live')?.dataset.liveState === 'live'", 90)
 
-        # ------------------------------------------------------------------------------------------- perte du flux, puis retour tout seul
+        # --------------------------------------------------------------------------------------------- stream loss, then automatic return
         stop(ff)
         r.check("flux perdu : le lecteur le dit (pas de video figee silencieuse)",
                 cdp.wait("['reconnecting','no-stream','connecting'].includes(document.querySelector('.vc-live')?.dataset.liveState)", 40),
@@ -280,7 +280,7 @@ try:
         r.check("le lecteur se reconnecte tout seul", cdp.wait("document.querySelector('.vc-live')?.dataset.liveState === 'live'", 90),
                 str(cdp.eval("document.querySelector('.vc-live')?.dataset.liveState")))
 
-        # ------------------------------------------------------------------------------------------- fermeture propre de la session
+        # ------------------------------------------------------------------------------------------------------ clean session close
         before = None
         try:
             with urllib.request.urlopen(f"{api}/v3/webrtcsessions/list", timeout=5) as resp:

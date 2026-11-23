@@ -12,7 +12,7 @@ class Marionette:
     def __init__(self, port=2828, timeout=30):
         self.sock = socket.create_connection(("127.0.0.1", port), timeout=timeout)
         self.msg_id = 0
-        self._read()  # message d'accueil
+        self._read()  # greeting message
         self.cmd("WebDriver:NewSession", {"capabilities": {}})
 
     def _read(self):

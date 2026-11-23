@@ -60,7 +60,7 @@ def click_in_row(name, selector):
     )
 
 
-# Etat propre, puis connexion par l'API.
+# Clean state, then login through the API.
 m.goto(url)
 m.cmd("WebDriver:DeleteAllCookies")
 m.js("localStorage.clear()")
@@ -71,7 +71,7 @@ res = m.js_async(
 )
 r.check("connexion administrateur", res == 200, str(res))
 
-# Sans jeton, personne n'entre ------------------------------------------------------------------------------------
+# Without a token, nobody gets in ---------------------------------------------------------------------------------
 status, _ = call_mcp(None)
 r.check("/mcp sans jeton : 401", status == 401, str(status))
 status, _ = call_mcp("dnm_" + "x" * 43)
@@ -83,21 +83,21 @@ r.check("serveur actif annonce", "/mcp" in (m.text("#mcp-status") or ""), m.text
 r.check("lien du menu d'administration actif",
         m.js("return [...document.querySelectorAll('#vc-nav-admin a')].some(a => a.getAttribute('href') === '/admin/mcp' && a.getAttribute('aria-current') === 'page')") is True)
 
-# Validation cote serveur ------------------------------------------------------------------------------------------
+# Server-side validation -------------------------------------------------------------------------------------------
 m.wait_for("document.querySelector('#mcp-create-submit') && !document.querySelector('#mcp-create-submit').disabled", 20)
 fill("#mcp-name", "   ")
 m.click("#mcp-create-submit")
 r.check("nom vide : erreur sous le champ",
         m.wait_for("(document.querySelector('#crud-error-name')?.textContent || '').includes('obligatoire')", 8),
         m.text("#crud-error-name"))
-m.js("document.querySelector('#mcp-scope-lecture').click()")  # decoche la seule portee
+m.js("document.querySelector('#mcp-scope-lecture').click()")  # unticks the only scope
 fill("#mcp-name", tag)
 m.click("#mcp-create-submit")
 r.check("aucune portee : erreur sous le champ", m.wait_for("document.querySelector('#crud-error-scopes') !== null", 8))
 r.check("aucun jeton montre apres un refus", m.js("return document.querySelector('#mcp-token') === null"))
 
-# Creation : la valeur n'est montree qu'une fois ------------------------------------------------------------------------
-m.js("document.querySelector('#mcp-scope-lecture').click()")  # recoche
+# Creation: the value is only shown once --------------------------------------------------------------------------------
+m.js("document.querySelector('#mcp-scope-lecture').click()")  # re-ticks
 m.js("document.querySelector('#mcp-scope-pilotage').click()")
 m.click("#mcp-create-submit")
 r.check("jeton cree : valeur affichee", m.wait_for("document.querySelector('#mcp-token-value') !== null", 10))
@@ -107,7 +107,7 @@ r.check("forme de la valeur : dnm_ + 43 caracteres", re.fullmatch(r"dnm_[A-Za-z0
 r.check("la commande Claude Code contient le jeton et /mcp",
         value in command and "claude mcp add" in command and "/mcp" in command, command)
 
-# Le jeton marche vraiment -----------------------------------------------------------------------------------------
+# The token really works -------------------------------------------------------------------------------------------
 status, body = call_mcp(value)
 r.check("/mcp avec le jeton : 200", status == 200, f"{status} {body[:120]}")
 r.check("l'outil system_status est propose", "system_status" in body, body[:200])
@@ -115,7 +115,7 @@ status, body = call_mcp(value, {"jsonrpc": "2.0", "id": 2, "method": "tools/call
                                 "params": {"name": "system_status", "arguments": {}}})
 r.check("system_status repond (portee lecture)", status == 200 and '"database":"ok"' in body.replace(" ", ""), body[:200])
 
-# Une fois masque ou la page rechargee, la valeur a disparu ------------------------------------------------------------
+# Once hidden or the page reloaded, the value is gone ------------------------------------------------------------------
 m.click("#mcp-token-hide")
 r.check("masquer retire la valeur", m.wait_for("document.querySelector('#mcp-token') === null", 5))
 m.goto(url + "admin/mcp")
@@ -126,7 +126,7 @@ r.check("le jeton est liste et actif", row_state(tag) == "active", str(row_state
 r.check("seul le debut de la valeur est montre",
         m.js(f"return [...document.querySelectorAll('#mcp-tokens-table tbody tr')].some(t => t.textContent.includes({tag!r}) && t.textContent.includes({value[:12]!r}) && !t.textContent.includes({value[:20]!r}));") is True)
 
-# Revocation avec confirmation, puis refus immediat ----------------------------------------------------------------
+# Revocation with confirmation, then immediate refusal -------------------------------------------------------------
 m.wait_for("document.querySelector('.mcp-revoke') && !document.querySelector('.mcp-revoke').disabled", 20)
 r.check("clic sur Revoquer", click_in_row(tag, ".mcp-revoke"))
 r.check("confirmation demandee", m.wait_for("document.querySelector('.mcp-revoke-confirm') !== null", 5))
@@ -139,7 +139,7 @@ r.check("jeton revoque dans la liste", m.wait_for(
 status, _ = call_mcp(value)
 r.check("/mcp avec le jeton revoque : 401 des l'appel suivant", status == 401, str(status))
 
-# Journal d'audit -------------------------------------------------------------------------------------------------------
+# Audit log -------------------------------------------------------------------------------------------------------------
 r.check("journal : creation et revocation", m.wait_for(
     "(() => { const t = document.querySelector('#mcp-audit-table'); return t && t.innerText.includes('Jeton créé') && t.innerText.includes('Jeton révoqué'); })()", 8))
 r.check("journal : l'auteur est l'administrateur",
@@ -149,7 +149,7 @@ m.js("const s = document.querySelector('#mcp-audit-kind'); s.value = 'denied'; s
 r.check("filtre sur les refus : rien d'enregistre", m.wait_for("document.querySelector('#mcp-audit-empty') !== null", 8))
 m.js("const s = document.querySelector('#mcp-audit-kind'); s.value = ''; s.dispatchEvent(new Event('change', {bubbles: true}));")
 
-# Traduction a chaud ---------------------------------------------------------------------------------------------------
+# Live translation -----------------------------------------------------------------------------------------------------
 m.js("[...document.querySelectorAll('.vc-lang button')].find(b => /English/i.test(b.textContent)).click()")
 r.check("formulaire et etats en anglais", m.wait_for(
     "document.querySelector('#mcp-create-submit').textContent === 'Create the token' && "

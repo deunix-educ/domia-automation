@@ -37,7 +37,7 @@ for spec in pages:
     path, _, action = spec.partition("!")
     m.goto(url + path)
     m.wait_for("document.querySelector('main') !== null", 10)
-    if action == "add":  # ouvre le formulaire du composant CRUD
+    if action == "add":  # opens the CRUD component's form
         for _ in range(40):
             m.click("#crud-add")
             if m.wait_for("document.querySelector('#crud-form') !== null", 0.5):

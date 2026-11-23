@@ -99,7 +99,7 @@ m.goto(url)
 m.js("localStorage.clear()")
 r.check("connexion administrateur", login(admin))
 
-# --- donnees : deux destinataires (meme mot de passe que l'administrateur), un telephone ------------------------------------------------------------
+# --- data: two recipients (same password as the administrator), a phone -----------------------------------------------------------------------------
 sql(
     "UPDATE users SET email = 'root@example.test' WHERE username = " + repr(admin) + ";"
     "INSERT INTO users (username, email, mobile, password_hash, role) SELECT 'alice', 'alice@example.test', '+33611111111', password_hash, 'user' FROM users WHERE username = "
@@ -114,11 +114,11 @@ fill("#android-phone", "+33600000000")
 m.click("#android-add-submit")
 m.wait_for("document.querySelector('#android-token-value')?.textContent.length === 36", 10)
 token = m.text("#android-token-value").strip()
-phone = Phone(url, token, ping_interval=2, ack=None)  # le telephone n'accuse pas tout seul : on le fait a la main
+phone = Phone(url, token, ping_interval=2, ack=None)  # the phone does not acknowledge by itself: we do it by hand
 phone.connect()
 r.check("telephone simule connecte", phone.wait_frame(lambda f: f.get("type") == "auth_ok") is not None)
 
-# --- composer : champs invalides ---------------------------------------------------------------------------------------------------------------------------
+# --- compose: invalid fields -------------------------------------------------------------------------------------------------------------------------------
 m.goto(url + "messaging/compose")
 r.check("page d'ecriture", m.wait_for("document.querySelector('#messaging-form') !== null", 10))
 live()
@@ -130,7 +130,7 @@ r.check("tout vide : sujet, message et destinataires refuses",
         m.wait_for("['subject','body','recipients'].every(f => document.querySelector('#crud-error-' + f) !== null)", 10))
 r.check("... rien n'est enregistre", scalar("SELECT count(*) FROM message") == "0")
 
-# --- envoi asynchrone, suivi en direct -------------------------------------------------------------------------------------------------------------------
+# --- asynchronous sending, live follow-up ----------------------------------------------------------------------------------------------------------------
 fill("#messaging-subject", "Coupure d'eau")
 fill("#messaging-body", "Demain de 9h a 12h.")
 m.click("#messaging-channel-both")
@@ -152,13 +152,13 @@ r.check("accuse du telephone : SMS « envoye » en direct", wait_row("alice", "s
 r.check("... et le message passe a « termine »", m.wait_for("document.querySelector('#messaging-message')?.dataset.status === 'sent'", 15))
 msg_id = scalar("SELECT id FROM message")
 
-# --- liste des messages envoyes --------------------------------------------------------------------------------------------------------------------------------
+# --- list of the sent messages ---------------------------------------------------------------------------------------------------------------------------------
 m.goto(url + "messaging")
 r.check("liste des envoyes : le message y est", m.wait_for("document.querySelector('#messaging-table tbody tr[data-status=sent]')?.textContent.includes('Coupure d')", 10))
 m.goto(url + "messaging/")
 r.check("/messaging/ avec barre finale", m.wait_for("document.querySelector('#messaging-table') !== null", 10))
 
-# --- le destinataire ----------------------------------------------------------------------------------------------------------------------------------------------------
+# --- the recipient ------------------------------------------------------------------------------------------------------------------------------------------------------
 r.check("connexion d'alice", login("alice"))
 m.goto(url + "messaging/inbox")
 r.check("boite de reception : le message est la", m.wait_for("document.querySelector('#messaging-table tbody tr')?.textContent.includes('Coupure d')", 10))
@@ -170,7 +170,7 @@ m.goto(url + "messaging/compose")
 r.check("alice n'a pas la page d'ecriture", m.wait_for("document.querySelector('#messaging-form') === null && document.body.innerText.length > 0", 10))
 r.check("... ni celle des messages envoyes", (m.goto(url + "messaging"), m.wait_for("document.querySelector('#messaging-table') === null", 10))[1])
 
-# --- sans telephone : les SMS echouent avec leur raison --------------------------------------------------------------------------------------------
+# --- without a phone: the SMS fail with their reason -----------------------------------------------------------------------------------------------
 phone.close()
 r.check("connexion administrateur (2)", login(admin))
 m.goto(url + "android")
@@ -187,7 +187,7 @@ r.check("SMS sans appareil en ligne : echec par destinataire", m.wait_for("/\\/m
 r.check("... avec la raison", "no Android device" in m.js("return document.querySelector('#messaging-deliveries tbody').innerText"))
 r.check("... et le message est termine", m.wait_for("document.querySelector('#messaging-message')?.dataset.status === 'sent'", 15))
 
-# --- message inconnu -------------------------------------------------------------------------------------------------------------------------------------------------------
+# --- unknown message -------------------------------------------------------------------------------------------------------------------------------------------------------
 m.goto(url + "messaging/999999")
 r.check("message inconnu : introuvable", m.wait_for("document.querySelector('#messaging-not-found') !== null", 10))
 sys.exit(r.finish())

@@ -66,7 +66,7 @@ def click_in_row(name, selector):
 
 
 def open_form():
-    for _ in range(40):  # tant que l'interface n'est pas hydratee, le clic n'ouvre rien
+    for _ in range(40):  # until the interface is hydrated, the click opens nothing
         m.click("#crud-add")
         if m.wait_for("document.querySelector('#crud-form') !== null", 0.5):
             return True
@@ -87,7 +87,7 @@ r.check("connexion administrateur", res == 200, str(res))
 m.goto(url + "admin/cameras")
 r.check("page rendue", m.wait_for("document.querySelector('#crud-add') !== null", 10))
 
-# Ajout avec mot de passe ----------------------------------------------------------------------------------------
+# Adding with a password -----------------------------------------------------------------------------------------
 name = f"{tag}-Entree"
 r.check("le formulaire s'ouvre", open_form())
 save_enabled()
@@ -108,7 +108,7 @@ r.check("la source du path porte l'identifiant et le mot de passe",
         conf.get("source") == f"rtsp://admin:{secret}@127.0.0.1:1/e2e", "source differente")
 r.check("le path est toujours ouvert (pas a la demande)", conf.get("sourceOnDemand") is False)
 
-# Le secret ne revient jamais -------------------------------------------------------------------------------------
+# The secret never comes back -------------------------------------------------------------------------------------
 html = m.js("return document.documentElement.outerHTML")
 r.check("le mot de passe n'apparait pas dans la page", secret not in html)
 r.check("l'identifiant public s'affiche (32 hexadecimaux)", path_name in html)
@@ -117,7 +117,7 @@ r.check("formulaire prerempli", m.wait_for(f"document.querySelector('#crud-field
 r.check("le jeton du profil ONVIF est modifiable", m.js("return document.querySelector('#crud-field-main_token')?.type") == "text")
 r.check("le mot de passe n'est pas prerempli", m.js("return document.querySelector('#crud-field-rtsp_pass').value") == "")
 
-# Modification sans ressaisir le secret ----------------------------------------------------------------------------
+# Editing without re-entering the secret ---------------------------------------------------------------------------
 save_enabled()
 fill("#crud-field-fps", "15")
 m.js("document.querySelector('#crud-field-rtsp_transport_tcp').click()")
@@ -127,7 +127,7 @@ conf = mediamtx_paths().get(path_name, {})
 r.check("secret conserve apres modification", conf.get("source") == f"rtsp://admin:{secret}@127.0.0.1:1/e2e", str(conf.get("source", "")[:20]))
 r.check("TCP force dans MediaMTX", conf.get("sourceProtocol") == "tcp", str(conf.get("sourceProtocol")))
 
-# Synchronisation a la demande : un path de camera inconnu disparait, les autres restent -------------------------------
+# On-demand synchronisation: an unknown camera path disappears, the others stay ----------------------------------------
 stray = "ab" * 16
 req = urllib.request.Request(f"{api}/v3/config/paths/add/{stray}", data=json.dumps({"source": "rtsp://127.0.0.1:1/x"}).encode(),
                              headers={"Content-Type": "application/json"}, method="POST")
@@ -139,16 +139,16 @@ r.check("le path inconnu est retire", stray not in mediamtx_paths())
 r.check("le path de la camera reste", path_name in mediamtx_paths())
 r.check("le path joker de la configuration reste", "~.*" in mediamtx_paths())
 
-# Consultation par un compte connecte -----------------------------------------------------------------------------
+# Viewing by a logged-in account ----------------------------------------------------------------------------------
 m.goto(url + "surveillance/")
 r.check("la page de consultation liste la camera", m.wait_for(f"document.querySelector('[data-camera=\"{path_name}\"]') !== null", 10))
 r.check("sans adresse IP ni chemin", "127.0.0.1" not in m.js("return document.querySelector('main').textContent"))
 
-# Suppression ------------------------------------------------------------------------------------------------------
+# Deletion ---------------------------------------------------------------------------------------------------------
 m.goto(url + "admin/cameras")
 m.wait_for("document.querySelector('#crud-add') !== null", 10)
 m.wait_for(f"[...document.querySelectorAll('#crud-table tbody tr td')].some(t => t.textContent === {name!r})", 10)
-for _ in range(40):  # tant que l'interface n'est pas hydratee, le clic n'ouvre rien
+for _ in range(40):  # until the interface is hydrated, the click opens nothing
     click_in_row(name, ".crud-delete")
     if m.wait_for("document.querySelector('.crud-confirm-yes') !== null", 0.5):
         break

@@ -83,7 +83,7 @@ r.check("connexion administrateur", res == 200, str(res))
 
 
 def open_form():
-    for _ in range(40):  # tant que l'interface n'est pas hydratee, le clic n'ouvre rien
+    for _ in range(40):  # until the interface is hydrated, the click opens nothing
         m.click("#crud-add")
         if m.wait_for("document.querySelector('#crud-form') !== null", 0.5):
             return True
@@ -143,7 +143,7 @@ save_enabled()
 fill("#crud-field-title", title)
 fill("#crud-field-expr", "vector(1) > 0")
 fill("#crud-field-summary", "Resume")
-# Le navigateur borne deja le champ numerique : la verification du serveur se voit par l'API.
+# The browser already bounds the numeric field: the server's check is seen through the API.
 bad = m.js_async(
     "const cb = arguments[arguments.length-1];"
     "fetch('/sf/grafana-rules/save', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({input:"
@@ -168,5 +168,5 @@ r.check("suppression", wait_rows(f"!rows.includes({title!r})"), str(rows()))
 if graf_file:
     r.check("rules.yaml ne la contient plus", wait_file(graf_file, lambda t: uid not in t and "meteo-canicule" in t))
 
-# Un non-administrateur n'a pas ces pages (elles sont gardees comme les autres pages d'administration).
+# A non-administrator does not have these pages (they are guarded like the other administration pages).
 r.finish()

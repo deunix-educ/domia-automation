@@ -122,7 +122,7 @@ try:
         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     r.check("le path de la camera enregistre (record: true)", path_conf().get("record") is True, str(path_conf().get("record")))
 
-    # ------------------------------------------------------------------------------------------------ continu : segments indexes puis archives
+    # ---------------------------------------------------------------------------------------------- continuous: segments indexed then archived
     r.check("deux segments continus archives dans ReductStore", wait_items(2, "continuous"), str(items()))
     done = items("continuous", "done")
     rec = done[0] if done else {"id": 0, "size_bytes": 0}
@@ -157,18 +157,18 @@ try:
             break
     r.check("« Lire » ouvre le lecteur sur le flux du segment",
             m.wait_for("(document.querySelector('#rec-player')?.getAttribute('src') || '').includes('/stream/')", 10))
-    # Regression : la liste se rafraichit toute seule (5 s) ; le lecteur ne doit PAS etre recree (la video repartait du debut).
+    # Regression: the list refreshes by itself (5 s); the player must NOT be recreated (the video restarted from the beginning).
     m.js("document.querySelector('#rec-player').dataset.mark = 'same'")
     time.sleep(7)
     r.check("le lecteur survit au rafraichissement de la liste", m.js("return document.querySelector('#rec-player')?.dataset.mark") == "same")
 
-    # ------------------------------------------------------------------------------------------------ manuel
+    # ------------------------------------------------------------------------------------------------ manual
     camera["id"] = cam["id"]
     camera["recording_mode"] = "manual"
     status, text = post("/sf/cameras/save", {"input": camera})
     r.check("camera passee en mode manuel", status == 200 and "Saved" in text, text[:100])
     r.check("en mode manuel, le path n'enregistre plus", path_conf().get("record") is not True, str(path_conf().get("record")))
-    # L'enregistrement continu est fini : on attend que ses derniers segments soient pris, puis on compte.
+    # Continuous recording is over: we wait for its last segments to be taken, then we count.
     time.sleep(3)
     before = len(items("manual"))
     status, text = form("/sf/recordings/manual", {"uuid": uuid, "on": True})
@@ -185,7 +185,7 @@ try:
     status, text = form("/sf/recordings/manual", {"uuid": "0" * 32, "on": True})
     r.check("camera inconnue : NotFound", "NotFound" in text, text[:80])
 
-    # ------------------------------------------------------------------------------------------------ suppression
+    # --------------------------------------------------------------------------------------------------- deletion
     victim = (items("continuous", "done") or [rec])[0]
     count = len(items())
     status, text = form("/sf/recordings/delete", {"uuid": uuid, "id": victim["id"]})

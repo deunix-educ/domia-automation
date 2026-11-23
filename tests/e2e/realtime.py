@@ -25,7 +25,7 @@ restart_cmd = sys.argv[4] if len(sys.argv) > 4 else None
 m = Marionette()
 r = Report()
 
-# Le simulateur n'agit que sur des appareils qui existent : on en cree deux (prepares en SQL sur la base jetable).
+# The simulator only acts on devices that exist: we create two (prepared in SQL on the throw-away database).
 db_shell = os.environ.get("E2E_DB_SHELL")
 if not db_shell:
     sys.exit("E2E_DB_SHELL absent : lancer par tools/e2e.sh")
@@ -38,7 +38,7 @@ def new_device(name):
 
 
 dev_a, dev_b = new_device("E2E Sim A"), new_device("E2E Sim B")
-dev_unknown = max(dev_a, dev_b) + 1000  # numero sans appareil : sert a verifier qu'on ne suit plus rien
+dev_unknown = max(dev_a, dev_b) + 1000  # number without a device: used to check that nothing is followed any more
 
 
 def fill(selector, value):
@@ -69,7 +69,7 @@ m.cmd("WebDriver:DeleteAllCookies")
 m.js("localStorage.clear()")
 r.check("connexion administrateur", api_login() == 200)
 
-# --- CSP, en-tetes, compression ---------------------------------------------------------------------------------------
+# --- CSP, headers, compression ----------------------------------------------------------------------------------------
 
 
 def diagnose_hang(cookie, what):
@@ -105,7 +105,7 @@ headers = m.js_async(
 import json  # noqa: E402
 
 h = json.loads(headers)
-if "error" in h:  # echec reseau : on le dit au lieu d'attendre le delai du script
+if "error" in h:  # network failure: we say so instead of waiting for the script's timeout
     sys.exit(f"fetch(location.href) a echoue : {h['error']} (url {m.js('return location.href')})")
 r.check("CSP presente avec un nonce", "'nonce-" in (h["csp"] or ""), str(h["csp"])[:120])
 r.check("pages jamais mises en cache", h["cc"] == "no-store", str(h["cc"]))
@@ -119,7 +119,7 @@ r.check("WASM : revalidation (no-cache)", asset["cc"] == "no-cache", str(asset))
 r.check("WASM compresse", asset["enc"] == "gzip", str(asset))
 r.check("WASM : type MIME application/wasm", (asset["type"] or "").startswith("application/wasm"), str(asset))
 
-# Un script en ligne sans nonce, injecte dans la page, doit etre bloque par la CSP.
+# An inline script without a nonce, injected into the page, must be blocked by the CSP.
 blocked = m.js_async(
     "const cb = arguments[arguments.length-1];"
     "let violated = false;"
@@ -136,7 +136,7 @@ r.check("script en ligne sans nonce : bloque par la CSP", b["ran"] is False and 
 r.check("temps reel : connecte (le WebSocket passe la CSP)", wait_state("online"), str(rt_state()))
 r.check("indicateur lisible", "connecté" in (m.text("#vc-rt-state") or ""), m.text("#vc-rt-state"))
 
-# --- Diffusion : le message arrive, en texte seulement ------------------------------------------------------------------------
+# --- Broadcast: the message arrives, as text only -----------------------------------------------------------------------------
 payload = "Alerte <b onmouseover=alert(1)>test</b> & co"
 fill("#broadcast-text", payload)
 m.click("#broadcast-send")
@@ -152,7 +152,7 @@ m.click("#broadcast-send")
 r.check("notification temporaire apparait", m.wait_for("document.querySelector('.vc-toast') !== null", 8))
 r.check("... et disparait toute seule", m.wait_for("document.querySelector('.vc-toast') === null", 14))
 
-# --- Sujets : abonnement par numero d'appareil, etat retenu, etats invalides --------------------------------------------------
+# --- Subjects: subscription by device number, retained state, invalid states --------------------------------------------------
 def inject(device, state, available=True):
     body = f"device_id={device}&state={urllib.parse.quote(state)}&available={'true' if available else 'false'}"
     return m.js_async(
@@ -175,25 +175,25 @@ r.check("injection d'un etat : diffusee a l'onglet abonne", m.wait_for("(documen
 r.check("l'etat arrive en direct dans la page", m.wait_for("document.querySelector('#sim-received').textContent.includes('E2E Sim A')", 8), received())
 r.check("... avec ses proprietes", '"temperature":21.5' in received(), received())
 
-# Un etat injecte AVANT l'abonnement est livre des l'abonnement (dernier etat retenu cote serveur).
+# A state injected BEFORE the subscription is delivered upon subscription (last state retained on the server side).
 inject(dev_b, '{"state":"OFF","battery":88}', False)
 fill("#sim-device", str(dev_b))
 r.check("nouvel abonne : recoit le dernier etat retenu", m.wait_for("document.querySelector('#sim-received').textContent.includes('battery')", 8), received())
 r.check("... y compris l'indisponibilite", "false" in received().split("|")[1] if "|" in received() else False, received())
 
-# Changer de numero change de sujet : l'ancien etat n'est plus affiche, et plus rien n'est recu pour lui.
+# Changing the number changes the subject: the old state is no longer displayed, and nothing is received for it any more.
 fill("#sim-device", str(dev_unknown))
 r.check("autre appareil sans etat : message vide", m.wait_for("document.querySelector('#sim-received').textContent.includes('Aucun état reçu')", 5), received())
 inject(dev_b, '{"state":"ON","battery":87}')
 time.sleep(0.8)
 r.check("un appareil abandonne n'est plus suivi", "Aucun état reçu" in received(), received())
 
-# Validation cote serveur.
+# Server-side validation.
 fill("#sim-device", str(dev_a))
 fill("#sim-state", "[1, 2]")
 m.click("#sim-send")
 r.check("etat non objet : refuse, message traduit", m.wait_for("(document.querySelector('#sim-status')?.textContent || '').includes('objet JSON')", 8), m.text("#sim-status"))
-# Firefox bloque lui-meme la soumission d'un 0 (attribut min) ; on le retire pour exercer le message de l'interface.
+# Firefox itself blocks the submission of a 0 (min attribute); we remove it to exercise the interface's message.
 m.js("document.querySelector('#sim-device').removeAttribute('min')")
 fill("#sim-device", "0")
 m.click("#sim-send")
@@ -201,18 +201,18 @@ r.check("numero invalide : refuse", m.wait_for("(document.querySelector('#sim-st
 fill("#sim-state", '{"state": "ON", "temperature": 21.5}')
 fill("#sim-device", str(dev_a))
 
-# Un numero valide mais sans appareil est refuse aussi (le simulateur n'invente pas d'appareil).
+# A valid number but without a device is refused too (the simulator does not invent a device).
 fill("#sim-device", str(dev_unknown))
 m.click("#sim-send")
 r.check("appareil inexistant : refuse", m.wait_for("(document.querySelector('#sim-status')?.textContent || '').includes('appareil existant')", 8), m.text("#sim-status"))
 fill("#sim-device", str(dev_a))
 
-# --- Basculer de langue : l'indicateur suit ---------------------------------------------------------------------------------
+# --- Switching language: the indicator follows ------------------------------------------------------------------------------
 m.js("[...document.querySelectorAll('.vc-lang button')].find(b => /English/i.test(b.textContent)).click()")
 r.check("indicateur traduit", m.wait_for("(document.querySelector('#vc-rt-state')?.textContent || '').includes('connected')", 5), m.text("#vc-rt-state"))
 m.js("[...document.querySelectorAll('.vc-lang button')].find(b => /Fran/i.test(b.textContent)).click()")
 
-# --- Reconnexion automatique apres un redemarrage du serveur ------------------------------------------------------------------
+# --- Automatic reconnection after a server restart ----------------------------------------------------------------------------
 if restart_cmd:
     subprocess.run(restart_cmd, shell=True, check=True)
     r.check("apres redemarrage : la connexion est retablie toute seule", wait_state("online", 40), str(rt_state()))
@@ -220,14 +220,14 @@ if restart_cmd:
     m.click("#broadcast-send")
     r.check("... et les messages arrivent a nouveau", m.wait_for("document.querySelector('.vc-toast') !== null", 10))
     m.js("document.querySelector('.vc-toast-close')?.click()")
-    # Le serveur a tout oublie (abonnements et etats retenus) : le navigateur doit RE-demander l'appareil suivi (7).
+    # The server forgot everything (subscriptions and retained states): the browser must ask AGAIN for the followed device (7).
     inject(dev_a, '{"state":"APRES-REDEMARRAGE"}')
     r.check("apres redemarrage : l'appareil suivi est de nouveau abonne",
             m.wait_for("document.querySelector('#sim-received').textContent.includes('APRES-REDEMARRAGE')", 10), received())
 else:
     print("SKIP  reconnexion apres redemarrage (pas de commande fournie)")
 
-# --- Deconnexion : plus de barre laterale, plus de connexion ------------------------------------------------------------------
+# --- Logout: no more sidebar, no more connection ------------------------------------------------------------------------------
 done = False
 for _ in range(30):
     m.click("#vc-logout")

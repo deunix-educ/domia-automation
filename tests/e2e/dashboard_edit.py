@@ -108,7 +108,7 @@ INSERT INTO widget (dashboard_id, widget_type, title, grid_col, grid_row, width,
  ({board}, 'grille', 'C', 0, 3, 3, 2);
 """)
 
-# --- deplacement au pointeur --------------------------------------------------------------------------------------------------
+# --- pointer move -------------------------------------------------------------------------------------------------------------
 m.goto(url + f"?d={board}")
 r.check("trois widgets affiches", m.wait_for("document.querySelectorAll('#vc-dashboard-grid > .vc-widget').length === 3", 20))
 r.check("hydratation terminee", online())
@@ -118,7 +118,7 @@ geo = json.loads(m.js(
     "const by = n => w.find(e => e.querySelector('.vc-widget-header-title').textContent === n).getBoundingClientRect();"
     "return JSON.stringify({a: by('A').left, b: by('B').left, aTop: by('A').top, c: by('C').top})"
 ))
-pitch = (geo["b"] - geo["a"]) / 4   # largeur d'une colonne + intervalle
+pitch = (geo["b"] - geo["a"]) / 4   # width of a column + gap
 row_pitch = (geo["c"] - geo["aTop"]) / 3
 m.js("[...document.querySelectorAll('#vc-dashboard-grid > .vc-widget')].forEach(e => { e.dataset.t = e.querySelector('.vc-widget-header-title').textContent; })")
 A = "[data-t=A]"
@@ -132,10 +132,10 @@ r.check("plus de transformation restante", m.js("return [...document.querySelect
 m.goto(url + f"?d={board}")
 r.check("position conservee apres rechargement", m.wait_for("[...document.querySelectorAll('#vc-dashboard-grid > .vc-widget')].some(e => e.querySelector('.vc-widget-header-title')?.textContent === 'A' && getComputedStyle(e).gridColumnStart === '7')", 15))
 
-# --- emplacement occupe : refuse, le widget revient --------------------------------------------------------------------------
+# --- occupied slot: refused, the widget comes back ---------------------------------------------------------------------------
 online()
 m.js("[...document.querySelectorAll('#vc-dashboard-grid > .vc-widget')].forEach(e => { e.dataset.t = e.querySelector('.vc-widget-header-title').textContent; })")
-drag("[data-t=A]", -2 * pitch, 0)   # de la colonne 6 a la colonne 4 : sur B
+drag("[data-t=A]", -2 * pitch, 0)   # from column 6 to column 4: onto B
 r.check("emplacement occupe : message d'erreur", m.wait_for("document.querySelector('#vc-dash-notice') !== null", 15), m.text("#vc-dash-notice"))
 r.check("... et le widget n'a pas bouge en base", widgets(board)["A"] == (6, 0), str(widgets(board)))
 r.check("... ni a l'ecran", m.js("return getComputedStyle([...document.querySelectorAll('#vc-dashboard-grid > .vc-widget')].find(e => e.querySelector('.vc-widget-header-title').textContent === 'A')).gridColumnStart") == "7")
@@ -143,11 +143,11 @@ drag("[data-t=C]", 0, row_pitch)
 r.check("deplacement vertical (ligne 3 -> 4)", m.wait_for("[...document.querySelectorAll('#vc-dashboard-grid > .vc-widget')].some(e => e.querySelector('.vc-widget-header-title')?.textContent === 'C' && getComputedStyle(e).gridRowStart === '5')", 15), str(widgets(board)))
 r.check("... et le message d'erreur precedent a disparu", m.js("return document.querySelector('#vc-dash-notice')") is None)
 
-# --- administration des widgets ------------------------------------------------------------------------------------------------
+# --- widgets administration ----------------------------------------------------------------------------------------------------
 m.goto(url + f"admin/widgets?d={board}")
 r.check("page des widgets : le tableau est choisi", m.wait_for(f"document.querySelector('#widgets-dashboard')?.value === '{board}'", 20))
 r.check("trois lignes", m.wait_for("document.querySelectorAll('#crud-table tbody tr').length === 3", 15))
-online()  # hydratation terminee : sinon le clic ne declenche rien
+online()  # hydration finished: otherwise the click triggers nothing
 m.click("#crud-add")
 r.check("formulaire : type 'texte' par defaut -> champ contenu, pas de configuration", m.wait_for("document.querySelector('#crud-field-content') !== null", 10)
         and m.js("return document.querySelector('#crud-field-config')") is None and m.js("return document.querySelector('#crud-field-device_id')") is None)
@@ -174,15 +174,15 @@ r.check("widget cree", m.wait_for("document.querySelectorAll('#crud-table tbody 
 saved = json.loads(post("/sf/widgets/list", f"dashboard_id={board}")["text"])
 new = next(w for w in saved if w["title"] == "Nouveau")
 r.check("HTML assaini a l'enregistrement (pas de script)", "<script" not in new["content"] and "<b>toi</b>" in new["content"], new["content"])
-# Suppression avec confirmation.
+# Deletion with confirmation.
 m.js("[...document.querySelectorAll('#crud-table tbody tr')].find(t => t.textContent.includes('Nouveau')).querySelector('.crud-delete').click()")
 m.js("document.querySelector('.crud-confirm-yes').click()")
 r.check("widget deleted", m.wait_for("document.querySelectorAll('#crud-table tbody tr').length === 3", 10))
 
-# --- administration des tableaux ---------------------------------------------------------------------------------------------------
+# --- dashboards administration -----------------------------------------------------------------------------------------------------
 m.goto(url + "admin/dashboards")
 r.check("page des tableaux", m.wait_for("document.querySelector('#crud-table') !== null", 20))
-online()  # hydratation terminee : sinon le clic ne declenche rien
+online()  # hydration finished: otherwise the click triggers nothing
 m.click("#crud-add")
 m.wait_for("document.querySelector('#crud-field-owner') !== null", 10)
 fill("#crud-field-name", "Garage")

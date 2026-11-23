@@ -54,9 +54,9 @@ res = m.js_async(
 )
 r.check("connexion administrateur", res == 200, str(res))
 
-# --- une alerte en cours chez Prometheus -------------------------------------------------------------------------------------------------
+# --- an ongoing alert at Prometheus ------------------------------------------------------------------------------------------------------
 set_mode("firing")
-time.sleep(3)  # la lecture se fait toutes les 2 s dans ce lancement
+time.sleep(3)  # the read happens every 2 s in this run
 m.goto(url + "alerts")
 r.check("page des alertes", m.wait_for("document.querySelector('#alerts-filters') !== null", 10))
 r.check("section Plateforme presente", m.wait_for("document.querySelector('#platform-alerts') !== null", 10))
@@ -70,12 +70,12 @@ m.wait_for("document.querySelector('#vc-rt-state')?.dataset.state === 'online'",
 r.check("la pastille compte l'alerte de la plateforme", wait_until(lambda: badge() == "1"), str(badge()))
 r.check("aucune alerte d'appareil : le tableau des appareils est absent", m.js("return document.querySelector('#alerts-table') === null"))
 
-# --- les filtres « resolues » et « acquittees » ne montrent pas la plateforme ---------------------------------------------------------------
+# --- the "resolved" and "acknowledged" filters do not show the platform ---------------------------------------------------------------------
 m.goto(url + "alerts?status=resolved")
 r.check("filtre resolues : page chargee", m.wait_for("document.querySelector('#alerts-filters') !== null && document.querySelector('#alerts-empty, #alerts-table') !== null", 10))
 r.check("... section Plateforme absente", m.js("return document.querySelector('#platform-alerts') === null"))
 
-# --- la cause disparait : l'alerte disparait, en direct --------------------------------------------------------------------------------------------
+# --- the cause disappears: the alert disappears, live ----------------------------------------------------------------------------------------------
 m.goto(url + "alerts")
 m.wait_for("document.querySelector('#platform-table') !== null", 10)
 m.wait_for("document.querySelector('#vc-rt-state')?.dataset.state === 'online'", 20)
@@ -83,7 +83,7 @@ set_mode("empty")
 r.check("alerte disparue de la liste sans recharger la page", m.wait_for("document.querySelector('#platform-empty') !== null", 15), m.text("#platform-alerts"))
 r.check("... la pastille se cache", wait_until(lambda: badge() is None), str(badge()))
 
-# --- Prometheus injoignable : dit, jamais confondu avec « aucune alerte » ------------------------------------------------------------------------
+# --- Prometheus unreachable: said, never confused with "no alert" --------------------------------------------------------------------------------
 set_mode("down")
 time.sleep(3)
 m.goto(url + "alerts")
@@ -91,7 +91,7 @@ r.check("source injoignable annoncee", m.wait_for("document.querySelector('#plat
 r.check("... sans « aucune alerte de la plateforme » trompeur", m.js("return document.querySelector('#platform-empty') === null"))
 r.check("... ni message vide general", m.js("return document.querySelector('#alerts-empty')?.hidden !== false"))
 
-# --- retour : l'alerte reapparait -----------------------------------------------------------------------------------------------------------------------------
+# --- back: the alert reappears --------------------------------------------------------------------------------------------------------------------------------
 set_mode("firing")
 time.sleep(3)
 m.goto(url + "alerts")

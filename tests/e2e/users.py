@@ -116,7 +116,7 @@ r.check("ajout : ligne dans le tableau", has_row(name))
 r.check("nom complet et rôle affichés", "Eve Test" in (row_text(name) or "") and "Utilisateur" in (row_text(name) or ""), str(row_text(name)))
 r.check("le nouveau compte peut se connecter", '"Success"' in (login_probe(name, pw1) or "") or "Success" in (login_probe(name, pw1) or ""))
 
-# Identifiant deja pris ---------------------------------------------------------------------------------------------
+# Identifier already taken ------------------------------------------------------------------------------------------
 r.check("formulaire rouvert", open_form())
 enabled("#crud-save")
 fill("#crud-field-username", name.upper())
@@ -125,7 +125,7 @@ m.click("#crud-save")
 r.check("identifiant déjà pris (casse ignorée)", m.wait_for("(document.querySelector('#crud-error-username')?.textContent || '').includes('déjà')", 8), m.text("#crud-error-username"))
 m.click("#crud-cancel")
 
-# Modification : identifiant en lecture seule, role, reinitialisation du mot de passe ---------------------------------------
+# Editing: read-only identifier, role, password reset -----------------------------------------------------------------------
 click_row(name, ".crud-edit")
 r.check("formulaire prérempli", m.wait_for(f"document.querySelector('#crud-field-username')?.value === {name!r}", 5))
 r.check("identifiant en lecture seule", m.js("return document.querySelector('#crud-field-username').readOnly") is True)
@@ -138,11 +138,11 @@ r.check("modification : rôle Administrateur", m.wait_for(f"(() => {{ const tr =
 r.check("ancien mot de passe refusé", "InvalidCredentials" in (login_probe(name, pw1) or ""))
 r.check("nouveau mot de passe accepté", "Success" in (login_probe(name, pw2) or ""))
 
-# Protections sur son propre compte -----------------------------------------------------------------------------------
+# Protections on one's own account ------------------------------------------------------------------------------------
 click_row(admin, ".crud-edit")
 m.wait_for(f"document.querySelector('#crud-field-username')?.value === {admin!r}", 5)
 enabled("#crud-save")
-m.js("document.querySelector('#crud-field-is_active').click()")  # decoche
+m.js("document.querySelector('#crud-field-is_active').click()")  # unticked
 m.click("#crud-save")
 r.check("se désactiver soi-même : refusé", m.wait_for("(document.querySelector('#crud-banner')?.textContent || '').includes('propre compte')", 8), banner())
 r.check("le formulaire reste ouvert, aucune session coupée", m.js("return document.querySelector('#crud-form') !== null") is True)
@@ -153,13 +153,13 @@ m.js("document.querySelector('.crud-confirm-yes').click()")
 r.check("se supprimer soi-même : refusé", m.wait_for("(document.querySelector('#crud-banner')?.textContent || '').includes('propre compte')", 8), banner())
 r.check("le compte administrateur est toujours là", has_row(admin))
 
-# Traduction a chaud ------------------------------------------------------------------------------------------------
+# Live translation --------------------------------------------------------------------------------------------------
 m.js("[...document.querySelectorAll('.vc-lang button')].find(b => /English/i.test(b.textContent)).click()")
 r.check("rôle traduit dans le tableau", m.wait_for(f"(() => {{ const tr = {row_js(name)}; return !!tr && tr.innerText.includes('Administrator'); }})()", 8))
 m.js("[...document.querySelectorAll('.vc-lang button')].find(b => /Fran/i.test(b.textContent)).click()")
 m.wait_for("document.querySelector('.vc-page-header h2').textContent === 'Utilisateurs'", 8)
 
-# Suppression ---------------------------------------------------------------------------------------------------------
+# Deletion ------------------------------------------------------------------------------------------------------------
 click_row(name, ".crud-delete")
 m.wait_for("document.querySelector('.crud-confirm-yes') !== null", 5)
 m.js("document.querySelector('.crud-confirm-yes').click()")

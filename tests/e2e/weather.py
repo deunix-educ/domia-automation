@@ -80,19 +80,19 @@ res = m.js_async(
 )
 r.check("connexion administrateur", res == 200, str(res))
 
-# Les sources qui font des messages des appareils (comme `dominet seed-weather` et la source SolarMax de la production).
+# The sources that turn the messages into devices (like `dominet seed-weather` and the production's SolarMax source).
 for payload in (source("E2E Météo", "meteo/#", "meteo"), source("E2E Soleil", f"{sun_prefix}/#", sun_prefix)):
     res = post_json("/sf/mqtt-sources/save", payload)
     r.check(f"source {payload['input']['name']}", res["status"] == 200 and "Saved" in res["text"], res["text"][:100])
-time.sleep(1.5)  # abonnements recharges
+time.sleep(1.5)  # subscriptions reloaded
 
-# --- l'onduleur simule alimente un appareil (publisher SolarMax, toutes les 2 s) ---------------------------------------------------------
+# --- the simulated inverter feeds a device (SolarMax publisher, every 2 s) ---------------------------------------------------------------
 r.check("onduleur simule -> appareil (production, etat)",
         wait_until(lambda: scalar("SELECT (state->>'pac') || '|' || (state->>'status') FROM device WHERE friendly_name = 'inv/prod'") == "632.5|Operating at MPP"),
         scalar("SELECT state::text FROM device WHERE friendly_name = 'inv/prod'"))
 r.check("... avec le prefixe de la source", scalar("SELECT base_topic FROM device WHERE friendly_name = 'inv/prod'") == sun_prefix)
 
-# --- station meteo creee depuis l'administration : interrogee tout de suite ----------------------------------------------------------------
+# --- weather station created from the administration: queried right away -------------------------------------------------------------------
 before = requests_made()
 r.check("sans station active, l'API n'est pas interrogee", wait_until(lambda: requests_made() == before, 3) and scalar("SELECT count(*) FROM weather_station") == "0")
 m.goto(url + "admin/weather-stations")
@@ -121,18 +121,18 @@ r.check("le releve publie devient un appareil (source MQTT)",
         wait_until(lambda: scalar(f"SELECT (state->>'temperature') || '|' || base_topic FROM device WHERE friendly_name = '{suffix}'") == "18.2|meteo"),
         scalar(f"SELECT state::text FROM device WHERE friendly_name = '{suffix}'"))
 
-# --- visible sur la page des appareils ----------------------------------------------------------------------------------------------------------
+# --- visible on the devices page ----------------------------------------------------------------------------------------------------------------
 m.goto(url + "automation/")
 r.check("la station meteo est sur /automation/ avec sa temperature",
         m.wait_for(f"[...document.querySelectorAll('#devices-grid article')].some(a => a.textContent.includes({suffix!r}) && a.textContent.includes('18.2'))", 15),
         m.text("#devices-grid"))
 r.check("l'onduleur aussi (puissance)", m.wait_for("[...document.querySelectorAll('#devices-grid article')].some(a => a.textContent.includes('inv/prod') && a.textContent.includes('632.5'))", 15))
 
-# --- desactiver la station arrete les requetes ------------------------------------------------------------------------------------------------------
+# --- deactivating the station stops the requests ----------------------------------------------------------------------------------------------------
 m.goto(url + "admin/weather-stations")
 m.wait_for("document.querySelector('#crud-add') !== null", 10)
 m.wait_for(f"[...document.querySelectorAll('#crud-table tbody tr td')].some(t => t.textContent === 'E2E Maison')", 10)
-for _ in range(40):  # tant que l'interface n'est pas hydratee, le clic n'ouvre rien
+for _ in range(40):  # until the interface is hydrated, the click opens nothing
     m.js("[...document.querySelectorAll('#crud-table tbody tr')].find(t => t.querySelector('td').textContent === 'E2E Maison').querySelector('.crud-edit').click()")
     if m.wait_for("document.querySelector('#crud-form') !== null", 0.5):
         break
@@ -140,7 +140,7 @@ m.wait_for("document.querySelector('#crud-field-enabled') !== null && document.q
 m.js("document.querySelector('#crud-field-enabled').click()")
 m.click("#crud-save")
 r.check("station desactivee en base", wait_until(lambda: scalar(f"SELECT enabled::text FROM weather_station WHERE mqtt_topic_suffix = '{suffix}'") == "false"))
-time.sleep(1.5)  # le reveil du publisher a pu faire un dernier cycle (sans station active : aucune requete)
+time.sleep(1.5)  # the publisher's wake-up may have done a last cycle (without an active station: no request)
 settled = requests_made()
 time.sleep(4)
 r.check("plus aucune requete a l'API apres la desactivation", requests_made() == settled, f"{settled} -> {requests_made()}")

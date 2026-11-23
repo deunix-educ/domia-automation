@@ -44,9 +44,9 @@ try:
     m.goto(url + "surveillance/discovery")
     r.check("page rendue", m.wait_for("document.querySelector('#discovery-start') !== null", 10))
 
-    # Aucun role `discovery` dans l'E2E : un message le dit au lieu d'attendre indefiniment.
+    # No `discovery` role in the E2E: a message says so instead of waiting indefinitely.
     silent = False
-    for _ in range(3):  # un clic avant l'hydratation ne fait rien : on recommence
+    for _ in range(3):  # a click before hydration does nothing: we start again
         m.click("#discovery-start")
         if m.wait_for("document.querySelector('#discovery-silent') !== null", 9):
             silent = True
@@ -54,13 +54,13 @@ try:
     r.check("message clair sans role discovery", silent, m.text("#discovery-silent") or "")
     r.check("le message nomme la commande", "--only discovery" in (m.text("#discovery-silent") or ""))
 
-    # Adresse invalide ---------------------------------------------------------------------------------------------
+    # Invalid address ----------------------------------------------------------------------------------------------
     fill("#manual-ip", "cam; rm -rf")
     m.click("#manual-submit")
     r.check("adresse invalide refusee", m.wait_for("(document.querySelector('#manual-result')?.textContent || '').includes('invalide')", 8),
             m.text("#manual-result") or "")
 
-    # Ajout par adresse, avec identifiants : camera creee et synchronisee ------------------------------------------------
+    # Adding by address, with credentials: camera created and synchronised -----------------------------------------------
     fill("#manual-ip", "127.0.0.1")
     fill("#manual-port", port)
     fill("#manual-user", "admin")
@@ -75,12 +75,12 @@ try:
         (m.js("return document.querySelector('#onvif-cameras')?.innerHTML") or "")[:300])
     r.check("fabricant et modele affiches", "IPC_NT98566" in (m.text("#onvif-cameras .camera-info") or ""), m.text("#onvif-cameras .camera-info") or "")
 
-    # Deuxieme ajout de la meme adresse --------------------------------------------------------------------------------
+    # Second addition of the same address ------------------------------------------------------------------------------
     m.click("#manual-submit")
     r.check("meme adresse : camera existante", m.wait_for("(document.querySelector('#manual-result')?.textContent || '').includes('déjà')", 8),
             m.text("#manual-result") or "")
 
-    # Synchronisation ONVIF a la demande ------------------------------------------------------------------------------
+    # On-demand ONVIF synchronisation ---------------------------------------------------------------------------------
     m.click(".camera-onvif-sync")
     r.check("synchronisation ONVIF : profil et PTZ",
             m.wait_for("(document.querySelector('.onvif-result')?.textContent || '').includes('Profile_1')", 10),
@@ -90,7 +90,7 @@ try:
     html = m.js("return document.documentElement.outerHTML")
     r.check("le mot de passe n'apparait nulle part dans la page", secret not in html)
 finally:
-    # Nettoyage : la camera de test (et son path MediaMTX) sont supprimes ---------------------------------------------------
+    # Cleanup: the test camera (and its MediaMTX path) are deleted ----------------------------------------------------------
     deleted = m.js_async(
         "const cb = arguments[arguments.length-1];"
         "fetch('/sf/cameras/list', {method:'POST'}).then(x => x.json()).then(async list => {"

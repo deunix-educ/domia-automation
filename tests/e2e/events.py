@@ -104,7 +104,7 @@ def wait_event(kind, timeout):
 
 ff = None
 try:
-    # La luminosite de l'image du bus oscille (0,6 Hz) : c'est un mouvement, et le bus reste reconnaissable.
+    # The bus image's brightness oscillates (0.6 Hz): it is a motion, and the bus stays recognisable.
     ff = subprocess.Popen(
         ["ffmpeg", "-loglevel", "error", "-re", "-loop", "1", "-framerate", "10", "-i", bus,
          "-vf", "scale=640:480,eq=brightness='0.25*sin(2*PI*t*0.6)':eval=frame,format=yuv420p",
@@ -139,7 +139,7 @@ try:
     r.check("page des evenements : tableau", m.wait_for("document.querySelectorAll('#events-table tbody tr').length >= 1", 20))
     r.check("... avec un mouvement", m.js("return document.querySelector('#events-table tbody tr[data-kind=motion]') !== null"))
     r.check("reglage du detecteur visible pour l'administrateur", m.wait_for("document.querySelector('#detector-card') !== null", 10))
-    # Coupe le detecteur depuis l'interface (la page se reactive et charge le reglage : on attend l'etat attendu, on reessaie les clics).
+    # Turns the detector off from the interface (the page reactivates itself and loads the setting: we wait for the expected state, we retry the clicks).
     if have_model:
         r.check("la case reflete le reglage actif", m.wait_for("document.querySelector('#detector-enabled')?.checked === true", 15))
     for _ in range(8):

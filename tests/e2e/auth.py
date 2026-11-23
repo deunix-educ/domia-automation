@@ -31,7 +31,7 @@ def clear():
 
 
 def fill(selector, value):
-    # Saisie realiste : l'evenement `input` met a jour l'etat de l'interface.
+    # Realistic input: the `input` event updates the interface's state.
     return m.js(
         f"const e = document.querySelector({selector!r}); if (!e) return false; e.focus(); e.value = {value!r};"
         "e.dispatchEvent(new Event('input', {bubbles: true})); return true;"
@@ -50,13 +50,13 @@ def sign_in(u, p, expect_ok=True):
     return m.wait_for("document.querySelector('#login-error') !== null", 8)
 
 
-# --- garde -----------------------------------------------------------------------------------------------------
+# --- guard -----------------------------------------------------------------------------------------------------
 clear()
 m.goto(url + "account")
 r.check("page protegee : renvoi vers /login avec la cible", path() == "/login?next=%2Faccount", path())
 r.check("aucune barre laterale pour un anonyme", m.js("return document.querySelector('.vc-sidebar')") is None)
 
-# --- remplissage automatique : valeurs posees SANS evenement `input` (gestionnaire de mots de passe, restauration de formulaire) ---
+# --- autofill: values set WITHOUT an `input` event (password manager, form restoration) --------------------------------------------
 m.goto(url + "login")
 m.wait_for("document.querySelector('#login-submit') && !document.querySelector('#login-submit').disabled", 20)
 m.js(f"document.querySelector('#login-username').value = {user!r}; document.querySelector('#login-password').value = {password!r};")
@@ -66,7 +66,7 @@ m.js_async("const cb = arguments[arguments.length-1]; fetch('/api/auth/logout', 
 m.goto(url + "account")
 r.check("(retour a l'etat anonyme)", path() == "/login?next=%2Faccount", path())
 
-# --- connexion : echec puis succes ----------------------------------------------------------------------------
+# --- login: failure then success ------------------------------------------------------------------------------
 r.check("mauvais mot de passe : message d'erreur", sign_in(user, "mauvais mot de passe", expect_ok=False))
 msg = m.text("#login-error") or ""
 r.check("message en francais", "incorrect" in msg, msg)
@@ -84,13 +84,13 @@ r.check("identite affichee", user in (m.text("#account-identity") or ""), m.text
 r.check("lien Mon compte actif dans la barre",
         m.js("return document.querySelector('a.vc-sidebar-user')?.getAttribute('aria-current')") == "page")
 
-# --- /login quand on est deja connecte ---------------------------------------------------------------------
+# --- /login when already logged in -------------------------------------------------------------------------
 m.goto(url + "login")
 r.check("deja connecte : /login renvoie vers l'accueil", path() == "/", path())
 m.goto(url + "login?next=%2F%2Fevil.example")
 r.check("redirection ouverte refusee", m.js("return location.hostname") == "127.0.0.1" and path() == "/", path())
 
-# --- changement de mot de passe ------------------------------------------------------------------------------
+# --- password change -----------------------------------------------------------------------------------------
 m.goto(url + "account")
 
 
@@ -119,7 +119,7 @@ r.check("session fermee : plus de barre laterale", m.wait_for("document.querySel
 m.goto(url + "account")
 r.check("l'ancienne session ne donne plus acces", path() == "/login?next=%2Faccount", path())
 
-# Aller-retour : on se reconnecte avec le mot de passe temporaire puis on retablit l'original.
+# Round trip: we log back in with the temporary password then restore the original.
 r.check("connexion avec le nouveau mot de passe", sign_in(user, temp))
 m.goto(url + "account")
 m.wait_for("document.querySelector('#pw-submit') && !document.querySelector('#pw-submit').disabled", 15)
@@ -128,7 +128,7 @@ r.check("mot de passe d'origine retabli",
         m.wait_for("location.pathname === '/login' && document.querySelector('#login-notice') !== null", 10), path())
 r.check("reconnexion avec le mot de passe d'origine", sign_in(user, password))
 
-# --- deconnexion -----------------------------------------------------------------------------------------------
+# --- logout ----------------------------------------------------------------------------------------------------
 done = False
 for _ in range(30):
     m.click("#vc-logout")
@@ -139,14 +139,14 @@ r.check("deconnexion : retour sur /login, barre laterale disparue", done, path()
 m.goto(url)
 r.check("apres deconnexion, la racine renvoie vers /login", path() == "/login", path())
 
-# --- cible hors de l'interface (documentation) : vrai chargement de page, pas la page « introuvable » du routeur ---
+# --- target outside the interface (documentation): a real page load, not the router's "not found" page -------------
 m.goto(url + "docs/")
 r.check("documentation sans session : renvoi vers /login avec la cible", path() == "/login?next=%2Fdocs%2F", path())
 sign_in(user, password)
 r.check("apres connexion : /docs/ charge par le serveur (pas la page introuvable de l'interface)",
         m.wait_for("location.pathname === '/docs/' && document.querySelector('.vc-main-wrap, .vc-auth-wrap') === null", 10), path())
 m.goto(url)
-# Meme cible depuis la barre de navigation : lien ordinaire (rel="external"), pas une navigation du routeur.
+# Same target from the navigation bar: an ordinary link (rel="external"), not a router navigation.
 if m.wait_for("document.querySelector('a.vc-nav-link[href=\"/docs/\"]') !== null", 10):
     done = False
     for _ in range(20):

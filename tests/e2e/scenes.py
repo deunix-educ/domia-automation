@@ -83,7 +83,7 @@ def row_click(i, cls):
 
 
 def open_form():
-    for _ in range(40):  # tant que l'interface n'est pas hydratee, le clic n'ouvre rien
+    for _ in range(40):  # until the interface is hydrated, the click opens nothing
         m.click("#crud-add")
         if m.wait_for("document.querySelector('#crud-form') !== null", 0.5):
             return True
@@ -119,7 +119,7 @@ res = post("/sf/settings/save", "key=Z2M_BASE_TOPIC&value=" + urllib.parse.quote
 r.check("prefixe Zigbee2MQTT propre au script", res["status"] == 200 and "Saved" in res["text"], res["text"][:120])
 sql(f"INSERT INTO device (friendly_name, base_topic) VALUES ('{dev_a}', '{base}'), ('{dev_b}', '{base}');")
 
-# --- administration : scene avec deux commandes ----------------------------------------------------------------------------
+# --- administration: a scene with two commands -----------------------------------------------------------------------------
 m.goto(url + "admin/scenes")
 r.check("page des scenes (administration)", m.wait_for("document.querySelector('#crud-add') !== null", 10))
 open_form()
@@ -147,7 +147,7 @@ scene = int(scalar("SELECT id FROM scene WHERE name = 'E2E Soiree'"))
 r.check("commandes en base, dans l'ordre saisi", commands(scene) == f"{dev_a}=ON,{dev_b}=OFF", commands(scene))
 r.check("colonne du nombre de commandes", m.wait_for("[...document.querySelectorAll('#crud-table tbody tr')].some(t => t.textContent.includes('E2E Soiree') && t.textContent.includes('2'))", 5))
 
-# --- modification : le formulaire est prerempli, on inverse l'ordre ------------------------------------------------------
+# --- editing: the form is prefilled, we reverse the order ----------------------------------------------------------------
 m.js("[...document.querySelectorAll('#crud-table tbody tr')].find(t => t.textContent.includes('E2E Soiree')).querySelector('.crud-edit').click()")
 r.check("formulaire prerempli : deux commandes", m.wait_for("document.querySelectorAll('.vc-pairs-row').length === 2", 10))
 r.check("... avec leurs appareils et leurs textes",
@@ -159,7 +159,7 @@ save_enabled()
 m.click("#crud-save")
 r.check("ordre inverse en base", m.wait_for("document.querySelector('#crud-form') === null", 10) and commands(scene) == f"{dev_b}=OFF,{dev_a}=ON", commands(scene))
 
-# --- page des scenes et activation -------------------------------------------------------------------------------------------
+# --- scenes page and activation ----------------------------------------------------------------------------------------------
 m.goto(url + "automation/scenes")
 r.check("carte de la scene", m.wait_for(f"document.querySelector('#scene-card-{scene}') !== null", 15))
 r.check("... avec ses commandes dans l'ordre", m.js(f"return [...document.querySelectorAll('#scene-card-{scene} .vc-scene-device')].map(e => e.textContent).join(',')") == f"{dev_b},{dev_a}")
@@ -172,7 +172,7 @@ r.check("deux commandes publiees dans l'ordre de la scene",
         got == [f'{base}/{dev_b}/set {{"state":"OFF"}}', f'{base}/{dev_a}/set {{"state":"ON"}}'], str(got))
 r.check("retour ✓", m.wait_for(f"(document.querySelector('#scene-result-{scene}')?.textContent || '').startsWith('✓')", 10), m.text(f"#scene-result-{scene}"))
 
-# --- une commande en echec n'arrete pas la suivante -----------------------------------------------------------------------------
+# --- a failing command does not stop the next one -------------------------------------------------------------------------------
 sql(f"UPDATE device SET active = FALSE WHERE friendly_name = '{dev_b}';")
 sub = listen(f"{base}/#", 1)
 time.sleep(1.0)
@@ -183,7 +183,7 @@ r.check("retour ✗ avec le nom de l'appareil", m.wait_for(f"(document.querySele
         m.text(f"#scene-result-{scene}"))
 sql(f"UPDATE device SET active = TRUE WHERE friendly_name = '{dev_b}';")
 
-# --- widget scene : liste deroulante dans l'administration, bouton sur l'accueil ---------------------------------------------------
+# --- scene widget: drop-down list in the administration, button on the home page ---------------------------------------------------
 admin_id = scalar(f"SELECT id FROM users WHERE username = '{admin}'")
 board = int(re.search(r"^\s*(\d+)\s*$", sql(f"INSERT INTO dashboard (name, owner_id) VALUES ('E2E Scenes', {admin_id}) RETURNING id;"), re.M).group(1))
 m.goto(url + f"admin/widgets?d={board}")
@@ -208,7 +208,7 @@ r.check("le bouton du widget publie les deux commandes dans l'ordre",
         got == [f'{base}/{dev_b}/set {{"state":"OFF"}}', f'{base}/{dev_a}/set {{"state":"ON"}}'], str(got))
 r.check("retour ✓ sur le widget", m.wait_for("(document.querySelector('[data-widget-type=scene] .vc-scene-result')?.textContent || '').startsWith('✓')", 10))
 
-# --- suppression : le widget le dit, la page aussi --------------------------------------------------------------------------------
+# --- deletion: the widget says so, the page too -----------------------------------------------------------------------------------
 m.goto(url + "admin/scenes")
 m.wait_for("document.querySelector('#crud-add') !== null", 10)
 m.wait_for("document.querySelectorAll('#crud-table tbody tr').length > 0", 10)
@@ -224,6 +224,6 @@ r.check("... le widget perd sa scene", scalar(f"SELECT coalesce(scene_id::text, 
 m.goto(url + f"?d={board}")
 r.check("le widget annonce une scene introuvable", m.wait_for("document.querySelector('[id^=scene-problem-]') !== null", 15))
 
-# Nettoyage : la base jetable est partagee avec les scripts suivants (le tableau de l'administrateur, notamment).
+# Cleanup: the throw-away database is shared with the following scripts (the administrator's dashboard, notably).
 sql(f"DELETE FROM dashboard WHERE id = {board}; DELETE FROM device WHERE friendly_name IN ('{dev_a}', '{dev_b}');")
 sys.exit(r.finish())

@@ -64,7 +64,7 @@ res = m.js_async(
 )
 r.check("connexion administrateur", res == 200, str(res))
 
-# --- historique : hier, sur les trois appareils du bilan (heure locale = Paris, midi UTC reste le meme jour) ---------------------------
+# --- history: yesterday, on the summary's three devices (local time = Paris, noon UTC stays the same day) ------------------------------
 sql("INSERT INTO device (friendly_name, base_topic, tracked_keys) VALUES ('consommation', 'x', '{HCHP,HCHC}'), ('prod', 'x', '{qdy}'), ('PAC-CE', 'x', '{energy_a,energy_b}');")
 yesterday_local = scalar("SELECT (now() AT TIME ZONE 'Europe/Paris')::date - 1")
 rows = []
@@ -75,14 +75,14 @@ for dev, key, values in [
     ("PAC-CE", "energy_b", [1000.0, 1100.5]),
     ("prod", "qdy", [0.5, 6.005]),
 ]:
-    for hour, v in zip((6, 14), values):  # 06:00 et 14:00 UTC : meme jour local que UTC
+    for hour, v in zip((6, 14), values):  # 06:00 and 14:00 UTC: same local day as UTC
         rows.append(f"((SELECT id FROM device WHERE friendly_name = '{dev}'), '{key}', '{yesterday_local} {hour:02d}:00:00+00', {v})")
 sql("INSERT INTO device_state_log (device_id, key, ts, value_num) VALUES " + ",".join(rows) + ";")
-# Quatorze jours de bilans plus anciens, pour le graphique.
+# Fourteen days of older summaries, for the chart.
 sql(f"""INSERT INTO energy_daily_log (day, linky_hp_wh, linky_hc_wh, solar_wh, pac_wh)
         SELECT '{yesterday_local}'::date - g, 3000 + g * 10, 800, 5000 + g * 100, 400 FROM generate_series(1, 14) g;""")
 
-# --- le travail de 00:05, lance par le vrai planificateur ---------------------------------------------------------------------------------
+# --- the 00:05 job, launched by the real scheduler ----------------------------------------------------------------------------------------
 r.check("le travail systeme existe (00:05 locale)", scalar("SELECT cron_expr || '|' || timezone FROM schedule_job WHERE name = 'compute_daily_energy'") == "5 0 * * *|Europe/Paris")
 sql("UPDATE schedule_job SET args = '{}'::jsonb, next_run_at = now() - interval '1 second' WHERE name = 'compute_daily_energy';")
 r.check("hier calcule par le planificateur", wait_until(lambda: (scalar("SELECT last_status FROM schedule_job WHERE name = 'compute_daily_energy'") or "").startswith(f"ok : balance of {yesterday_local}"), 45),
@@ -90,7 +90,7 @@ r.check("hier calcule par le planificateur", wait_until(lambda: (scalar("SELECT 
 got = scalar(f"SELECT linky_hp_wh || '|' || linky_hc_wh || '|' || solar_wh || '|' || pac_wh FROM energy_daily_log WHERE day = '{yesterday_local}'")
 r.check("... les memes Wh que la reference (HP 1200, HC 300, solaire 6005 = int(6.005*1000), PAC 500)", got == "1200|300|6005|500", got)
 
-# --- la page ---------------------------------------------------------------------------------------------------------------------------------
+# --- the page --------------------------------------------------------------------------------------------------------------------------------
 m.goto(url + "automation/energy")
 r.check("page d'energie", m.wait_for("document.querySelector('#energy-live') !== null", 15))
 r.check("graphique SVG calcule par le serveur (15 jours x 3 barres)", m.wait_for("document.querySelectorAll('#energy-chart rect').length === 45", 10), str(m.js("return document.querySelectorAll('#energy-chart rect').length")))
@@ -105,7 +105,7 @@ r.check("API /api/energy/?days=5 : les cinq derniers jours, format de reference"
         api["status"] == 200 and len(api["body"]["data"]) == 5 and api["body"]["data"][-1]["date"] == yesterday_local
         and api["body"]["data"][-1]["linky_total_wh"] == 1500 and api["body"]["data"][-1]["net_wh"] == 4005, str(api)[:200])
 
-# --- etat en direct, sans recharger ----------------------------------------------------------------------------------------------------------
+# --- live state, without reloading -----------------------------------------------------------------------------------------------------------
 m.wait_for("document.querySelector('#vc-rt-state')?.dataset.state === 'online'", 20)
 m.js("window.__no_reload = 5")
 ids = {n: scalar(f"SELECT id FROM device WHERE friendly_name = '{n}'") for n in ("prod", "consommation", "PAC-CE")}
@@ -119,6 +119,6 @@ r.check("PAC en direct", m.wait_for("document.querySelector('#energy-live-pac').
 r.check("bilan net en direct = 1500 - 400 - 300 = +800 (surplus)", m.wait_for("document.querySelector('#energy-live-net').textContent.trim() === '+800'", 15) and "Surplus" in (m.text("#energy-live-net-label") or ""), m.text("#energy-live-net"))
 r.check("... sans recharger la page", m.js("return window.__no_reload") == 5)
 
-# Nettoyage : la base jetable est partagee avec les scripts suivants.
+# Cleanup: the throw-away database is shared with the following scripts.
 sql("DELETE FROM energy_daily_log; DELETE FROM device WHERE friendly_name IN ('consommation', 'prod', 'PAC-CE');")
 sys.exit(r.finish())

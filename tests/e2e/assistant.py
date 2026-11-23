@@ -62,7 +62,7 @@ def log_text():
     return m.js("return document.querySelector('#assistant-log')?.innerText || ''")
 
 
-# Une maison minimale : un volet.
+# A minimal house: one shutter.
 sql("INSERT INTO device (friendly_name, base_topic, device_type) VALUES ('Volet-salon', 'e2eassistant', 'cover');")
 
 m.goto(url)
@@ -75,7 +75,7 @@ res = m.js_async(
 )
 r.check("connexion administrateur", res == 200, str(res))
 
-# Desactive par defaut ---------------------------------------------------------------------------------------------
+# Off by default ---------------------------------------------------------------------------------------------------
 m.goto(url + "admin/assistant")
 r.check("page rendue", m.wait_for("document.querySelector('#assistant-form') !== null", 20))
 r.check("desactive par defaut : message affiche", m.wait_for("document.querySelector('#assistant-off') !== null", 8))
@@ -83,7 +83,7 @@ r.check("lien du menu d'administration actif",
         m.js("return [...document.querySelectorAll('#vc-nav-admin a')].some(a => a.getAttribute('href') === '/admin/assistant' && a.getAttribute('aria-current') === 'page')") is True)
 r.check("envoi impossible tant que desactive", m.js("return document.querySelector('#assistant-send').disabled") is True)
 
-# Reglages -------------------------------------------------------------------------------------------------------------
+# Settings -------------------------------------------------------------------------------------------------------------
 m.goto(url + "admin/settings")
 m.wait_for("document.querySelector('#setting-AGENT_ENABLED') !== null", 15)
 for key, value in (("AGENT_LLM_URL", llm), ("AGENT_MODEL", model)):
@@ -96,7 +96,7 @@ m.click("#setting-AGENT_ENABLED")
 m.click("#setting-save-AGENT_ENABLED")
 r.check("AGENT_ENABLED enregistre", saved("AGENT_ENABLED"))
 
-# Page active, test de connexion -------------------------------------------------------------------------------------
+# Active page, connection test ---------------------------------------------------------------------------------------
 m.goto(url + "admin/assistant")
 m.wait_for("document.querySelector('#assistant-form') !== null", 20)
 r.check("plus de message « desactive »", m.wait_for("document.querySelector('#assistant-off') === null", 8))
@@ -105,7 +105,7 @@ m.click("#assistant-test")
 r.check("test de connexion : reponse", m.wait_for("(document.querySelector('#assistant-test-result')?.textContent || '').length > 3", 60),
         m.text("#assistant-test-result"))
 
-# Lecture --------------------------------------------------------------------------------------------------------------
+# Reading --------------------------------------------------------------------------------------------------------------
 done = ask("Quels volets y a-t-il dans la maison ?")
 r.check("la lecture se termine", done)
 r.check("la question apparait", "volets" in log_text().lower())
@@ -113,7 +113,7 @@ r.check("le volet du salon est cite dans la reponse", m.wait_for("document.query
         and "salon" in m.js("return [...document.querySelectorAll('.vc-chat__reply')].map(e => e.textContent).join(' ')").lower(), log_text()[-300:])
 r.check("aucune carte pour une simple lecture", m.js("return document.querySelector('.vc-chat__card') === null"))
 
-# Action : une carte, jamais d'execution sans clic -----------------------------------------------------------------------
+# Action: a card, never executed without a click -------------------------------------------------------------------------
 done = ask("Ferme le volet du salon")
 r.check("le tour d'action se termine", done)
 r.check("une carte est proposee", m.wait_for("document.querySelector('.vc-chat__card') !== null", 10), log_text()[-300:])
@@ -126,21 +126,21 @@ m.click(".assistant-confirm")
 r.check("Confirmer : la carte devient « Fait »", m.wait_for("document.querySelector('.vc-chat__done') !== null", 30), log_text()[-300:])
 r.check("la carte a disparu apres confirmation", m.wait_for("document.querySelector('.assistant-confirm') === null", 5))
 
-# Annulation d'une autre carte ----------------------------------------------------------------------------------------------
+# Cancelling another card ---------------------------------------------------------------------------------------------------
 done = ask("Ouvre le volet du salon")
 r.check("deuxieme action : carte", m.wait_for("document.querySelector('.assistant-cancel') !== null", 10), log_text()[-300:])
 m.click(".assistant-cancel")
 r.check("Annuler : action abandonnee", m.wait_for("document.querySelector('.assistant-cancel') === null", 10))
 r.check("pas de seconde execution", log_text().count("Fait") <= 1, log_text()[-300:])
 
-# Liste des modifications ---------------------------------------------------------------------------------------------------
+# List of the changes -------------------------------------------------------------------------------------------------------
 m.goto(url + "admin/assistant")
 m.wait_for("document.querySelector('#assistant-changes') !== null", 20)
 r.check("la modification confirmee est listee, sans annulation possible (commande d'appareil)",
         m.wait_for("document.querySelector('#assistant-changes li') !== null", 10) and m.js("return document.querySelector('.assistant-undo') === null"),
         m.text("#assistant-changes"))
 
-# Nouvelle conversation ------------------------------------------------------------------------------------------------------
+# New conversation -----------------------------------------------------------------------------------------------------------
 m.click("#assistant-reset")
 r.check("Nouvelle conversation vide le journal", m.wait_for("document.querySelectorAll('#assistant-log li').length === 0", 10))
 

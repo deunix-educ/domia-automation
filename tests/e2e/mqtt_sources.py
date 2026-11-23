@@ -90,14 +90,14 @@ r.check("page rendue", m.wait_for("document.querySelector('#crud-add') !== null"
 r.check("entree du menu d'administration",
         m.js("return !!document.querySelector('#vc-nav-admin a[href=\"/admin/mqtt-sources\"]')") is True)
 
-# --- ajout depuis la page ----------------------------------------------------------------------------------------------------
-for _ in range(40):  # tant que l'interface n'est pas hydratee, le clic n'ouvre rien
+# --- adding from the page ----------------------------------------------------------------------------------------------------
+for _ in range(40):  # until the interface is hydrated, the click opens nothing
     m.click("#crud-add")
     if m.wait_for("document.querySelector('#crud-form') !== null", 0.5):
         break
 save_enabled()
 fill("#crud-field-name", name)
-fill("#crud-field-topic_pattern", "a/#/b")  # invalide : # au milieu
+fill("#crud-field-topic_pattern", "a/#/b")  # invalid: # in the middle
 m.click("#crud-save")
 r.check("filtre invalide : erreur sous le champ",
         m.wait_for("(document.querySelector('#crud-error-topic_pattern')?.textContent || '').length > 0", 8),
@@ -111,9 +111,9 @@ m.click("#crud-save")
 r.check("la source est dans le tableau", m.wait_for(f"[...document.querySelectorAll('#crud-table tbody tr td')].some(t => t.textContent === {name!r})", 8), str(rows()))
 r.check("enregistree en base (QoS 1, appareil automatique, code conserve)",
         scalar(f"SELECT qos || '|' || auto_device || '|' || handler_code FROM mqtt_source WHERE name = '{name}'") == '1|true|print("conserve")')
-time.sleep(1.5)  # abonnement recharge
+time.sleep(1.5)  # subscription reloaded
 
-# --- un message sur le broker cree l'appareil -----------------------------------------------------------------------------------
+# --- a message on the broker creates the device ---------------------------------------------------------------------------------
 pub(f"{prefix}/compteur/prod", {"power": 1500})
 r.check("appareil cree par la source (nom sans prefixe, prefixe memorise)",
         wait_until(lambda: scalar("SELECT friendly_name || '|' || base_topic || '|' || (state->>'power') FROM device WHERE friendly_name = 'compteur/prod'") == f"compteur/prod|{prefix}|1500"),
@@ -125,7 +125,7 @@ pub(f"{prefix}/compteur/prod", "[1, 2]")
 time.sleep(1.0)
 r.check("charge non objet ignoree", scalar("SELECT state->>'power' FROM device WHERE friendly_name = 'compteur/prod'") == "1600")
 
-# --- desactivation depuis la page : les messages suivants sont ignores ---------------------------------------------------------
+# --- deactivation from the page: the following messages are ignored ------------------------------------------------------------
 click_in_row(name, ".crud-edit")
 m.wait_for("document.querySelector('#crud-field-active') !== null", 5)
 save_enabled()
@@ -140,7 +140,7 @@ r.check("source inactive : messages ignores",
         scalar("SELECT state->>'power' FROM device WHERE friendly_name = 'compteur/prod'") == "1600"
         and scalar("SELECT count(*) FROM device WHERE friendly_name = 'autre'") == "0")
 
-# --- suppression -----------------------------------------------------------------------------------------------------------------
+# --- deletion --------------------------------------------------------------------------------------------------------------------
 click_in_row(name, ".crud-delete")
 m.wait_for("document.querySelector('.crud-confirm-yes') !== null", 5)
 m.js("document.querySelector('.crud-confirm-yes').click()")

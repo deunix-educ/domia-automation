@@ -96,7 +96,7 @@ def post(path, body):
 
 
 def open_form():
-    for _ in range(40):  # tant que l'interface n'est pas hydratee, le clic n'ouvre rien
+    for _ in range(40):  # until the interface is hydrated, the click opens nothing
         m.click("#crud-add")
         if m.wait_for("document.querySelector('#crud-form') !== null", 0.5):
             return True
@@ -120,7 +120,7 @@ res = post("/sf/settings/save", "key=Z2M_BASE_TOPIC&value=" + urllib.parse.quote
 r.check("prefixe Zigbee2MQTT propre au script", res["status"] == 200 and "Saved" in res["text"], res["text"][:120])
 time.sleep(1.5)
 
-# --- administration : un groupe, puis un appareil range dans ce groupe ------------------------------------------------------
+# --- administration: a group, then a device placed in that group ------------------------------------------------------------
 m.goto(url + "admin/device-groups")
 r.check("page des groupes", m.wait_for("document.querySelector('#crud-add') !== null", 10))
 open_form()
@@ -147,7 +147,7 @@ r.check("... avec son groupe et son type en base",
         == f"light|E2E Salon|{base}|{{brightness}}")
 dev = int(scalar(f"SELECT id FROM device WHERE friendly_name = '{name}'"))
 
-# --- page des appareils : carte, filtres -----------------------------------------------------------------------------------------
+# --- devices page: card, filters -------------------------------------------------------------------------------------------------
 m.goto(url + "automation/")
 r.check("la carte de l'appareil est affichee", m.wait_for(f"document.querySelector('#device-card-{dev}') !== null", 15))
 r.check("temps reel connecte", m.wait_for("document.querySelector('#vc-rt-state')?.dataset.state === 'online'", 20))
@@ -161,7 +161,7 @@ m.goto(url + f"automation/?group={group}")
 r.check("filtre par groupe : la lampe est la", m.wait_for(f"document.querySelector('#device-card-{dev}') !== null", 10))
 r.check("... et la liste deroulante garde le choix", m.js("return document.querySelector('#filter-group').value") == group)
 
-# --- etat publie sur le broker -> carte -------------------------------------------------------------------------------------------
+# --- state published on the broker -> card ----------------------------------------------------------------------------------------
 m.goto(url + "automation/")
 m.wait_for(f"document.querySelector('#device-card-{dev}') !== null", 15)
 m.wait_for("document.querySelector('#vc-rt-state')?.dataset.state === 'online'", 20)
@@ -173,7 +173,7 @@ r.check("... sans recharger", m.js("return window.__no_reload") == 77)
 ctrl_ready = f"document.querySelectorAll('#device-card-{dev} .vc-dev-ctrl').length === 2 && document.querySelectorAll('#device-card-{dev} .vc-dev-ctrl[disabled]').length === 0"
 r.check("commandes actives", m.wait_for(ctrl_ready, 10))
 
-# --- commandes : le bouton ON et le curseur publient sur <appareil>/set --------------------------------------------------------------
+# --- commands: the ON button and the slider publish on <device>/set ------------------------------------------------------------------
 sub = listen(f"{base}/{name}/set")
 time.sleep(1.0)
 m.js(f"[...document.querySelectorAll('#device-card-{dev} .vc-dev-ctrl')].find(b => b.textContent.trim() === 'ON').click()")
@@ -192,26 +192,26 @@ r.check("appareil hors ligne : commandes inactives", m.wait_for(f"document.query
 pub(f"{base}/{name}/availability", "online")
 r.check("de nouveau en ligne : commandes actives", m.wait_for(ctrl_ready, 15))
 
-# --- appairage (administrateur) --------------------------------------------------------------------------------------------------
+# --- pairing (administrator) -----------------------------------------------------------------------------------------------------
 r.check("appairage ferme au depart", "fermé" in m.text("#permit-state"), m.text("#permit-state"))
 sub = listen(f"{base}/bridge/request/permit_join")
 time.sleep(1.0)
 m.click("#permit-toggle")
 got = heard(sub)
-# Format de Zigbee2MQTT 2.x : une duree en secondes ({"value": true} est refuse, « Invalid payload »).
+# Zigbee2MQTT 2.x format: a duration in seconds ({"value": true} is refused, "Invalid payload").
 r.check("ouverture de l'appairage : {\"time\":254} publie", got == '{"time":254}', got)
 r.check("... et l'etat affiche suit", m.wait_for("document.querySelector('#permit-state').textContent.includes('ouvert')", 8), m.text("#permit-state"))
-m.wait_for("!document.querySelector('#permit-toggle').disabled", 8)  # l'action precedente est terminee
+m.wait_for("!document.querySelector('#permit-toggle').disabled", 8)  # the previous action is finished
 m.click("#permit-toggle")
 r.check("fermeture", m.wait_for("document.querySelector('#permit-state').textContent.includes('fermé')", 8))
 
-# --- page de l'appareil ---------------------------------------------------------------------------------------------------------------
+# --- device page ----------------------------------------------------------------------------------------------------------------------
 m.js(f"document.querySelector('#device-card-{dev} .vc-widget-header a').click()")
 r.check("clic sur le nom : page de l'appareil", m.wait_for("location.pathname === '/automation/devices/%d' && document.querySelector('#device-title') !== null" % dev, 10), m.js("return location.href"))
 info = m.text("#device-info")
 r.check("topics affiches", f"{base}/{name}/set" in info and f"{base}/{name}" in info, info)
 
-# Image : generee dans le navigateur (canvas), envoyee par le formulaire (multipart), vue puis supprimee.
+# Image: generated in the browser (canvas), sent by the form (multipart), viewed then deleted.
 png = m.js_async(
     "const cb = arguments[arguments.length-1]; const c = document.createElement('canvas'); c.width = 800; c.height = 600;"
     "const g = c.getContext('2d'); g.fillStyle = '#2060c0'; g.fillRect(0, 0, 800, 600);"
@@ -230,7 +230,7 @@ m.js_async(f"const cb = arguments[arguments.length-1]; fetch('/api/devices/{dev}
 m.goto(url + f"automation/devices/{dev}")
 r.check("image supprimee : plus affichee", m.wait_for("document.querySelector('#device-admin') !== null", 10) and m.js("return document.querySelector('#device-live img.vc-device-img')") is None)
 
-# Historique : une valeur numerique de la cle suivie, puis la courbe.
+# History: a numeric value of the tracked key, then the curve.
 pub(f"{base}/{name}", {"state": "ON", "brightness": 150})
 time.sleep(0.5)
 pub(f"{base}/{name}", {"state": "ON", "brightness": 200})
@@ -238,9 +238,9 @@ r.check("historique en base", wait_until(lambda: int(scalar(f"SELECT count(*) FR
 m.goto(url + f"automation/devices/{dev}")
 r.check("courbe de la cle suivie", m.wait_for("document.querySelector('#device-history svg.vc-sparkline polyline') !== null", 10))
 
-# Tableau Grafana.
+# Grafana dashboard.
 m.wait_for("document.querySelector('#grafana-generate') && !document.querySelector('#grafana-generate').disabled", 10)
-m.wait_for("document.querySelector('#vc-rt-state')?.dataset.state === 'online'", 20)  # interface hydratee : le clic a un gestionnaire
+m.wait_for("document.querySelector('#vc-rt-state')?.dataset.state === 'online'", 20)  # interface hydrated: the click has a handler
 m.click("#grafana-generate")
 r.check("tableau Grafana : ecrit", m.wait_for("(document.querySelector('#grafana-result')?.textContent || '').includes('écrit')", 10), m.text("#grafana-result"))
 if grafana_dir:
@@ -250,10 +250,10 @@ if grafana_dir:
     r.check("... fichier JSON du tableau (un panneau par cle suivie)", ok and doc.get("uid") == f"dominet-device-{dev}" and len(doc.get("panels", [])) == 1, str(doc)[:200])
 r.check("... et la case « tableau Grafana » est cochee", scalar(f"SELECT grafana_dashboard::text FROM device WHERE id = {dev}") == "true")
 
-# Un compte ordinaire ne voit pas les outils d'administration.
+# An ordinary account does not see the administration tools.
 r.check("les outils d'administration sont visibles de l'administrateur", m.js("return document.querySelector('#device-admin') !== null"))
 
-# --- appareil inconnu --------------------------------------------------------------------------------------------------------------------
+# --- unknown device ----------------------------------------------------------------------------------------------------------------------
 m.goto(url + f"automation/devices/{dev + 100000}")
 r.check("appareil inconnu : message", m.wait_for("document.querySelector('#device-missing') !== null", 10))
 

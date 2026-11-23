@@ -26,8 +26,8 @@ if not db_shell:
     sys.exit("E2E_DB_SHELL absent : lancer par tools/e2e.sh")
 broker = os.environ.get("E2E_MQTT_CONTAINER", "dominet-dev-mosquitto-1")
 stamp = int(time.time())
-z2m = f"e2eautoz{stamp}"        # base Zigbee2MQTT du serveur pendant ce script
-prefix = f"e2eauto{stamp}"      # topics de commande des appareils et topic surveille
+z2m = f"e2eautoz{stamp}"        # server's Zigbee2MQTT base during this script
+prefix = f"e2eauto{stamp}"      # devices' command topics and the watched topic
 remote, blind = "E2E Remote", "E2E Blind"
 
 m = Marionette()
@@ -106,7 +106,7 @@ def post(path, body):
 
 
 def open_form():
-    for _ in range(40):  # tant que l'interface n'est pas hydratee, le clic n'ouvre rien
+    for _ in range(40):  # until the interface is hydrated, the click opens nothing
         m.click("#crud-add")
         if m.wait_for("document.querySelector('#crud-form') !== null", 0.5):
             return True
@@ -143,7 +143,7 @@ r.check("prefixe Zigbee2MQTT propre au script", res["status"] == 200 and "Saved"
 sql(f"INSERT INTO device (friendly_name, base_topic) VALUES ('{remote}', '{z2m}'), ('{blind}', '{prefix}');")
 time.sleep(1.5)
 
-# --- formulaire : champs selon le type ------------------------------------------------------------------------------------------
+# --- form: fields according to the type -----------------------------------------------------------------------------------------
 m.goto(url + "admin/automations")
 r.check("page des automations", m.wait_for("document.querySelector('#crud-add') !== null", 10))
 open_form()
@@ -167,7 +167,7 @@ r.check("action script : zone de code", m.wait_for("document.querySelector('#cru
 choose("#crud-field-action_type", "mqtt_publish")
 m.wait_for("document.querySelector('#crud-field-action_topic') !== null", 5)
 
-# --- automation 1 : etat de la telecommande -> commande du volet --------------------------------------------------------------------
+# --- automation 1: remote-control state -> shutter command --------------------------------------------------------------------------
 fill("#crud-field-name", "E2E TC ouvrir")
 choose("#crud-field-friendly_name", remote)
 fill("#crud-field-key", "action")
@@ -183,7 +183,7 @@ r.check("automation creee", m.wait_for("[...document.querySelectorAll('#crud-tab
 r.check("... avec le JSON de reference en base",
         json.loads(scalar("SELECT trigger_config::text || '|' || action_config::text FROM automation WHERE name = 'E2E TC ouvrir'").split("|")[0]) ==
         {"friendly_name": remote, "key": "action", "value": "1_single"})
-time.sleep(1.0)  # le moteur recharge ses automations a l'enregistrement
+time.sleep(1.0)  # the engine reloads its automations on save
 
 sub = listen(f"{prefix}/#")
 time.sleep(1.0)
@@ -193,7 +193,7 @@ r.check("etat publie -> commande du volet publiee", got == [f'{prefix}/{blind}/s
 r.check("compteur de declenchements en base", wait_until(lambda: count("E2E TC ouvrir") == "1"), count("E2E TC ouvrir"))
 r.check("journal : ok", (journal("E2E TC ouvrir") or "").startswith("ok|published on "), journal("E2E TC ouvrir"))
 
-# --- automation 2 : message MQTT sur un topic sans source, filtre + condition -> notification --------------------------------------------
+# --- automation 2: MQTT message on a topic without a source, filter + condition -> notification ------------------------------------------
 open_form()
 save_enabled()
 choose("#crud-field-trigger_type", "mqtt_message")
@@ -208,10 +208,10 @@ m.wait_for("document.querySelector('#crud-field-message') !== null", 5)
 fill("#crud-field-message", "Bouton E2E appuye")
 m.click("#crud-save")
 r.check("automation message creee", m.wait_for("[...document.querySelectorAll('#crud-table tbody tr td')].some(t => t.textContent === 'E2E Bouton')", 10))
-time.sleep(1.5)  # rechargement du moteur et nouvel abonnement du client MQTT
+time.sleep(1.5)  # engine reload and new subscription of the MQTT client
 m.wait_for("document.querySelector('#vc-rt-state')?.dataset.state === 'online'", 20)
-pub(f"{prefix}in/salon", {"action": "double", "battery": 100})     # filtre
-pub(f"{prefix}in/salon", {"action": "single", "battery": 50})      # condition fausse
+pub(f"{prefix}in/salon", {"action": "double", "battery": 100})     # filter
+pub(f"{prefix}in/salon", {"action": "single", "battery": 50})      # false condition
 time.sleep(1.0)
 r.check("filtre et condition : rien ne se declenche", count("E2E Bouton") == "0")
 pub(f"{prefix}in/salon", {"action": "single", "battery": 100})
@@ -219,14 +219,14 @@ r.check("topic sans source : l'automation se declenche", wait_until(lambda: coun
 r.check("notification affichee dans le navigateur", m.wait_for("[...document.querySelectorAll('.vc-toast')].some(t => t.textContent.includes('Bouton E2E appuye'))", 15))
 r.check("journal : notification", (journal("E2E Bouton") or "") == "ok|notification : Bouton E2E appuye", journal("E2E Bouton"))
 
-# --- journal visible dans la page ---------------------------------------------------------------------------------------------------
+# --- log visible in the page --------------------------------------------------------------------------------------------------------
 m.click("#runs-refresh")
 r.check("le journal de la page liste les executions",
         m.wait_for("document.querySelectorAll('#runs-table tbody tr').length >= 2", 10), str(m.js("return document.querySelectorAll('#runs-table tbody tr').length")))
 r.check("... avec le nom, le declencheur et le resultat",
         m.js("return [...document.querySelectorAll('#runs-table tbody tr')].some(t => t.textContent.includes('E2E TC ouvrir') && t.textContent.includes('state E2E Remote: action = 1_single') && t.querySelector('.vc-badge--success'))"))
 
-# --- garde-fou anti-boucle ---------------------------------------------------------------------------------------------------------------
+# --- anti-loop safeguard -----------------------------------------------------------------------------------------------------------------
 before = int(count("E2E Bouton"))
 pub_many(f"{prefix}in/boucle", [json.dumps({"action": "single", "battery": 100})] * 40)
 r.check("garde-fou : 30 declenchements par minute au plus", wait_until(lambda: int(count("E2E Bouton")) >= 30, 20) and int(count("E2E Bouton")) <= 30,
@@ -235,7 +235,7 @@ time.sleep(1.5)
 r.check("... et le depassement est inscrit une seule fois au journal",
         scalar("SELECT count(*) FROM automation_run WHERE status = 'limited' AND automation_id = (SELECT id FROM automation WHERE name = 'E2E Bouton')") == "1")
 
-# --- scripts Rhai : syntaxe, essai a blanc, execution, script hostile ------------------------------------------------------------------
+# --- Rhai scripts: syntax, dry run, execution, hostile script --------------------------------------------------------------------------
 open_form()
 save_enabled()
 choose("#crud-field-trigger_type", "mqtt_message")
@@ -299,7 +299,7 @@ pub(f"{prefix}sc/x", {"n": 6})
 got = heard(sub)
 r.check("le moteur continue apres le script hostile", got == [f'{prefix}/script/set {{"double":12}}'], str(got))
 
-# --- planificateur : cron chaque minute et coucher du soleil ----------------------------------------------------------------------------
+# --- scheduler: cron every minute and sunset --------------------------------------------------------------------------------------------
 open_form()
 save_enabled()
 choose("#crud-field-trigger_type", "schedule")
@@ -343,7 +343,7 @@ r.check("le cron chaque minute se declenche tout seul (moins de 90 s)",
 r.check("... et notifie le navigateur", m.wait_for("[...document.querySelectorAll('.vc-toast')].some(t => t.textContent.includes('Top minute E2E'))", 15))
 r.check("... le travail note son passage", scalar("SELECT last_status FROM schedule_job WHERE name LIKE 'automation-%' AND cron_expr = '* * * * *'").startswith("ok"))
 
-# --- desactivation a chaud ----------------------------------------------------------------------------------------------------------------
+# --- live deactivation --------------------------------------------------------------------------------------------------------------------
 m.goto(url + "admin/automations")
 m.wait_for("document.querySelectorAll('#crud-table tbody tr').length >= 2", 10)
 for _ in range(40):
@@ -361,7 +361,7 @@ pub(f"{z2m}/{remote}", {"action": "1_single", "battery": 96})
 time.sleep(2.0)
 r.check("desactivee : l'etat ne declenche plus rien", count("E2E TC ouvrir") == "1", count("E2E TC ouvrir"))
 
-# --- suppression --------------------------------------------------------------------------------------------------------------------------------
+# --- deletion -----------------------------------------------------------------------------------------------------------------------------------
 for name in ("E2E TC ouvrir", "E2E Bouton", "E2E Script", "E2E Hostile", "E2E Minute", "E2E Soleil"):
     for _ in range(40):
         m.js(f"[...document.querySelectorAll('#crud-table tbody tr')].find(t => t.textContent.includes({name!r}))?.querySelector('.crud-delete')?.click()")
@@ -373,6 +373,6 @@ for name in ("E2E TC ouvrir", "E2E Bouton", "E2E Script", "E2E Hostile", "E2E Mi
 r.check("le journal des supprimees est vide en base", scalar("SELECT count(*) FROM automation_run") == "0")
 r.check("leurs travaux planifies ont disparu", wait_until(lambda: scalar("SELECT count(*) FROM schedule_job WHERE automation_id IS NOT NULL") == "0"))
 
-# Nettoyage : la base jetable est partagee avec les scripts suivants.
+# Cleanup: the throw-away database is shared with the following scripts.
 sql(f"DELETE FROM device WHERE friendly_name IN ('{remote}', '{blind}');")
 sys.exit(r.finish())

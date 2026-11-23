@@ -66,12 +66,12 @@ cam_id = 0
 try:
     status, _ = call("/api/auth/login", {"username": user, "password": password})
     r.check("connexion administrateur", status == 200, str(status))
-    # La camera simulee est ajoutee par son adresse (identifiants fournis : elle est synchronisee, donc PTZ detecte).
+    # The simulated camera is added by its address (credentials supplied: it is synchronised, so PTZ detected).
     status, text = call("/sf/cameras/add-by-ip", {"input": {"ip": "127.0.0.1", "onvif_port": int(port), "user": "admin", "pass": secret}})
     added = json.loads(text)["Added"]
     cam_id = added["id"]
     r.check("camera ajoutee et reconnue PTZ", status == 200 and added["model"] == "IPC_NT98566", text[:120])
-    # Methode jour / nuit : ONVIF (la camera simulee sait l'imagerie).
+    # Day / night method: ONVIF (the simulated camera knows imaging).
     status, text = call("/sf/cameras/list", {})
     cam = next(c for c in json.loads(text) if c["id"] == cam_id)
     cam.pop("has_rtsp_pass", None)
@@ -96,7 +96,7 @@ try:
     r.check("le pilotage se connecte a la camera", m.wait_for("document.querySelector('#ptz-panel')?.dataset.ptzState === 'ready'", 60),
             m.text("#ptz-status") or "")
 
-    # Direction maintenue : l'ordre est renvoye ; relachement : arret.
+    # Held direction: the order is sent again; release: stop.
     pointer("#ptz-right", "pointerdown")
     r.check("droite : ContinuousMove a mi-vitesse", wait_command(lambda c: c == "ContinuousMove 0.5 0 0"), str(commands()[-3:]))
     n = len([c for c in commands() if c.startswith("ContinuousMove")])
@@ -108,7 +108,7 @@ try:
     time.sleep(0.8)
     r.check("plus aucun ordre apres le relachement", len(commands()) == after)
 
-    # Vitesse et autres directions.
+    # Speed and other directions.
     fill("#ptz-speed-pt", "100")
     pointer("#ptz-up", "pointerdown")
     r.check("haut a pleine vitesse : tilt +1", wait_command(lambda c: c == "ContinuousMove 0 1 0"), str(commands()[-3:]))
@@ -133,7 +133,7 @@ try:
     r.check("preset supprime de la camera", wait_command(lambda c: c.startswith("RemovePreset preset_")))
     r.check("... et de la liste", m.wait_for("document.querySelector('#ptz-presets li') === null", 10))
 
-    # Jour / nuit.
+    # Day / night.
     m.click("#night-ircut")
     r.check("IR-cut : la camera passe en NIGHT", wait_command(lambda c: "IrCutFilter=NIGHT" in c), str(commands()[-2:]))
     r.check("le retour est affiche", m.wait_for("(document.querySelector('#night-feedback')?.textContent || '').includes('NIGHT')", 10),

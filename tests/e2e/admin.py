@@ -68,11 +68,11 @@ r.check("liens d'administration dans la barre",
          "/admin/mqtt-sources", "/admin/devices", "/admin/device-groups", "/admin/device-labels", "/admin/weather-stations",
          "/admin/scenes", "/admin/automations", "/admin/alert-rules", "/admin/prometheus-rules", "/admin/grafana-rules", "/admin/logs", "/admin/mcp", "/admin/assistant"])
 
-# Le contenu ne passe pas sous la barre laterale (regle de voisinage `.vc-sidebar + .vc-main-wrap`)
+# The content does not slide under the sidebar (sibling rule `.vc-sidebar + .vc-main-wrap`)
 r.check("contenu decale a droite de la barre laterale",
         m.js("return document.querySelector('.vc-main-wrap').getBoundingClientRect().left >= document.querySelector('.vc-sidebar').getBoundingClientRect().width - 1") is True)
 
-# --- Menu d'administration : tiroir masquable a droite (les liens restent dans le DOM, caches quand il est ferme) ---
+# --- Administration menu: hideable drawer on the right (the links stay in the DOM, hidden when it is closed) --------
 def drawer():
     return m.js("const d = document.querySelector('#vc-admin-drawer'); return {hidden: d.getAttribute('aria-hidden'),"
                 "visible: getComputedStyle(d).visibility, left: Math.round(d.getBoundingClientRect().left),"
@@ -82,7 +82,7 @@ def drawer():
 closed = drawer()
 r.check("tiroir d'administration ferme au chargement", closed["hidden"] == "true" and closed["visible"] == "hidden" and closed["left"] >= closed["vw"] - 1, str(closed))
 r.check("languette visible sur le bord droit", closed["toggle"] == "1", str(closed))
-for _ in range(40):  # tant que l'interface n'est pas hydratee, le clic n'a aucun effet
+for _ in range(40):  # until the interface is hydrated, the click has no effect
     m.js("document.querySelector('#vc-admin-toggle').click()")
     if m.wait_for("document.querySelector('#vc-admin-drawer').getAttribute('aria-hidden') === 'false'", 0.5):
         break
@@ -99,14 +99,14 @@ m.js("document.querySelector('#vc-admin-close').click()")
 time.sleep(0.5)
 r.check("bouton de fermeture du tiroir", drawer()["hidden"] == "true")
 
-# --- Cellules tronquees : l'info-bulle (title) porte la valeur complete ---
+# --- Truncated cells: the tooltip (title) carries the full value ----------
 r.check("chaque cellule de texte du tableau porte son title",
         m.js("const ok = [...document.querySelectorAll('#crud-table tbody tr')].every(tr => [...tr.querySelectorAll('td:not(:last-child)')]"
              ".every(td => td.querySelector('.vc-badge') || td.getAttribute('title') === td.textContent)); return ok;") is True)
 
-# --- Modifier depuis une longue liste : retour en haut de page ---
+# --- Editing from a long list: back to the top of the page -------
 m.js("const d = document.createElement('div'); d.id = 'e2e-spacer'; d.style.height = '4000px'; document.querySelector('.vc-main').appendChild(d); window.scrollTo(0, 1500);")
-r.check("page defilee avant le clic", m.wait_for("window.scrollY > 500", 5))  # le defilement est anime (scroll-behavior: smooth)
+r.check("page defilee avant le clic", m.wait_for("window.scrollY > 500", 5))  # scrolling is animated (scroll-behavior: smooth)
 m.js("document.querySelector('.crud-edit').click()")
 r.check("clic sur Modifier : retour au debut de la page", m.wait_for("window.scrollY === 0", 5))
 m.js("document.querySelector('#e2e-spacer')?.remove()")
@@ -121,7 +121,7 @@ r.check("ordre 0 par defaut", m.js("return document.querySelector('#crud-field-s
 r.check("administrateurs seulement : decoche par defaut", m.js("return document.querySelector('#crud-field-admin_only').checked") is False)
 r.check("aides affichees sous les champs", m.js("return document.querySelectorAll('.vc-hint').length") >= 3)
 
-# Refus cote serveur : icone inconnue de Lucide, URL dangereuse.
+# Server-side refusal: icon unknown to Lucide, dangerous URL.
 enabled("#crud-save")
 label = f"{tag}-Entree"
 fill("#crud-field-label", label)
@@ -143,7 +143,7 @@ r.check("la barre laterale suit, sans rechargement", m.wait_for(f"[...document.q
 r.check("icone SVG de la nouvelle entree",
         m.js(f"const a = [...document.querySelectorAll('#vc-nav-top .vc-nav-link')].find(a => a.textContent.trim() === {label!r}); return !!a && !!a.querySelector('svg')") is True)
 
-# Modification : passe en bas, reservee aux administrateurs, nouvelle fenetre.
+# Editing: goes to the bottom, reserved to administrators, new window.
 m.js(f"[...document.querySelectorAll('#crud-table tbody tr')].find(tr => tr.querySelector('td').textContent === {label!r}).querySelector('.crud-edit').click()")
 r.check("formulaire prerempli (liste deroulante comprise)",
         m.wait_for("document.querySelector('#crud-field-position')?.value === 'top' && document.querySelector('#crud-field-sort_order').value === '999'", 5))
@@ -155,20 +155,20 @@ m.click("#crud-save")
 r.check("deplacee en bas dans la barre", m.wait_for(f"[...document.querySelectorAll('#vc-nav-bottom .vc-nav-link')].some(a => a.textContent.trim() === {label!r} && a.getAttribute('target') === '_blank')", 8), str(sidebar()))
 r.check("plus dans le haut", m.js(f"return ![...document.querySelectorAll('#vc-nav-top .vc-nav-link')].some(a => a.textContent.trim() === {label!r})") is True)
 
-# Traduction a chaud des listes deroulantes et du tableau
+# Live translation of the drop-down lists and the table
 m.js("[...document.querySelectorAll('.vc-lang button')].find(b => /English/i.test(b.textContent)).click()")
 r.check("tableau traduit (position Bottom)", m.wait_for(f"(() => {{ const tr = [...document.querySelectorAll('#crud-table tbody tr')].find(t => t.querySelector('td').textContent === {label!r}); return !!tr && [...tr.querySelectorAll('td')].some(td => td.textContent === 'Bottom'); }})()", 8))
 m.js("[...document.querySelectorAll('.vc-lang button')].find(b => /Fran/i.test(b.textContent)).click()")
 m.wait_for("document.querySelector('.vc-page-header h2').textContent === 'Navigation'", 8)
 
-# Suppression
+# Deletion
 m.js(f"[...document.querySelectorAll('#crud-table tbody tr')].find(tr => tr.querySelector('td').textContent === {label!r}).querySelector('.crud-delete').click()")
 m.wait_for("document.querySelector('.crud-confirm-yes') !== null", 5)
 m.js("document.querySelector('.crud-confirm-yes').click()")
 r.check("suppression : plus dans le tableau", m.wait_for(f"![...document.querySelectorAll('#crud-table tbody tr')].some(tr => tr.querySelector('td').textContent === {label!r})", 8))
 r.check("suppression : plus dans la barre", m.wait_for(f"![...document.querySelectorAll('.vc-sidebar .vc-nav-link')].some(a => a.textContent.trim() === {label!r})", 8))
 
-# ============================================== Reglages ========================================================
+# ============================================== Settings ========================================================
 m.goto(url + "admin/settings")
 r.check("page Reglages rendue", m.wait_for("document.querySelector('#setting-MOTION_THRESHOLD') !== null", 10))
 r.check("17 reglages affiches", m.js("return document.querySelectorAll('.vc-setting').length") == 17)
@@ -185,7 +185,7 @@ m.goto(url + "admin/settings")
 m.wait_for("document.querySelector('#setting-MOTION_THRESHOLD') !== null", 10)
 r.check("valeur conservee apres rechargement", m.js("return document.querySelector('#setting-MOTION_THRESHOLD').value") == "0.37")
 
-# Un entier refuse une valeur decimale (le navigateur laisse passer step=1 via JS, le serveur tranche).
+# An integer refuses a decimal value (the browser lets step=1 through via JS, the server decides).
 enabled("#setting-save-PROMETHEUS_ALERT_COOLDOWN")
 fill("#setting-PROMETHEUS_ALERT_COOLDOWN", "1.5")
 m.js("document.querySelector('#setting-PROMETHEUS_ALERT_COOLDOWN').removeAttribute('required'); document.querySelector('#setting-PROMETHEUS_ALERT_COOLDOWN').step = 'any'")
@@ -193,13 +193,13 @@ m.click("#setting-save-PROMETHEUS_ALERT_COOLDOWN")
 r.check("entier invalide : message d'erreur", m.wait_for("(document.querySelector('#setting-status-PROMETHEUS_ALERT_COOLDOWN')?.textContent || '').includes('Entier')", 8),
         m.text("#setting-status-PROMETHEUS_ALERT_COOLDOWN"))
 
-# Retablit la valeur d'origine.
+# Restores the original value.
 enabled("#setting-save-MOTION_THRESHOLD")
 fill("#setting-MOTION_THRESHOLD", original)
 m.click("#setting-save-MOTION_THRESHOLD")
 r.check("valeur d'origine retablie", m.wait_for("(document.querySelector('#setting-status-MOTION_THRESHOLD')?.textContent || '').includes('Enregistré')", 8))
 
-# Secret : defini puis efface ; jamais affiche.
+# Secret: set then cleared; never displayed.
 enabled("#setting-save-SMS_FREE_KEY")
 fill("#setting-SMS_FREE_KEY", secret)
 m.click("#setting-save-SMS_FREE_KEY")
@@ -214,7 +214,7 @@ enabled("#setting-clear-SMS_FREE_KEY")
 m.click("#setting-clear-SMS_FREE_KEY")
 r.check("secret efface : Non defini", m.wait_for("(document.querySelector('#setting-state-SMS_FREE_KEY')?.textContent || '') === 'Non défini'", 8), m.text("#setting-state-SMS_FREE_KEY"))
 
-# ============================================== Journaux de l'application ======================================
+# ============================================== Application logs ===============================================
 m.goto(url + "admin/logs")
 r.check("page Journaux rendue avec des lignes", m.wait_for("document.querySelector('#logs-table') !== null", 15))
 r.check("resume affiche (lignes, correspondantes, en memoire)",
@@ -226,7 +226,7 @@ r.check("les lignes sont les plus recentes d'abord",
 FILTERED = ("document.querySelectorAll('#logs-table tbody tr').length >= 1 && [...document.querySelectorAll('#logs-table .vc-log-msg')]"
             ".every(td => td.textContent.toLowerCase().includes('http server started'))")
 ok = False
-for _ in range(20):  # tant que l'interface n'est pas hydratee, la saisie n'est pas prise en compte
+for _ in range(20):  # until the interface is hydrated, the input is not taken into account
     fill("#logs-text", "HTTP server started")
     if m.wait_for(FILTERED, 1.5):
         ok = True

@@ -57,7 +57,7 @@ login = m.js_async(
 )
 r.check("connexion administrateur", login == 200)
 
-# --- compte sans tableau : invitation, puis creation par l'interface -------------------------------------------------
+# --- account without a dashboard: invitation, then creation through the interface ------------------------------------
 m.goto(url)
 r.check("invitation a creer un premier tableau", m.wait_for("document.querySelector('#vc-dash-empty') !== null", 20))
 r.check("aucune grille tant qu'il n'y a pas de tableau", m.js("return document.querySelector('#vc-dashboard-grid')") is None)
@@ -74,10 +74,10 @@ r.check("titre du tableau", m.wait_for("document.querySelector('#vc-dash-name')?
 r.check("tableau vide : message", m.js("return document.querySelector('#vc-dash-no-widgets') !== null"))
 board = int(m.js("return new URLSearchParams(location.search).get('d')"))
 
-# --- widgets (prepares en SQL), puis rendu serveur ----------------------------------------------------------------------
-# Depuis R3 un widget vise un appareil qui existe (cle etrangere) ; l'interface de creation des appareils arrive au lot 5.
+# --- widgets (prepared in SQL), then server render ----------------------------------------------------------------------
+# Since R3 a widget targets a device that exists (foreign key); the device creation interface arrives in lot 5.
 dev = int(re.search(r"^\s*(\d+)\s*$", sql("INSERT INTO device (friendly_name) VALUES ('E2E Sonde tableau') RETURNING id;"), re.M).group(1))
-# Idem pour la scene (cle etrangere depuis R4) : creee avant le widget.
+# Same for the scene (foreign key since R4): created before the widget.
 scene = int(re.search(r"^\s*(\d+)\s*$", sql("INSERT INTO scene (name) VALUES ('E2E Ambiance tableau') RETURNING id;"), re.M).group(1))
 sql(f"""
 INSERT INTO widget (dashboard_id, widget_type, title, device_id, grid_col, grid_row, width, height, config, content) VALUES
@@ -108,7 +108,7 @@ r.check("largeurs proportionnelles (4 colonnes contre 3)", 1.1 < info["noteW"] /
 r.check("le widget de droite est a droite de la note", info["devLeft"] > info["noteLeft"] + info["noteW"] * 0.9, str(info))
 r.check("aucun attribut style rendu par le serveur", m.js("return document.querySelectorAll('#vc-dashboard-grid [style]').length") == 0)
 
-# --- texte assaini --------------------------------------------------------------------------------------------------------
+# --- sanitised text -------------------------------------------------------------------------------------------------------
 r.check("mise en forme conservee", m.js("return document.querySelector('[data-widget-type=text] .vc-widget-text p b')?.textContent") == "vous")
 r.check("script, gestionnaire et lien javascript: neutralises", m.js("return window.__pwned === undefined"), str(m.js("return window.__pwned")))
 r.check("aucun lien javascript: dans la page", m.js("return [...document.querySelectorAll('a')].every(a => !a.href.startsWith('javascript:'))"))
@@ -122,7 +122,7 @@ r.check("Grafana : adresse d'une autre origine refusee (pas d'iframe)", m.js("re
 csp = m.js_async("const cb = arguments[arguments.length-1]; fetch(location.href).then(x => cb(x.headers.get('content-security-policy')));")
 r.check("CSP : frame-src limite a l'origine de Grafana", "frame-src http://localhost:3000" in (csp or ""), str(csp)[:200])
 
-# --- appareil (propre a ce script : le serveur retient le dernier etat de chaque appareil) : attente, puis direct --------------------------------------------------------------------------
+# --- device (specific to this script: the server keeps each device's last state): wait, then live ------------------------------------------------------------------------------------------
 r.check("appareil sans etat : attente", m.wait_for("document.querySelector('[data-widget-type=device] #dev-waiting') !== null", 10))
 m.js("window.__no_reload = 42")
 res = post("/sf/devices/inject", f"device_id={dev}&state=" + '{"temperature":21.5}'.replace('"', "%22").replace("{", "%7B").replace("}", "%7D").replace(":", "%3A").replace(",", "%2C") + "&available=true")
@@ -143,12 +143,12 @@ r.check("commutateur : commandes actives (le serveur a un client MQTT et l'appar
 m.goto(url + f"?d={board}")
 r.check("rendu serveur : dernier etat connu des l'arrivee", m.wait_for("document.querySelector('[data-widget-type=device] .vc-dev-state') !== null", 10) and "power" in m.text("[data-widget-type=device]").lower(), m.text("[data-widget-type=device]"))
 
-# --- camera : un widget sur une camera inconnue le dit (R6) ; scene : nom et bouton d'activation (R4) ---------------------------------------------
+# --- camera: a widget on an unknown camera says so (R6); scene: name and activation button (R4) ---------------------------------------------------
 r.check("camera inconnue : le widget le dit", m.js("return document.querySelectorAll('[id^=widget-camera-missing-]').length") == 1)
 r.check("scene : nom et bouton d'activation", "E2E Ambiance tableau" in (m.text("[data-widget-type=scene]") or "")
         and m.js("return document.querySelector('[data-widget-type=scene] .scene-activate') !== null"), m.text("[data-widget-type=scene]"))
 
-# --- selecteur de tableaux ------------------------------------------------------------------------------------------------
+# --- dashboard selector ---------------------------------------------------------------------------------------------------
 r.check("un seul tableau : pas de selecteur", m.js("return document.querySelector('#vc-dash-picker')") is None)
 res = post("/sf/dashboard/create", "name=Cave")
 r.check("second tableau cree", res["status"] == 200 and "Saved" in res["text"], str(res))
@@ -165,7 +165,7 @@ r.check("l'autre tableau n'a pas de widget", m.js("return document.querySelector
 m.goto(url + "?d=999999")
 r.check("tableau inexistant : retour au tableau par defaut", m.wait_for("document.querySelector('#vc-dash-name')?.textContent === 'Salon'", 10), m.text("#vc-dash-name"))
 
-# --- petit ecran ----------------------------------------------------------------------------------------------------------
+# --- small screen ---------------------------------------------------------------------------------------------------------
 m.cmd("WebDriver:SetWindowRect", {"width": 480, "height": 900})
 m.goto(url + f"?d={board}")
 m.wait_for("document.querySelector('#vc-dashboard-grid') !== null", 15)

@@ -81,12 +81,12 @@ login = m.js_async(
 )
 r.check("connexion administrateur", login == 200)
 
-# --- prefixe propre au script : la modification est prise en compte a chaud (abonnement refait) ----------------------------
+# --- prefix specific to the script: the change is taken into account live (subscription redone) ----------------------------
 res = post("/sf/settings/save", "key=Z2M_BASE_TOPIC&value=" + urllib.parse.quote(base, safe=""))
 r.check("Zigbee2MQTT prefix changed", res["status"] == 200 and "Saved" in res["text"], res["text"][:120])
-time.sleep(1.5)  # le client resouscrit
+time.sleep(1.5)  # the client resubscribes
 
-# --- decouverte : les appareils apparaissent en base, avec le type deduit ------------------------------------------------------
+# --- discovery: the devices appear in the database, with the deduced type ------------------------------------------------------
 pub("bridge/devices", [
     {"ieee_address": "0x00124b0000000000", "friendly_name": "Coordinator", "type": "Coordinator", "definition": None},
     {"ieee_address": "0x00124b00000000aa", "friendly_name": "E2E Sonde", "type": "EndDevice", "supported": True,
@@ -101,7 +101,7 @@ r.check("le coordinateur est ignore", scalar("SELECT count(*) FROM device WHERE 
 dev = int(scalar("SELECT id FROM device WHERE friendly_name = 'E2E Sonde'"))
 sql("UPDATE device SET tracked_keys = ARRAY['temperature'] WHERE id = %d;" % dev)
 
-# --- un tableau avec un widget sur cet appareil ------------------------------------------------------------------------------------
+# --- a dashboard with a widget on this device --------------------------------------------------------------------------------------
 for d in json.loads(post("/sf/dashboards/list", "")["text"]):
     if d["owner"] == admin:
         post("/sf/dashboards/delete", f"id={d['id']}")
@@ -112,7 +112,7 @@ r.check("widget affiche", m.wait_for("document.querySelector('[data-widget-type=
 m.wait_for("document.querySelector('#vc-rt-state')?.dataset.state === 'online'", 20)
 m.js("window.__no_reload = 5")
 
-# --- etat publie sur le broker : widget mis a jour sans recharger ---------------------------------------------------------------------
+# --- state published on the broker: widget updated without reloading ------------------------------------------------------------------
 pub("E2E Sonde", {"temperature": 23.4, "humidity": 51, "linkquality": 90})
 r.check("l'etat publie sur MQTT arrive dans le widget (23.4)",
         m.wait_for("document.querySelector('[data-widget-type=device]').textContent.includes('23.4')", 15), m.text("[data-widget-type=device]"))
@@ -144,13 +144,13 @@ if os.environ.get("REDUCTSTORE_URL"):
             str(archived_state(dev)))
 r.check("historique de la cle suivie", wait_until(lambda: int(scalar("SELECT count(*) FROM device_state_log WHERE device_id = %d AND key = 'temperature'" % dev)) >= 1))
 
-# --- disponibilite ----------------------------------------------------------------------------------------------------------------
+# --- availability -----------------------------------------------------------------------------------------------------------------
 pub("E2E Sonde/availability", {"state": "offline"})
 r.check("indisponible : cadre attenue", m.wait_for("document.querySelector('[data-widget-type=device]').classList.contains('vc-widget--offline')", 15))
 pub("E2E Sonde/availability", "online")
 r.check("de nouveau disponible", m.wait_for("!document.querySelector('[data-widget-type=device]').classList.contains('vc-widget--offline')", 15))
 
-# --- bruit ignore -----------------------------------------------------------------------------------------------------------------------
+# --- noise ignored ----------------------------------------------------------------------------------------------------------------------
 before = scalar("SELECT state::text FROM device WHERE id = %d" % dev)
 pub("E2E Sonde/set", {"state": "ON"})
 pub("bridge/logs", {"level": "info"})
@@ -160,6 +160,6 @@ r.check("commandes, journaux du bridge et charges non JSON ignores", scalar("SEL
 
 r.check("le dernier etat est celui qui est en base", scalar("SELECT state->>'temperature' FROM device WHERE id = %d" % dev) == "24.1")
 
-# nettoyage du prefixe pour ne pas laisser d'abonnement orphelin
+# cleanup of the prefix so as not to leave an orphan subscription
 post("/sf/settings/save", "key=Z2M_BASE_TOPIC&value=zigbee2mqtt")
 r.finish()

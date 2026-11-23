@@ -33,7 +33,7 @@ res = m.js_async(
 r.check("connexion par l'API", res == 200, str(res))
 m.goto(url)
 
-# Rendu serveur : la barre laterale est dans le HTML initial (avant toute hydratation).
+# Server render: the sidebar is in the initial HTML (before any hydration).
 r.check("barre laterale presente", m.wait_for("document.querySelector('.vc-sidebar') !== null", 8))
 r.check("contenu decale par le CSS (marge = largeur de la barre)",
         m.js("return parseInt(getComputedStyle(document.querySelector('.vc-main-wrap')).marginLeft)") > 100)
@@ -44,7 +44,7 @@ r.check("icones SVG inline", m.js("return document.querySelectorAll('.vc-sidebar
 r.check("lien actif : Tableau de bord",
         m.js("return document.querySelector('.vc-sidebar-nav a[aria-current=page]')?.textContent.trim()") == "Tableau de bord")
 
-# Attendre l'hydratation en cliquant sur le repli jusqu'a ce que ce soit pris en compte.
+# Wait for hydration by clicking on the collapse until it is taken into account.
 collapsed = False
 for _ in range(40):
     m.click(".vc-sidebar-collapse-btn")
@@ -52,7 +52,7 @@ for _ in range(40):
         collapsed = True
         break
 r.check("repli de la barre laterale", collapsed)
-# Le contenu a une transition de .25 s sur margin-left : on attend la fin de l'animation.
+# The content has a .25 s transition on margin-left: we wait for the animation to end.
 r.check("contenu pleine largeur apres repli",
         m.wait_for("parseInt(getComputedStyle(document.querySelector('.vc-main-wrap')).marginLeft) === 0", 5))
 r.check("repli memorise (localStorage)", m.js("return localStorage.getItem('vc-sidebar-collapsed')") == "1")
@@ -63,17 +63,17 @@ m.click(".vc-sidebar-open-btn")
 r.check("reouverture", m.wait_for("!document.querySelector('.vc-sidebar').classList.contains('vc-sidebar--collapsed')", 5))
 r.check("reouverture memorisee", m.js("return localStorage.getItem('vc-sidebar-collapsed')") == "0")
 
-# Langue a chaud : les libelles de la barre changent sans rechargement.
+# Live language: the bar's labels change without reloading.
 m.js("[...document.querySelectorAll('.vc-lang button')].find(b => /English/i.test(b.textContent)).click()")
 r.check("libelles en anglais", m.wait_for("document.querySelector('.vc-logout-btn').textContent.includes('Sign out')", 8))
 m.js("[...document.querySelectorAll('.vc-lang button')].find(b => /Fran/i.test(b.textContent)).click()")
 r.check("libelles en francais", m.wait_for("document.querySelector('.vc-logout-btn').textContent.includes('Déconnexion')", 8))
 
-# Page inconnue : vraie 404, mais toujours dans la mise en page.
+# Unknown page: a real 404, but still within the layout.
 m.goto(url + "page-inexistante")
 r.check("404 dans la mise en page", m.wait_for("document.querySelector('.vc-sidebar') !== null", 8))
 
-# Deconnexion
+# Logout
 m.goto(url)
 done = False
 for _ in range(40):
