@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Activation des scenes (R4 lot 2, ADR 0031).
+//! Scene activation (R4 lot 2, ADR 0031).
 //!
-//! Activer une scene = publier chaque commande sur le topic de commande de son appareil, **dans l'ordre**, QoS 1 (comme
-//! l'implementation de reference). Une commande en echec n'arrete pas les suivantes ; les echecs sont rapportes.
-//! Le moteur d'automations (lot 3) et l'API de script (lot 5) passent par ici.
+//! Activating a scene = publishing each command on its device's command topic, **in order**, QoS 1 (like
+//! the reference implementation). A failing command does not stop the following ones; the failures are reported.
+//! The automation engine (lot 3) and the script API (lot 5) go through here.
 
 use dominet_domain::repo::{DeviceRepo, SceneRepo};
 use dominet_domain::scene::{Scene, SceneId};
@@ -12,7 +12,7 @@ use dominet_proto::{CommandOutcome, SceneFailureDto, SceneOutcome};
 use crate::AppState;
 use crate::control::send_command;
 
-/// Publie les commandes de `scene`, dans l'ordre.
+/// Publishes the commands of `scene`, in order.
 pub async fn activate(state: &AppState, scene: &Scene) -> SceneOutcome {
     let mut sent = 0u32;
     let mut failed = vec![];
@@ -38,7 +38,7 @@ pub async fn activate(state: &AppState, scene: &Scene) -> SceneOutcome {
     SceneOutcome::Activated { sent, failed }
 }
 
-/// Active la scene `id` si elle existe et est active.
+/// Activates scene `id` if it exists and is active.
 pub async fn activate_by_id(state: &AppState, id: SceneId) -> SceneOutcome {
     match state.store.scenes().get(id).await {
         Ok(Some(scene)) if scene.active => activate(state, &scene).await,
@@ -56,7 +56,7 @@ pub async fn activate_by_id(state: &AppState, id: SceneId) -> SceneOutcome {
     }
 }
 
-/// Active la scene de ce nom (API de script, lot 5).
+/// Activates the scene of that name (script API, lot 5).
 pub async fn activate_by_name(state: &AppState, name: &str) -> SceneOutcome {
     match state.store.scenes().find_by_name(name).await {
         Ok(Some(scene)) if scene.active => activate(state, &scene).await,

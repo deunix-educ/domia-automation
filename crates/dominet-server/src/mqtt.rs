@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Role `mqtt` : demarre le client MQTT supervise (`dominet-mqtt`) et l'ingestion des messages d'appareils (ADR 0026 et 0027).
+//! `mqtt` role: starts the supervised MQTT client (`dominet-mqtt`) and the ingestion of the devices' messages (ADR 0026 and 0027).
 //!
-//! L'ingestion ecrit en base, puis diffuse l'etat sur le sujet `device:<id>` du hub **avec dernier etat retenu** (les widgets
-//! l'affichent des l'arrivee de la page). Au demarrage, les derniers etats connus de la base sont republies : ils survivent
-//! donc a un redemarrage du serveur.
+//! Ingestion writes to the database, then broadcasts the state on the hub's `device:<id>` subject **with the last state kept** (the widgets
+//! show it as soon as the page arrives). At start-up, the last known states from the database are republished: they therefore
+//! survive a server restart.
 
 use std::collections::BTreeMap;
 use std::sync::Arc;
@@ -33,7 +33,7 @@ use crate::automation::ServerExecutor;
 type ServerEngine = Engine<PgAutomations, PgAutomationRuns, ServerExecutor>;
 type ServerAlerts = AlertEngine<PgAlertRules, PgAlerts, AlertNotifier>;
 
-/// Reglages du client depuis la configuration (le mot de passe reste un secret jusqu'ici).
+/// Client settings from the configuration (the password stays a secret up to here).
 #[must_use]
 pub fn settings(cfg: &MqttConfig) -> MqttSettings {
     let mut s = MqttSettings::new(&cfg.host, cfg.port, &cfg.client_id);
@@ -42,15 +42,15 @@ pub fn settings(cfg: &MqttConfig) -> MqttSettings {
     s
 }
 
-/// Cote serveur de l'ingestion : diffusion sur le hub et memorisation de `permit_join`.
+/// Server side of the ingestion: broadcast on the hub and memorisation of `permit_join`.
 #[derive(Debug)]
 pub struct HubSink {
     hub: Hub,
     permit_join: Arc<std::sync::atomic::AtomicBool>,
     iot: Option<IotWriter>,
-    /// Moteur d'automations (declencheurs `mqtt_message` et `device_state`), absent dans certains tests.
+    /// Automation engine (`mqtt_message` and `device_state` triggers), absent in some tests.
     engine: Option<EngineHandle>,
-    /// Evaluation des regles d'alerte apres chaque etat d'appareil.
+    /// Alert rule evaluation after each device state.
     alerts: Option<AlertHandle>,
     /// Last Zigbee2MQTT error shown as a banner (see [`BRIDGE_ERROR_QUIET`]).
     last_bridge_error: std::sync::Mutex<Option<(String, std::time::Instant)>>,
@@ -91,14 +91,14 @@ impl HubSink {
         }
     }
 
-    /// Relie l'evaluation des alertes.
+    /// Wires the alert evaluation.
     #[must_use]
     pub fn with_alerts(mut self, alerts: AlertHandle) -> Self {
         self.alerts = Some(alerts);
         self
     }
 
-    /// Relie le moteur d'automations.
+    /// Wires the automation engine.
     #[must_use]
     pub fn with_engine(mut self, engine: EngineHandle) -> Self {
         self.engine = Some(engine);
@@ -183,9 +183,9 @@ impl Sink for HubSink {
     }
 }
 
-/// Abonnements voulus : tout le prefixe Zigbee2MQTT en QoS 1, plus le filtre de chaque source active avec son QoS (le plus
-/// eleve si un meme filtre revient), plus le topic de chaque automation `mqtt_message` active (QoS 1) : une automation qui
-/// attend un topic hors des sources fonctionne sans source a creer.
+/// Wanted subscriptions: the whole Zigbee2MQTT prefix at QoS 1, plus the filter of each active source with its QoS (the highest
+/// if the same filter comes back), plus the topic of each active `mqtt_message` automation (QoS 1): an automation that
+/// waits for a topic outside the sources works without a source to create.
 #[must_use]
 pub fn subscriptions(
     z2m_base: &str,
@@ -205,7 +205,7 @@ pub fn subscriptions(
     out
 }
 
-/// Archive brute ReductStore, si `REDUCTSTORE_URL` est renseigne (ecriture en tache de fond : elle ne ralentit pas l'ingestion).
+/// ReductStore raw archive, if `REDUCTSTORE_URL` is set (written in a background task: it does not slow ingestion down).
 fn iot_writer(state: &AppState) -> Option<IotWriter> {
     let cfg = state.config.reductstore.as_ref()?;
     let quota = u64::from(cfg.iot_quota_gb) * 1024 * 1024 * 1024;
@@ -217,14 +217,14 @@ fn iot_writer(state: &AppState) -> Option<IotWriter> {
     ) {
         Ok(archive) => Some(IotWriter::spawn(archive)),
         Err(e) => {
-            // L'archive brute est facultative : le serveur demarre sans elle.
+            // The raw archive is optional: the server starts without it.
             tracing::warn!(error = %e, "ReductStore archive disabled: HTTP client cannot be built");
             None
         }
     }
 }
 
-/// Intervalle de rechargement de securite des sources (un autre processus a pu les modifier).
+/// Safety reload interval of the sources (another process may have modified them).
 const SOURCES_POLL: std::time::Duration = std::time::Duration::from_secs(60);
 
 pub(crate) async fn z2m_base(state: &AppState) -> String {
@@ -236,10 +236,10 @@ pub(crate) async fn z2m_base(state: &AppState) -> String {
     }
 }
 
-/// Demarre le client et l'ingestion ; renvoie la poignee du client (commandes, etat du lien).
+/// Starts the client and the ingestion; returns the client's handle (commands, link state).
 ///
 /// # Errors
-/// Erreur si `MQTT_HOST` n'est pas renseigne.
+/// Error if `MQTT_HOST` is not set.
 pub async fn spawn(state: &AppState) -> anyhow::Result<MqttClient> {
     let cfg = state
         .config
@@ -248,7 +248,7 @@ pub async fn spawn(state: &AppState) -> anyhow::Result<MqttClient> {
         .context("the mqtt role needs MQTT_HOST")?;
     let started = start(&settings(&cfg));
     let base = z2m_base(state).await;
-    // Le moteur d'automations publie et active des scenes par le client de ce role : son etat en porte une copie.
+    // The automation engine publishes and activates scenes through this role's client: its state carries a copy of it.
     let mut engine_state = state.clone();
     engine_state.mqtt = Some(started.client.clone());
     let (engine, handle, queue) = Engine::new(
@@ -287,7 +287,7 @@ pub async fn spawn(state: &AppState) -> anyhow::Result<MqttClient> {
     tokio::spawn(engine.run(queue));
     tokio::spawn(alert_engine.run(alert_queue));
     tokio::spawn(Arc::clone(&ingestor).run(started.messages));
-    // Le prefixe (reglage) et les sources MQTT (administration) changent a chaud : abonnements et aiguillage suivent.
+    // The prefix (setting) and the MQTT sources (administration) change live: subscriptions and routing follow.
     let mut changes = state.settings.subscribe();
     tokio::spawn(async move {
         loop {
@@ -308,7 +308,7 @@ pub async fn spawn(state: &AppState) -> anyhow::Result<MqttClient> {
     Ok(started.client)
 }
 
-/// Ce qu'il faut pour recalculer abonnements et aiguillage.
+/// What is needed to recompute subscriptions and routing.
 struct Wiring {
     state: AppState,
     ingestor: Arc<Ingestor<PgDevices, PgStateLog, HubSink>>,
@@ -319,8 +319,8 @@ struct Wiring {
 }
 
 impl Wiring {
-    /// Relit le prefixe, les sources et les automations, puis met a jour l'aiguillage et les abonnements (idempotent : rien ne
-    /// change si rien n'a change, `set_subscriptions` ne touche que la difference).
+    /// Re-reads the prefix, the sources and the automations, then updates the routing and the subscriptions (idempotent: nothing
+    /// changes if nothing changed, `set_subscriptions` only touches the difference).
     async fn refresh(&self) {
         self.engine.reload().await;
         self.alert_engine.reload().await;
@@ -399,7 +399,7 @@ mod tests {
         b.qos = 2;
         let mut off = MqttSource::draft("Off", "off/#");
         off.active = false;
-        let z2m_dup = MqttSource::draft("Z2M", "zigbee2mqtt/#"); // qos 0 : le QoS 1 du prefixe est conserve
+        let z2m_dup = MqttSource::draft("Z2M", "zigbee2mqtt/#"); // qos 0: the prefix's QoS 1 is kept
         assert_eq!(
             subscriptions("zigbee2mqtt", &[a, b, off, z2m_dup], &[]),
             BTreeMap::from([("linky/#".to_string(), 2), ("zigbee2mqtt/#".to_string(), 1)])

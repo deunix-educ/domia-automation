@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Hub de diffusion temps reel : des *sujets* ([`Topic`]) a qui on publie des messages, et des abonnes qui les recoivent.
+//! Real-time broadcast hub: *subjects* ([`Topic`]) to which messages are published, and subscribers that receive them.
 //!
-//! Base de `/ws/notifications/` : notifications, etat des appareils (`device:<id>`), statistiques (`system`), puis les
-//! cameras (R6). Un sujet est cree a la demande et disparait quand plus personne ne l'ecoute.
+//! Basis of `/ws/notifications/`: notifications, device state (`device:<id>`), statistics (`system`), then the
+//! cameras (R6). A subject is created on demand and disappears when nobody listens to it any more.
 //!
-//! **Dernier message retenu** : pour un sujet d'etat (appareil, statistiques), le dernier message publie avec
-//! [`Hub::publish_retained`] est conserve ; un nouvel abonne le recoit tout de suite, et le rendu serveur des pages peut
-//! afficher l'etat courant sans attendre le prochain message. Seul le code du serveur peut retenir un message (un
-//! abonne ne le peut pas) : le cache est donc borne par le nombre d'appareils connus.
+//! **Last message kept**: for a state subject (device, statistics), the last message published with
+//! [`Hub::publish_retained`] is kept; a new subscriber receives it right away, and the server render of the pages can
+//! display the current state without waiting for the next message. Only the server's code can retain a message (a
+//! subscriber cannot): the cache is therefore bounded by the number of known devices.
 
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex, MutexGuard};
@@ -15,10 +15,10 @@ use std::sync::{Arc, Mutex, MutexGuard};
 use dominet_proto::{Topic, WsServerMsg};
 use tokio::sync::broadcast;
 
-/// Messages en attente par abonne avant qu'un abonne trop lent n'en perde (il est alors prevenu, pas deconnecte).
+/// Pending messages per subscriber before a too-slow subscriber loses some (it is then warned, not disconnected).
 const TOPIC_CAPACITY: usize = 64;
 
-/// Connexions simultanees maximales par compte (onglets, appareils) : borne les ressources d'un compte.
+/// Maximum simultaneous connections per account (tabs, devices): bounds an account's resources.
 pub const MAX_CONNECTIONS_PER_USER: usize = 8;
 
 #[derive(Debug, Default)]
@@ -28,13 +28,13 @@ struct Inner {
     connections: Mutex<HashMap<i64, usize>>,
 }
 
-/// Hub partage (clonable a bas cout).
+/// Shared hub (cheap to clone).
 #[derive(Debug, Clone, Default)]
 pub struct Hub {
     inner: Arc<Inner>,
 }
 
-/// Compte une connexion ouverte ; le compteur du compte redescend quand la garde est liberee.
+/// Counts an open connection; the account's counter goes back down when the guard is released.
 #[derive(Debug)]
 pub struct ConnectionGuard {
     inner: Arc<Inner>,
@@ -54,7 +54,7 @@ impl Drop for ConnectionGuard {
     }
 }
 
-// Sections critiques courtes, sans `await` : un verrou empoisonne ne contient que des compteurs, on le reprend.
+// Short critical sections, without `await`: a poisoned lock only holds counters, we take it back.
 fn lock<T>(m: &Mutex<T>) -> MutexGuard<'_, T> {
     m.lock().unwrap_or_else(std::sync::PoisonError::into_inner)
 }
@@ -65,7 +65,7 @@ impl Hub {
         Self::default()
     }
 
-    /// S'abonne a un sujet (le cree au besoin).
+    /// Subscribes to a subject (creating it if needed).
     #[must_use]
     pub fn subscribe(&self, topic: &Topic) -> broadcast::Receiver<Arc<WsServerMsg>> {
         let mut topics = lock(&self.inner.topics);
@@ -75,17 +75,17 @@ impl Hub {
             .subscribe()
     }
 
-    /// Publie un message ; renvoie le nombre d'abonnes qui le recevront. Un sujet sans abonne est supprime.
-    #[allow(clippy::must_use_candidate)] // le decompte est informatif : l'ignorer est legitime
+    /// Publishes a message; returns the number of subscribers that will receive it. A subject without subscribers is removed.
+    #[allow(clippy::must_use_candidate)] // the count is informative: ignoring it is legitimate
     pub fn publish(&self, topic: &Topic, msg: WsServerMsg) -> usize {
         self.send(topic, Arc::new(msg))
     }
 
-    /// Comme [`Hub::publish`], et conserve le message comme **dernier etat** du sujet (voir [`Hub::retained`]).
+    /// Like [`Hub::publish`], and keeps the message as the subject's **last state** (see [`Hub::retained`]).
     #[allow(clippy::must_use_candidate)]
     pub fn publish_retained(&self, topic: &Topic, msg: WsServerMsg) -> usize {
         let msg = Arc::new(msg);
-        // Retenu AVANT de diffuser : un abonne qui arrive entre les deux lit le nouvel etat, jamais un etat plus ancien.
+        // Retained BEFORE broadcasting: a subscriber arriving between the two reads the new state, never an older one.
         lock(&self.inner.retained).insert(topic.clone(), Arc::clone(&msg));
         self.send(topic, msg)
     }
@@ -102,13 +102,13 @@ impl Hub {
         receivers
     }
 
-    /// Dernier message retenu pour ce sujet, s'il y en a un.
+    /// Last message kept for this subject, if there is one.
     #[must_use]
     pub fn retained(&self, topic: &Topic) -> Option<Arc<WsServerMsg>> {
         lock(&self.inner.retained).get(topic).cloned()
     }
 
-    /// Reserve une connexion pour ce compte, ou `None` s'il en a deja [`MAX_CONNECTIONS_PER_USER`].
+    /// Reserves a connection for this account, or `None` if it already has [`MAX_CONNECTIONS_PER_USER`].
     #[must_use]
     pub fn try_connect(&self, user_id: i64) -> Option<ConnectionGuard> {
         let mut conns = lock(&self.inner.connections);
@@ -124,7 +124,7 @@ impl Hub {
         })
     }
 
-    /// Nombre total de connexions ouvertes.
+    /// Total number of open connections.
     #[must_use]
     pub fn connection_count(&self) -> usize {
         lock(&self.inner.connections).values().sum()
@@ -176,7 +176,7 @@ mod tests {
         let hub = Hub::new();
         let t = Topic::Device(7);
         assert!(hub.retained(&t).is_none());
-        // Sans abonne, le message est quand meme retenu (c'est ce que lit le rendu serveur).
+        // Without a subscriber, the message is still retained (this is what the server render reads).
         assert_eq!(hub.publish_retained(&t, state(7, 1)), 0);
         assert_eq!(*hub.retained(&t).unwrap(), state(7, 1));
         assert_eq!(hub.publish_retained(&t, state(7, 2)), 0);
@@ -185,7 +185,7 @@ mod tests {
             state(7, 2),
             "le dernier remplace le precedent"
         );
-        // `publish` ne retient rien ; les autres sujets sont independants.
+        // `publish` retains nothing; the other subjects are independent.
         hub.publish(&t, state(7, 3));
         assert_eq!(*hub.retained(&t).unwrap(), state(7, 2));
         assert!(hub.retained(&Topic::Device(8)).is_none());

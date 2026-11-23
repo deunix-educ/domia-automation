@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Commandes d'administration (hors `serve`).
+//! Administration commands (outside `serve`).
 
 use anyhow::{Context, bail};
 use dominet_domain::repo::UserRepo;
@@ -18,13 +18,13 @@ use crate::error::conflict_message;
 use crate::config::Config;
 use crate::server::lazy_pool;
 
-/// `dominet migrate` : applique les migrations en attente et affiche le bilan.
+/// `dominet migrate`: applies the pending migrations and prints the summary.
 ///
 /// # Errors
-/// Retourne une erreur si la base est injoignable ou si une migration echoue.
+/// Returns an error if the database is unreachable or if a migration fails.
 pub async fn migrate(config: &Config) -> anyhow::Result<()> {
     let pool = lazy_pool(config)?;
-    // La table de suivi n'existe pas avant la premiere migration : on compte alors 0.
+    // The tracking table does not exist before the first migration: we then count 0.
     let before: i64 = sqlx::query_scalar("SELECT count(*) FROM _sqlx_migrations")
         .fetch_one(&pool)
         .await
@@ -39,7 +39,7 @@ pub async fn migrate(config: &Config) -> anyhow::Result<()> {
     Ok(())
 }
 
-/// Variable d'environnement pour fournir le mot de passe sans saisie (scripts, Docker).
+/// Environment variable to supply the password without prompting (scripts, Docker).
 pub const PASSWORD_ENV: &str = "DOMINET_PASSWORD";
 
 async fn connect(config: &Config) -> anyhow::Result<PgStore> {
@@ -59,7 +59,7 @@ fn auth_service(store: PgStore) -> AuthService {
     )
 }
 
-/// Message lisible pour la CLI (les conflits nomment une contrainte SQL : on les traduit).
+/// Readable message for the CLI (conflicts name an SQL constraint: we translate them).
 fn explain(err: &AuthError) -> anyhow::Error {
     match err {
         AuthError::Repo(dominet_domain::RepoError::Conflict { constraint }) => {
@@ -81,7 +81,7 @@ fn ask(prompt: &str) -> anyhow::Result<String> {
     Ok(line.trim().to_string())
 }
 
-/// Mot de passe : variable d'environnement si presente, sinon saisie masquee demandee deux fois.
+/// Password: environment variable if present, otherwise masked input asked twice.
 fn read_password() -> anyhow::Result<String> {
     if let Ok(pw) = std::env::var(PASSWORD_ENV) {
         return Ok(pw);
@@ -94,10 +94,10 @@ fn read_password() -> anyhow::Result<String> {
     Ok(first)
 }
 
-/// Coeur de `createsuperuser`, separe de la saisie pour etre testable.
+/// Core of `createsuperuser`, separated from the input to be testable.
 ///
 /// # Errors
-/// Nom ou mot de passe refuses par la politique, ou nom deja pris.
+/// Name or password refused by the policy, or name already taken.
 pub async fn create_superuser(
     auth: &AuthService,
     username: &str,
@@ -108,10 +108,10 @@ pub async fn create_superuser(
         .await
 }
 
-/// Coeur de `passwd` : change le mot de passe et revoque les sessions du compte.
+/// Core of `passwd`: changes the password and revokes the account's sessions.
 ///
 /// # Errors
-/// `Repo(NotFound)` si le compte n'existe pas, `Invalid` si le mot de passe viole la politique.
+/// `Repo(NotFound)` if the account does not exist, `Invalid` if the password violates the policy.
 pub async fn change_password(
     auth: &AuthService,
     store: &PgStore,
@@ -130,7 +130,7 @@ pub async fn change_password(
 /// `dominet createsuperuser`.
 ///
 /// # Errors
-/// Voir [`create_superuser`] ; erreur aussi si la base est injoignable.
+/// See [`create_superuser`]; also an error if the database is unreachable.
 pub async fn createsuperuser(config: &Config, args: SuperuserArgs) -> anyhow::Result<()> {
     let store = connect(config).await?;
     let username = match args.username {
@@ -148,7 +148,7 @@ pub async fn createsuperuser(config: &Config, args: SuperuserArgs) -> anyhow::Re
 /// `dominet passwd`.
 ///
 /// # Errors
-/// Voir [`change_password`].
+/// See [`change_password`].
 pub async fn passwd(config: &Config, args: UserArgs) -> anyhow::Result<()> {
     let store = connect(config).await?;
     let username = match args.username {
@@ -166,9 +166,9 @@ pub async fn passwd(config: &Config, args: UserArgs) -> anyhow::Result<()> {
     Ok(())
 }
 
-/// `dominet healthcheck` : `GET /healthz` sur le serveur local ; vrai si la reponse est 200.
+/// `dominet healthcheck`: `GET /healthz` on the local server; true if the response is 200.
 ///
-/// Sans `--addr`, le port de `HTTP_ADDR` (defaut 8000) sur 127.0.0.1. Ne lit ni la base ni la configuration complete.
+/// Without `--addr`, the port of `HTTP_ADDR` (default 8000) on 127.0.0.1. Reads neither the database nor the full configuration.
 #[must_use]
 pub fn healthcheck(addr: Option<&str>) -> bool {
     use std::io::{Read, Write};
@@ -202,7 +202,7 @@ pub fn healthcheck(addr: Option<&str>) -> bool {
     head[..n].starts_with(b"HTTP/1.1 200") || head[..n].starts_with(b"HTTP/1.0 200")
 }
 
-/// `dominet gen-master-key` : affiche une cle maitresse neuve (aucune configuration necessaire).
+/// `dominet gen-master-key`: prints a new master key (no configuration needed).
 pub fn gen_master_key() {
     println!("{}", crate::secrets::MasterKey::generate());
     eprintln!(
@@ -210,21 +210,21 @@ pub fn gen_master_key() {
     );
 }
 
-/// Resume de `seed`.
+/// Summary of `seed`.
 #[derive(Debug, Default, PartialEq, Eq)]
 pub struct SeedSummary {
     pub settings_created: usize,
     pub settings_existing: usize,
     pub navbar_created: usize,
     pub navbar_existing: usize,
-    /// Regles d'alerte Prometheus et Grafana livrees, creees (R7) ; jamais recreees si l'administrateur en a supprime.
+    /// Shipped Prometheus and Grafana alert rules, created (R7); never recreated if the administrator deleted them.
     pub rules_created: usize,
 }
 
-/// Coeur de `seed`, separe de la configuration pour etre testable : reglages puis navigation, sans rien ecraser.
+/// Core of `seed`, separated from the configuration to be testable: settings then navigation, without overwriting anything.
 ///
 /// # Errors
-/// Voir [`crate::settings::SettingsService::seed`] ; erreur de depot pour la navigation.
+/// See [`crate::settings::SettingsService::seed`]; repository error for the navigation.
 pub async fn seed_data(
     settings: &crate::settings::SettingsService,
     store: &PgStore,
@@ -245,8 +245,8 @@ pub async fn seed_data(
         settings_existing: report.existing.len(),
         ..SeedSummary::default()
     };
-    // La navigation par defaut n'est creee que si la table est vide : on ne ressuscite pas une entree que
-    // l'administrateur a supprimee ou renommee.
+    // The default navigation is only created if the table is empty: we do not resurrect an entry that
+    // the administrator deleted or renamed.
     let defaults = default_navbar();
     for item in &defaults {
         item.validate()
@@ -266,8 +266,8 @@ pub async fn seed_data(
     Ok(summary)
 }
 
-/// Regles d'alerte livrees : creees **seulement dans une table vide** (comme la navigation, on ne ressuscite pas une regle que
-/// l'administrateur a supprimee). Renvoie le nombre de regles creees (ou a creer en simulation).
+/// Shipped alert rules: created **only in an empty table** (like the navigation, we do not resurrect a rule that
+/// the administrator deleted). Returns the number of rules created (or to create in a simulation).
 async fn seed_rules(store: &PgStore, dry_run: bool) -> anyhow::Result<usize> {
     use dominet_domain::observability::{default_grafana_rules, default_prometheus_rules};
     use dominet_domain::repo::{GrafanaRuleRepo, PrometheusRuleRepo};
@@ -298,10 +298,10 @@ async fn seed_rules(store: &PgStore, dry_run: bool) -> anyhow::Result<usize> {
     Ok(created)
 }
 
-/// `dominet sync-rules` : ecrit `rules.yml` et `rules.yaml` depuis la base et demande leur rechargement.
+/// `dominet sync-rules`: writes `rules.yml` and `rules.yaml` from the database and asks for their reload.
 ///
 /// # Errors
-/// Base injoignable, ou un des deux services en echec (le code de sortie le dit).
+/// Database unreachable, or one of the two services failing (the exit code says so).
 pub async fn sync_rules(config: &Config) -> anyhow::Result<()> {
     use crate::rules::SyncStatus;
 
@@ -330,11 +330,11 @@ pub async fn sync_rules(config: &Config) -> anyhow::Result<()> {
     Ok(())
 }
 
-/// Libelles a creer pour les cles d'etat des appareils : ceux du referentiel connu (`KNOWN_LABELS`) ou, a defaut, une icone
-/// neutre et la cle comme nom. Sans `dry_run`, les libelles sont ecrits (sans jamais ecraser un existant).
+/// Labels to create for the devices' state keys: those of the known reference list (`KNOWN_LABELS`) or, failing that, a neutral icon
+/// and the key as the name. Without `dry_run`, the labels are written (never overwriting an existing one).
 ///
 /// # Errors
-/// Erreur de depot.
+/// Repository error.
 pub async fn seed_labels_data(
     store: &PgStore,
     dry_run: bool,
@@ -361,7 +361,7 @@ pub async fn seed_labels_data(
 /// `dominet seed-labels [--dry-run]`.
 ///
 /// # Errors
-/// Voir [`seed_labels_data`].
+/// See [`seed_labels_data`].
 pub async fn seed_labels(config: &Config, args: SeedArgs) -> anyhow::Result<()> {
     let store = connect(config).await?;
     let missing = seed_labels_data(&store, args.dry_run).await?;
@@ -381,11 +381,11 @@ pub async fn seed_labels(config: &Config, args: SeedArgs) -> anyhow::Result<()> 
     Ok(())
 }
 
-/// `dominet seed [--dry-run]` : les valeurs initiales viennent de l'environnement (memes noms que les reglages),
-/// sinon des valeurs par defaut. Les valeurs ne sont jamais affichees.
+/// `dominet seed [--dry-run]`: the initial values come from the environment (same names as the settings),
+/// otherwise from default values. The values are never printed.
 ///
 /// # Errors
-/// Voir [`seed_data`].
+/// See [`seed_data`].
 pub async fn seed(config: &Config, args: SeedArgs) -> anyhow::Result<()> {
     let store = connect(config).await?;
     let state = crate::AppState::new(store.pool().clone(), std::sync::Arc::new(config.clone()));
@@ -408,14 +408,14 @@ pub async fn seed(config: &Config, args: SeedArgs) -> anyhow::Result<()> {
     Ok(())
 }
 
-// ------------------------------------------------------------------ meteo, publishers, contexte (R3 lot 6)
+// ------------------------------------------------------------------ weather, publishers, context (R3 lot 6)
 
-/// `dominet seed-weather` : source MQTT « Meteo » (`meteo/#`, appareils automatiques), appareil `meteo_locale`, et la station si
-/// `--lat` et `--lon` sont donnes. Ne remplace jamais l'existant. Contrairement a l'implementation de reference, aucun faux etat initial n'est
-/// ecrit : l'appareil attend le premier releve reel.
+/// `dominet seed-weather`: "Meteo" MQTT source (`meteo/#`, automatic devices), `meteo_locale` device, and the station if
+/// `--lat` and `--lon` are given. Never replaces what exists. Unlike the reference implementation, no fake initial state is
+/// written: the device waits for the first real reading.
 ///
 /// # Errors
-/// Base injoignable, ou parametres de station invalides.
+/// Database unreachable, or invalid station parameters.
 pub async fn seed_weather(config: &Config, args: SeedWeatherArgs) -> anyhow::Result<()> {
     use dominet_domain::device::{DeviceDraft, DeviceType, MqttSource, WeatherStation};
     use dominet_domain::repo::{DeviceRepo, MqttSourceRepo, WeatherRepo};
@@ -499,7 +499,7 @@ pub async fn seed_weather(config: &Config, args: SeedWeatherArgs) -> anyhow::Res
     Ok(())
 }
 
-/// Client MQTT d'un diagnostic : attend la connexion (10 s au plus).
+/// MQTT client of a diagnostic: waits for the connection (10 s at most).
 async fn diagnostic_client(config: &Config) -> anyhow::Result<dominet_mqtt::MqttClient> {
     let mut cfg = config
         .mqtt
@@ -520,10 +520,10 @@ async fn diagnostic_client(config: &Config) -> anyhow::Result<dominet_mqtt::Mqtt
     Ok(client)
 }
 
-/// `dominet publish weather|solarmax [--print-only]` : un seul cycle, pour verifier une installation.
+/// `dominet publish weather|solarmax [--print-only]`: a single cycle, to check an installation.
 ///
 /// # Errors
-/// Source injoignable ou illisible, broker injoignable (sauf `--print-only`), reglage absent.
+/// Source unreachable or unreadable, broker unreachable (except `--print-only`), setting missing.
 pub async fn publish(config: &Config, args: PublishArgs) -> anyhow::Result<()> {
     use dominet_domain::repo::WeatherRepo;
     use dominet_integrations::solarmax::SolarMaxClient;
@@ -578,18 +578,18 @@ pub async fn publish(config: &Config, args: PublishArgs) -> anyhow::Result<()> {
         }
     }
     if let Some(c) = &client {
-        // La publication est mise en file : on laisse partir les messages avant de couper.
+        // The publication is queued: we let the messages go out before cutting.
         tokio::time::sleep(std::time::Duration::from_millis(500)).await;
         c.shutdown();
     }
     Ok(())
 }
 
-/// Document `context.yaml` : appareils actifs (par type puis nom), listes vides pour ce qui arrive en R4, schemas de reference.
+/// `context.yaml` document: active devices (by type then name), empty lists for what arrives in R4, reference schemas.
 ///
 /// # Errors
-/// Base injoignable.
-#[allow(clippy::too_many_lines)] // une rubrique par collection,
+/// Database unreachable.
+#[allow(clippy::too_many_lines)] // one section per collection,
 pub async fn context_document(store: &PgStore) -> anyhow::Result<serde_json::Value> {
     use dominet_domain::context::{numeric_keys, reference_schemas, state_schema};
     use dominet_domain::repo::{
@@ -643,7 +643,7 @@ pub async fn context_document(store: &PgStore) -> anyhow::Result<serde_json::Val
         }
         entries.insert(d.friendly_name, Value::Object(entry));
     }
-    // Regles Grafana actives, par source puis identifiant (comme la reference).
+    // Active Grafana rules, by source then identifier (like the reference).
     let mut grafana: Vec<_> = store
         .grafana_rules()
         .list()
@@ -669,7 +669,7 @@ pub async fn context_document(store: &PgStore) -> anyhow::Result<serde_json::Val
             })
         })
         .collect();
-    // Scenes actives par identifiant, avec leurs commandes dans l'ordre de publication.
+    // Active scenes by identifier, with their commands in publication order.
     let mut scenes: Vec<_> = store
         .scenes()
         .list()
@@ -689,8 +689,8 @@ pub async fn context_document(store: &PgStore) -> anyhow::Result<serde_json::Val
             json!({"pk": s.id.0, "name": s.name, "icon": s.icon, "actions": actions})
         })
         .collect();
-    // Automations activees par type de declencheur puis nom ; la condition et le code Rhai, propres a
-    // DomiNet, ne sont ecrits que s'il y en a.
+    // Enabled automations by trigger type then name; the condition and the Rhai code, specific to
+    // DomiNet, are only written if there are any.
     let mut automations: Vec<_> = store.automations().list_enabled().await?;
     automations.sort_by(|a, b| {
         (a.draft.trigger.kind(), &a.draft.name).cmp(&(b.draft.trigger.kind(), &b.draft.name))
@@ -714,7 +714,7 @@ pub async fn context_document(store: &PgStore) -> anyhow::Result<serde_json::Val
             Value::Object(entry)
         })
         .collect();
-    // Regles d'alerte d'appareil activees, par appareil.
+    // Enabled device alert rules, by device.
     let mut rules: Vec<_> = store
         .alert_rules()
         .list()
@@ -752,10 +752,10 @@ pub async fn context_document(store: &PgStore) -> anyhow::Result<serde_json::Val
     }))
 }
 
-/// `dominet dump-context [--output FICHIER]`.
+/// `dominet dump-context [--output FILE]`.
 ///
 /// # Errors
-/// Base injoignable ou fichier non inscriptible.
+/// Database unreachable or file not writable.
 pub async fn dump_context(config: &Config, args: DumpContextArgs) -> anyhow::Result<()> {
     let store = connect(config).await?;
     let document = context_document(&store).await?;
@@ -774,16 +774,16 @@ pub async fn dump_context(config: &Config, args: DumpContextArgs) -> anyhow::Res
     Ok(())
 }
 
-// ------------------------------------------------------------------ energie (R4 lot 7)
+// ------------------------------------------------------------------ energy (R4 lot 7)
 
-/// Resultat de `seed-energy` pour un appareil : `None` s'il n'existe pas, sinon les cles ajoutees au suivi (vide : deja suivies).
+/// Result of `seed-energy` for a device: `None` if it does not exist, otherwise the keys added to the tracking (empty: already tracked).
 pub type SeedEnergyLine = (String, Option<Vec<String>>);
 
-/// Ajoute aux `tracked_keys` des trois appareils du bilan les cles dont le calcul a besoin (`HCHP`, `HCHC`, `qdy`, `energy_a`,
-/// `energy_b`) et les puissances du tableau Grafana « Energie » (`PAPP`, `pac`, `power_ab`). Ne retire rien ; sans `dry_run` rien n'est ecrit.
+/// Adds to the `tracked_keys` of the summary's three devices the keys the computation needs (`HCHP`, `HCHC`, `qdy`, `energy_a`,
+/// `energy_b`) and the powers of the Grafana "Energy" dashboard (`PAPP`, `pac`, `power_ab`). Removes nothing; without `dry_run` nothing is written.
 ///
 /// # Errors
-/// Base injoignable.
+/// Database unreachable.
 pub async fn seed_energy_data(
     store: &PgStore,
     names: &dominet_automation::energy::EnergyDevices,
@@ -826,10 +826,10 @@ pub async fn seed_energy_data(
     Ok(out)
 }
 
-/// `dominet seed-energy` : voir [`seed_energy_data`]. Sans historique de ces cles, le bilan reste a zero.
+/// `dominet seed-energy`: see [`seed_energy_data`]. Without a history of these keys, the summary stays at zero.
 ///
 /// # Errors
-/// Base injoignable.
+/// Database unreachable.
 pub async fn seed_energy(config: &Config, args: SeedArgs) -> anyhow::Result<()> {
     let store = connect(config).await?;
     for (name, line) in seed_energy_data(&store, &config.energy, args.dry_run).await? {
@@ -848,11 +848,11 @@ pub async fn seed_energy(config: &Config, args: SeedArgs) -> anyhow::Result<()> 
     Ok(())
 }
 
-/// `dominet aggregate-energy [--days N | --date AAAA-MM-JJ]` : calcule et enregistre le bilan des derniers jours (hier par defaut),
-/// comme le travail de nuit.
+/// `dominet aggregate-energy [--days N | --date YYYY-MM-DD]`: computes and records the summary of the last days (yesterday by default),
+/// like the night job.
 ///
 /// # Errors
-/// Base injoignable.
+/// Database unreachable.
 pub async fn aggregate_energy(config: &Config, args: AggregateEnergyArgs) -> anyhow::Result<()> {
     use dominet_automation::energy::{compute_and_store, yesterday};
 
@@ -887,12 +887,12 @@ pub async fn aggregate_energy(config: &Config, args: AggregateEnergyArgs) -> any
     Ok(())
 }
 
-/// `dominet notify-test --email [--to ADRESSE] --sms` : envoie **vraiment** un message de test par chaque canal demande, avec la
-/// configuration de l'environnement et les reglages. C'est la seule voie d'envoi reel hors alertes et messagerie (plan R5, D1) :
-/// elle ne se lance que sur demande explicite.
+/// `dominet notify-test --email [--to ADDRESS] --sms`: **really** sends a test message through each requested channel, with the
+/// environment's configuration and the settings. It is the only real sending path outside alerts and messaging (plan R5, D1):
+/// it only runs on explicit request.
 ///
 /// # Errors
-/// Aucun canal demande, base injoignable ou echec d'un envoi (le secret n'apparait jamais dans le message).
+/// No channel requested, database unreachable or a sending failure (the secret never appears in the message).
 pub async fn notify_test(config: &Config, args: NotifyTestArgs) -> anyhow::Result<()> {
     use crate::notify::Channels;
     use crate::secrets::{MasterKey, SecretBox};
@@ -952,7 +952,7 @@ pub async fn notify_test(config: &Config, args: NotifyTestArgs) -> anyhow::Resul
     Ok(())
 }
 
-// ------------------------------------------------------------------ sauvegardes (R7 lot 4)
+// ------------------------------------------------------------------ backups (R7 lot 4)
 
 fn human_bytes(n: u64) -> String {
     #[allow(clippy::cast_precision_loss, reason = "affichage")]
@@ -960,10 +960,10 @@ fn human_bytes(n: u64) -> String {
     format!("{mb:.1} Mo")
 }
 
-/// `dominet backup` : sauvegarde immediate.
+/// `dominet backup`: immediate backup.
 ///
 /// # Errors
-/// `BACKUP_DIR` absent, client PostgreSQL en echec, disque plein.
+/// `BACKUP_DIR` missing, PostgreSQL client failing, disk full.
 pub async fn backup(config: &Config) -> anyhow::Result<()> {
     let report = crate::backup::run_once(crate::backup::BackupService::new(config)).await?;
     println!(
@@ -985,10 +985,10 @@ pub async fn backup(config: &Config) -> anyhow::Result<()> {
     Ok(())
 }
 
-/// `dominet backups` : liste des sauvegardes.
+/// `dominet backups`: list of backups.
 ///
 /// # Errors
-/// `BACKUP_DIR` absent.
+/// `BACKUP_DIR` missing.
 pub fn backups(config: &Config) -> anyhow::Result<()> {
     let service = crate::backup::BackupService::new(config);
     anyhow::ensure!(service.is_configured(), "BACKUP_DIR is not set");
@@ -1003,10 +1003,10 @@ pub fn backups(config: &Config) -> anyhow::Result<()> {
     Ok(())
 }
 
-/// `dominet restore` : restaure la base ou le volume ReductStore.
+/// `dominet restore`: restores the database or the ReductStore volume.
 ///
 /// # Errors
-/// Somme de controle incorrecte, base injoignable, confirmation absente, dossier cible non vide.
+/// Wrong checksum, database unreachable, confirmation missing, non-empty target folder.
 pub fn restore(config: &Config, args: RestoreArgs) -> anyhow::Result<()> {
     use crate::backup::BackupService;
 

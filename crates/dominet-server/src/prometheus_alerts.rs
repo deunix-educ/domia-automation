@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Alertes de Prometheus relayees par e-mail et SMS (R7 lot 3, ADR 0053) : port de `check_prometheus_alerts` de la reference
-//!. Toutes les `PROMETHEUS_ALERTS_POLL_SECS` secondes, on lit `/api/v1/alerts` ; une alerte `firing`
-//! **nouvelle** est notifiee (e-mail, et SMS si elle est `critical`) puis tue pendant `PROMETHEUS_ALERT_COOLDOWN` (1 h).
+//! Prometheus alerts relayed by e-mail and SMS (R7 lot 3, ADR 0053): port of the reference's `check_prometheus_alerts`
+//! . Every `PROMETHEUS_ALERTS_POLL_SECS` seconds, `/api/v1/alerts` is read; a **new** `firing`
+//! alert is notified (e-mail, and SMS if it is `critical`) then silenced for `PROMETHEUS_ALERT_COOLDOWN` (1 h).
 //!
-//! Deux ecarts voulus avec reference, qui venaient de defauts de la version d'origine (ADR 0053) :
-//! - l'identite d'une alerte est tiree de **ses etiquettes** : l'API d'alertes de Prometheus ne fournit pas de `fingerprint`, si
-//!   bien que reference donnait la meme cle a toutes les alertes et que la deuxieme alerte passait sous silence pendant une heure ;
-//! - une alerte notifiee qui **disparait** de la liste (Prometheus ne renvoie jamais l'etat `resolved`) envoie le message « RESOLVED »
-//!   que reference prevoyait mais ne pouvait jamais envoyer.
+//! Two intended differences with the reference, which came from defects of the original version (ADR 0053):
+//! - an alert's identity is derived from **its labels**: Prometheus's alerts API does not provide a `fingerprint`, so
+//!   the reference gave the same key to all the alerts and the second alert was silenced for an hour;
+//! - a notified alert that **disappears** from the list (Prometheus never returns the `resolved` state) sends the "RESOLVED" message
+//!   that the reference planned but could never send.
 
 use std::collections::BTreeMap;
 use std::time::{Duration, Instant};
@@ -16,10 +16,10 @@ use serde_json::Value;
 
 use crate::AppState;
 
-/// Severites qui declenchent aussi un SMS (`_SMS_SEVERITIES` de la reference).
+/// Severities that also trigger an SMS (the reference's `_SMS_SEVERITIES`).
 const SMS_SEVERITIES: [&str; 1] = ["critical"];
 
-/// Une alerte lue sur `/api/v1/alerts`.
+/// An alert read from `/api/v1/alerts`.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PromAlert {
     pub state: String,
@@ -32,7 +32,7 @@ impl PromAlert {
         self.labels.get(key).map(String::as_str)
     }
 
-    /// Identite stable : toutes les etiquettes, triees.
+    /// Stable identity: all the labels, sorted.
     fn key(&self) -> String {
         self.labels
             .iter()
@@ -42,7 +42,7 @@ impl PromAlert {
     }
 }
 
-/// Lit la reponse de `/api/v1/alerts` (`{"data": {"alerts": [...]}}`). Une alerte mal formee est ignoree.
+/// Reads the response of `/api/v1/alerts` (`{"data": {"alerts": [...]}}`). A malformed alert is ignored.
 #[must_use]
 pub fn parse_alerts(body: &Value) -> Vec<PromAlert> {
     let strings = |v: Option<&Value>| -> BTreeMap<String, String> {
@@ -68,7 +68,7 @@ pub fn parse_alerts(body: &Value) -> Vec<PromAlert> {
         .unwrap_or_default()
 }
 
-/// Message envoye (la reference) : titre, resume, description eventuelle.
+/// Message sent (the reference's): title, summary, optional description.
 #[must_use]
 pub fn build_message(
     name: &str,
@@ -87,19 +87,19 @@ pub fn build_message(
     lines.join("\n")
 }
 
-/// Ce qu'il faut envoyer.
+/// What to send.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Notification {
     pub message: String,
     pub sms: bool,
 }
 
-/// Memoire des alertes deja notifiees (equivalent du cache de la reference) et decision d'envoi, sans entree-sortie : l'horloge est
-/// fournie, ce qui la rend testable.
+/// Memory of the alerts already notified (equivalent of the reference's cache) and sending decision, without I/O: the clock is
+/// supplied, which makes it testable.
 #[derive(Debug)]
 pub struct AlertMonitor {
     cooldown: Duration,
-    /// Cle d'alerte -> (expiration du silence, message de resolution a envoyer si elle disparait).
+    /// Alert key -> (silence expiry, resolution message to send if it disappears).
     notified: BTreeMap<String, (Instant, Notification)>,
 }
 
@@ -112,10 +112,10 @@ impl AlertMonitor {
         }
     }
 
-    /// Passage sur la liste courante : les notifications a envoyer, dans l'ordre.
+    /// Pass over the current list: the notifications to send, in order.
     pub fn check(&mut self, alerts: &[PromAlert], now: Instant) -> Vec<Notification> {
         let mut out = vec![];
-        // Le silence d'une alerte expire apres le delai (Reference : `timeout` du cache) : elle sera renotifiee si elle dure.
+        // An alert's silence expires after the delay (reference: the cache's `timeout`): it will be notified again if it lasts.
         self.notified.retain(|_, (until, _)| *until > now);
         let mut present = vec![];
         for alert in alerts {
@@ -160,7 +160,7 @@ impl AlertMonitor {
                 _ => present.push(key),
             }
         }
-        // Une alerte notifiee qui n'est plus dans la liste est terminee.
+        // A notified alert that is no longer in the list is over.
         let gone: Vec<String> = self
             .notified
             .keys()
@@ -176,7 +176,7 @@ impl AlertMonitor {
     }
 }
 
-/// Lit `/api/v1/alerts` puis notifie ; `None` si Prometheus ne repond pas (journalise, on reessaie au prochain passage).
+/// Reads `/api/v1/alerts` then notifies; `None` if Prometheus does not answer (logged, we retry at the next pass).
 async fn fetch(client: &reqwest::Client, url: &str) -> Option<Vec<PromAlert>> {
     let resp = client
         .get(format!("{}/api/v1/alerts", url.trim_end_matches('/')))
@@ -198,7 +198,7 @@ async fn fetch(client: &reqwest::Client, url: &str) -> Option<Vec<PromAlert>> {
     }
 }
 
-/// Demarre le sondage (rôle `scheduler`) ; sans `PROMETHEUS_URL`, rien ne tourne.
+/// Starts the polling (`scheduler` role); without `PROMETHEUS_URL`, nothing runs.
 pub fn spawn(state: &AppState) {
     let Some(url) = state.config.prometheus_url.clone() else {
         return;
@@ -333,7 +333,7 @@ mod tests {
             m.check(&[], t0 + Duration::from_secs(180)).is_empty(),
             "une seule fois"
         );
-        // Une alerte jamais notifiee qui disparait ne dit rien.
+        // An alert that was never notified and disappears says nothing.
         assert_eq!(
             m.check(&[alert("pending", "P", "warning", "s", "", "x")], t0)
                 .len(),

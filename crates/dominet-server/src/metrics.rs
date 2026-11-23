@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Metriques Prometheus (ADR 0051) : un enregistreur global, un ecouteur `/metrics` **a part** (jamais sur le port public), des
-//! compteurs poses aux endroits utiles (HTTP, WebSocket, MQTT, planificateur, video) et un collecteur periodique pour les jauges.
+//! Prometheus metrics (ADR 0051): a global recorder, a **separate** `/metrics` listener (never on the public port),
+//! counters placed where useful (HTTP, WebSocket, MQTT, scheduler, video) and a periodic collector for the gauges.
 //!
-//! Les noms suivent la convention Prometheus (`dominet_*`, unite en suffixe, `_total` pour les compteurs). Les etiquettes sont
-//! **bornees** : route normalisee (jamais l'URL brute), statut, nom de tache, identifiant de camera. Aucun secret ni identifiant
-//! de compte n'y figure.
+//! The names follow the Prometheus convention (`dominet_*`, unit as suffix, `_total` for counters). The labels are
+//! **bounded**: normalised route (never the raw URL), status, task name, camera identifier. No secret or account
+//! identifier appears there.
 
 use std::sync::OnceLock;
 use std::time::{Duration, Instant};
@@ -19,16 +19,16 @@ use metrics_exporter_prometheus::{Matcher, PrometheusBuilder, PrometheusHandle};
 
 use crate::AppState;
 
-/// Intervalle de rafraichissement des jauges (alignee sur le `scrape_interval` de Prometheus).
+/// Refresh interval of the gauges (aligned with Prometheus's `scrape_interval`).
 const COLLECT_EVERY: Duration = Duration::from_secs(15);
-/// Seaux de la latence HTTP (secondes) : de la page legere au rendu lent.
+/// Buckets of the HTTP latency (seconds): from a light page to a slow render.
 const LATENCY_BUCKETS: &[f64] = &[
     0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0, 30.0,
 ];
 
 static HANDLE: OnceLock<PrometheusHandle> = OnceLock::new();
 
-/// Installe l'enregistreur global au premier appel (les suivants rendent la meme poignee). Les tests y passent aussi.
+/// Installs the global recorder at the first call (the following ones return the same handle). The tests go through it too.
 pub fn handle() -> &'static PrometheusHandle {
     HANDLE.get_or_init(|| {
         let recorder = PrometheusBuilder::new()
@@ -39,7 +39,7 @@ pub fn handle() -> &'static PrometheusHandle {
             .expect("valid latency buckets")
             .build_recorder();
         let handle = recorder.handle();
-        // Un enregistreur deja installe (autre test, autre bibliotheque) ne doit pas faire echouer le serveur.
+        // An already installed recorder (another test, another library) must not make the server fail.
         if metrics::set_global_recorder(recorder).is_err() {
             tracing::warn!("metrics recorder already installed");
         }
@@ -48,7 +48,7 @@ pub fn handle() -> &'static PrometheusHandle {
     })
 }
 
-/// Nature d'une metrique, pour sa description.
+/// Kind of a metric, for its description.
 #[derive(Debug, Clone, Copy)]
 enum Kind {
     Counter,
@@ -56,8 +56,8 @@ enum Kind {
     Seconds,
 }
 
-/// Toutes les metriques de DomiNet : nom, nature, aide. Les tableaux Grafana et les regles Prometheus ne peuvent citer que ces noms
-/// (test `grafana_assets`).
+/// All of DomiNet's metrics: name, kind, help. The Grafana dashboards and the Prometheus rules can only cite these names
+/// (`grafana_assets` test).
 const METRICS: &[(&str, Kind, &str)] = &[
     (
         "dominet_http_requests_total",
@@ -161,7 +161,7 @@ const METRICS: &[(&str, Kind, &str)] = &[
     ),
 ];
 
-/// Noms des metriques de DomiNet.
+/// Names of DomiNet's metrics.
 #[must_use]
 pub fn names() -> Vec<&'static str> {
     METRICS.iter().map(|(n, _, _)| *n).collect()
@@ -178,8 +178,8 @@ fn describe() {
     }
 }
 
-/// Route normalisee d'une requete : le modele de route quand il existe, sinon une famille fixe. Jamais l'URL brute (identifiants,
-/// jetons) : cardinalite bornee et rien de sensible.
+/// Normalised route of a request: the route template when it exists, otherwise a fixed family. Never the raw URL (identifiers,
+/// tokens): bounded cardinality and nothing sensitive.
 fn route_label(req: &Request) -> String {
     if let Some(m) = req.extensions().get::<MatchedPath>() {
         return m.as_str().to_string();
@@ -193,8 +193,8 @@ fn route_label(req: &Request) -> String {
     "ui".into()
 }
 
-/// Fonctions serveur (`/sf/<point>`) : leurs adresses sont fixes (un point par fonction), donc sans danger pour la cardinalite
-/// **quand le serveur les connait** (statut autre que 404) ; une adresse inventee reste dans la famille `/sf/*`.
+/// Server functions (`/sf/<point>`): their addresses are fixed (one point per function), hence harmless for cardinality
+/// **when the server knows them** (status other than 404); an invented address stays in the `/sf/*` family.
 fn refine_route(route: String, path: &str, status: u16) -> String {
     if route == "/sf/*" && status != 404 && path.len() <= 64 {
         return path.to_string();
@@ -202,7 +202,7 @@ fn refine_route(route: String, path: &str, status: u16) -> String {
     route
 }
 
-/// Intergiciel : compte les requetes et mesure leur duree.
+/// Middleware: counts the requests and measures their duration.
 pub async fn track(req: Request, next: Next) -> Response {
     let method = req.method().to_string();
     let route = route_label(&req);
@@ -283,7 +283,7 @@ pub(crate) fn detection(camera: &str) {
         .increment(1);
 }
 
-/// Jauges lues a la demande (pool, MQTT) et version : mises a jour par le collecteur et juste avant chaque lecture.
+/// Gauges read on demand (pool, MQTT) and version: updated by the collector and just before each read.
 fn refresh_gauges(state: &AppState) {
     let pool = &state.pool;
     let size = f64::from(pool.size());
@@ -296,7 +296,7 @@ fn refresh_gauges(state: &AppState) {
     }
 }
 
-/// Routeur de l'ecouteur : `GET /metrics` (format texte Prometheus).
+/// Listener's router: `GET /metrics` (Prometheus text format).
 pub fn router(state: AppState) -> Router {
     Router::new().route(
         "/metrics",
@@ -318,7 +318,7 @@ pub fn router(state: AppState) -> Router {
     )
 }
 
-/// Demarre l'ecouteur `/metrics` si `METRICS_ADDR` n'est pas `off`. Un port deja pris n'arrete pas le serveur : on le dit et on continue.
+/// Starts the `/metrics` listener if `METRICS_ADDR` is not `off`. A port already taken does not stop the server: we say so and carry on.
 pub async fn spawn_listener(state: &AppState) {
     let _ = handle();
     metrics::gauge!("dominet_build_info", "version" => env!("CARGO_PKG_VERSION")).set(1.0);
@@ -342,7 +342,7 @@ pub async fn spawn_listener(state: &AppState) {
     }
 }
 
-/// Sert `/metrics` sur un ecouteur deja lie (aussi utilise par les tests).
+/// Serves `/metrics` on an already bound listener (also used by the tests).
 pub fn serve(listener: tokio::net::TcpListener, state: AppState) {
     let app = router(state.clone());
     tokio::spawn(async move {

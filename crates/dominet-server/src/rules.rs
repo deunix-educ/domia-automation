@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Regles d'alerte de Prometheus et de Grafana (R7 lot 2, ADR 0052) : les regles editees dans l'administration sont ecrites en
-//! fichiers de provisionnement (`rules.yml`, `rules.yaml`) puis le service concerne est invite a les relire. Comme en reference
-//!, a ceci pres que l'ecriture est atomique (fichier temporaire puis renommage).
+//! Prometheus and Grafana alert rules (R7 lot 2, ADR 0052): the rules edited in the administration are written as
+//! provisioning files (`rules.yml`, `rules.yaml`) then the service concerned is invited to re-read them. As in the reference
+//! , except that the writing is atomic (temporary file then rename).
 
 use std::path::{Path, PathBuf};
 use std::time::Duration;
@@ -16,12 +16,12 @@ use crate::config::Config;
 
 const RELOAD_TIMEOUT: Duration = Duration::from_secs(5);
 
-/// Ce qui s'est passe pour un service (Prometheus ou Grafana).
+/// What happened for a service (Prometheus or Grafana).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum SyncStatus {
-    /// Ni dossier de fichiers (`*_RULES_PATH`) ni adresse n'est configure : rien a faire.
+    /// Neither a files folder (`*_RULES_PATH`) nor an address is configured: nothing to do.
     Disabled,
-    /// Fichier ecrit ; `reloaded` dit si le service l'a pris en compte (`None` : pas d'adresse, rechargement a faire a la main).
+    /// File written; `reloaded` says whether the service took it into account (`None`: no address, reload to be done by hand).
     Done {
         groups: usize,
         reloaded: Option<bool>,
@@ -30,7 +30,7 @@ pub enum SyncStatus {
 }
 
 impl SyncStatus {
-    /// Tout s'est bien passe (ou rien n'etait demande).
+    /// Everything went well (or nothing was requested).
     #[must_use]
     pub fn is_ok(&self) -> bool {
         match self {
@@ -41,7 +41,7 @@ impl SyncStatus {
     }
 }
 
-/// Service d'ecriture et de rechargement des regles.
+/// Rules writing and reloading service.
 #[derive(Debug, Clone)]
 pub struct RulesService {
     store: PgStore,
@@ -87,13 +87,13 @@ impl RulesService {
         }
     }
 
-    /// Les deux services ont-ils de quoi etre synchronises ?
+    /// Do the two services have what they need to be synchronised?
     #[must_use]
     pub fn is_configured(&self) -> bool {
         self.prometheus_path.is_some() || self.grafana_path.is_some()
     }
 
-    /// Ecrit `rules.yml` depuis la base puis recharge Prometheus (`POST /-/reload`).
+    /// Writes `rules.yml` from the database then reloads Prometheus (`POST /-/reload`).
     pub async fn sync_prometheus(&self) -> SyncStatus {
         let Some(path) = &self.prometheus_path else {
             return SyncStatus::Disabled;
@@ -119,7 +119,7 @@ impl RulesService {
         SyncStatus::Done { groups, reloaded }
     }
 
-    /// Ecrit `rules.yaml` depuis la base puis recharge le provisionnement d'alertes de Grafana.
+    /// Writes `rules.yaml` from the database then reloads Grafana's alerting provisioning.
     pub async fn sync_grafana(&self) -> SyncStatus {
         let Some(path) = &self.grafana_path else {
             return SyncStatus::Disabled;
@@ -154,7 +154,7 @@ impl RulesService {
         SyncStatus::Done { groups, reloaded }
     }
 
-    /// `POST` de rechargement ; ne divulgue jamais l'identifiant ni le mot de passe dans les journaux.
+    /// Reload `POST`; never discloses the identifier or the password in the logs.
     async fn post(&self, url: &str, auth: Option<(&String, Option<&str>)>) -> bool {
         let mut req = self.http.post(url);
         if let Some((user, password)) = auth {
@@ -176,7 +176,7 @@ impl RulesService {
         }
     }
 
-    /// Les deux services, l'un apres l'autre (apres une modification, au demarrage, `dominet sync-rules`).
+    /// The two services, one after the other (after a modification, at start-up, `dominet sync-rules`).
     pub async fn sync_all(&self) -> (SyncStatus, SyncStatus) {
         (self.sync_prometheus().await, self.sync_grafana().await)
     }

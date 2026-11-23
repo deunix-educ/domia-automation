@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Canaux d'envoi branches sur la configuration (R5, ADR 0038) : le serveur SMTP vient de l'environnement (`EMAIL_*`), l'expediteur,
-//! le destinataire des alertes et les identifiants Free Mobile des reglages (modifiables sans redemarrage).
+//! Sending channels wired to the configuration (R5, ADR 0038): the SMTP server comes from the environment (`EMAIL_*`), the sender,
+//! the alerts recipient and the Free Mobile credentials from the settings (modifiable without a restart).
 
 use dominet_notify::{FreeMobile, NotifyError, SmtpSender};
 
@@ -24,7 +24,7 @@ impl Channels {
         }
     }
 
-    /// Un serveur SMTP est-il configure (`EMAIL_HOST`) ?
+    /// Is an SMTP server configured (`EMAIL_HOST`)?
     #[must_use]
     pub fn email_configured(&self) -> bool {
         self.email.is_some()
@@ -38,10 +38,10 @@ impl Channels {
             .map_err(|e| NotifyError::Config(format!("setting {key}: {e}")))
     }
 
-    /// Un e-mail de `DEFAULT_FROM_EMAIL` vers `to`.
+    /// An e-mail from `DEFAULT_FROM_EMAIL` to `to`.
     ///
     /// # Errors
-    /// `NotConfigured` sans `EMAIL_HOST`, sinon l'erreur du canal.
+    /// `NotConfigured` without `EMAIL_HOST`, otherwise the channel's error.
     pub async fn send_email(&self, to: &str, subject: &str, body: &str) -> Result<(), NotifyError> {
         let cfg = self
             .email
@@ -53,10 +53,10 @@ impl Channels {
             .await
     }
 
-    /// Le destinataire des alertes : `EMAIL_RECIPIENT`, a defaut `DEFAULT_FROM_EMAIL` (comme la reference).
+    /// The alerts recipient: `EMAIL_RECIPIENT`, failing that `DEFAULT_FROM_EMAIL` (like the reference).
     ///
     /// # Errors
-    /// Voir [`Self::setting`].
+    /// See [`Self::setting`].
     pub async fn alert_recipient(&self) -> Result<String, NotifyError> {
         let to = self.setting("EMAIL_RECIPIENT").await?;
         if to.is_empty() {
@@ -65,10 +65,10 @@ impl Channels {
         Ok(to)
     }
 
-    /// Un e-mail d'alerte au destinataire des alertes.
+    /// An alert e-mail to the alerts recipient.
     ///
     /// # Errors
-    /// `NotConfigured` si aucun destinataire n'est defini.
+    /// `NotConfigured` if no recipient is defined.
     pub async fn send_alert_email(&self, subject: &str, body: &str) -> Result<(), NotifyError> {
         let to = self.alert_recipient().await?;
         if to.is_empty() {
@@ -77,15 +77,15 @@ impl Channels {
         self.send_email(&to, subject, body).await
     }
 
-    /// Notification libre (action d'automation `notification`, plan R5 D7) : un e-mail au destinataire des alertes et, si `sms`,
-    /// un SMS Free Mobile. Chaque canal est tente meme si l'autre echoue ; renvoie les echecs (canal, raison). Un canal non
-    /// configure n'est pas une panne : il est ignore sans bruit.
+    /// Free-form notification (`notification` automation action, plan R5 D7): an e-mail to the alerts recipient and, if `sms`,
+    /// a Free Mobile SMS. Each channel is attempted even if the other fails; returns the failures (channel, reason). An unconfigured
+    /// channel is not an outage: it is ignored silently.
     pub async fn notify(&self, message: &str, sms: bool) -> Vec<(&'static str, String)> {
         self.notify_with_subject("[DomiNet] Notification", message, sms)
             .await
     }
 
-    /// Comme [`Channels::notify`], avec l'objet de l'e-mail (mouvement, detection : `[DomiNet] Mouvement - <camera>`).
+    /// Like [`Channels::notify`], with the e-mail's subject (motion, detection: `[DomiNet] Mouvement - <camera>`).
     pub async fn notify_with_subject(
         &self,
         subject: &str,
@@ -104,10 +104,10 @@ impl Channels {
         failures
     }
 
-    /// Un SMS Free Mobile (au proprietaire du compte).
+    /// A Free Mobile SMS (to the account's owner).
     ///
     /// # Errors
-    /// `NotConfigured` sans identifiants (`SMS_FREE_USER` / `SMS_FREE_KEY`), sinon l'erreur du canal.
+    /// `NotConfigured` without credentials (`SMS_FREE_USER` / `SMS_FREE_KEY`), otherwise the channel's error.
     pub async fn send_sms_free(&self, message: &str) -> Result<(), NotifyError> {
         let user = self.setting("SMS_FREE_USER").await?;
         let key = self.setting("SMS_FREE_KEY").await?;
@@ -117,7 +117,7 @@ impl Channels {
     }
 }
 
-/// Note le resultat d'un envoi : un canal non configure est ignore (information), toute autre erreur est un echec.
+/// Notes the result of a sending: an unconfigured channel is ignored (information), any other error is a failure.
 pub fn record(
     failures: &mut Vec<(&'static str, String)>,
     channel: &'static str,

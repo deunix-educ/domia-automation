@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Alertes cote serveur (R4 lot 6, ADR 0035 ; canaux reels R5 lot 6, ADR 0042) : envoi (bandeau dans l'interface, e-mail, SMS,
-//! Android) et diffusion du nombre d'alertes en cours.
+//! Server-side alerts (R4 lot 6, ADR 0035; real channels R5 lot 6, ADR 0042): sending (banner in the interface, e-mail, SMS,
+//! Android) and broadcast of the number of ongoing alerts.
 
 use dominet_automation::alerts::{AlertNotice, Notifier};
 use dominet_domain::alert::Severity;
@@ -14,8 +14,8 @@ use crate::external_alerts::ExternalAlerts;
 use crate::hub::Hub;
 use crate::notify::{Channels, record};
 
-/// Lit le nombre d'alertes en cours (appareils, plus Prometheus et Grafana) et le diffuse (dernier etat conserve : la pastille
-/// s'affiche des l'arrivee).
+/// Reads the number of ongoing alerts (devices, plus Prometheus and Grafana) and broadcasts it (last state kept: the badge
+/// shows as soon as the page arrives).
 pub async fn publish_count(hub: &Hub, store: &PgStore, external: &ExternalAlerts) {
     match store.alerts().count_firing().await {
         Ok(n) => {
@@ -32,9 +32,9 @@ pub async fn publish_count(hub: &Hub, store: &PgStore, external: &ExternalAlerts
     }
 }
 
-/// Le port `Notifier` : bandeau dans l'interface de tous les comptes connectes, puis les canaux de la regle (plan R5, D8) :
-/// e-mail au destinataire des alertes, SMS Free Mobile, push `alert_notification` a tous les appareils Android en ligne. Chaque
-/// canal est tente meme si un autre echoue (les echecs sont journalises) ; `notified` passe a vrai apres l'essai, comme la reference.
+/// The `Notifier` port: banner in the interface of all the logged-in accounts, then the rule's channels (plan R5, D8):
+/// e-mail to the alerts recipient, Free Mobile SMS, `alert_notification` push to all the online Android devices. Each
+/// channel is attempted even if another fails (the failures are logged); `notified` becomes true after the attempt, like the reference.
 #[derive(Debug, Clone)]
 pub struct AlertNotifier {
     hub: Hub,
@@ -56,7 +56,7 @@ impl AlertNotifier {
         }
     }
 
-    /// Sert les canaux de la regle puis marque l'alerte `notified`. Renvoie les echecs `(canal, raison)`.
+    /// Serves the rule's channels then marks the alert `notified`. Returns the failures `(channel, reason)`.
     pub async fn deliver(&self, notice: &AlertNotice) -> Vec<(&'static str, String)> {
         let rule = &notice.rule.rule;
         let mut failures = vec![];
@@ -117,7 +117,7 @@ impl Notifier for AlertNotifier {
                 text: notice.short.chars().take(200).collect(),
             },
         );
-        // Les envois peuvent durer (SMTP, Free Mobile) : l'evaluation des alertes ne les attend pas.
+        // Sending can take a while (SMTP, Free Mobile): the alert evaluation does not wait for it.
         let (this, notice) = (self.clone(), notice.clone());
         tokio::spawn(async move {
             this.deliver(&notice).await;

@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Publishers meteo et SolarMax, hebergees par le serveur (R3 lot 6, ADR 0030) : des taches supervisees du role `mqtt`, qui lisent une
-//! source externe et publient sur le broker. L'ingestion (sources MQTT) transforme ensuite les messages en appareils.
+//! Weather and SolarMax publishers, hosted by the server (R3 lot 6, ADR 0030): supervised tasks of the `mqtt` role, which read an
+//! external source and publish on the broker. Ingestion (MQTT sources) then turns the messages into devices.
 //!
-//! - **Meteo** : toujours lancee ; elle n'interroge l'API que pour les stations activees (aucune station = aucune requete).
-//! - **SolarMax** : lancee seulement si `SOLARMAX_HOST` est renseigne (jamais d'adresse par defaut).
+//! - **Weather**: always started; it only queries the API for the enabled stations (no station = no request).
+//! - **SolarMax**: started only if `SOLARMAX_HOST` is set (never a default address).
 
 use std::sync::Arc;
 use std::time::Duration;
@@ -17,7 +17,7 @@ use dominet_mqtt::MqttClient;
 use crate::AppState;
 use crate::config::SolarMaxConfig;
 
-/// Publication par le client MQTT du serveur (QoS 1, sans retenue).
+/// Publication through the server's MQTT client (QoS 1, not retained).
 #[derive(Debug, Clone)]
 pub struct MqttPublisher(pub MqttClient);
 
@@ -29,7 +29,7 @@ impl Publisher for MqttPublisher {
     }
 }
 
-/// Reglages du publisher SolarMax depuis la configuration.
+/// SolarMax publisher settings from the configuration.
 #[must_use]
 pub fn solarmax_settings(cfg: &SolarMaxConfig) -> SolarMaxSettings {
     SolarMaxSettings {
@@ -42,11 +42,11 @@ pub fn solarmax_settings(cfg: &SolarMaxConfig) -> SolarMaxSettings {
     }
 }
 
-/// Client MQTT du role `publishers` quand le role `mqtt` n'est pas lance : il ne s'abonne a rien. Son identifiant se termine par
-/// `-publishers` pour ne pas prendre la session du role `mqtt`.
+/// MQTT client of the `publishers` role when the `mqtt` role is not running: it subscribes to nothing. Its identifier ends with
+/// `-publishers` so as not to take over the `mqtt` role's session.
 ///
 /// # Errors
-/// Erreur si `MQTT_HOST` n'est pas renseigne.
+/// Error if `MQTT_HOST` is not set.
 pub fn own_client(state: &AppState) -> anyhow::Result<MqttClient> {
     use anyhow::Context;
     let mut cfg = state
@@ -58,7 +58,7 @@ pub fn own_client(state: &AppState) -> anyhow::Result<MqttClient> {
     Ok(dominet_mqtt::start(&crate::mqtt::settings(&cfg)).client)
 }
 
-/// Demarre les publishers (supervises : une panique relance la tache).
+/// Starts the publishers (supervised: a panic restarts the task).
 pub fn spawn(state: &AppState, client: &MqttClient) {
     match OpenMeteo::new(&state.config.open_meteo_url) {
         Ok(api) => {

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Effets des automations cote serveur (R4 lot 3, ADR 0032) : publier sur le broker, activer une scene, notifier l'interface.
+//! Server-side effects of the automations (R4 lot 3, ADR 0032): publish on the broker, activate a scene, notify the interface.
 
-// Les methodes du port sont `async` pour les executeurs qui attendent (scenes) ; celle-ci n'attend rien.
+// The port's methods are `async` for the executors that wait (scenes); this one waits for nothing.
 #![allow(clippy::unused_async_trait_impl)]
 
 use dominet_automation::engine::Executor;
@@ -14,7 +14,7 @@ use serde_json::Value;
 
 use crate::AppState;
 
-/// Executeur du moteur. `state.mqtt` doit etre le client du role `mqtt` (le moteur tourne avec lui).
+/// Engine executor. `state.mqtt` must be the `mqtt` role's client (the engine runs with it).
 #[derive(Debug, Clone)]
 pub struct ServerExecutor {
     state: AppState,
@@ -27,7 +27,7 @@ impl ServerExecutor {
     }
 }
 
-/// Texte du resultat d'une activation de scene : `Ok` si tout est parti.
+/// Text of a scene activation's result: `Ok` if everything went out.
 fn scene_result(outcome: &SceneOutcome) -> Result<String, String> {
     match outcome {
         SceneOutcome::NotFound => Err("scene not found or disabled".to_string()),
@@ -114,8 +114,8 @@ impl Executor for ServerExecutor {
     }
 
     fn notify(&self, message: &str, sms: bool) {
-        // Bandeau pour tous les comptes connectes, puis e-mail au destinataire des alertes et SMS Free Mobile si l'automation le
-        // demande (plan R5, D7). L'envoi se fait a part : une automation n'attend jamais le SMTP.
+        // Banner for all the logged-in accounts, then e-mail to the alerts recipient and Free Mobile SMS if the automation
+        // asks for it (plan R5, D7). Sending is done separately: an automation never waits for SMTP.
         tracing::info!(sms, %message, "notification d'automation");
         let (channels, text) = (self.state.channels.clone(), message.to_string());
         tokio::spawn(async move {

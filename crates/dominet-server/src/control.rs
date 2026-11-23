@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Envoi de commandes aux appareils et ouverture de l'appairage Zigbee2MQTT (R3 lot 5, ADR 0029).
+//! Sending commands to devices and opening Zigbee2MQTT pairing (R3 lot 5, ADR 0029).
 //!
-//! Le serveur publie sur le broker, QoS 1, sans retenue ; l'effet se voit quand Zigbee2MQTT republie l'etat de l'appareil.
-//! Rien n'est mis en attente : sans lien avec le broker la commande est refusee tout de suite (`Unavailable`).
+//! The server publishes on the broker, QoS 1, not retained; the effect shows when Zigbee2MQTT republishes the device's state.
+//! Nothing is queued: without a link to the broker the command is refused right away (`Unavailable`).
 
 use dominet_domain::device::DeviceId;
 use dominet_domain::repo::DeviceRepo;
@@ -11,7 +11,7 @@ use serde_json::{Value, json};
 
 use crate::AppState;
 
-/// Publie `command` (objet JSON deja valide) sur `<topic de l'appareil>/set`.
+/// Publishes `command` (an already validated JSON object) on `<device topic>/set`.
 pub async fn send_command(state: &AppState, device: DeviceId, command: &Value) -> CommandOutcome {
     let found = match state.store.devices().get(device).await {
         Ok(Some(d)) if d.active => d,
@@ -33,15 +33,15 @@ pub async fn send_command(state: &AppState, device: DeviceId, command: &Value) -
     }
 }
 
-/// Duree d'ouverture de l'appairage, en secondes (maximum accepte par Zigbee2MQTT).
+/// Duration the pairing stays open, in seconds (maximum accepted by Zigbee2MQTT).
 pub const PERMIT_JOIN_SECS: u8 = 254;
 
-/// Ouvre ou ferme l'appairage de nouveaux appareils (`<prefixe>/bridge/request/permit_join`). Comme en reference, l'etat
-/// affiche est mis a jour tout de suite ; `bridge/info` le confirmera.
+/// Opens or closes the pairing of new devices (`<prefix>/bridge/request/permit_join`). As in the reference, the displayed
+/// state is updated right away; `bridge/info` will confirm it.
 ///
-/// Zigbee2MQTT 2.x n'accepte plus `{"value": true}` (reponse « Invalid payload », constate en production le 2026-11-13) : il
-/// faut une duree en secondes, `{"time": N}`, 0 pour fermer et 254 au plus. L'appairage se referme donc seul apres
-/// [`PERMIT_JOIN_SECS`] ; `bridge/info` remet alors l'etat affiche a « ferme ».
+/// Zigbee2MQTT 2.x no longer accepts `{"value": true}` (answer "Invalid payload", observed in production on 2026-11-13): it
+/// needs a duration in seconds, `{"time": N}`, 0 to close and 254 at most. Pairing therefore closes by itself after
+/// [`PERMIT_JOIN_SECS`]; `bridge/info` then puts the displayed state back to "closed".
 pub async fn set_permit_join(state: &AppState, enabled: bool) -> CommandOutcome {
     let Some(client) = &state.mqtt else {
         return CommandOutcome::Unavailable;

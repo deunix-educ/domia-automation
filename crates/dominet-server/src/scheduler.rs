@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Role `scheduler` (R4 lot 4, ADR 0033) : le planificateur et ses taches cote serveur.
+//! `scheduler` role (R4 lot 4, ADR 0033): the scheduler and its server-side tasks.
 
 use std::sync::Arc;
 
@@ -17,7 +17,7 @@ use crate::automation::ServerExecutor;
 
 type ServerEngine = Engine<PgAutomations, PgAutomationRuns, ServerExecutor>;
 
-/// Taches des travaux : `run_automation` (declenche une automation planifiee) et `compute_daily_energy`.
+/// Job tasks: `run_automation` (triggers a scheduled automation) and `compute_daily_energy`.
 #[derive(Debug)]
 pub struct ServerRunner {
     engine: Arc<ServerEngine>,
@@ -30,7 +30,7 @@ pub struct ServerRunner {
 impl ServerRunner {
     #[must_use]
     pub fn new(state: &AppState) -> Self {
-        // Le planificateur publie et active des scenes par le client MQTT de ce processus, s'il y en a un.
+        // The scheduler publishes and activates scenes through this process's MQTT client, if there is one.
         let (engine, _handle, _queue) = Engine::new(
             state.store.automations(),
             state.store.automation_runs(),
@@ -50,7 +50,7 @@ impl ServerRunner {
     }
 }
 
-/// Texte du journal pour un declenchement horaire ou solaire.
+/// Log text for a time-based or solar trigger.
 fn trigger_label(trigger: &Trigger) -> String {
     match trigger {
         Trigger::Schedule { cron } => format!("schedule {cron}"),
@@ -60,7 +60,7 @@ fn trigger_label(trigger: &Trigger) -> String {
 }
 
 impl ServerRunner {
-    /// Bilan d'energie d'un jour (`args.date`, `AAAA-MM-JJ`) ou d'hier (jour local) par defaut.
+    /// Energy summary of a day (`args.date`, `YYYY-MM-DD`) or of yesterday (local day) by default.
     async fn daily_energy(&self, job: &Job) -> Result<String, String> {
         use dominet_automation::energy::{compute_and_store, yesterday};
 
@@ -140,10 +140,10 @@ impl ServerRunner {
     }
 }
 
-/// Client MQTT propre au planificateur quand le role `mqtt` n'est pas lance dans ce processus.
+/// The scheduler's own MQTT client when the `mqtt` role is not running in this process.
 ///
 /// # Errors
-/// Erreur si `MQTT_HOST` n'est pas renseigne.
+/// Error if `MQTT_HOST` is not set.
 pub fn own_client(state: &AppState) -> anyhow::Result<dominet_mqtt::MqttClient> {
     use anyhow::Context;
     let mut cfg = state
@@ -155,7 +155,7 @@ pub fn own_client(state: &AppState) -> anyhow::Result<dominet_mqtt::MqttClient> 
     Ok(dominet_mqtt::start(&crate::mqtt::settings(&cfg)).client)
 }
 
-/// Demarre le planificateur (supervise par tokio : une panique ne touche pas les autres roles).
+/// Starts the scheduler (supervised by tokio: a panic does not touch the other roles).
 pub fn spawn(state: &AppState) {
     let tz = state.config.timezone.parse().unwrap_or_else(|_| {
         tracing::warn!(tz = %state.config.timezone, "unknown time zone: Europe/Paris");

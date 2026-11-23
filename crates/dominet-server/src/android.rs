@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Relais Android cote serveur (R5, ADR 0039) : le point d'acces `/ws/android/device/<jeton>/` de l'application Kotlin (non modifiee)
-//! et le service qui lui envoie des ordres (SMS a emettre, alertes).
+//! Server-side Android relay (R5, ADR 0039): the `/ws/android/device/<token>/` endpoint of the Kotlin application (unmodified)
+//! and the service that sends it orders (SMS to send, alerts).
 //!
-//! - **Authentification** par le jeton de l'adresse (forme canonique, empreinte en base) ; inconnu : le WebSocket s'ouvre puis se
-//!   ferme avec le code **4001**. Le jeton n'est jamais journalise (voir `web::loggable_path`).
-//! - **Une connexion par appareil** : une nouvelle connexion remplace l'ancienne (qui est fermee) ; « hors ligne » n'est pose que
-//!   quand la connexion **courante** se ferme.
-//! - **Battement** (D4) : le serveur envoie une trame de controle toutes les 30 s et ferme apres 90 s sans rien recevoir (`OkHttp`
-//!   repond tout seul) ; au demarrage tous les appareils repassent hors ligne.
-//! - **Navigateurs** : les evenements sont publies sur le sujet `android:<id>` du hub (D5).
+//! - **Authentication** by the token in the address (canonical form, fingerprint in the database); unknown: the WebSocket opens then
+//!   closes with code **4001**. The token is never logged (see `web::loggable_path`).
+//! - **One connection per device**: a new connection replaces the old one (which is closed); "offline" is only set when
+//!   the **current** connection closes.
+//! - **Heartbeat** (D4): the server sends a control frame every 30 s and closes after 90 s without receiving anything (`OkHttp`
+//!   answers by itself); at start-up all the devices go back offline.
+//! - **Browsers**: the events are published on the hub's `android:<id>` subject (D5).
 
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicU64, Ordering};
@@ -34,28 +34,28 @@ use tokio::sync::mpsc;
 use crate::AppState;
 use crate::hub::Hub;
 
-/// Fermeture : jeton inconnu (code de l'implementation de reference).
+/// Close: unknown token (code of the reference implementation).
 pub const CLOSE_UNKNOWN_TOKEN: u16 = 4001;
-/// Fermeture : une autre connexion du meme appareil a pris le relais.
+/// Close: another connection of the same device took over.
 pub const CLOSE_REPLACED: u16 = 4009;
-/// Fermeture : rien recu pendant le delai de silence.
+/// Close: nothing received during the silence delay.
 pub const CLOSE_IDLE: u16 = 4408;
 
-/// Delai d'accuse d'un SMS (D6) : au-dela, l'envoi est declare en echec.
+/// SMS acknowledgement delay (D6): beyond it, the sending is declared failed.
 pub const SMS_ACK_TIMEOUT: Duration = Duration::from_secs(60);
-/// Taille maximale d'une trame de l'application.
+/// Maximum size of an application frame.
 const MAX_FRAME_BYTES: usize = 64 * 1024;
-/// Bornes des champs ecrits en base (les contraintes de la table sont 30 et 100 caracteres).
+/// Bounds of the fields written to the database (the table's constraints are 30 and 100 characters).
 const MAX_NUMBER: usize = 30;
 const MAX_CONTACT: usize = 100;
 const MAX_BODY: usize = 5000;
-/// Ordres en attente par appareil connecte.
+/// Pending orders per connected device.
 const OUTBOX_QUEUE: usize = 32;
 
 #[derive(Debug)]
 enum Outgoing {
     Frame(ServerFrame),
-    /// Une autre connexion prend la place.
+    /// Another connection takes the place.
     Replaced,
 }
 
@@ -88,7 +88,7 @@ pub enum SendError {
     Repo(#[from] dominet_domain::RepoError),
 }
 
-/// Appareils connectes et ordres a leur adresser. Clonable a bas cout.
+/// Connected devices and the orders to send them. Cheap to clone.
 #[derive(Debug, Clone)]
 pub struct AndroidRelay {
     conns: Arc<Mutex<HashMap<i64, Conn>>>,
@@ -116,7 +116,7 @@ impl AndroidRelay {
         }
     }
 
-    /// Inscrit la connexion de l'appareil ; l'ancienne, s'il y en a une, est invitee a se fermer.
+    /// Registers the device's connection; the old one, if any, is invited to close.
     fn register(&self, device: AndroidDeviceId) -> (u64, mpsc::Receiver<Outgoing>) {
         let id = self.next.fetch_add(1, Ordering::Relaxed);
         let (tx, rx) = mpsc::channel(OUTBOX_QUEUE);
@@ -126,7 +126,7 @@ impl AndroidRelay {
         (id, rx)
     }
 
-    /// Retire la connexion ; vrai si c'etait la courante (l'appareil est alors hors ligne).
+    /// Removes the connection; true if it was the current one (the device is then offline).
     fn unregister(&self, device: AndroidDeviceId, conn: u64) -> bool {
         let mut conns = lock(&self.conns);
         if conns.get(&device.0).is_some_and(|c| c.id == conn) {
@@ -149,14 +149,14 @@ impl AndroidRelay {
             .collect()
     }
 
-    /// Adresse une trame a l'appareil ; faux s'il n'est pas connecte ou si sa file est pleine.
+    /// Addresses a frame to the device; false if it is not connected or if its queue is full.
     fn push(&self, device: AndroidDeviceId, frame: ServerFrame) -> bool {
         lock(&self.conns)
             .get(&device.0)
             .is_some_and(|c| c.tx.try_send(Outgoing::Frame(frame)).is_ok())
     }
 
-    /// Pousse une alerte a **tous** les appareils connectes (l'application actuelle l'ignore) ; renvoie le nombre d'appareils joints.
+    /// Pushes an alert to **all** the connected devices (the current application ignores it); returns the number of devices reached.
     #[must_use]
     pub fn push_alert(
         &self,
@@ -181,11 +181,11 @@ impl AndroidRelay {
             .count()
     }
 
-    /// Demande a un appareil d'envoyer un SMS : une ligne est ajoutee a la file d'envoi (son identifiant est le `message_id` du
-    /// protocole) puis l'ordre est transmis. Le resultat arrivera par l'accuse de l'application.
+    /// Asks a device to send an SMS: a row is added to the sending queue (its identifier is the protocol's `message_id`)
+    /// then the order is transmitted. The result will arrive through the application's acknowledgement.
     ///
     /// # Errors
-    /// `Offline` si l'appareil n'est pas connecte (rien n'est enregistre), ou une erreur de depot.
+    /// `Offline` if the device is not connected (nothing is recorded), or a repository error.
     pub async fn send_sms(
         &self,
         state: &AppState,
@@ -215,7 +215,7 @@ impl AndroidRelay {
                 message_id: item.id.0,
             },
         ) {
-            // La connexion vient de tomber : l'envoi ne partira pas, on le dit tout de suite.
+            // The connection has just dropped: the sending will not go out, we say so right away.
             settle(
                 state,
                 &item,
@@ -230,9 +230,9 @@ impl AndroidRelay {
     }
 }
 
-// ------------------------------------------------------------------ evenements vers les navigateurs
+// ------------------------------------------------------------------ events towards the browsers
 
-/// SMS tel que montre a l'interface ; `out` est la ligne de la file d'envoi d'un SMS sortant du navigateur, s'il y en a une.
+/// SMS as shown to the interface; `out` is the row of the sending queue of an outgoing browser SMS, if there is one.
 #[must_use]
 pub fn sms_dto(s: &SmsMessage, out: Option<&SmsOutbox>) -> SmsDto {
     SmsDto {
@@ -264,14 +264,14 @@ pub fn call_dto(c: &CallLog) -> CallDto {
     }
 }
 
-/// Publie un evenement pour les navigateurs abonnes a `android:<id>`.
+/// Publishes an event for the browsers subscribed to `android:<id>`.
 pub fn publish(hub: &Hub, device: AndroidDeviceId, event: AndroidEvent) {
     let msg = WsServerMsg::Android {
         device_id: device.0,
         event,
     };
     let topic = Topic::Android(device.0);
-    // La presence est un etat (le dernier est conserve), le reste des evenements.
+    // Presence is a state (the last one is kept), the rest are events.
     if matches!(
         msg,
         WsServerMsg::Android {
@@ -285,14 +285,14 @@ pub fn publish(hub: &Hub, device: AndroidDeviceId, event: AndroidEvent) {
     }
 }
 
-/// Premiere partie de `s`, sans couper un caractere.
+/// First part of `s`, without cutting a character.
 fn clip(s: &str, max: usize) -> String {
     s.chars().take(max).collect()
 }
 
-// ------------------------------------------------------------------ trames de l'application
+// ------------------------------------------------------------------ application frames
 
-/// Traite une trame de l'application ; la reponse eventuelle est a lui renvoyer.
+/// Handles an application frame; the possible response is to be sent back to it.
 pub async fn process_frame(
     state: &AppState,
     device: &AndroidDevice,
@@ -356,7 +356,7 @@ async fn on_call(state: &AppState, device: &AndroidDevice, event: &CallEvent, no
         let open = calls.find_open(device.id, &event.number).await?;
         let plan = plan_call(device.id, &event, open.as_ref(), now);
         if plan == CallPlan::Nothing {
-            // `answered` ou etat inconnu : rien n'est ecrit, mais les navigateurs voient l'appel en cours (comme la reference).
+            // `answered` or unknown state: nothing is written, but the browsers see the ongoing call (like the reference).
             return Ok(open);
         }
         calls.apply(&plan).await
@@ -394,7 +394,7 @@ async fn on_ack(state: &AppState, device: &AndroidDevice, ack: &SmsAck, now: Dat
         .await;
     match acked {
         Ok(Some(item)) => settled(state, &item, now).await,
-        // Inconnu, d'un autre appareil ou deja acquitte (ou expire) : sans effet.
+        // Unknown, from another device or already acknowledged (or expired): no effect.
         Ok(None) => tracing::debug!(
             device = device.id.0,
             message_id = id,
@@ -404,7 +404,7 @@ async fn on_ack(state: &AppState, device: &AndroidDevice, ack: &SmsAck, now: Dat
     }
 }
 
-/// Passe une ligne de la file d'envoi dans son etat final (appareil injoignable, delai) puis en tire les consequences.
+/// Moves a sending-queue row to its final state (device unreachable, timeout) then draws the consequences.
 pub async fn settle(
     state: &AppState,
     item: &SmsOutbox,
@@ -424,8 +424,8 @@ pub async fn settle(
     }
 }
 
-/// Consequences d'une ligne qui vient de recevoir son etat final : evenement pour les navigateurs et, pour un destinataire de la
-/// messagerie, son statut SMS puis l'etat du message.
+/// Consequences of a row that has just received its final state: event for the browsers and, for a messaging
+/// recipient, their SMS status then the message's state.
 pub async fn settled(state: &AppState, item: &SmsOutbox, now: DateTime<Utc>) {
     let success = item.status == OutboxStatus::Sent;
     publish(
@@ -461,7 +461,7 @@ pub async fn settled(state: &AppState, item: &SmsOutbox, now: DateTime<Utc>) {
     }
 }
 
-/// Declare en echec les SMS sans accuse depuis plus de [`SMS_ACK_TIMEOUT`] ; renvoie leur nombre.
+/// Declares failed the SMS without an acknowledgement for more than [`SMS_ACK_TIMEOUT`]; returns their number.
 pub async fn expire_stale(state: &AppState, now: DateTime<Utc>) -> usize {
     let before = now - chrono::Duration::from_std(SMS_ACK_TIMEOUT).unwrap_or_default();
     match state
@@ -483,7 +483,7 @@ pub async fn expire_stale(state: &AppState, now: DateTime<Utc>) -> usize {
     }
 }
 
-/// Tache de fond : balaye les SMS sans accuse toutes les 10 s.
+/// Background task: sweeps the SMS without an acknowledgement every 10 s.
 pub async fn run_expiry(state: AppState) {
     let mut tick = tokio::time::interval(Duration::from_secs(10));
     tick.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Delay);
@@ -493,7 +493,7 @@ pub async fn run_expiry(state: AppState) {
     }
 }
 
-// ------------------------------------------------------------------ point d'acces
+// ------------------------------------------------------------------ endpoint
 
 pub fn routes() -> Router<AppState> {
     Router::new().route("/ws/android/device/{token}/", get(device_socket))
@@ -504,7 +504,7 @@ async fn device_socket(
     Path(token): Path<String>,
     ws: WebSocketUpgrade,
 ) -> Response {
-    // Jeton mal forme : traite comme inconnu, sans toucher a la base.
+    // Malformed token: treated as unknown, without touching the database.
     let device = match canonical_token(&token) {
         Some(t) => state
             .store
@@ -605,7 +605,7 @@ async fn run(
                     }
                 }
                 Some(Ok(Message::Close(_)) | Err(_)) | None => return,
-                // Trames de controle (OkHttp en envoie) et binaires : la ligne est vivante.
+                // Control frames (OkHttp sends some) and binary ones: the line is alive.
                 Some(Ok(_)) => last_rx = Instant::now(),
             },
             order = orders.recv() => match order {

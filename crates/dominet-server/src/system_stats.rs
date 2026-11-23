@@ -1,16 +1,16 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Statistiques de la machine (processeur, memoire, disque, temperature).
+//! Machine statistics (processor, memory, disk, temperature).
 //!
-//! Un collecteur (`spawn`) mesure toutes les `SYSTEM_STATS_SECS` secondes avec `sysinfo` et publie le resultat comme
-//! **dernier etat** du sujet `system` du hub : les onglets abonnes le recoivent en direct, un nouvel abonne le recoit
-//! tout de suite, et `GET /api/system-stats/` relit le meme message (pas de second cache).
+//! A collector (`spawn`) measures every `SYSTEM_STATS_SECS` seconds with `sysinfo` and publishes the result as the
+//! **last state** of the hub's `system` subject: subscribed tabs receive it live, a new subscriber receives it
+//! right away, and `GET /api/system-stats/` re-reads the same message (no second cache).
 //!
-//! La conversion des mesures brutes en [`SystemStatsDto`] (`build`) et le choix de la temperature (`pick_temperature`)
-//! sont des fonctions pures, testees sans toucher a la machine.
+//! The conversion of the raw measurements into [`SystemStatsDto`] (`build`) and the choice of the temperature (`pick_temperature`)
+//! are pure functions, tested without touching the machine.
 //!
-//! Dans un conteneur, `/proc` decrit l'hote (processeur, memoire) mais le disque est celui du conteneur et les
-//! capteurs de temperature ne sont visibles que si `/sys/class/thermal` est monte : les valeurs absentes restent
-//! `null` plutot que fausses.
+//! In a container, `/proc` describes the host (processor, memory) but the disk is the container's and the
+//! temperature sensors are only visible if `/sys/class/thermal` is mounted: absent values stay
+//! `null` rather than wrong.
 
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
@@ -22,16 +22,16 @@ use crate::hub::Hub;
 
 const GIB: f64 = 1024.0 * 1024.0 * 1024.0;
 
-/// Mesures brutes d'un instant, avant conversion.
+/// Raw measurements at an instant, before conversion.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Raw {
     pub cpu_percent: f32,
     pub cpu_count: usize,
     pub mem_total: u64,
     pub mem_available: u64,
-    /// (taille totale, espace disponible) du disque monte sur `/`.
+    /// (total size, available space) of the disk mounted on `/`.
     pub disk: Option<(u64, u64)>,
-    /// (etiquette, degres Celsius) de chaque capteur.
+    /// (label, degrees Celsius) of each sensor.
     pub sensors: Vec<(String, f32)>,
 }
 
@@ -52,9 +52,9 @@ fn gib(bytes: u64) -> f64 {
     round1(bytes as f64 / GIB)
 }
 
-/// Capteur a afficher : le processeur d'abord (etiquettes `coretemp`, `package`, `cpu`, `tctl`, `k10temp`, `soc`),
-/// sinon le plus chaud de tous. Les valeurs non finies ou hors de `0 < t <= 150` sont ignorees (capteurs absents ou
-/// defectueux, qui rapportent 0 ou des valeurs absurdes).
+/// Sensor to display: the processor first (labels `coretemp`, `package`, `cpu`, `tctl`, `k10temp`, `soc`),
+/// otherwise the hottest of all. Non-finite values or values outside `0 < t <= 150` are ignored (absent or
+/// faulty sensors, which report 0 or absurd values).
 #[must_use]
 pub fn pick_temperature(sensors: &[(String, f32)]) -> Option<f64> {
     const CPU_WORDS: [&str; 6] = ["coretemp", "package", "cpu", "tctl", "k10temp", "soc"];
@@ -80,7 +80,7 @@ pub fn pick_temperature(sensors: &[(String, f32)]) -> Option<f64> {
     cpu.or_else(any).map(|t| round1(f64::from(t)))
 }
 
-/// Convertit des mesures brutes au format de l'API (tailles en Gio a une decimale, pourcentages a une decimale).
+/// Converts raw measurements to the API format (sizes in GiB to one decimal, percentages to one decimal).
 #[must_use]
 pub fn build(raw: &Raw, updated_at: f64) -> SystemStatsDto {
     let mem_used = raw.mem_total.saturating_sub(raw.mem_available);
@@ -119,22 +119,22 @@ fn unix_now() -> f64 {
         .map_or(0.0, |d| d.as_secs_f64())
 }
 
-/// Instruments `sysinfo` conserves d'une mesure a l'autre (la charge du processeur est une difference entre deux
-/// releves).
+/// `sysinfo` instruments kept from one measurement to the next (the processor load is a difference between two
+/// readings).
 #[derive(Debug)]
 pub struct Sampler {
     sys: System,
-    /// Absents si la plateforme ne les fournit pas : le disque et la temperature restent alors `null`.
+    /// Absent if the platform does not provide them: the disk and the temperature then stay `null`.
     disks: Option<Disks>,
     components: Option<Components>,
 }
 
 impl Sampler {
     /// # Errors
-    /// Retourne une erreur si la plateforme ne permet pas de lire le processeur et la memoire.
+    /// Returns an error if the platform does not allow reading the processor and the memory.
     pub fn new() -> Result<Self, sysinfo::Error> {
         let mut sys = System::new()?;
-        // Premier releve : sert de point de depart a la charge du processeur.
+        // First reading: serves as the starting point for the processor load.
         sys.refresh_cpu_usage();
         Ok(Self {
             sys,
@@ -143,7 +143,7 @@ impl Sampler {
         })
     }
 
-    /// Releve les mesures. Bloquant (lectures de `/proc` et `/sys`) : a appeler hors du reacteur asynchrone.
+    /// Takes the measurements. Blocking (reads of `/proc` and `/sys`): to call outside the async reactor.
     pub fn sample(&mut self) -> Raw {
         self.sys.refresh_cpu_usage();
         self.sys
@@ -174,7 +174,7 @@ impl Sampler {
     }
 }
 
-/// Mesure maintenant (le processeur est alors mesure sur un court intervalle) : utile aux tests et aux diagnostics.
+/// Measures now (the processor is then measured over a short interval): useful for tests and diagnostics.
 pub async fn sample_once() -> Option<SystemStatsDto> {
     tokio::task::spawn_blocking(|| {
         let mut sampler = Sampler::new().ok()?;
@@ -186,8 +186,8 @@ pub async fn sample_once() -> Option<SystemStatsDto> {
     .flatten()
 }
 
-/// Lance le collecteur : une premiere mesure des que le processeur peut etre mesure, puis une toutes les `every`.
-#[allow(clippy::must_use_candidate)] // la tache peut rester detachee
+/// Starts the collector: a first measurement as soon as the processor can be measured, then one every `every`.
+#[allow(clippy::must_use_candidate)] // the task may stay detached
 pub fn spawn(hub: Hub, every: Duration) -> JoinHandle<()> {
     tokio::spawn(async move {
         let mut sampler = match Sampler::new() {

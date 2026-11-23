@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Journal de l'application en memoire, consultable dans l'administration (`/admin/logs`).
+//! In-memory application log, viewable in the administration (`/admin/logs`).
 //!
-//! Une couche `tracing` ([`LogLayer`]) copie chaque evenement qui passe le filtre `RUST_LOG` dans un tampon circulaire borne
-//! ([`CAPACITY`] lignes) : le plus ancien est ecarte quand il est plein. Le tampon ne couvre que **ce processus, depuis son demarrage** ;
-//! l'historique complet reste dans les journaux de Docker. Les autres services (nginx, Mosquitto...) n'y figurent pas.
+//! A `tracing` layer ([`LogLayer`]) copies each event that passes the `RUST_LOG` filter into a bounded circular buffer
+//! ([`CAPACITY`] lines): the oldest is dropped when it is full. The buffer only covers **this process, since its start**;
+//! the full history stays in Docker's logs. The other services (nginx, Mosquitto...) do not appear there.
 
 use std::collections::{BTreeSet, VecDeque};
 use std::fmt::Write as _;
@@ -15,15 +15,15 @@ use tracing::{Event, Level, Subscriber};
 use tracing_subscriber::Layer;
 use tracing_subscriber::layer::Context;
 
-/// Nombre maximal de lignes gardees.
+/// Maximum number of lines kept.
 pub const CAPACITY: usize = 20_000;
-/// Longueur maximale d'un message garde (le reste est coupe).
+/// Maximum length of a kept message (the rest is cut).
 const MAX_MESSAGE: usize = 2048;
 
-/// Une ligne du journal.
+/// A log line.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct LogEntry {
-    /// Instant, en millisecondes depuis 1970.
+    /// Instant, in milliseconds since 1970.
     pub at_ms: i64,
     /// 1 = ERROR, 2 = WARN, 3 = INFO, 4 = DEBUG, 5 = TRACE.
     pub rank: u8,
@@ -32,7 +32,7 @@ pub struct LogEntry {
 }
 
 impl LogEntry {
-    /// Nom du niveau.
+    /// Level name.
     #[must_use]
     pub fn level(&self) -> &'static str {
         match self.rank {
@@ -45,7 +45,7 @@ impl LogEntry {
     }
 }
 
-/// Rang d'un niveau `tracing`.
+/// Rank of a `tracing` level.
 fn rank_of(level: Level) -> u8 {
     match level {
         Level::ERROR => 1,
@@ -56,7 +56,7 @@ fn rank_of(level: Level) -> u8 {
     }
 }
 
-/// Rang minimal de severite pour un nom de niveau (`error`, `warn`, `info`, `debug`, `trace`) : les lignes de rang inferieur ou egal sont gardees.
+/// Minimum severity rank for a level name (`error`, `warn`, `info`, `debug`, `trace`): lines of lower or equal rank are kept.
 #[must_use]
 pub fn rank_of_name(name: &str) -> u8 {
     match name.trim().to_ascii_lowercase().as_str() {
@@ -68,35 +68,35 @@ pub fn rank_of_name(name: &str) -> u8 {
     }
 }
 
-/// Filtre d'une consultation.
+/// Filter of a query.
 #[derive(Clone, Debug, Default)]
 pub struct LogQuery {
-    /// Rang maximal garde (voir [`rank_of_name`]) ; 0 vaut « tout ».
+    /// Maximum rank kept (see [`rank_of_name`]); 0 means "everything".
     pub max_rank: u8,
-    /// Le module (`target`) doit contenir ce texte (sans casse) ; vide : tous.
+    /// The module (`target`) must contain this text (case-insensitive); empty: all.
     pub target: String,
-    /// Le message doit contenir ce texte (sans casse) ; vide : tous.
+    /// The message must contain this text (case-insensitive); empty: all.
     pub text: String,
-    /// Instant minimal, en millisecondes depuis 1970.
+    /// Minimum instant, in milliseconds since 1970.
     pub since_ms: Option<i64>,
-    /// Nombre maximal de lignes renvoyees (les plus recentes).
+    /// Maximum number of lines returned (the most recent).
     pub limit: usize,
 }
 
-/// Resultat d'une consultation.
+/// Result of a query.
 #[derive(Clone, Debug, Default)]
 pub struct LogPage {
-    /// Les lignes retenues, **les plus recentes d'abord**, au plus `limit`.
+    /// The lines kept, **most recent first**, at most `limit`.
     pub entries: Vec<LogEntry>,
-    /// Combien de lignes correspondent au filtre (avant la limite).
+    /// How many lines match the filter (before the limit).
     pub matched: usize,
-    /// Combien de lignes sont en memoire.
+    /// How many lines are in memory.
     pub total: usize,
-    /// Les modules vus (pour l'aide a la saisie), tries.
+    /// The modules seen (as input help), sorted.
     pub targets: Vec<String>,
 }
 
-/// Tampon circulaire.
+/// Circular buffer.
 #[derive(Debug)]
 pub struct LogBuffer {
     entries: Mutex<VecDeque<LogEntry>>,
@@ -112,7 +112,7 @@ impl LogBuffer {
         }
     }
 
-    /// Ajoute une ligne (la plus ancienne est ecartee si le tampon est plein).
+    /// Adds a line (the oldest is dropped if the buffer is full).
     pub fn push(&self, entry: LogEntry) {
         let mut list = self
             .entries
@@ -124,7 +124,7 @@ impl LogBuffer {
         list.push_back(entry);
     }
 
-    /// Consulte le tampon.
+    /// Queries the buffer.
     #[must_use]
     pub fn query(&self, q: &LogQuery) -> LogPage {
         let list = self
@@ -159,14 +159,14 @@ impl LogBuffer {
     }
 }
 
-/// Le tampon du processus.
+/// The process's buffer.
 #[must_use]
 pub fn global() -> &'static LogBuffer {
     static BUFFER: OnceLock<LogBuffer> = OnceLock::new();
     BUFFER.get_or_init(|| LogBuffer::new(CAPACITY))
 }
 
-/// Instant courant, en millisecondes depuis 1970.
+/// Current instant, in milliseconds since 1970.
 #[must_use]
 pub fn now_ms() -> i64 {
     SystemTime::now()
@@ -174,7 +174,7 @@ pub fn now_ms() -> i64 {
         .map_or(0, |d| i64::try_from(d.as_millis()).unwrap_or(i64::MAX))
 }
 
-/// Couche `tracing` qui alimente le tampon global.
+/// `tracing` layer that feeds the global buffer.
 #[derive(Clone, Copy, Debug, Default)]
 pub struct LogLayer;
 
@@ -237,7 +237,7 @@ impl<S: Subscriber> Layer<S> for LogLayer {
     }
 }
 
-/// `2026-11-13 09:12:05` dans le fuseau donne.
+/// `2026-11-13 09:12:05` in the given time zone.
 #[must_use]
 pub fn format_local(at_ms: i64, tz: chrono_tz::Tz) -> String {
     use chrono::TimeZone;
@@ -249,7 +249,7 @@ pub fn format_local(at_ms: i64, tz: chrono_tz::Tz) -> String {
         })
 }
 
-/// Comme [`format_local`], avec le nom du fuseau (`Europe/Paris`) ; un nom inconnu donne l'heure UTC.
+/// Like [`format_local`], with the time zone's name (`Europe/Paris`); an unknown name gives UTC time.
 #[must_use]
 pub fn format_local_name(at_ms: i64, tz_name: &str) -> String {
     format_local(at_ms, tz_name.parse().unwrap_or(chrono_tz::UTC))
@@ -367,7 +367,7 @@ mod tests {
         assert_eq!(rank_of_name("inconnu"), 3);
         assert_eq!(rank_of_name("debug"), 4);
         assert_eq!(rank_of_name("all"), 5);
-        // 2026-11-13 08:00:00 UTC = 09:00:00 a Paris (heure d'hiver).
+        // 2026-11-13 08:00:00 UTC = 09:00:00 in Paris (winter time).
         assert_eq!(
             format_local(1_794_556_800_000, chrono_tz::Europe::Paris),
             "2026-11-13 09:00:00"

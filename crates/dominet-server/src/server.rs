@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Demarrage du serveur HTTP, taches de maintenance et arret propre.
+//! HTTP server start-up, maintenance tasks and clean shutdown.
 
 use std::net::SocketAddr;
 use std::sync::Arc;
@@ -16,14 +16,14 @@ use crate::cli::Role;
 use crate::config::Config;
 use crate::{AppState, web};
 
-/// Duree de conservation du journal des tentatives de connexion.
+/// Retention of the login-attempts log.
 const ATTEMPTS_RETENTION_DAYS: i64 = 7;
 
-/// Cree le pool PostgreSQL **paresseux** : le serveur demarre meme si la base est absente et
-/// `/readyz` repond alors 503 (utile pour les orchestrateurs).
+/// Creates the **lazy** PostgreSQL pool: the server starts even if the database is absent and
+/// `/readyz` then answers 503 (useful for orchestrators).
 ///
 /// # Errors
-/// Retourne une erreur si l'URL de la base est inexploitable.
+/// Returns an error if the database URL is unusable.
 pub fn lazy_pool(config: &Config) -> anyhow::Result<sqlx::PgPool> {
     PgPoolOptions::new()
         .max_connections(10)
@@ -32,8 +32,8 @@ pub fn lazy_pool(config: &Config) -> anyhow::Result<sqlx::PgPool> {
         .context("unusable DATABASE_URL")
 }
 
-/// Purge toutes les heures les sessions expirees et les tentatives de connexion anciennes, et une fois par jour l'historique
-/// des appareils plus vieux que `HISTORY_RETENTION_DAYS`. (Sera reprise par le planificateur en R4.)
+/// Hourly purges the expired sessions and the old login attempts, and once a day the devices' history
+/// older than `HISTORY_RETENTION_DAYS`. (Will be taken over by the scheduler in R4.)
 fn spawn_maintenance(state: &AppState) {
     let sessions = state.store.sessions();
     let attempts = state.store.attempts();
@@ -86,12 +86,12 @@ fn spawn_maintenance(state: &AppState) {
     });
 }
 
-/// Lance les roles demandes jusqu'a SIGINT/SIGTERM : `Web` (serveur HTTP) et/ou `Mqtt` (client MQTT supervise). `ui` construit l'interface (pages et fonctions serveur) a partir
-/// de l'etat de l'application ; elle est servie pour tout ce que l'API et les sondes ne traitent pas. `extra` ajoute des routes
-/// (serveur MCP) sous les memes middlewares ; `None` si la fonctionnalite est coupee.
+/// Runs the requested roles until SIGINT/SIGTERM: `Web` (HTTP server) and/or `Mqtt` (supervised MQTT client). `ui` builds the interface (pages and server functions) from
+/// the application state; it is served for everything the API and the probes do not handle. `extra` adds routes
+/// (MCP server) under the same middlewares; `None` if the feature is off.
 ///
 /// # Errors
-/// Retourne une erreur si le port est indisponible ou si le serveur s'arrete anormalement.
+/// Returns an error if the port is unavailable or if the server stops abnormally.
 pub async fn serve(
     config: Config,
     roles: &[Role],
@@ -105,7 +105,7 @@ pub async fn serve(
         state.mqtt = Some(crate::mqtt::spawn(&state).await?);
     }
     if roles.contains(&Role::Publishers) {
-        // Role `mqtt` present : on publie par son client ; sinon le role a le sien (sans ecoute).
+        // `mqtt` role present: we publish through its client; otherwise the role has its own (without listening).
         let client = if let Some(c) = &state.mqtt {
             c.clone()
         } else {
@@ -116,7 +116,7 @@ pub async fn serve(
         crate::publishers::spawn(&state, &client);
     }
     if roles.contains(&Role::Scheduler) {
-        // Seul avec la base : un client MQTT a lui (sans ecoute), si un broker est configure, pour publier et activer des scenes.
+        // Alone with the database: its own MQTT client (without listening), if a broker is configured, to publish and activate scenes.
         if state.mqtt.is_none() && state.config.mqtt.is_some() {
             match crate::scheduler::own_client(&state) {
                 Ok(c) => state.mqtt = Some(c),
@@ -128,7 +128,7 @@ pub async fn serve(
         crate::backup::spawn(&state);
     }
     if roles.contains(&Role::Video) {
-        // Mouvement et detection publient sur MQTT : le client du role `mqtt` s'il tourne ici, sinon un client a part (sans ecoute).
+        // Motion and detection publish over MQTT: the `mqtt` role's client if it runs here, otherwise a separate client (without listening).
         if state.mqtt.is_none()
             && let Some(mut cfg) = state.config.mqtt.clone()
         {
@@ -148,18 +148,18 @@ pub async fn serve(
     }
     crate::metrics::spawn_listener(&state).await;
     spawn_maintenance(&state);
-    // Cache des reglages charge avant la premiere page : l'en-tete CSP en depend (iframe Grafana), sans pouvoir attendre.
+    // Settings cache loaded before the first page: the CSP header depends on it (Grafana iframe), without being able to wait.
     if let Err(e) = state.settings.reload().await {
         tracing::warn!(error = %e, "settings not loaded at start-up (database unreachable?)");
     }
-    // Nombre d'alertes en cours : retenu des le demarrage (la pastille de la barre laterale l'affiche des l'arrivee).
+    // Number of ongoing alerts: retained from start-up (the sidebar badge shows it as soon as the page arrives).
     crate::alerts::publish_count(&state.hub, &state.store, &state.external_alerts).await;
     crate::system_stats::spawn(
         state.hub.clone(),
         Duration::from_secs(u64::from(state.config.system_stats_secs)),
     );
     if roles.contains(&Role::Web) {
-        // Aucune connexion n'existe encore : « en ligne » ne doit plus rien affirmer (D4). Puis balayage des SMS sans accuse.
+        // No connection exists yet: "online" must no longer claim anything (D4). Then sweep of the SMS without an acknowledgement.
         match dominet_domain::repo::AndroidDeviceRepo::set_all_offline(
             &state.store.android_devices(),
         )
@@ -188,7 +188,7 @@ pub async fn serve(
         .await
         .with_context(|| format!("cannot listen on {addr}"))?;
     tracing::info!(%addr, version = env!("CARGO_PKG_VERSION"), "HTTP server started");
-    // `ConnectInfo` donne l'adresse du pair (necessaire au blocage par IP).
+    // `ConnectInfo` gives the peer's address (needed for IP lock-out).
     let router = web::router_with_extra(state.clone(), ui(&state), extra(&state));
     let app = router.into_make_service_with_connect_info::<SocketAddr>();
     axum::serve(listener, app)
@@ -201,9 +201,9 @@ pub async fn serve(
     Ok(())
 }
 
-/// Taches de demarrage du role web, en fond : une base injoignable ne doit pas retarder le serveur HTTP.
+/// Web role start-up tasks, in the background: an unreachable database must not delay the HTTP server.
 fn spawn_startup_tasks(state: &AppState) {
-    // Les fichiers de regles refletent la base des le demarrage (un Prometheus / Grafana neuf les lit au sien).
+    // The rules files reflect the database from start-up (a fresh Prometheus / Grafana reads them at its own start).
     if state.rules.is_configured() {
         let rules = state.rules.clone();
         tokio::spawn(async move {
@@ -211,9 +211,9 @@ fn spawn_startup_tasks(state: &AppState) {
             tracing::info!(?prom, ?graf, "alert rules synchronised at start-up");
         });
     }
-    // Les messages interrompus par l'arret precedent sont clotures.
+    // Messages interrupted by the previous shutdown are closed.
     let recovering = state.clone();
-    // MediaMTX est remis d'aplomb avec la base (un MediaMTX redemarre a perdu les paths ajoutes a chaud).
+    // MediaMTX is brought back in line with the database (a restarted MediaMTX lost the paths added live).
     let syncing = state.clone();
     tokio::spawn(async move {
         if syncing.cameras.has_mediamtx() {

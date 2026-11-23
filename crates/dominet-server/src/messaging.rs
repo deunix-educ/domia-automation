@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Messagerie interne cote serveur (R5 lot 5, ADR 0041) : un message vers plusieurs comptes, par e-mail, SMS ou les deux.
+//! Server-side internal messaging (R5 lot 5, ADR 0041): a message to several accounts, by e-mail, SMS or both.
 //!
-//! L'envoi est **asynchrone** (plan R5, D6) : [`send`] enregistre le message et ses destinataires puis rend la main ; une tache de fond
-//! envoie les e-mails (un message par destinataire qui a une adresse), confie les SMS a l'appareil Android en ligne le plus
-//! recemment vu, et met les statuts a jour. Les navigateurs qui suivent le sujet `message:<id>` en sont prevenus. Un SMS reste
-//! `pending` jusqu'a l'accuse de l'application (voir `android::settled`) ou jusqu'a l'expiration des 60 s.
+//! Sending is **asynchronous** (plan R5, D6): [`send`] records the message and its recipients then returns; a background task
+//! sends the e-mails (one message per recipient who has an address), hands the SMS to the Android device online most
+//! recently seen, and updates the statuses. The browsers following the `message:<id>` subject are notified. An SMS stays
+//! `pending` until the application's acknowledgement (see `android::settled`) or until the 60 s expire.
 
 use chrono::Utc;
 use dominet_domain::RepoError;
@@ -20,15 +20,15 @@ use crate::AppState;
 use crate::android::SendError;
 use crate::hub::Hub;
 
-/// Un seul envoi a la fois pour tout le serveur : le serveur SMTP n'est pas martele et les statuts restent ordonnes.
+/// A single sending at a time for the whole server: the SMTP server is not hammered and the statuses stay ordered.
 static SEND_LOCK: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
 
 pub const ERR_NO_DEVICE: &str = "no Android device connected";
 pub const ERR_UNREACHABLE: &str = "device unreachable";
 pub const ERR_RESTART: &str = "interrupted by a server restart";
 
-/// Destinataires d'un message : `all` = tous les comptes actifs, `staff` = les administrateurs actifs (les deux groupes se
-/// cumulent avec les comptes choisis, comme la reference ; `all` couvre `staff`). Sans doublon, par nom d'utilisateur.
+/// Recipients of a message: `all` = all the active accounts, `staff` = the active administrators (both groups
+/// add up with the chosen accounts, like the reference; `all` covers `staff`). No duplicates, by username.
 #[must_use]
 pub fn resolve_audience<'a>(users: &'a [User], audience: &str, picked: &[i64]) -> Vec<&'a User> {
     let mut out: Vec<&User> = users
@@ -44,7 +44,7 @@ pub fn resolve_audience<'a>(users: &'a [User], audience: &str, picked: &[i64]) -
     out
 }
 
-/// Previent les navigateurs qu'un envoi a progresse.
+/// Warns the browsers that a sending has progressed.
 pub fn publish_progress(hub: &Hub, message: dominet_domain::messaging::MessageId, complete: bool) {
     let _ = hub.publish(
         &Topic::Message(message.0),
@@ -55,10 +55,10 @@ pub fn publish_progress(hub: &Hub, message: dominet_domain::messaging::MessageId
     );
 }
 
-/// Enregistre le message (etat `sending`) et lance son envoi en tache de fond.
+/// Records the message (state `sending`) and starts its sending in a background task.
 ///
 /// # Errors
-/// Erreur de depot (rien n'est envoye).
+/// Repository error (nothing is sent).
 pub async fn send(
     state: &AppState,
     sender: UserId,
@@ -111,7 +111,7 @@ pub async fn send(
     Ok(message)
 }
 
-/// Envoie chaque e-mail et confie chaque SMS ; le message passe a `sent` quand plus rien n'est en attente.
+/// Sends each e-mail and hands over each SMS; the message becomes `sent` when nothing is pending any more.
 async fn dispatch(
     state: &AppState,
     message: &Message,
@@ -174,7 +174,7 @@ async fn record(
     }
 }
 
-/// Confie le SMS a l'appareil en ligne le plus recemment vu (de n'importe quel proprietaire, comme la reference) ; l'accuse viendra plus tard.
+/// Hands the SMS to the device online most recently seen (of any owner, like the reference); the acknowledgement will come later.
 async fn hand_over_sms(
     state: &AppState,
     message: &Message,
@@ -205,8 +205,8 @@ async fn hand_over_sms(
     }
 }
 
-/// Au demarrage : un message reste `sending` si le serveur s'est arrete en cours d'envoi. Ses envois en attente sont declares en
-/// echec (on ne sait pas s'ils sont partis) et le message est cloture. Renvoie le nombre de messages repris.
+/// At start-up: a message stays `sending` if the server stopped during sending. Its pending sendings are declared
+/// failed (we do not know whether they went out) and the message is closed. Returns the number of messages taken over.
 pub async fn recover_interrupted(state: &AppState) -> usize {
     let messages = state.store.messages();
     let Ok(all) = messages.list(200, 0).await else {
@@ -231,10 +231,10 @@ pub async fn recover_interrupted(state: &AppState) -> usize {
     n
 }
 
-/// Pour les pages : les comptes par identifiant.
+/// For the pages: the accounts by identifier.
 ///
 /// # Errors
-/// Erreur de depot.
+/// Repository error.
 pub async fn users_by_id(
     state: &AppState,
 ) -> Result<std::collections::HashMap<i64, User>, RepoError> {
@@ -248,7 +248,7 @@ pub async fn users_by_id(
         .collect())
 }
 
-/// Le canal choisi ne depend pas de la casse.
+/// The chosen channel does not depend on case.
 #[must_use]
 pub fn parse_channel(s: &str) -> Option<Channel> {
     Channel::parse(s.trim())
@@ -293,7 +293,7 @@ mod tests {
         assert_eq!(names("all", &[]), ["bob", "zoe"]);
         assert_eq!(names("staff", &[]), ["zoe"]);
         assert_eq!(names("staff", &[2, 1]), ["bob", "zoe"]);
-        // Un compte choisi explicitement est servi meme inactif (comme la reference).
+        // An explicitly chosen account is served even if inactive (like the reference).
         assert_eq!(names("", &[3]), ["ann"]);
         assert_eq!(names("", &[]), Vec::<&str>::new());
         assert_eq!(names("tous", &[]), Vec::<&str>::new());

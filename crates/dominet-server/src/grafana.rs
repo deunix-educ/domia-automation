@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Ecriture du tableau Grafana d'un appareil dans le dossier surveille par Grafana (R3 lot 5, ADR 0029).
+//! Writing of a device's Grafana dashboard into the folder watched by Grafana (R3 lot 5, ADR 0029).
 
 use std::path::{Path, PathBuf};
 
@@ -7,7 +7,7 @@ use dominet_domain::device::Device;
 use dominet_domain::grafana::{dashboard_file_name, dashboard_json};
 use serde_json::Value;
 
-/// Version a ecrire : celle du fichier existant + 1 (Grafana ignore une version qui ne change pas).
+/// Version to write: that of the existing file + 1 (Grafana ignores a version that does not change).
 fn next_version(path: &Path) -> u64 {
     std::fs::read_to_string(path)
         .ok()
@@ -16,7 +16,7 @@ fn next_version(path: &Path) -> u64 {
         .map_or(1, |v| v + 1)
 }
 
-/// Supprime les anciens fichiers `device_*.json` du meme tableau (appareil renomme).
+/// Deletes the old `device_*.json` files of the same dashboard (renamed device).
 fn remove_stale(dir: &Path, current: &Path, uid: &str) {
     let Ok(entries) = std::fs::read_dir(dir) else {
         return;
@@ -42,11 +42,11 @@ fn remove_stale(dir: &Path, current: &Path, uid: &str) {
     }
 }
 
-/// Ecrit le tableau de l'appareil dans `dir` (cree au besoin) : fichier temporaire puis renommage, pour que Grafana ne lise
-/// jamais un fichier a moitie ecrit. Renvoie `Ok(None)` si l'appareil n'a aucune cle suivie.
+/// Writes the device's dashboard into `dir` (created if needed): temporary file then rename, so that Grafana never reads
+/// a half-written file. Returns `Ok(None)` if the device has no tracked key.
 ///
 /// # Errors
-/// Erreur d'ecriture dans le dossier.
+/// Write error in the folder.
 pub fn write_dashboard(dir: &Path, device: &Device) -> std::io::Result<Option<PathBuf>> {
     let path = dir.join(dashboard_file_name(device));
     let Some(document) = dashboard_json(device, next_version(&path)) else {
@@ -61,10 +61,10 @@ pub fn write_dashboard(dir: &Path, device: &Device) -> std::io::Result<Option<Pa
     Ok(Some(path))
 }
 
-/// [`write_dashboard`] hors du thread de la requete.
+/// [`write_dashboard`] off the request thread.
 ///
 /// # Errors
-/// Erreur d'ecriture dans le dossier.
+/// Write error in the folder.
 pub async fn write_dashboard_async(
     dir: PathBuf,
     device: Device,
@@ -128,7 +128,7 @@ mod tests {
         let v2: Value = serde_json::from_str(&std::fs::read_to_string(&path).unwrap()).unwrap();
         assert_eq!(v2["version"], 2);
         assert_eq!(v2["panels"].as_array().unwrap().len(), 2);
-        // Aucun fichier temporaire ne reste.
+        // No temporary file is left.
         let names: Vec<_> = std::fs::read_dir(&dir)
             .unwrap()
             .flatten()
@@ -143,7 +143,7 @@ mod tests {
         let dir = scratch("rename");
         write_dashboard(&dir, &device(7, "Ancien nom", &["temperature"])).unwrap();
         write_dashboard(&dir, &device(8, "Autre", &["temperature"])).unwrap();
-        // Un tableau d'une autre origine (sans `device_`) n'est jamais touche.
+        // A dashboard of another origin (without `device_`) is never touched.
         std::fs::write(dir.join("weather.json"), "{\"uid\":\"dominet-device-7\"}").unwrap();
         write_dashboard(&dir, &device(7, "Nouveau nom", &["temperature"])).unwrap();
         let mut names: Vec<_> = std::fs::read_dir(&dir)

@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Alertes de la plateforme vues par l'interface (R13 lot E1, ADR 0061) : celles de Prometheus et de Grafana, lues en lecture seule
-//! pour que la page des alertes et la pastille de la barre laterale montrent **tout ce qui ne va pas**, pas seulement les alertes
-//! d'appareil.
+//! Platform alerts seen by the interface (R13 lot E1, ADR 0061): those of Prometheus and Grafana, read in read-only mode
+//! so that the alerts page and the sidebar badge show **everything that is wrong**, not only the device
+//! alerts.
 //!
-//! Rien n'est ecrit en base : l'etat vient des services, relu toutes les `PROMETHEUS_ALERTS_POLL_SECS` secondes (60 par defaut).
-//! Une alerte disparait de la liste quand sa cause disparait. Ce module ne notifie rien : l'e-mail et le SMS restent le travail du
-//! relais de `prometheus_alerts` (Prometheus) et du point de contact de Grafana.
+//! Nothing is written to the database: the state comes from the services, re-read every `PROMETHEUS_ALERTS_POLL_SECS` seconds (60 by default).
+//! An alert disappears from the list when its cause disappears. This module notifies nothing: e-mail and SMS remain the job of the
+//! `prometheus_alerts` relay (Prometheus) and of Grafana's contact point.
 
 use std::sync::{Arc, RwLock};
 use std::time::Duration;
@@ -15,7 +15,7 @@ use serde_json::Value;
 use crate::AppState;
 use crate::config::Config;
 
-/// Qui a leve l'alerte.
+/// Who raised the alert.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Source {
     Prometheus,
@@ -32,30 +32,30 @@ impl Source {
     }
 }
 
-/// Une alerte en cours chez Prometheus ou Grafana.
+/// An ongoing alert at Prometheus or Grafana.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ExternalAlert {
     pub source: Source,
     pub name: String,
-    /// `info`, `warning` ou `critical` (`warning` si l'etiquette manque ou est inconnue).
+    /// `info`, `warning` or `critical` (`warning` if the label is missing or unknown).
     pub severity: String,
     pub summary: String,
     pub description: String,
-    /// Debut de l'alerte (RFC 3339), si la source le donne.
+    /// Start of the alert (RFC 3339), if the source gives it.
     pub since: Option<String>,
 }
 
-/// Ce que l'on sait d'une source a la derniere lecture.
+/// What is known about a source at the last read.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum SourceState {
-    /// Pas d'adresse (ou pas d'identifiants pour Grafana) : la source n'est pas surveillee.
+    /// No address (or no credentials for Grafana): the source is not monitored.
     NotConfigured,
-    /// La derniere lecture a echoue : on ne sait rien, et la page doit le dire.
+    /// The last read failed: nothing is known, and the page must say so.
     Unreachable,
     Ok(Vec<ExternalAlert>),
 }
 
-/// Instantane des deux sources.
+/// Snapshot of the two sources.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Snapshot {
     pub prometheus: SourceState,
@@ -63,7 +63,7 @@ pub struct Snapshot {
 }
 
 impl Snapshot {
-    /// Les alertes en cours, Prometheus d'abord, du plus grave au moins grave.
+    /// The ongoing alerts, Prometheus first, from most to least serious.
     #[must_use]
     pub fn alerts(&self) -> Vec<ExternalAlert> {
         let mut all: Vec<ExternalAlert> = [&self.prometheus, &self.grafana]
@@ -140,8 +140,8 @@ fn build(
     }
 }
 
-/// Lit `/api/v1/alerts` de Prometheus (`{"data": {"alerts": [...]}}`) : seules les alertes `firing` comptent (`pending` : le delai
-/// de la regle n'est pas ecoule). Une entree mal formee est ignoree.
+/// Reads Prometheus's `/api/v1/alerts` (`{"data": {"alerts": [...]}}`): only the `firing` alerts count (`pending`: the rule's delay
+/// has not elapsed). A malformed entry is ignored.
 #[must_use]
 pub fn parse_prometheus(body: &Value) -> Vec<ExternalAlert> {
     body["data"]["alerts"]
@@ -162,8 +162,8 @@ pub fn parse_prometheus(body: &Value) -> Vec<ExternalAlert> {
         .unwrap_or_default()
 }
 
-/// Lit `/api/alertmanager/grafana/api/v2/alerts` de Grafana (une liste d'alertes) : seules les alertes `active` comptent (ni
-/// `suppressed`, ni `unprocessed`).
+/// Reads Grafana's `/api/alertmanager/grafana/api/v2/alerts` (a list of alerts): only the `active` alerts count (neither
+/// `suppressed` nor `unprocessed`).
 #[must_use]
 pub fn parse_grafana(body: &Value) -> Vec<ExternalAlert> {
     body.as_array()
@@ -183,7 +183,7 @@ pub fn parse_grafana(body: &Value) -> Vec<ExternalAlert> {
         .unwrap_or_default()
 }
 
-/// Compte de Grafana pour la lecture des alertes.
+/// Grafana account for reading the alerts.
 #[derive(Clone)]
 struct GrafanaAccess {
     url: String,
@@ -191,7 +191,7 @@ struct GrafanaAccess {
     password: String,
 }
 
-/// Les alertes de la plateforme, lues en fond et partagees (clonable : un seul instantane derriere).
+/// The platform's alerts, read in the background and shared (cloneable: a single snapshot behind).
 #[derive(Clone)]
 pub struct ExternalAlerts {
     http: reqwest::Client,
@@ -223,7 +223,7 @@ impl ExternalAlerts {
         Self::with_endpoints(config.prometheus_url.clone(), grafana)
     }
 
-    /// `grafana` : adresse, compte, mot de passe.
+    /// `grafana`: address, account, password.
     #[must_use]
     pub fn with_endpoints(
         prometheus_url: Option<String>,
@@ -255,13 +255,13 @@ impl ExternalAlerts {
         }
     }
 
-    /// Au moins une source est surveillee.
+    /// At least one source is monitored.
     #[must_use]
     pub fn is_configured(&self) -> bool {
         self.prometheus_url.is_some() || self.grafana.is_some()
     }
 
-    /// Le dernier instantane lu.
+    /// The last snapshot read.
     #[must_use]
     pub fn snapshot(&self) -> Snapshot {
         self.last
@@ -269,7 +269,7 @@ impl ExternalAlerts {
             .map_or_else(|e| e.into_inner().clone(), |s| s.clone())
     }
 
-    /// Nombre d'alertes en cours chez Prometheus et Grafana.
+    /// Number of ongoing alerts at Prometheus and Grafana.
     #[must_use]
     pub fn firing(&self) -> u32 {
         self.snapshot().firing()
@@ -295,7 +295,7 @@ impl ExternalAlerts {
         }
     }
 
-    /// Relit les deux sources ; renvoie vrai si quelque chose a change depuis la lecture precedente.
+    /// Re-reads the two sources; returns true if something changed since the previous read.
     pub async fn refresh(&self) -> bool {
         let prometheus = match &self.prometheus_url {
             None => SourceState::NotConfigured,
@@ -344,8 +344,8 @@ impl ExternalAlerts {
     }
 }
 
-/// Demarre la lecture en fond (role `web` : c'est lui qui sert la page et la pastille). Sans Prometheus ni Grafana configures, rien
-/// ne tourne. La pastille est rediffusee a chaque changement.
+/// Starts the background read (`web` role: it is the one that serves the page and the badge). Without Prometheus or Grafana configured, nothing
+/// runs. The badge is rebroadcast at each change.
 pub fn spawn(state: &AppState) {
     if !state.external_alerts.is_configured() {
         return;
