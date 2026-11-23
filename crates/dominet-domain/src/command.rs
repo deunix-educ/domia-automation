@@ -1,18 +1,18 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Commandes envoyees aux appareils (R3 lot 5, ADR 0029) : ce que le serveur accepte de publier sur `<appareil>/set`.
+//! Commands sent to devices (R3 lot 5, ADR 0029): what the server agrees to publish on `<device>/set`.
 //!
-//! L'implementation de reference publiait n'importe quel JSON. Ici la charge doit etre un objet non vide, de profondeur et de taille bornees :
-//! l'interface n'envoie que des objets plats (`{"state":"ON"}`, `{"brightness":128}`), Zigbee2MQTT accepte quelques objets imbriques
-//! (`{"color":{"x":0.3,"y":0.4}}`), rien d'autre n'a de sens.
+//! The reference implementation published any JSON. Here the payload must be a non-empty object, of bounded depth and size:
+//! the interface only sends flat objects (`{"state":"ON"}`, `{"brightness":128}`), Zigbee2MQTT accepts a few nested objects
+//! (`{"color":{"x":0.3,"y":0.4}}`), nothing else makes sense.
 
 use serde_json::Value;
 
-/// Taille maximale du JSON publie, en octets.
+/// Maximum size of the published JSON, in bytes.
 pub const MAX_COMMAND_BYTES: usize = 1024;
-/// Profondeur maximale d'imbrication (l'objet racine compte pour 1).
+/// Maximum nesting depth (the root object counts for 1).
 pub const MAX_COMMAND_DEPTH: usize = 3;
 
-/// Pourquoi une commande est refusee.
+/// Why a command is refused.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum CommandProblem {
     NotJson,
@@ -30,10 +30,10 @@ fn depth(v: &Value) -> usize {
     }
 }
 
-/// Analyse le texte d'une commande.
+/// Parses the text of a command.
 ///
 /// # Errors
-/// [`CommandProblem`] si ce n'est pas un objet JSON non vide, trop gros ou trop imbrique.
+/// [`CommandProblem`] if it is not a non-empty JSON object, too big or too deeply nested.
 pub fn parse_command(text: &str) -> Result<Value, CommandProblem> {
     if text.len() > MAX_COMMAND_BYTES {
         return Err(CommandProblem::TooLarge);
@@ -43,7 +43,7 @@ pub fn parse_command(text: &str) -> Result<Value, CommandProblem> {
     Ok(value)
 }
 
-/// Verifie une commande deja analysee (scenes, automations) : objet non vide, 3 niveaux au plus, 1 Ko au plus une fois ecrit.
+/// Checks an already parsed command (scenes, automations): non-empty object, 3 levels at most, 1 KB at most once written.
 ///
 /// # Errors
 /// [`CommandProblem`].

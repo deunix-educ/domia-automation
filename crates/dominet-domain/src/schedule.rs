@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Travaux du planificateur (R4 lot 4, ADR 0033) : table `schedule_job` (migration 0006, remplace un planificateur externe).
+//! Scheduler jobs (R4 lot 4, ADR 0033): `schedule_job` table (migration 0006, replaces an external scheduler).
 //!
-//! Un travail a un horaire (intervalle, cron a cinq champs dans un fuseau, ou evenement solaire), une tache a executer et ses
-//! arguments. Ceux des automations `schedule` / `solar` portent leur `automation` (supprimes avec elle) ; les travaux du
-//! systeme (`compute_daily_energy`) n'en ont pas.
+//! A job has a schedule (interval, five-field cron in a time zone, or solar event), a task to run and its
+//! arguments. Those of the `schedule` / `solar` automations carry their `automation` (deleted with it); the system
+//! jobs (`compute_daily_energy`) have none.
 
 use chrono::{DateTime, Utc};
 use serde_json::Value;
@@ -37,7 +37,7 @@ impl IntervalPeriod {
             .find(|p| p.as_str() == s)
     }
 
-    /// Duree d'une unite, en secondes.
+    /// Duration of a unit, in seconds.
     #[must_use]
     pub fn seconds(self) -> i64 {
         match self {
@@ -48,12 +48,12 @@ impl IntervalPeriod {
     }
 }
 
-/// Quand un travail s'execute.
+/// When a job runs.
 #[derive(Debug, Clone, PartialEq)]
 pub enum JobSchedule {
-    /// Toutes les `every` minutes / heures / jours.
+    /// Every `every` minutes / hours / days.
     Interval { every: u32, period: IntervalPeriod },
-    /// Expression cron a cinq champs, a l'heure du fuseau du travail.
+    /// Five-field cron expression, in the job's time zone.
     Cron(String),
     Solar {
         event: SolarEvent,
@@ -62,20 +62,20 @@ pub enum JobSchedule {
     },
 }
 
-/// Un travail a enregistrer.
+/// A job to save.
 #[derive(Debug, Clone, PartialEq)]
 pub struct JobDraft {
     pub name: String,
     pub task: String,
     pub args: Value,
     pub schedule: JobSchedule,
-    /// Nom IANA (`Europe/Paris`).
+    /// IANA name (`Europe/Paris`).
     pub timezone: String,
     pub enabled: bool,
     pub automation: Option<AutomationId>,
 }
 
-/// Un travail enregistre.
+/// A saved job.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Job {
     pub id: JobId,

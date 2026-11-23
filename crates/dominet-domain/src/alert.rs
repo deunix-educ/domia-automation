@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Regles d'alerte et alertes (R4, ADR 0031). L'evaluation d'une valeur est celle de l'implementation de reference,
-//! particularites comprises ; le cycle declenchement / cooldown / resolution est celui du cycle des alertes (lot 6).
+//! Alert rules and alerts (R4, ADR 0031). The evaluation of a value is the reference implementation's,
+//! quirks included; the trigger / cooldown / resolution cycle is that of the alert cycle (lot 6).
 
 use chrono::{DateTime, Utc};
 use serde_json::Value;
@@ -80,7 +80,7 @@ impl Severity {
         Self::ALL.into_iter().find(|o| o.as_str() == s)
     }
 
-    /// Libelle de la reference (`get_severity_display`), repris dans les messages envoyes.
+    /// Reference label (`get_severity_display`), reused in the messages sent.
     #[must_use]
     pub fn label(self) -> &'static str {
         match self {
@@ -116,7 +116,7 @@ impl AlertStatus {
     }
 }
 
-// Reflet d'une ligne de table : les canaux de notification et l'activation sont independants.
+// Mirror of a table row: the notification channels and the activation are independent.
 #[allow(clippy::struct_excessive_bools)]
 #[derive(Debug, Clone, PartialEq)]
 pub struct AlertRuleDraft {
@@ -198,10 +198,10 @@ impl AlertRuleDraft {
         out
     }
 
-    /// Vrai si `value` satisfait la regle (la reference) :
-    /// - `contains` : le seuil texte (minuscules) est contenu dans la valeur rendue en texte (minuscules) ;
-    /// - sinon la valeur et le seuil sont lus comme nombres (seuil texte si pas de seuil numerique) ; si l'un n'en est pas un,
-    ///   repli sur l'egalite de textes (`eq` / `neq` seulement, espaces et casse ignores), tout autre operateur est faux.
+    /// True if `value` satisfies the rule (the reference's):
+    /// - `contains`: the text threshold (lower case) is contained in the value rendered as text (lower case);
+    /// - otherwise the value and the threshold are read as numbers (text threshold if there is no numeric threshold); if one of them is not one,
+    ///   fall back on text equality (`eq` / `neq` only, spaces and case ignored), any other operator is false.
     #[must_use]
     pub fn evaluate(&self, value: &Value) -> bool {
         let text = plain_str(value);
@@ -237,7 +237,7 @@ impl AlertRuleDraft {
     }
 }
 
-/// `str(valeur)` de la reference pour une valeur JSON (booleens `True` / `False`, `None`).
+/// The reference's `str(value)` for a JSON value (booleans `True` / `False`, `None`).
 #[must_use]
 pub fn plain_str(v: &Value) -> String {
     match v {
@@ -249,8 +249,8 @@ pub fn plain_str(v: &Value) -> String {
     }
 }
 
-/// `float("texte")` de la reference : espaces ignores, signe, `.5`, `5.`, `1e3`, `nan`, `inf`, et des tirets bas entre deux chiffres
-/// (`1_000`), que `f64::from_str` refuse.
+/// The reference's `float("text")`: spaces ignored, sign, `.5`, `5.`, `1e3`, `nan`, `inf`, and underscores between two digits
+/// (`1_000`), which `f64::from_str` refuses.
 fn float_from_text(text: &str) -> Option<f64> {
     let t = text.trim();
     if !t.contains('_') {
@@ -271,7 +271,7 @@ fn float_from_text(text: &str) -> Option<f64> {
     }
 }
 
-/// `float(valeur)` de la reference : nombres, booleens (1.0 / 0.0) et textes numeriques ; le reste echoue.
+/// The reference's `float(value)`: numbers, booleans (1.0 / 0.0) and numeric texts; the rest fails.
 fn float_value(v: &Value) -> Option<f64> {
     match v {
         Value::Number(n) => n.as_f64(),
@@ -281,8 +281,8 @@ fn float_value(v: &Value) -> Option<f64> {
     }
 }
 
-/// Les deux textes d'une alerte, comme la reference : le long (e-mail) et le court (SMS, notification Android,
-/// bandeau). La date est celle de l'alerte, en UTC (`fired_at.strftime` d'un instant UTC en reference).
+/// The two texts of an alert, like the reference: the long one (e-mail) and the short one (SMS, Android notification,
+/// banner). The date is the alert's, in UTC (`fired_at.strftime` of a UTC instant in the reference).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AlertMessages {
     pub long: String,
@@ -307,7 +307,7 @@ pub fn alert_messages(
     }
 }
 
-/// Une alerte declenchee.
+/// A raised alert.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Alert {
     pub id: AlertId,
@@ -369,7 +369,7 @@ mod tests {
             "float(True) = 1.0"
         );
         assert!(rule(Operator::Neq, Some(1.0), "").evaluate(&json!(2)));
-        // Seuil texte numerique si pas de seuil numerique.
+        // Numeric text threshold if there is no numeric threshold.
         assert!(rule(Operator::Gt, None, " 20 ").evaluate(&json!(21)));
     }
 
@@ -387,7 +387,7 @@ mod tests {
             !rule(Operator::Gt, None, "abc").evaluate(&json!(5)),
             "seuil texte non numerique : faux"
         );
-        // Une liste n'est pas un nombre : repli texte, `"[1]" != ""` est vrai (particularite de la reference : le seuil texte est vide ici).
+        // A list is not a number: text fallback, `"[1]" != ""` is true (a quirk of the reference: the text threshold is empty here).
         assert!(rule(Operator::Neq, Some(1.0), "").evaluate(&json!([1])));
     }
 

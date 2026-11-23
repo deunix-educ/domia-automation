@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Surveillance (R6, ADR 0043) : cameras, presets PTZ, enregistrements, snapshots, evenements de mouvement et de detection.
+//! Surveillance (R6, ADR 0043): cameras, PTZ presets, recordings, snapshots, motion and detection events.
 //!
-//! Les mots de passe et la cle d'API d'une camera sont des [`Sealed`] : le domaine ne manipule que le texte **deja chiffre**
-//! (le chiffrement est fait par le serveur, `SecretBox`), et `Debug` n'en montre rien.
+//! A camera's passwords and API key are [`Sealed`]s: the domain only handles the **already encrypted** text
+//! (encryption is done by the server, `SecretBox`), and `Debug` shows none of it.
 
 use std::fmt;
 use std::str::FromStr;
@@ -15,7 +15,7 @@ use crate::error::{Problem, ValidationError};
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct CameraId(pub i64);
 
-/// Identifiant public d'une camera : 32 caracteres hexadecimaux, aussi **nom du path MediaMTX** (ADR 0043).
+/// Public identifier of a camera: 32 hexadecimal characters, also the **MediaMTX path name** (ADR 0043).
 #[derive(Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct CameraUuid(pub Uuid);
 
@@ -34,7 +34,7 @@ impl fmt::Debug for CameraUuid {
 impl FromStr for CameraUuid {
     type Err = ValidationError;
 
-    /// Accepte la forme a 32 caracteres hexadecimaux (et la forme avec tirets, que le modele de widget peut porter).
+    /// Accepts the 32-hexadecimal form (and the hyphenated form, which the widget model may carry).
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Uuid::parse_str(s.trim())
             .map(Self)
@@ -42,7 +42,7 @@ impl FromStr for CameraUuid {
     }
 }
 
-/// Secret deja chiffre (`v1:...`), vide s'il n'est pas renseigne. Jamais affiche.
+/// Already encrypted secret (`v1:...`), empty if not set. Never displayed.
 #[derive(Clone, PartialEq, Eq, Default)]
 pub struct Sealed(pub String);
 
@@ -63,7 +63,7 @@ impl fmt::Debug for Sealed {
     }
 }
 
-/// Enumeration textuelle stockee : `as_str`, `ALL`, `FromStr`.
+/// Stored text enumeration: `as_str`, `ALL`, `FromStr`.
 macro_rules! text_enum {
     ($(#[$m:meta])* $name:ident, $what:literal, { $($variant:ident => $text:literal),+ $(,)? }) => {
         $(#[$m])*
@@ -99,12 +99,12 @@ macro_rules! text_enum {
 
 text_enum!(StreamProto, "protocol", { Rtsp => "rtsp", Rtmp => "rtmp" });
 text_enum!(
-    /// Quand une camera est enregistree (`manual` : seulement sur demande).
+    /// When a camera records (`manual`: only on request).
     RecordingMode, "recording mode",
     { None => "none", Continuous => "continuous", Motion => "motion", Manual => "manual" }
 );
 text_enum!(
-    /// Methode de bascule jour / nuit (IR-cut) : un backend par valeur, `none` = desactive.
+    /// Day / night toggle method (IR-cut): one backend per value, `none` = disabled.
     NightApi, "day/night mode",
     { None => "none", Onvif => "onvif", Openipc => "openipc", Thingino => "thingino", Goform => "goform" }
 );
@@ -113,7 +113,7 @@ text_enum!(RecordingStatus, "recording status", { Pending => "pending", Uploadin
 text_enum!(DetectionTrigger, "declencheur", { Motion => "motion", Periodic => "periodic" });
 text_enum!(DetectorBackend, "backend de detection", { Yolov8n => "yolov8n", Yolov8s => "yolov8s", Onnx => "onnx", Coral => "coral" });
 
-/// Reglages d'une camera (creation ou remplacement). Les secrets sont chiffres.
+/// Settings of a camera (creation or replacement). The secrets are encrypted.
 #[allow(
     clippy::struct_excessive_bools,
     reason = "independent form flags (active, ONVIF, PTZ, YOLO, RTSP options)"
@@ -123,7 +123,7 @@ pub struct CameraDraft {
     pub name: String,
     pub location_id: Option<i64>,
     pub active: bool,
-    /// 1 = haute priorite, 9 = basse.
+    /// 1 = high priority, 9 = low.
     pub priority: i32,
     pub notes: String,
     pub proto: StreamProto,
@@ -148,7 +148,7 @@ pub struct CameraDraft {
     pub main_token: String,
     pub ptz: bool,
     pub yolo_enabled: bool,
-    /// Classes COCO retenues ; vide = toutes.
+    /// COCO classes kept; empty = all.
     pub yolo_classes: Vec<String>,
     pub yolo_min_confidence: f64,
     pub manufacturer: String,
@@ -159,7 +159,7 @@ pub struct CameraDraft {
 impl CameraDraft {
     pub const NAME_MAX: usize = 128;
 
-    /// Camera aux valeurs par defaut de la reference (RTSP, port 554, 10 fps, rien d'enregistre).
+    /// Camera with the reference's default values (RTSP, port 554, 10 fps, nothing recorded).
     #[must_use]
     pub fn new(name: &str) -> Self {
         Self {
@@ -198,7 +198,7 @@ impl CameraDraft {
         }
     }
 
-    /// Tous les problemes, champ par champ.
+    /// All the problems, field by field.
     #[must_use]
     pub fn problems(&self) -> Vec<(&'static str, Problem)> {
         let mut out = vec![];
@@ -234,7 +234,7 @@ impl CameraDraft {
                 ));
             }
         }
-        // Le chemin vient d'un champ libre : pas d'espace, de retour a la ligne ni de `@` (injection dans l'URL du flux).
+        // The path comes from a free field: no space, line break or `@` (injection into the stream URL).
         if self.path.chars().count() > 128
             || self.path.chars().any(|c| c.is_whitespace() || c == '@')
         {
@@ -256,7 +256,7 @@ impl CameraDraft {
     }
 
     /// # Errors
-    /// Le premier probleme, en francais.
+    /// The first problem, in French.
     pub fn validate(&self) -> Result<(), ValidationError> {
         match self.problems().first() {
             None => Ok(()),
@@ -264,7 +264,7 @@ impl CameraDraft {
         }
     }
 
-    /// URL du flux source **avec** le mot de passe en clair (`password` est le secret dechiffre) : a ne jamais journaliser.
+    /// Source stream URL **with** the password in clear (`password` is the decrypted secret): never to be logged.
     #[must_use]
     pub fn source_url(&self, password: &str) -> String {
         self.build_url(&if self.rtsp_user.is_empty() {
@@ -274,7 +274,7 @@ impl CameraDraft {
         })
     }
 
-    /// Meme URL, mot de passe masque : celle-ci peut s'afficher et se journaliser.
+    /// Same URL, password masked: this one can be displayed and logged.
     #[must_use]
     pub fn masked_source_url(&self) -> String {
         self.build_url(&if self.rtsp_user.is_empty() {
@@ -299,7 +299,7 @@ impl CameraDraft {
     }
 }
 
-/// Nom d'hote, adresse IPv4 ou IPv6 (sans crochets) : lettres, chiffres, `.`, `-`, `:`.
+/// Host name, IPv4 or IPv6 address (without brackets): letters, digits, `.`, `-`, `:`.
 fn valid_host(host: &str) -> bool {
     host.len() <= 64
         && host
@@ -307,7 +307,7 @@ fn valid_host(host: &str) -> bool {
             .all(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '-' | ':'))
 }
 
-/// Echappe `:`, `@`, `/`, `%` et les caracteres non ASCII d'un identifiant ou d'un mot de passe (partie `userinfo` d'une URL).
+/// Escapes `:`, `@`, `/`, `%` and the non-ASCII characters of an identifier or a password (the `userinfo` part of a URL).
 fn userinfo(s: &str) -> String {
     use std::fmt::Write;
     let mut out = String::with_capacity(s.len());
@@ -330,7 +330,7 @@ pub struct Camera {
     pub config: CameraDraft,
 }
 
-/// Ce que la synchronisation ONVIF apprend d'une camera.
+/// What the ONVIF synchronisation learns about a camera.
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct OnvifInfo {
     pub manufacturer: String,
@@ -398,7 +398,7 @@ pub struct Recording {
     pub started_at: DateTime<Utc>,
     pub duration_ms: Option<i64>,
     pub segment_path: String,
-    /// Horodatage de l'entree dans ReductStore, en microsecondes.
+    /// Timestamp of the entry in ReductStore, in microseconds.
     pub reduct_ts: Option<i64>,
     pub event_type: RecordingEvent,
     pub status: RecordingStatus,
@@ -414,7 +414,7 @@ pub struct Snapshot {
     pub id: SnapshotId,
     pub camera: CameraId,
     pub taken_at: DateTime<Utc>,
-    /// Chemin relatif au dossier des snapshots.
+    /// Path relative to the snapshots folder.
     pub file: String,
     pub size_bytes: i32,
 }
@@ -427,14 +427,14 @@ pub struct MotionEvent {
     pub id: MotionEventId,
     pub camera: CameraId,
     pub detected_at: DateTime<Utc>,
-    /// Rapport de pixels modifies (0..1).
+    /// Ratio of changed pixels (0..1).
     pub confidence: f64,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct DetectionEventId(pub i64);
 
-/// Un objet reconnu : classe COCO, score, boite `[x1, y1, x2, y2]` en pixels de l'image d'origine.
+/// A recognised object: COCO class, score, box `[x1, y1, x2, y2]` in pixels of the original image.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Detection {
     pub class: String,
@@ -453,7 +453,7 @@ pub struct DetectionEvent {
 }
 
 impl DetectionEvent {
-    /// Classes distinctes, triees.
+    /// Distinct classes, sorted.
     #[must_use]
     pub fn class_names(&self) -> Vec<&str> {
         let mut v: Vec<&str> = self.labels.iter().map(|d| d.class.as_str()).collect();
@@ -463,7 +463,7 @@ impl DetectionEvent {
     }
 }
 
-/// Configuration globale du detecteur (une seule ligne).
+/// Global configuration of the detector (a single row).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct DetectorConfig {
     pub backend: DetectorBackend,

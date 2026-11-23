@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Evenements solaires (R4 lot 4, ADR 0033) : lever, coucher, midi solaire, aubes et crepuscules, calcules sans dependance.
+//! Solar events (R4 lot 4, ADR 0033): sunrise, sunset, solar noon, dawns and dusks, computed without dependencies.
 //!
-//! Position du soleil par les series de Meeus (precision ~0,01°), equation du temps, angle horaire. Memes conventions que
-//! les evenements solaires de reference / `ephem` (pression 0, altitude 0) : lever et coucher quand le **bord superieur** touche l'horizon
-//! a −34′ (centre a environ −0,83°), crepuscules quand le **centre** atteint −6°, −12° ou −18°. Compare a `ephem` par
-//! ecart maximal tolere 90 s (mesure sur 1 036 cas : 13 s, `tests/schedule_oracle.rs`), hors cercles polaires.
+//! Position of the sun by Meeus series (accuracy ~0.01°), equation of time, hour angle. Same conventions as
+//! the reference's solar events / `ephem` (pressure 0, altitude 0): sunrise and sunset when the **upper limb** touches the horizon
+//! at −34′ (centre at about −0.83°), twilights when the **centre** reaches −6°, −12° or −18°. Compared with `ephem` by
+//! maximum tolerated difference 90 s (measured on 1036 cases: 13 s, `tests/schedule_oracle.rs`), outside the polar circles.
 
 use chrono::{DateTime, TimeZone, Utc};
 
@@ -17,8 +17,8 @@ fn rad(deg: f64) -> f64 {
     deg.to_radians()
 }
 
-/// (declinaison en degres, equation du temps en minutes, distance en UA) au jour julien `jd`.
-#[allow(clippy::many_single_char_names)] // les symboles de Meeus (T, L0, M, e, C...) sont ceux de la reference
+/// (declination in degrees, equation of time in minutes, distance in AU) at Julian day `jd`.
+#[allow(clippy::many_single_char_names)] // Meeus's symbols (T, L0, M, e, C...) are those of the reference
 fn sun(jd: f64) -> (f64, f64, f64) {
     let t = (jd - J2000) / 36525.0;
     let l0 = (280.466_46 + 36_000.769_83 * t + 0.000_303_2 * t * t).rem_euclid(360.0);
@@ -46,9 +46,9 @@ fn sun(jd: f64) -> (f64, f64, f64) {
     (decl, eq, distance)
 }
 
-/// Altitude du centre du soleil (degres) a laquelle l'evenement se produit.
+/// Altitude of the centre of the sun (degrees) at which the event occurs.
 fn altitude(event: SolarEvent, distance: f64) -> f64 {
-    // Bord superieur a −34′ : le centre est plus bas du demi-diametre apparent.
+    // Upper limb at −34′: the centre is lower by the apparent half-diameter.
     let limb = -34.0 / 60.0 - 0.266_49 / distance;
     match event {
         SolarEvent::Sunrise | SolarEvent::Sunset => limb,
@@ -59,13 +59,13 @@ fn altitude(event: SolarEvent, distance: f64) -> f64 {
     }
 }
 
-/// Instant (jour julien) de l'evenement autour du midi solaire du jour UTC `day` (jours depuis 1970), ou `None` si le soleil
-/// n'atteint pas cette altitude ce jour-la (nuit polaire, soleil de minuit).
+/// Instant (Julian day) of the event around the solar noon of UTC day `day` (days since 1970), or `None` if the sun
+/// does not reach this altitude that day (polar night, midnight sun).
 fn event_jd(event: SolarEvent, lat: f64, lon: f64, day: i64) -> Option<f64> {
     #[allow(clippy::cast_precision_loss)]
-    // un nombre de jours depuis 1970 tient largement dans un f64
+    // a number of days since 1970 fits comfortably in an f64
     let midnight = UNIX_EPOCH_JD + day as f64;
-    // Midi solaire : on itere car l'equation du temps depend de l'instant.
+    // Solar noon: we iterate because the equation of time depends on the instant.
     let mut transit = midnight + 0.5 - lon / 360.0;
     for _ in 0..3 {
         transit = midnight + 0.5 - lon / 360.0 - sun(transit).1 / 1440.0;
@@ -101,14 +101,14 @@ fn event_jd(event: SolarEvent, lat: f64, lon: f64, day: i64) -> Option<f64> {
 }
 
 fn from_jd(jd: f64) -> Option<DateTime<Utc>> {
-    #[allow(clippy::cast_possible_truncation)] // millisecondes depuis 1970 : bien dans un i64
+    #[allow(clippy::cast_possible_truncation)] // milliseconds since 1970: well within an i64
     let millis = ((jd - UNIX_EPOCH_JD) * 86_400_000.0).round() as i64;
     Utc.timestamp_millis_opt(millis).single()
 }
 
-/// Premier instant **strictement posterieur** a `after` ou l'evenement se produit au lieu donne (latitude nord et longitude
-/// est positives). `None` si le soleil n'atteint jamais cette altitude dans les trois jours qui suivent (cercle polaire en
-/// plein ete ou plein hiver) : l'appelant reessaie plus tard.
+/// First instant **strictly after** `after` at which the event occurs at the given place (north latitude and east longitude
+/// positive). `None` if the sun never reaches this altitude in the following three days (polar circle in
+/// midsummer or midwinter): the caller retries later.
 #[must_use]
 pub fn next_event(
     event: SolarEvent,
@@ -136,7 +136,7 @@ mod tests {
 
     #[test]
     fn marseille_sunset_on_the_28th_of_march_is_at_six_pm_utc() {
-        // les evenements solaires de reference (ephem) donne 18:00:01 UTC (valeur du fichier d'oracle).
+        // the reference solar events (ephem) give 18:00:01 UTC (value of the oracle file).
         let t = next_event(SolarEvent::Sunset, 43.3, 5.4, utc(2026, 3, 28, 12, 0)).unwrap();
         assert!(
             (t - utc(2026, 3, 28, 18, 0)).num_seconds().abs() <= 90,
@@ -172,7 +172,7 @@ mod tests {
 
     #[test]
     fn the_polar_night_and_the_midnight_sun_have_no_event() {
-        // Tromso (69,65 N) : ni lever autour du 21 decembre, ni coucher autour du 21 juin (dans les 3 jours qui suivent).
+        // Tromsø (69.65 N): no sunrise around 21 December, no sunset around 21 June (within the following 3 days).
         assert_eq!(
             next_event(SolarEvent::Sunrise, 69.65, 18.96, utc(2026, 12, 20, 0, 0)),
             None

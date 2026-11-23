@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Evaluation d'une regle d'alerte contre le **implementation de reference** : 2 030 combinaisons
-//! d'operateur, de seuil et de valeur (nombres, textes numeriques, booleens, listes, `nan`, `inf`, `1_000`...).
+//! Evaluation of an alert rule against the **reference implementation**: 2030 combinations
+//! of operator, threshold and value (numbers, numeric texts, booleans, lists, `nan`, `inf`, `1_000`...).
 
 use dominet_domain::alert::{AlertRuleDraft, Operator};
 use dominet_domain::device::DeviceId;

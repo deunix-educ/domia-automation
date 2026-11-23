@@ -1,20 +1,20 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Tableau de bord Grafana d'un appareil (R3 lot 5, ADR 0029) : un panneau par cle suivie, meme forme que celui de la version
-//! reference. Le document est ecrit **en fichier** dans le dossier surveille par Grafana, jamais par
-//! l'API (un tableau charge depuis un fichier devient « provisionne » et l'API refuse ensuite de le modifier).
+//! Grafana dashboard of a device (R3 lot 5, ADR 0029): one panel per tracked key, same shape as that of the
+//! reference version. The document is written **to a file** in the folder watched by Grafana, never through
+//! the API (a dashboard loaded from a file becomes "provisioned" and the API then refuses to modify it).
 //!
-//! Seule difference : la table lue s'appelle `device_state_log` (elle s'appelait `automation_devicestatelog`).
+//! Only difference: the table read is called `device_state_log` (it used to be `automation_devicestatelog`).
 
 use serde_json::{Value, json};
 
 use crate::device::Device;
 
-/// Source de donnees PostgreSQL de Grafana (uid provisionne par `monitoring/grafana/provisioning/datasources`).
+/// Grafana's PostgreSQL data source (uid provisioned by `monitoring/grafana/provisioning/datasources`).
 fn datasource() -> Value {
     json!({"type": "grafana-postgresql-datasource", "uid": "postgresql"})
 }
 
-/// Nom de fichier sur : le nom de l'appareil peut contenir des `/` et des espaces.
+/// Safe file name: the device name may contain `/` and spaces.
 #[must_use]
 pub fn dashboard_file_name(device: &Device) -> String {
     let mut slug = String::new();
@@ -44,7 +44,7 @@ fn panel(device: &Device, key: &str, index: usize) -> Value {
         "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}, "custom": {"lineWidth": 2, "fillOpacity": 10}}},
         "targets": [{
             "datasource": datasource(),
-            // Les cles suivies sont validees (lettres, chiffres, `_ . : -`) : aucune apostrophe possible.
+            // The tracked keys are validated (letters, digits, `_ . : -`): no apostrophe possible.
             "rawSql": format!(
                 "SELECT ts AS \"time\", value_num AS \"{key}\"\nFROM device_state_log\nWHERE device_id = {id}\n  AND key = '{key}'\n  AND $__timeFilter(ts)\nORDER BY ts",
                 id = device.id.0
@@ -55,7 +55,7 @@ fn panel(device: &Device, key: &str, index: usize) -> Value {
     })
 }
 
-/// Le document du tableau de bord ; `None` si l'appareil n'a aucune cle suivie (rien a afficher).
+/// The dashboard document; `None` if the device has no tracked key (nothing to show).
 #[must_use]
 pub fn dashboard_json(device: &Device, version: u64) -> Option<Value> {
     if device.tracked_keys.is_empty() {

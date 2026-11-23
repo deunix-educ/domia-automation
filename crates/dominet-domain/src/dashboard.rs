@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Tableaux de bord et widgets (R2, ADR 0018).
+//! Dashboards and widgets (R2, ADR 0018).
 //!
-//! Un tableau appartient a un compte ; il porte des widgets places sur une grille de [`GRID_COLUMNS`] colonnes. Les regles
-//! (rectangle dans la grille, pas de chevauchement, coherence type / presentation / references, configuration Grafana)
-//! vivent ici pour etre appliquees de la meme facon par le serveur et les tests ; la base garantit en plus l'absence de
-//! chevauchement (contrainte d'exclusion).
+//! A dashboard belongs to an account; it carries widgets placed on a grid of [`GRID_COLUMNS`] columns. The rules
+//! (rectangle within the grid, no overlap, consistency of type / presentation / references, Grafana configuration)
+//! live here so as to be applied the same way by the server and the tests; the database also guarantees the absence of
+//! overlap (exclusion constraint).
 
 use std::str::FromStr;
 
@@ -14,11 +14,11 @@ use uuid::Uuid;
 use crate::error::{Problem, ValidationError};
 use crate::user::UserId;
 
-/// Nombre de colonnes de la grille.
+/// Number of columns of the grid.
 pub const GRID_COLUMNS: i16 = 12;
-/// Derniere ligne autorisee.
+/// Last allowed row.
 pub const MAX_ROW: i16 = 99;
-/// Largeur et hauteur par defaut d'un widget.
+/// Default width and height of a widget.
 pub const DEFAULT_SPAN: i16 = 2;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -32,12 +32,12 @@ pub struct Dashboard {
     pub id: DashboardId,
     pub name: String,
     pub owner: UserId,
-    /// Le tableau ouvert par defaut (au plus un par proprietaire).
+    /// The dashboard opened by default (at most one per owner).
     pub is_default: bool,
 }
 
-/// Tableau a creer ou a modifier. `is_default` ne peut qu'**etre active** : le tableau par defaut change quand on en
-/// designe un autre (le premier tableau d'un compte est toujours par defaut).
+/// Dashboard to create or modify. `is_default` can only be **enabled**: the default dashboard changes when another one is
+/// designated (an account's first dashboard is always the default).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct DashboardDraft {
     pub name: String,
@@ -47,7 +47,7 @@ pub struct DashboardDraft {
 impl DashboardDraft {
     pub const NAME_MAX: usize = 64;
 
-    /// Problemes champ par champ (`name`).
+    /// Field-by-field problems (`name`).
     #[must_use]
     pub fn problems(&self) -> Vec<(&'static str, Problem)> {
         let mut out = vec![];
@@ -109,7 +109,7 @@ impl FromStr for WidgetType {
     }
 }
 
-/// Modele d'affichage d'un widget. `Auto` = defaut selon le type (et, pour un appareil, selon son type).
+/// Display model of a widget. `Auto` = default according to the type (and, for a device, according to its type).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Presentation {
     Auto,
@@ -148,7 +148,7 @@ impl Presentation {
         Self::Text,
     ];
 
-    /// Valeur stockee (chaine vide pour `Auto`) ; identique a l'implementation de reference.
+    /// Stored value (empty string for `Auto`); identical to the reference implementation.
     #[must_use]
     pub fn as_str(self) -> &'static str {
         match self {
@@ -170,7 +170,7 @@ impl Presentation {
         }
     }
 
-    /// Vrai si cette presentation peut s'appliquer a un widget de ce type.
+    /// True if this presentation can apply to a widget of this type.
     #[must_use]
     pub fn fits(self, widget_type: WidgetType) -> bool {
         match self {
@@ -195,7 +195,7 @@ impl FromStr for Presentation {
     }
 }
 
-/// Position et taille d'un widget, en cellules de la grille.
+/// Position and size of a widget, in grid cells.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct GridRect {
     pub col: i16,
@@ -205,7 +205,7 @@ pub struct GridRect {
 }
 
 impl GridRect {
-    /// Rectangle par defaut d'un nouveau widget, a l'origine.
+    /// Default rectangle of a new widget, at the origin.
     pub const DEFAULT: Self = Self {
         col: 0,
         row: 0,
@@ -213,7 +213,7 @@ impl GridRect {
         height: DEFAULT_SPAN,
     };
 
-    /// Problemes champ par champ (`col`, `row`, `width`, `height`) : le rectangle doit tenir dans la grille.
+    /// Field-by-field problems (`col`, `row`, `width`, `height`): the rectangle must fit in the grid.
     #[must_use]
     pub fn problems(&self) -> Vec<(&'static str, Problem)> {
         let range = |min: i16, max: i16| Problem::OutOfRange {
@@ -233,13 +233,13 @@ impl GridRect {
         if !(1..=GRID_COLUMNS).contains(&self.width) {
             out.push(("width", range(1, GRID_COLUMNS)));
         } else if (0..GRID_COLUMNS).contains(&self.col) && self.col + self.width > GRID_COLUMNS {
-            // Largeur valable seule, mais qui deborde a droite a partir de cette colonne.
+            // Width valid on its own, but overflowing to the right from this column.
             out.push(("width", range(1, GRID_COLUMNS - self.col)));
         }
         out
     }
 
-    /// Vrai si les deux rectangles partagent au moins une cellule (des rectangles contigus ne se chevauchent pas).
+    /// True if the two rectangles share at least one cell (contiguous rectangles do not overlap).
     #[must_use]
     pub fn overlaps(&self, other: &Self) -> bool {
         self.col < other.col + other.width
@@ -249,7 +249,7 @@ impl GridRect {
     }
 }
 
-/// Widget a creer ou a remplacer.
+/// Widget to create or replace.
 #[derive(Debug, Clone, PartialEq)]
 pub struct WidgetDraft {
     pub widget_type: WidgetType,
@@ -258,9 +258,9 @@ pub struct WidgetDraft {
     pub scene_id: Option<i64>,
     pub camera_uuid: Option<Uuid>,
     pub presentation: Presentation,
-    /// Objet JSON : Grafana (`panel_url`, ou `dashboard_uid` + `panel_id`, ou `key` avec un appareil), camera (`grafana_*`).
+    /// JSON object: Grafana (`panel_url`, or `dashboard_uid` + `panel_id`, or `key` with a device), camera (`grafana_*`).
     pub config: Value,
-    /// HTML du widget `text` (vide pour les autres types).
+    /// HTML of the `text` widget (empty for the other types).
     pub content: String,
     pub rect: GridRect,
 }
@@ -281,7 +281,7 @@ pub struct Widget {
 }
 
 impl Widget {
-    /// La meme donnee sous forme de brouillon (pour la modifier puis la renvoyer).
+    /// The same data as a draft (to modify it then send it back).
     #[must_use]
     pub fn to_draft(&self) -> WidgetDraft {
         WidgetDraft {
@@ -316,7 +316,7 @@ impl WidgetDraft {
     pub const CONFIG_MAX_BYTES: usize = 4096;
     pub const CONTENT_MAX: usize = 20_000;
 
-    /// Brouillon d'un type donne, sans reference ni configuration, a l'origine de la grille.
+    /// Draft of a given type, without reference or configuration, at the grid's origin.
     #[must_use]
     pub fn new(widget_type: WidgetType) -> Self {
         Self {
@@ -332,8 +332,8 @@ impl WidgetDraft {
         }
     }
 
-    /// Tous les problemes, champ par champ (`title`, `device_id`, `scene_id`, `camera_uuid`, `presentation`, `config`,
-    /// `content`, et ceux du rectangle).
+    /// All the problems, field by field (`title`, `device_id`, `scene_id`, `camera_uuid`, `presentation`, `config`,
+    /// `content`, and those of the rectangle).
     #[must_use]
     pub fn problems(&self) -> Vec<(&'static str, Problem)> {
         let mut out = vec![];
@@ -365,8 +365,8 @@ impl WidgetDraft {
         out
     }
 
-    /// Un widget `device` designe un appareil, `scene` une scene, `camera` une camera ; Grafana peut en plus s'appuyer sur un
-    /// appareil ; `text` et `grille` ne designent rien. Toute autre reference est refusee.
+    /// A `device` widget designates a device, `scene` a scene, `camera` a camera; Grafana may also rely on a
+    /// device; `text` and `grille` designate nothing. Any other reference is refused.
     fn reference_problems(&self, out: &mut Vec<(&'static str, Problem)>) {
         let t = self.widget_type;
         let device_ok = matches!(t, WidgetType::Device | WidgetType::Grafana);
@@ -432,7 +432,7 @@ impl WidgetDraft {
                     out.push(("config", Problem::Invalid));
                 }
             }
-            // Couche Grafana facultative sur le widget camera : verifiee si elle est presente.
+            // Optional Grafana layer on the camera widget: checked if present.
             WidgetType::Camera
                 if bad("grafana_panel_url", is_http_url) || bad("grafana_uid", is_uid) =>
             {
@@ -443,7 +443,7 @@ impl WidgetDraft {
     }
 
     /// # Errors
-    /// Le premier probleme, en francais (API, CLI).
+    /// The first problem, in French (API, CLI).
     pub fn validate(&self) -> Result<(), ValidationError> {
         match self.problems().first() {
             None => Ok(()),
@@ -461,7 +461,7 @@ impl WidgetDraft {
 }
 
 #[cfg(test)]
-// `assert!(x.is_empty())` sur des listes de problemes typees : plus lisible que la comparaison a un tableau vide annote.
+// `assert!(x.is_empty())` on typed problem lists: more readable than comparing with an annotated empty array.
 #[allow(clippy::assert_is_empty)]
 mod tests {
     use serde_json::json;

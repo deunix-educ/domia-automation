@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Types metier purs et ports (traits) : aucune I/O, aucun framework.
+//! Pure business types and ports (traits): no I/O, no framework.
 //!
-//! Les regles de validation vivent ici (noms, mobiles, URL de navigation, valeurs de reglages) pour
-//! etre appliquees de la meme facon par le serveur, la CLI et les tests.
+//! The validation rules live here (names, mobile numbers, navigation URLs, setting values) so as to
+//! be applied the same way by the server, the CLI and the tests.
 
 pub mod alert;
 pub mod android;

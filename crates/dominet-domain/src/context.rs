@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Instantane `context.yaml` de l'installation (R3 lot 6, ADR 0030) : aide-memoire pour ecrire automatisations, alertes, scenes et
-//! requetes Grafana sans relire le code. Le schema d'etat d'un appareil est deduit des **valeurs
-//! courantes** de son etat. Les tests comparent a l'execution de l'implementation de reference.
+//! `context.yaml` snapshot of the installation (R3 lot 6, ADR 0030): a memo to write automations, alerts, scenes and
+//! Grafana queries without re-reading the code. A device's state schema is deduced from the **current
+//! values** of its state. The tests compare with the reference implementation's execution.
 //!
-//! Le YAML est ecrit par un petit emetteur (le projet n'embarque pas de bibliotheque YAML) : mappings et listes en style bloc,
-//! **toutes les chaines entre guillemets** (la syntaxe JSON est du YAML valide), cles nues seulement quand aucun lecteur YAML 1.1
-//! ne peut les confondre avec un booleen ou un nombre.
+//! The YAML is written by a small emitter (the project does not embed a YAML library): mappings and lists in block style,
+//! **all strings quoted** (JSON syntax is valid YAML), bare keys only when no YAML 1.1 reader
+//! can mistake them for a boolean or a number.
 
 use serde_json::Value;
 
-/// Type d'une valeur, avec les noms de la reference.
+/// Type of a value, with the reference's names.
 #[must_use]
 pub fn infer_type(value: &Value) -> &'static str {
     match value {
@@ -23,7 +23,7 @@ pub fn infer_type(value: &Value) -> &'static str {
     }
 }
 
-/// `{cle: type}` d'un etat, dans l'ordre de l'etat (celui de la base, comme en reference) : sans `update` ni `linkquality`, sans objets ni listes ; une valeur nulle est « `float|null` ».
+/// `{key: type}` of a state, in the state's order (the database's, as in the reference): without `update` or `linkquality`, without objects or lists; a null value is "`float|null`".
 #[must_use]
 pub fn state_schema(state: &Value) -> Vec<(String, &'static str)> {
     let Some(object) = state.as_object() else {
@@ -40,7 +40,7 @@ pub fn state_schema(state: &Value) -> Vec<(String, &'static str)> {
         .collect()
 }
 
-/// Cles numeriques d'un schema.
+/// Numeric keys of a schema.
 #[must_use]
 pub fn numeric_keys(schema: &[(String, &'static str)]) -> Vec<String> {
     schema
@@ -79,7 +79,7 @@ fn scalar(value: &Value) -> String {
 }
 
 fn put(out: &mut String, args: std::fmt::Arguments<'_>) {
-    // Ecrire dans une `String` ne peut pas echouer.
+    // Writing into a `String` cannot fail.
     let _ = std::fmt::Write::write_fmt(out, args);
 }
 
@@ -110,7 +110,7 @@ fn emit(value: &Value, indent: usize, out: &mut String) {
             for item in items {
                 match item {
                     Value::Object(m) if !m.is_empty() => {
-                        // Premier couple sur la ligne du tiret, le reste aligne dessous.
+                        // First pair on the dash's line, the rest aligned below.
                         let mut inner = String::new();
                         emit(item, indent + 2, &mut inner);
                         put(out, format_args!("{pad}- {}", inner.trim_start()));
@@ -132,7 +132,7 @@ fn emit(value: &Value, indent: usize, out: &mut String) {
     }
 }
 
-/// Document YAML d'une valeur JSON (ordre des cles = ordre de l'objet).
+/// YAML document of a JSON value (key order = the object's order).
 #[must_use]
 pub fn to_yaml(value: &Value) -> String {
     let mut out = String::new();
@@ -140,10 +140,10 @@ pub fn to_yaml(value: &Value) -> String {
     out
 }
 
-/// Chaine de reference des requetes Grafana sur l'etat courant (la table s'appelle `device`).
+/// Reference string of the Grafana queries on the current state (the table is called `device`).
 pub const GRAFANA_SQL_PATTERN: &str = "SELECT (state->>'<key>')::float AS <key> FROM device WHERE friendly_name = '<friendly_name>' AND (state->>'<key>')::float <op> <seuil>";
 
-/// Schemas de reference des declencheurs et actions (les memes que l'implementation de reference).
+/// Reference schemas of the triggers and actions (the same as the reference implementation's).
 #[must_use]
 pub fn reference_schemas() -> Value {
     serde_json::json!({

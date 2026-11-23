@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Entrees de navigation.
+//! Navigation entries.
 
 use std::str::FromStr;
 
@@ -52,14 +52,14 @@ pub struct NavbarItem {
 }
 
 impl NavbarItem {
-    /// Une entree reservee aux administrateurs n'est montree qu'a eux.
+    /// An entry reserved to administrators is only shown to them.
     #[must_use]
     pub fn visible_to(&self, role: Role) -> bool {
         !self.admin_only || role.is_admin()
     }
 }
 
-/// Entree a creer ou a remplacer.
+/// Entry to create or replace.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct NavbarDraft {
     pub icon_name: String,
@@ -89,8 +89,8 @@ impl NavbarDraft {
                 || self.url.starts_with("https://"))
     }
 
-    /// Tous les problemes, champ par champ (`validate` ne rapporte que le premier, en francais). Les champs sont
-    /// `icon_name`, `label`, `url`, `url_target` et `sort_order`.
+    /// All the problems, field by field (`validate` only reports the first one, in French). The fields are
+    /// `icon_name`, `label`, `url`, `url_target` and `sort_order`.
     #[must_use]
     pub fn problems(&self) -> Vec<(&'static str, Problem)> {
         let mut out = vec![];
@@ -138,11 +138,11 @@ impl NavbarDraft {
         out
     }
 
-    /// Regles : icone Lucide en kebab-case, libelle 1-128, URL interne (`/...`) ou `http(s)://` uniquement
-    /// (jamais `javascript:` ni `data:`), cible `_self` ou `_blank`, ordre positif.
+    /// Rules: Lucide icon in kebab-case, label 1-128, internal URL (`/...`) or `http(s)://` only
+    /// (never `javascript:` or `data:`), target `_self` or `_blank`, positive order.
     ///
     /// # Errors
-    /// Retourne la premiere regle violee.
+    /// Returns the first rule violated.
     pub fn validate(&self) -> Result<(), ValidationError> {
         let icon_ok = !self.icon_name.is_empty()
             && self.icon_name.len() <= 64

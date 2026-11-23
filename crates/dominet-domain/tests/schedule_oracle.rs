@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Cron et evenements solaires contre le **implementation de reference** : un cron en heure d'Europe/Paris et
-//! les evenements solaires de reference (ephem). Les attendus sont figes dans les fichiers de reference.
+//! Cron and solar events against the **reference implementation**: a cron in Europe/Paris time and
+//! the reference's solar events (ephem). The expected values are frozen in the reference files.
 
 use chrono::{DateTime, Utc};
 use dominet_domain::automation::SolarEvent;

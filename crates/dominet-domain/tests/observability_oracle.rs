@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Les documents de regles d'alerte produits par Rust sont ceux du **vrai implementation de reference** pour les memes
-//! entrees ; les fichiers YAML ecrits par Rust (`golden.*`) se relisent comme ces documents.
+//! The alert-rule documents produced by Rust are those of the **real reference implementation** for the same
+//! inputs; the YAML files written by Rust (`golden.*`) can be read back as those documents.
 
 use std::path::PathBuf;
 
@@ -87,7 +87,7 @@ fn grafana_document_is_the_one_reference_writes() {
     assert_eq!(grafana_rules_document(&grafana(&o)), o["grafana"]);
 }
 
-/// Les fichiers `golden.*` sont ce que Rust ecrit ; `UPDATE_GOLDEN=1` les regenere.
+/// The `golden.*` files are what Rust writes; `UPDATE_GOLDEN=1` regenerates them.
 #[test]
 fn yaml_files_are_stable_and_reference_reads_them_back_identically() {
     let o = oracle();

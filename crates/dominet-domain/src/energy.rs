@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Bilan energetique journalier (R4, ADR 0031) : Linky (heures pleines et creuses), production solaire, pompe a chaleur.
+//! Daily energy summary (R4, ADR 0031): Linky (peak and off-peak hours), solar production, heat pump.
 
 use std::fmt::Write;
 
 use chrono::NaiveDate;
 
-/// Un jour, en Wh.
+/// A day, in Wh.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct EnergyDay {
     pub day: NaiveDate,
@@ -15,23 +15,23 @@ pub struct EnergyDay {
     pub pac_wh: i32,
 }
 
-/// Compteur cumulatif sur une journee (la reference) : `max - min` des valeurs numeriques, tronque vers zero, jamais
-/// negatif ; zero sans aucune valeur.
+/// Cumulative counter over a day (the reference's): `max - min` of the numeric values, truncated towards zero, never
+/// negative; zero without any value.
 #[must_use]
 pub fn cumulative_delta(min: Option<f64>, max: Option<f64>) -> i32 {
     match (min, max) {
         #[allow(clippy::cast_possible_truncation)]
-        // comme `int(...)` de la reference ; tronque vers zero
+        // like the reference's `int(...)`; truncated towards zero
         (Some(lo), Some(hi)) => (hi - lo).max(0.0) as i32,
         _ => 0,
     }
 }
 
-/// Production solaire du jour (maximum du jour, converti en Wh et tronque) : le maximum de `qdy` (kWh, remis a zero chaque jour)
-/// converti en Wh, tronque vers zero.
+/// Solar production of the day (maximum of the day, converted to Wh and truncated): the maximum of `qdy` (kWh, reset every day)
+/// converted to Wh, truncated towards zero.
 #[must_use]
 pub fn solar_wh_from_qdy(max_kwh: Option<f64>) -> i32 {
-    #[allow(clippy::cast_possible_truncation)] // comme `int(...)` de la reference
+    #[allow(clippy::cast_possible_truncation)] // like the reference's `int(...)`
     max_kwh.map_or(0, |hi| (hi * 1000.0) as i32)
 }
 
@@ -41,14 +41,14 @@ impl EnergyDay {
         self.linky_hp_wh + self.linky_hc_wh
     }
 
-    /// Production - (consommation + PAC) : positif = surplus injecte (comme la reference).
+    /// Production - (consumption + heat pump): positive = surplus fed in (like the reference).
     #[must_use]
     pub fn net_wh(&self) -> i32 {
         self.solar_wh - self.linky_total_wh() - self.pac_wh
     }
 }
 
-// ------------------------------------------------------------------ graphique SVG calcule cote serveur (aucune bibliotheque JS)
+// ------------------------------------------------------------------ SVG chart computed on the server side (no JS library)
 
 const W: f64 = 760.0;
 const H: f64 = 300.0;
@@ -61,7 +61,7 @@ const LINKY: &str = "#f87171";
 const PAC: &str = "#fb923c";
 const NET: &str = "#60a5fa";
 
-/// Pas « rond » (1, 2, 5 x 10^n) pour couvrir `span` en environ cinq graduations.
+/// "Round" step (1, 2, 5 x 10^n) to cover `span` in about five graduations.
 fn nice_step(span: f64) -> f64 {
     let raw = (span / 5.0).max(1.0);
     let magnitude = 10f64.powf(raw.log10().floor());
@@ -78,7 +78,7 @@ fn nice_step(span: f64) -> f64 {
     factor * magnitude
 }
 
-/// Graduation d'axe : `1500` -> `1.5k`, `500` -> `500`.
+/// Axis graduation: `1500` -> `1.5k`, `500` -> `500`.
 fn axis_label(v: f64) -> String {
     if v.abs() >= 1000.0 {
         let k = v / 1000.0;
@@ -92,10 +92,10 @@ fn axis_label(v: f64) -> String {
     }
 }
 
-/// Histogramme du bilan journalier (Wh) : solaire, Linky et PAC en barres, bilan net en courbe, comme la page de l'implementation de reference
-/// (Chart.js) mais en SVG pur, sans script ni attribut `style` (CSP). Vide s'il n'y a aucun jour. `days` du plus ancien au plus recent.
+/// Histogram of the daily summary (Wh): solar, Linky and heat pump as bars, net balance as a curve, like the reference implementation's page
+/// (Chart.js) but in pure SVG, without script or `style` attribute (CSP). Empty if there is no day. `days` from oldest to most recent.
 #[must_use]
-#[allow(clippy::too_many_lines)] // generateur de SVG : une longue suite d'ecritures, plus lisible d'un seul tenant
+#[allow(clippy::too_many_lines)] // SVG generator: a long series of writes, more readable in one piece
 pub fn chart_svg(days: &[EnergyDay]) -> String {
     if days.is_empty() {
         return String::new();
@@ -120,7 +120,7 @@ pub fn chart_svg(days: &[EnergyDay]) -> String {
     let top = if top <= bottom { bottom + step } else { top };
     let (plot_w, plot_h) = (W - LEFT - RIGHT, H - TOP - BOTTOM);
     let y = |v: f64| TOP + (top - v) / (top - bottom) * plot_h;
-    #[allow(clippy::cast_precision_loss)] // quelques centaines de jours au plus
+    #[allow(clippy::cast_precision_loss)] // a few hundred days at most
     let n = days.len() as f64;
     let slot = plot_w / n;
     let bar = (slot * 0.8 / 3.0).max(1.0);
@@ -129,7 +129,7 @@ pub fn chart_svg(days: &[EnergyDay]) -> String {
         out,
         r#"<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {H}" width="100%" role="img" id="energy-chart" font-family="sans-serif" font-size="10">"#
     );
-    // Graduations horizontales et axe Y.
+    // Horizontal graduations and Y axis.
     let mut tick = bottom;
     while tick <= top + step * 1e-9 {
         let ty = y(tick);
@@ -144,7 +144,7 @@ pub fn chart_svg(days: &[EnergyDay]) -> String {
         );
         tick += step;
     }
-    // Barres : une tranche par jour, trois barres cote a cote.
+    // Bars: one slice per day, three bars side by side.
     let skip = (days.len() / 10 + 1).max(1);
     for (i, d) in days.iter().enumerate() {
         #[allow(clippy::cast_precision_loss)]
@@ -180,7 +180,7 @@ pub fn chart_svg(days: &[EnergyDay]) -> String {
             );
         }
     }
-    // Bilan net : courbe et points.
+    // Net balance: curve and points.
     let points: Vec<(f64, f64)> = nets
         .iter()
         .enumerate()
@@ -247,7 +247,7 @@ mod tests {
             "{}",
             &svg[..200]
         );
-        // Un jour deficitaire descend sous zero : l'axe Y s'etend.
+        // A deficit day goes below zero: the Y axis extends.
         let svg = chart_svg(&[day(1, 0, 5000, 2000, 1000), day(2, 8000, 100, 0, 0)]);
         assert!(svg.contains(">-"), "graduation negative");
         assert!(svg.contains("bilan net : -8000 Wh"));
@@ -274,7 +274,7 @@ mod tests {
         assert_eq!(cumulative_delta(Some(5.0), Some(5.0)), 0);
         assert_eq!(cumulative_delta(None, None), 0);
         assert_eq!(cumulative_delta(Some(10.0), Some(3.0)), 0, "jamais negatif");
-        // `int(1.005 * 1000)` vaut 1004 en reference (1004.9999999999999) ; `int(4.35 * 1000)` vaut 4350.
+        // The reference's `int(1.005 * 1000)` is 1004 (1004.9999999999999); `int(4.35 * 1000)` is 4350.
         assert_eq!(solar_wh_from_qdy(Some(1.005)), 1004);
         assert_eq!(solar_wh_from_qdy(Some(4.35)), 4350);
         assert_eq!(solar_wh_from_qdy(None), 0);

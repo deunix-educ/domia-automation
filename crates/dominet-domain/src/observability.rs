@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Regles d'alerte de **Prometheus** et de **Grafana** (R7 lot 2, ADR 0052) : les entrees (editees dans l'administration), leur
-//! validation, et les documents de provisionnement qui en sont tires (`rules.yml`, `rules.yaml`). Memes regles de construction que
-//! des regles de reference (regroupement, intervalle du premier, requete SQL ou `PromQL`...).
+//! Alert rules of **Prometheus** and **Grafana** (R7 lot 2, ADR 0052): the inputs (edited in the administration), their
+//! validation, and the provisioning documents derived from them (`rules.yml`, `rules.yaml`). Same construction rules as
+//! the reference rules (grouping, interval of the first one, SQL or `PromQL` query...).
 
 use serde_json::{Map, Value, json};
 
@@ -14,7 +14,7 @@ pub struct PrometheusRuleId(pub i64);
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct GrafanaRuleId(pub i64);
 
-/// Duree Prometheus / Grafana : `0` ou une suite de `<n><unite>` (`30s`, `5m`, `1h30m`), unites `ms s m h d w y`.
+/// Prometheus / Grafana duration: `0` or a series of `<n><unit>` (`30s`, `5m`, `1h30m`), units `ms s m h d w y`.
 #[must_use]
 pub fn is_duration(s: &str) -> bool {
     if s == "0" {
@@ -32,14 +32,14 @@ pub fn is_duration(s: &str) -> bool {
             .into_iter()
             .find(|u| rest.starts_with(u));
         let Some(unit) = unit else { return false };
-        // `m` ne doit pas avaler le debut de `ms`.
+        // `m` must not swallow the start of `ms`.
         rest = &rest[unit.len()..];
         any = true;
     }
     any
 }
 
-/// Identifiant stable derive d'un titre (comme `slugify` de reference, borne a 50 caracteres) : minuscules, `a-z0-9`, tirets.
+/// Stable identifier derived from a title (like the reference's `slugify`, limited to 50 characters): lower case, `a-z0-9`, hyphens.
 #[must_use]
 pub fn slugify(title: &str) -> String {
     use unicode_normalization::UnicodeNormalization;
@@ -80,7 +80,7 @@ fn required(out: &mut Vec<(&'static str, Problem)>, field: &'static str, value: 
 
 // ---------------------------------------------------------------------------------------------------------------- Prometheus
 
-/// Regle Prometheus a creer ou a remplacer.
+/// Prometheus rule to create or replace.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PrometheusRuleDraft {
     pub name: String,
@@ -90,13 +90,13 @@ pub struct PrometheusRuleDraft {
     pub for_duration: String,
     pub summary: String,
     pub description: String,
-    /// Intervalle d'evaluation du groupe ; vide = celui de Prometheus.
+    /// Evaluation interval of the group; empty = Prometheus's.
     pub eval_interval: String,
     pub active: bool,
 }
 
 impl PrometheusRuleDraft {
-    /// Tous les problemes, champ par champ.
+    /// All the problems, field by field.
     #[must_use]
     pub fn problems(&self) -> Vec<(&'static str, Problem)> {
         let mut out = vec![];
@@ -121,8 +121,8 @@ pub struct PrometheusRule {
     pub draft: PrometheusRuleDraft,
 }
 
-/// Document `rules.yml` : les regles **actives**, dans l'ordre recu (groupe puis nom), regroupees par groupe. Comme en reference,
-/// l'intervalle du groupe est celui de sa **premiere** regle.
+/// `rules.yml` document: the **active** rules, in the order received (group then name), grouped by group. As in the reference,
+/// the group's interval is that of its **first** rule.
 #[must_use]
 pub fn prometheus_rules_document(rules: &[PrometheusRule]) -> Value {
     let mut groups: Vec<(String, String, Vec<Value>)> = vec![];
@@ -165,10 +165,10 @@ pub fn prometheus_rules_document(rules: &[PrometheusRule]) -> Value {
 pub const NO_DATA_STATES: [&str; 3] = ["NoData", "Alerting", "OK"];
 pub const EXEC_ERR_STATES: [&str; 3] = ["Error", "Alerting", "OK"];
 
-/// Regle Grafana a creer ou a remplacer.
+/// Grafana rule to create or replace.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct GrafanaRuleDraft {
-    /// Vide a la creation : tire du titre (voir [`slugify`]) et rendu unique par le service.
+    /// Empty at creation: derived from the title (see [`slugify`]) and made unique by the service.
     pub uid: String,
     pub title: String,
     pub folder: String,
@@ -236,8 +236,8 @@ pub struct GrafanaRule {
     pub draft: GrafanaRuleDraft,
 }
 
-/// Document `rules.yaml` de provisionnement Grafana : regles **actives**, ordonnees par dossier, groupe, titre ; regroupees par
-/// (dossier, groupe, intervalle). Une source autre que `prometheus` est lue en **SQL brut** (`rawSql`), sinon en `PromQL` instantane.
+/// Grafana provisioning `rules.yaml` document: **active** rules, ordered by folder, group, title; grouped by
+/// (folder, group, interval). A source other than `prometheus` is read as **raw SQL** (`rawSql`), otherwise as an instant `PromQL`.
 #[must_use]
 pub fn grafana_rules_document(rules: &[GrafanaRule]) -> Value {
     type Key = (String, String, String);
@@ -250,7 +250,7 @@ pub fn grafana_rules_document(rules: &[GrafanaRule]) -> Value {
                 d.query_window,
             )
         } else {
-            // Grafana exige `from` > 0 ; la fenetre n'est pas utilisee par la requete SQL elle-meme mais doit etre >= 60 s.
+            // Grafana requires `from` > 0; the window is not used by the SQL query itself but must be >= 60 s.
             (
                 json!({"rawSql": d.expr, "format": "table", "refId": "A"}),
                 d.query_window.max(60),
@@ -299,7 +299,7 @@ pub fn grafana_rules_document(rules: &[GrafanaRule]) -> Value {
     json!({"apiVersion": 1, "groups": groups})
 }
 
-// ------------------------------------------------------------------------------------------------------------ regles livrees
+// ------------------------------------------------------------------------------------------------------------ shipped rules
 
 #[allow(clippy::too_many_arguments)]
 fn shipped_prom(
@@ -325,8 +325,8 @@ fn shipped_prom(
     }
 }
 
-/// Regles Prometheus livrees (graine de `dominet seed`). Reprise de `monitoring/prometheus/rules.yml` de la reference, avec les noms de
-/// metriques de DomiNet (ADR 0051) : plus de reference (le planificateur le remplace) ni de reference.
+/// Shipped Prometheus rules (seed of `dominet seed`). Taken from the reference's `monitoring/prometheus/rules.yml`, with DomiNet's metric
+/// names (ADR 0051): no more reference (the scheduler replaces it) nor reference.
 #[must_use]
 pub fn default_prometheus_rules() -> Vec<PrometheusRuleDraft> {
     use Severity::{Critical, Info, Warning};
@@ -455,10 +455,10 @@ fn shipped_grafana(
     }
 }
 
-/// Regles Grafana livrees : les quatre de `context.yaml` / `alerting/rules.yaml` de la reference, sur les tables et metriques de
-/// DomiNet (`device` au lieu de `automation_device`).
-/// Les quatre ont l'etat « sans donnees » a `OK` : une requete qui ne renvoie rien (aucun `up == 0`, aucune erreur 5xx) signifie que tout va
-/// bien. Avec `NoData` (reglage de la reference), Grafana envoyait une alerte d'anomalie a chaque evaluation (constate a l'installation R8).
+/// Shipped Grafana rules: the four of `context.yaml` / `alerting/rules.yaml` of the reference, on DomiNet's tables and metrics
+/// (`device` instead of `automation_device`).
+/// All four have the "no data" state set to `OK`: a query that returns nothing (no `up == 0`, no 5xx error) means everything is
+/// fine. With `NoData` (the reference's setting), Grafana sent an anomaly alert at every evaluation (observed at the R8 installation).
 #[must_use]
 pub fn default_grafana_rules() -> Vec<GrafanaRuleDraft> {
     use Severity::{Critical, Warning};
@@ -525,7 +525,7 @@ fn yaml_key(k: &str) -> String {
 
 fn yaml_scalar(v: &Value) -> String {
     match v {
-        // Chaine JSON = chaine YAML entre guillemets (memes echappements `\n`, `\"`, `\\`, `\uXXXX`).
+        // A JSON string = a quoted YAML string (same escapes `\n`, `\"`, `\\`, `\uXXXX`).
         Value::String(_) | Value::Number(_) | Value::Bool(_) => v.to_string(),
         Value::Null => "null".into(),
         Value::Array(_) => "[]".into(),
@@ -558,7 +558,7 @@ fn yaml_into(v: &Value, indent: usize, out: &mut String) {
                 let nested = matches!(item, Value::Object(m) if !m.is_empty())
                     || matches!(item, Value::Array(a) if !a.is_empty());
                 if nested {
-                    // `- cle: valeur` puis les autres cles alignees sous la premiere.
+                    // `- key: value` then the other keys aligned under the first one.
                     let mut inner = String::new();
                     yaml_into(item, indent + 2, &mut inner);
                     put(
@@ -575,8 +575,8 @@ fn yaml_into(v: &Value, indent: usize, out: &mut String) {
     }
 }
 
-/// Texte YAML (blocs, chaines entre guillemets) d'un document JSON : le JSON est un sous-ensemble de YAML, ce rendu n'en change
-/// que la presentation pour qu'un humain relise le fichier.
+/// YAML text (blocks, quoted strings) of a JSON document: JSON is a subset of YAML, this rendering only changes
+/// its presentation so that a human can re-read the file.
 #[must_use]
 pub fn to_yaml(v: &Value) -> String {
     let mut out = String::new();

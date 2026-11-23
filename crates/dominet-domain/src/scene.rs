@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Scenes (R4, ADR 0031) : un ensemble de commandes appliquees ensemble a plusieurs appareils.
+//! Scenes (R4, ADR 0031): a set of commands applied together to several devices.
 //!
-//! Activer une scene = publier chaque commande sur le topic de commande de son appareil, **dans l'ordre**, en QoS 1. Une action en
-//! echec n'arrete pas les suivantes (comme l'implementation de reference) : les erreurs sont rapportees a la fin.
+//! Activating a scene = publishing each command on its device's command topic, **in order**, at QoS 1. A failing action does not stop
+//! the following ones (like the reference implementation): the errors are reported at the end.
 
 use serde_json::Value;
 
@@ -17,7 +17,7 @@ pub struct SceneId(pub i64);
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct SceneActionId(pub i64);
 
-/// Au plus autant d'actions par scene (garde-fou, reference n'en bornait pas).
+/// At most this many actions per scene (safeguard, the reference did not limit them).
 pub const MAX_SCENE_ACTIONS: usize = 100;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -36,11 +36,11 @@ pub struct Scene {
     pub description: String,
     pub location: Option<LocationId>,
     pub active: bool,
-    /// Dans l'ordre de publication.
+    /// In publication order.
     pub actions: Vec<SceneAction>,
 }
 
-/// Une commande a enregistrer (sa position est son rang dans la liste).
+/// A command to save (its position is its rank in the list).
 #[derive(Debug, Clone, PartialEq)]
 pub struct SceneActionDraft {
     pub device: DeviceId,
@@ -70,7 +70,7 @@ impl SceneDraft {
         }
     }
 
-    /// Problemes champ par champ. `actions` : trop nombreuses, ou une commande qui n'est pas un objet JSON admis.
+    /// Field-by-field problems. `actions`: too many, or a command that is not an allowed JSON object.
     #[must_use]
     pub fn problems(&self) -> Vec<(&'static str, Problem)> {
         let mut out = vec![];

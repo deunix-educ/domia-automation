@@ -1,22 +1,22 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Expressions cron a cinq champs (minute heure jour-du-mois mois jour-de-semaine), avec la syntaxe de les evenements solaires de reference
-//! qu'utilisait l'implementation de reference : `*`, `n`, `a-b`, `a-b/s`, `*/s`, listes separees par des virgules. Le jour de semaine va de
-//! **0 (dimanche) a 6 (samedi)** ; les noms `sun` a `sat` sont admis. Une plage a l'envers (`22-3`) fait le tour du champ.
+//! Five-field cron expressions (minute hour day-of-month month day-of-week), with the syntax used by
+//! the reference implementation: `*`, `n`, `a-b`, `a-b/s`, `*/s`, comma-separated lists. The day of week goes from
+//! **0 (Sunday) to 6 (Saturday)**; the names `sun` to `sat` are allowed. A reversed range (`22-3`) wraps around the field.
 //!
-//! Ce module analyse et valide ; le calcul du prochain passage (fuseau, changement d'heure) est celui du planificateur.
+//! This module parses and validates; the computation of the next run (time zone, clock change) is the scheduler's.
 
 use chrono::{Datelike, Duration, NaiveDate, NaiveDateTime, NaiveTime, Timelike};
 
 use crate::error::Problem;
 
-/// Valeurs admises d'un champ, triees et sans doublon.
+/// Allowed values of a field, sorted and without duplicates.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CronSpec {
     pub minutes: Vec<u8>,
     pub hours: Vec<u8>,
     pub days_of_month: Vec<u8>,
     pub months: Vec<u8>,
-    /// 0 = dimanche.
+    /// 0 = Sunday.
     pub days_of_week: Vec<u8>,
 }
 
@@ -29,7 +29,7 @@ pub enum CronError {
 }
 
 impl CronError {
-    /// Motif de formulaire correspondant.
+    /// Matching form pattern.
     #[must_use]
     pub fn problem(self) -> Problem {
         match self {
@@ -74,7 +74,7 @@ fn field(
                 number(b, min, max, weekday).ok_or(bad)?,
             );
             if to < from {
-                // Plage a l'envers : elle fait le tour du champ (comme un cron classique).
+                // Reversed range: it wraps around the field (like a classic cron).
                 (from..=max).chain(min..=to).collect()
             } else {
                 (from..=to).collect()
@@ -82,7 +82,7 @@ fn field(
         } else if step == 1 {
             vec![number(range, min, max, weekday).ok_or(bad)?]
         } else {
-            // `n/s` : de n jusqu'a la fin du champ, de s en s.
+            // `n/s`: from n to the end of the field, every s.
             (number(range, min, max, weekday).ok_or(bad)?..=max).collect()
         };
         out.extend(values.into_iter().step_by(usize::from(step)));
@@ -94,7 +94,7 @@ fn field(
 
 impl CronSpec {
     /// # Errors
-    /// [`CronError`] : nombre de champs, ou champ hors plage / mal forme.
+    /// [`CronError`]: number of fields, or field out of range / malformed.
     pub fn parse(expr: &str) -> Result<Self, CronError> {
         let fields: Vec<&str> = expr.split_whitespace().collect();
         let [minute, hour, dom, month, dow] = fields.as_slice() else {
@@ -109,12 +109,12 @@ impl CronSpec {
         })
     }
 
-    /// Plus petit instant **strictement posterieur** a `after` (heure locale « murale ») qui correspond a l'expression, a la
-    /// minute pile. Comme un cron classique, le jour doit correspondre au jour du mois **et** au jour de la semaine. `None` si rien ne
-    /// correspond dans les huit ans qui suivent (expression impossible, par exemple le 31 avril).
+    /// Smallest instant **strictly after** `after` ("wall-clock" local time) that matches the expression, at the
+    /// exact minute. Like a classic cron, the day must match the day of the month **and** the day of the week. `None` if nothing
+    /// matches in the following eight years (impossible expression, for example 31 April).
     #[must_use]
     pub fn next_after(&self, after: NaiveDateTime) -> Option<NaiveDateTime> {
-        // Minute pile suivante.
+        // Next exact minute.
         let start = after.with_second(0)?.with_nanosecond(0)? + Duration::minutes(1);
         let mut date = start.date();
         let mut first_day = true;
@@ -177,13 +177,13 @@ mod tests {
             c.next_after(at(2026, 11, 3, 0, 5, 30)),
             Some(at(2026, 11, 4, 0, 5, 0))
         );
-        // Jour du mois ET jour de la semaine (cron classique) : le premier lundi qui est un 1er.
+        // Day of the month AND day of the week (classic cron): the first Monday that is a 1st.
         let c = CronSpec::parse("0 7 1 * mon").unwrap();
         assert_eq!(
             c.next_after(at(2026, 1, 15, 0, 0, 0)),
             Some(at(2026, 6, 1, 7, 0, 0))
         );
-        // Le 29 fevrier, et une expression impossible.
+        // 29 February, and an impossible expression.
         let c = CronSpec::parse("0 0 29 2 *").unwrap();
         assert_eq!(
             c.next_after(at(2028, 3, 1, 0, 0, 0)),

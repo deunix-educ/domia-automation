@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Comptes utilisateurs.
+//! User accounts.
 
 use std::fmt;
 use std::str::FromStr;
@@ -17,7 +17,7 @@ impl fmt::Display for UserId {
     }
 }
 
-/// Role d'un compte : `admin` gere tout, `user` consulte et commande.
+/// Role of an account: `admin` manages everything, `user` views and commands.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Role {
     Admin,
@@ -53,13 +53,13 @@ impl FromStr for Role {
     }
 }
 
-/// Nom d'utilisateur valide : 1 a 150 caracteres, lettres, chiffres ou `@ . + - _`, sans espace.
+/// Valid username: 1 to 150 characters, letters, digits or `@ . + - _`, no space.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Username(String);
 
 impl Username {
     /// # Errors
-    /// Refuse un nom vide, trop long ou contenant un caractere non autorise.
+    /// Refuses an empty name, one that is too long or contains a disallowed character.
     pub fn parse(raw: &str) -> Result<Self, ValidationError> {
         let n = raw.chars().count();
         if n == 0 || n > 150 {
@@ -90,7 +90,7 @@ impl fmt::Display for Username {
     }
 }
 
-/// Champs d'un compte saisis dans l'administration, a verifier avant ecriture.
+/// Account fields entered in the administration, to check before writing.
 #[derive(Debug, Clone, Copy)]
 pub struct AccountFields<'a> {
     pub email: &'a str,
@@ -103,7 +103,7 @@ impl AccountFields<'_> {
     pub const EMAIL_MAX: usize = 254;
     pub const NAME_MAX: usize = 150;
 
-    /// Problemes champ par champ (`email`, `first_name`, `last_name`, `mobile`).
+    /// Field-by-field problems (`email`, `first_name`, `last_name`, `mobile`).
     #[must_use]
     pub fn problems(&self) -> Vec<(&'static str, Problem)> {
         let mut out = vec![];
@@ -148,7 +148,7 @@ impl AccountFields<'_> {
 }
 
 impl Username {
-    /// Raison pour laquelle `raw` n'est pas un nom d'utilisateur valide (`None` s'il l'est).
+    /// Reason why `raw` is not a valid username (`None` if it is).
     #[must_use]
     pub fn problem(raw: &str) -> Option<Problem> {
         let n = raw.chars().count();
@@ -164,10 +164,10 @@ impl Username {
     }
 }
 
-/// Normalise un numero de mobile (ex. `+33 6 12 34 56 78` -> `+33612345678`) ; vide est accepte.
+/// Normalises a mobile number (e.g. `+33 6 12 34 56 78` -> `+33612345678`); empty is accepted.
 ///
 /// # Errors
-/// Refuse tout ce qui n'est pas `+` optionnel suivi de 6 a 19 chiffres.
+/// Refuses anything that is not an optional `+` followed by 6 to 19 digits.
 pub fn normalize_mobile(raw: &str) -> Result<String, ValidationError> {
     let cleaned: String = raw
         .chars()
@@ -202,7 +202,7 @@ pub struct User {
 }
 
 impl User {
-    /// Prenom + nom s'ils existent, sinon le nom d'utilisateur (comme `User.__str__` en reference).
+    /// First name + last name if they exist, otherwise the username (like `User.__str__` in the reference).
     #[must_use]
     pub fn display_name(&self) -> String {
         let full = format!("{} {}", self.first_name.trim(), self.last_name.trim());
@@ -215,7 +215,7 @@ impl User {
     }
 }
 
-/// Donnees d'un compte a creer ; le mot de passe arrive deja haché (argon2id).
+/// Data of an account to create; the password arrives already hashed (argon2id).
 #[derive(Clone)]
 pub struct NewUser {
     pub username: Username,
@@ -237,7 +237,7 @@ impl fmt::Debug for NewUser {
     }
 }
 
-/// Champs modifiables d'un compte (le nom d'utilisateur et le mot de passe ont leurs propres operations).
+/// Editable fields of an account (the username and the password have their own operations).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct UserProfile {
     pub email: String,
@@ -248,7 +248,7 @@ pub struct UserProfile {
     pub is_active: bool,
 }
 
-/// Compte + condensat du mot de passe, pour la verification a la connexion uniquement.
+/// Account + password hash, for verification at login only.
 #[derive(Clone)]
 pub struct Credentials {
     pub user: User,

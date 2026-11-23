@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Trames de l'application Android (`tests/fixtures/android/frames.json`, tirees du code Kotlin non modifie) : le serveur Rust doit
-//! lire exactement ce que l'application envoie et produire exactement ce qu'elle comprend.
+//! Frames of the Android application (`tests/fixtures/android/frames.json`, taken from the unmodified Kotlin code): the Rust server must
+//! read exactly what the application sends and produce exactly what it understands.
 
 use chrono::DateTime;
 use dominet_domain::android::{DeviceFrame, ServerFrame, parse_device_frame};

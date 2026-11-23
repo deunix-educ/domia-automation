@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Automations (R4, ADR 0031) : un declencheur, une condition facultative, une action.
+//! Automations (R4, ADR 0031): a trigger, an optional condition, an action.
 //!
-//! Types **forts** en memoire, JSON **de l'implementation de reference** en base (`trigger_type` + `trigger_config`, `action_type` +
-//! `action_config`, `condition`) : les automations de la production se chargent telles quelles. les plugins deviennent des `script`
-//! (Rhai, code dans `script`). Les regles de validation sont ici, appliquees pareil par les pages, la CLI et les tests.
+//! **Strong** types in memory, the **reference implementation's** JSON in the database (`trigger_type` + `trigger_config`, `action_type` +
+//! `action_config`, `condition`): the production automations load as they are. The plugins become `script`s
+//! (Rhai, code in `script`). The validation rules are here, applied the same way by the pages, the CLI and the tests.
 
 use chrono::{DateTime, Utc};
 use serde_json::{Map, Value, json};
@@ -19,10 +19,10 @@ use crate::scene::SceneId;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct AutomationId(pub i64);
 
-/// Problemes champ par champ (les noms sont ceux des champs du formulaire).
+/// Field-by-field problems (the names are those of the form fields).
 pub type Problems = Vec<(&'static str, Problem)>;
 
-/// Les neuf evenements solaires de reference (les evenements solaires de reference).
+/// The nine solar events of the reference.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum SolarEvent {
     Sunrise,
@@ -70,23 +70,23 @@ impl SolarEvent {
     }
 }
 
-/// Ce qui declenche une automation.
+/// What triggers an automation.
 #[derive(Debug, Clone, PartialEq)]
 pub enum Trigger {
-    /// Un message dont le topic correspond au filtre (jokers `+` et `#`) et dont le payload contient `payload_filter`.
+    /// A message whose topic matches the filter (wildcards `+` and `#`) and whose payload contains `payload_filter`.
     MqttMessage {
         topic: String,
         payload_filter: Map<String, Value>,
     },
-    /// Une expression cron a cinq champs, a l'heure locale.
+    /// A cron expression with five fields, in local time.
     Schedule { cron: String },
-    /// Un evenement solaire au lieu donne.
+    /// A solar event at the given place.
     Solar {
         event: SolarEvent,
         latitude: f64,
         longitude: f64,
     },
-    /// Un message d'etat de l'appareil dont `etat[key]` vaut `value` (le sens est celui de l'ADR 0031, pas celui de la reference).
+    /// A device state message whose `state[key]` equals `value` (the meaning is that of ADR 0031, not the reference's).
     DeviceState {
         friendly_name: String,
         key: String,
@@ -115,7 +115,7 @@ impl Trigger {
         }
     }
 
-    /// Configuration JSON, de la forme de la reference.
+    /// JSON configuration, in the reference's shape.
     #[must_use]
     pub fn config(&self) -> Value {
         match self {
@@ -145,10 +145,10 @@ impl Trigger {
         }
     }
 
-    /// Lit un declencheur depuis `trigger_type` + `trigger_config`.
+    /// Reads a trigger from `trigger_type` + `trigger_config`.
     ///
     /// # Errors
-    /// Les problemes de forme (champ absent, mauvais type) puis de valeur.
+    /// Shape problems (absent field, wrong type) then value problems.
     pub fn from_parts(kind: &str, cfg: &Value) -> Result<Self, Problems> {
         let missing = |field: &'static str| vec![(field, Problem::Required)];
         let trigger = match kind {
@@ -268,7 +268,7 @@ impl Trigger {
     }
 }
 
-/// Condition facultative : si `key` est dans le payload, il doit valoir `value` ; sinon la condition est vraie (comme la reference).
+/// Optional condition: if `key` is in the payload, it must equal `value`; otherwise the condition is true (like the reference).
 #[derive(Debug, Clone, PartialEq)]
 pub struct Condition {
     pub key: String,
@@ -276,10 +276,10 @@ pub struct Condition {
 }
 
 impl Condition {
-    /// `{}` (ou `null`) = aucune condition.
+    /// `{}` (or `null`) = no condition.
     ///
     /// # Errors
-    /// Cle absente ou invalide.
+    /// Absent or invalid key.
     pub fn from_json(v: &Value) -> Result<Option<Self>, Problems> {
         match v {
             Value::Null => Ok(None),
@@ -304,8 +304,8 @@ impl Condition {
             .map_or_else(|| json!({}), |c| json!({"key": c.key, "value": c.value}))
     }
 
-    /// Vrai si le payload ne contient pas la cle, ou si elle y vaut `value` (egalite de la reference, voir [`loose_equal`]). Un payload
-    /// qui n'est pas un objet n'a pas la cle : la condition est vraie.
+    /// True if the payload does not contain the key, or if it equals `value` there (the reference's equality, see [`loose_equal`]). A payload
+    /// that is not an object does not have the key: the condition is true.
     #[must_use]
     pub fn holds(&self, payload: &Value) -> bool {
         payload
@@ -314,8 +314,8 @@ impl Condition {
     }
 }
 
-/// Egalite de deux valeurs JSON comme `==` en Reference : un nombre vaut le meme nombre quelle que soit sa forme (`1` = `1.0`),
-/// et un booleen vaut `0` / `1` (`True == 1`), y compris dans les listes et objets.
+/// Equality of two JSON values like `==` in the reference: a number equals the same number whatever its form (`1` = `1.0`),
+/// and a boolean equals `0` / `1` (`True == 1`), including inside lists and objects.
 #[must_use]
 pub fn loose_equal(a: &Value, b: &Value) -> bool {
     fn number(v: &Value) -> Option<f64> {
@@ -335,16 +335,16 @@ pub fn loose_equal(a: &Value, b: &Value) -> bool {
                     .all(|(k, v)| y.get(k).is_some_and(|w| loose_equal(v, w)))
         }
         _ => match (number(a), number(b)) {
-            #[allow(clippy::float_cmp)] // comme la reference : comparaison exacte
+            #[allow(clippy::float_cmp)] // like the reference: exact comparison
             (Some(x), Some(y)) => x == y,
             _ => a == b,
         },
     }
 }
 
-/// Filtre de payload d'un declencheur `mqtt_message` : chaque couple du filtre doit etre egal a la valeur du payload. Une cle
-/// absente du payload vaut `null` (`payload.get(k) == v` en Reference : un filtre `null` la laisse passer). Un payload qui n'est
-/// pas un objet ne passe que le filtre vide.
+/// Payload filter of an `mqtt_message` trigger: each pair of the filter must equal the payload's value. A key
+/// absent from the payload is `null` (`payload.get(k) == v` in the reference: a `null` filter lets it through). A payload that is
+/// not an object only passes the empty filter.
 #[must_use]
 pub fn payload_filter_holds(filter: &Map<String, Value>, payload: &Value) -> bool {
     let Some(object) = payload.as_object() else {
@@ -355,7 +355,7 @@ pub fn payload_filter_holds(filter: &Map<String, Value>, payload: &Value) -> boo
         .all(|(k, v)| loose_equal(object.get(k).unwrap_or(&Value::Null), v))
 }
 
-/// Forme texte d'un scalaire (`28` -> `28`, `true` -> `true`, `"28"` -> `28`).
+/// Text form of a scalar (`28` -> `28`, `true` -> `true`, `"28"` -> `28`).
 fn scalar_text(v: &Value) -> Option<String> {
     match v {
         Value::String(s) => Some(s.clone()),
@@ -365,8 +365,8 @@ fn scalar_text(v: &Value) -> Option<String> {
     }
 }
 
-/// Sens de `device_state` (ADR 0031, D2) : l'etat contient `key` et sa valeur egale `value`, par la forme texte des scalaires
-/// (`28` = `"28"`) ou numeriquement (`28.0` = `28`). Les valeurs non scalaires ne correspondent jamais.
+/// Meaning of `device_state` (ADR 0031, D2): the state contains `key` and its value equals `value`, by the text form of scalars
+/// (`28` = `"28"`) or numerically (`28.0` = `28`). Non-scalar values never match.
 #[must_use]
 pub fn device_state_holds(key: &str, value: &Value, state: &Value) -> bool {
     let Some(seen) = state.get(key) else {
@@ -381,15 +381,15 @@ pub fn device_state_holds(key: &str, value: &Value, state: &Value) -> bool {
     }
 }
 
-/// Valeur saisie dans un formulaire : du JSON s'il en est (`28`, `true`, `"28"`, `[1]`), sinon le texte tel quel (`ON`). Pour
-/// forcer un texte qui ressemble a du JSON (`28`), l'entourer de guillemets.
+/// Value entered in a form: JSON if it is some (`28`, `true`, `"28"`, `[1]`), otherwise the text as is (`ON`). To
+/// force a text that looks like JSON (`28`), surround it with quotes.
 #[must_use]
 pub fn value_from_text(text: &str) -> Value {
     let t = text.trim();
     serde_json::from_str::<Value>(t).unwrap_or_else(|_| Value::String(t.to_string()))
 }
 
-/// Inverse de [`value_from_text`] : un texte s'affiche tel quel, entre guillemets seulement s'il serait relu autrement.
+/// Inverse of [`value_from_text`]: a text is displayed as is, in quotes only if it would be read back differently.
 #[must_use]
 pub fn value_to_text(v: &Value) -> String {
     match v {
@@ -398,16 +398,16 @@ pub fn value_to_text(v: &Value) -> String {
     }
 }
 
-/// Ce que fait une automation.
+/// What an automation does.
 #[derive(Debug, Clone, PartialEq)]
 pub enum Action {
     MqttPublish {
         topic: String,
         payload: Value,
     },
-    /// Le code Rhai est dans [`AutomationDraft::script`].
+    /// The Rhai code is in [`AutomationDraft::script`].
     Script,
-    /// Journal et bandeau dans l'interface (l'envoi par SMS / e-mail / Android arrive avec R5).
+    /// Log and banner in the interface (sending by SMS / e-mail / Android comes with R5).
     Notification {
         message: String,
         sms: bool,
@@ -440,10 +440,10 @@ impl Action {
         }
     }
 
-    /// Lit une action depuis `action_type` + `action_config` (`script` : le code est dans le champ `script` de l'automation).
+    /// Reads an action from `action_type` + `action_config` (`script`: the code is in the automation's `script` field).
     ///
     /// # Errors
-    /// Problemes de forme puis de valeur.
+    /// Shape problems then value problems.
     pub fn from_parts(kind: &str, cfg: &Value) -> Result<Self, Problems> {
         let action = match kind {
             "mqtt_publish" => Self::MqttPublish {
@@ -498,7 +498,7 @@ impl Action {
     }
 }
 
-/// Une automation a enregistrer.
+/// An automation to save.
 #[derive(Debug, Clone, PartialEq)]
 pub struct AutomationDraft {
     pub name: String,
@@ -507,11 +507,11 @@ pub struct AutomationDraft {
     pub trigger: Trigger,
     pub condition: Option<Condition>,
     pub action: Action,
-    /// Code Rhai de l'action `script`.
+    /// Rhai code of the `script` action.
     pub script: String,
 }
 
-/// Les cinq colonnes JSON / texte d'une automation en base.
+/// The five JSON / text columns of an automation in the database.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Parts {
     pub trigger_type: &'static str,
@@ -548,10 +548,10 @@ impl AutomationDraft {
         }
     }
 
-    /// Reconstruit un brouillon depuis les colonnes de la base ou depuis un `context.yaml`.
+    /// Rebuilds a draft from the database columns or from a `context.yaml`.
     ///
     /// # Errors
-    /// Les problemes du declencheur, de la condition et de l'action, ensemble.
+    /// The problems of the trigger, the condition and the action, together.
     #[allow(clippy::too_many_arguments)]
     pub fn from_parts(
         name: &str,
@@ -627,7 +627,7 @@ impl AutomationDraft {
     }
 }
 
-/// Une automation enregistree.
+/// A saved automation.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Automation {
     pub id: AutomationId,
@@ -636,14 +636,14 @@ pub struct Automation {
     pub trigger_count: i32,
 }
 
-/// Issue d'un declenchement, inscrite au journal.
+/// Outcome of a trigger, written to the log.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum RunStatus {
     Ok,
     Error,
-    /// Condition fausse ou action sans effet.
+    /// False condition or action with no effect.
     Skipped,
-    /// Ignore par le garde-fou anti-boucle.
+    /// Ignored by the anti-loop safeguard.
     Limited,
 }
 
@@ -666,7 +666,7 @@ impl RunStatus {
     }
 }
 
-/// Une ligne du journal d'execution.
+/// A row of the execution log.
 #[derive(Debug, Clone, PartialEq)]
 pub struct AutomationRun {
     pub automation: AutomationId,
@@ -681,7 +681,7 @@ pub struct AutomationRun {
 mod tests {
     use super::*;
 
-    #[allow(clippy::needless_pass_by_value)] // les cas de test sont ecrits en `json!` temporaires
+    #[allow(clippy::needless_pass_by_value)] // the test cases are written in temporary `json!`
     fn parse(
         trigger_type: &str,
         tc: Value,
@@ -764,9 +764,9 @@ mod tests {
         assert!(payload_filter_holds(&f(json!({"n": 2.0})), &p));
         assert!(!payload_filter_holds(&f(json!({"action": "double"})), &p));
         assert!(!payload_filter_holds(&f(json!({"absent": 1})), &p));
-        // Reference : une cle absente vaut None, qui egale un filtre `null`.
+        // Reference: an absent key is None, which equals a `null` filter.
         assert!(payload_filter_holds(&f(json!({"absent": null})), &p));
-        // Un payload texte ne passe que le filtre vide.
+        // A text payload only passes the empty filter.
         assert!(payload_filter_holds(&Map::new(), &json!("online")));
         assert!(!payload_filter_holds(&f(json!({"a": 1})), &json!("online")));
     }

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Messagerie interne (R5, ADR 0037) : un message vers plusieurs utilisateurs, par e-mail, SMS ou les deux.
+//! Internal messaging (R5, ADR 0037): a message to several users, by e-mail, SMS or both.
 
 use chrono::{DateTime, Utc};
 
@@ -9,7 +9,7 @@ use crate::user::UserId;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct MessageId(pub i64);
 
-/// Un destinataire d'un message (ligne `message_recipient`) : sert aussi d'origine aux SMS en file.
+/// A recipient of a message (`message_recipient` row): also serves as the origin of queued SMS.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct DeliveryId(pub i64);
 
@@ -73,13 +73,13 @@ impl MessageStatus {
     }
 }
 
-/// Etat d'un envoi (e-mail ou SMS) pour un destinataire.
+/// State of a sending (e-mail or SMS) for a recipient.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum DeliveryStatus {
     Pending,
     Sent,
     Failed,
-    /// Canal non demande, ou destinataire sans adresse / sans mobile.
+    /// Channel not requested, or recipient without an address / without a mobile.
     NotApplicable,
 }
 
@@ -126,7 +126,7 @@ pub struct Delivery {
     pub updated_at: DateTime<Utc>,
 }
 
-/// Ce que l'utilisateur saisit pour ecrire un message.
+/// What the user enters to write a message.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MessageDraft {
     pub subject: String,
@@ -136,7 +136,7 @@ pub struct MessageDraft {
 }
 
 impl MessageDraft {
-    /// Problemes champ par champ (`subject`, `body`, `recipients`).
+    /// Field-by-field problems (`subject`, `body`, `recipients`).
     #[must_use]
     pub fn problems(&self) -> Vec<(&'static str, Problem)> {
         let mut out = vec![];
@@ -155,8 +155,8 @@ impl MessageDraft {
     }
 }
 
-/// Etats initiaux d'un destinataire selon le canal et ce qu'il possede (`(email, sms)`) : `pending` seulement si le canal est demande
-/// **et** la coordonnee existe, sinon `na`.
+/// Initial states of a recipient according to the channel and what they have (`(email, sms)`): `pending` only if the channel is requested
+/// **and** the contact detail exists, otherwise `na`.
 #[must_use]
 pub fn initial_statuses(
     channel: Channel,
@@ -176,7 +176,7 @@ pub fn initial_statuses(
     )
 }
 
-/// Etat final d'un message : `sent` quand plus aucun envoi n'est en attente.
+/// Final state of a message: `sent` when no sending is pending any more.
 #[must_use]
 pub fn is_complete(deliveries: &[Delivery]) -> bool {
     deliveries

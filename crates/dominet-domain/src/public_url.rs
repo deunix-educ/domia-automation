@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! URL publiques (WebRTC, R6) adaptees a l'hote par lequel le navigateur est arrive.
+//! Public URLs (WebRTC, R6) adapted to the host the browser arrived through.
 //!
-//! Les reglages (`MEDIAMTX_WEBRTC_DOMAIN`) contiennent le nom du reseau local (`dominet.local`). Un navigateur qui joint DomiNet par
-//! une autre adresse (IP du reseau local, second VPN...) ne sait pas forcement resoudre ce nom : on remplace alors l'hote configure
-//! par celui de la requete, **si** l'hote configure est un des hotes propres de l'instance (`ALLOWED_HOSTS`). MediaMTX et DomiNet sont
-//! servis par le meme nginx, donc sur le meme hote.
+//! The settings (`MEDIAMTX_WEBRTC_DOMAIN`) contain the local network name (`dominet.local`). A browser that reaches DomiNet through
+//! another address (local network IP, second VPN...) may not be able to resolve that name: the configured host is then replaced
+//! by the request's, **if** the configured host is one of the instance's own hosts (`ALLOWED_HOSTS`). MediaMTX and DomiNet are
+//! served by the same nginx, so on the same host.
 
-/// Hotes propres a l'instance : `ALLOWED_HOSTS` sans les adresses purement locales ni les jokers.
+/// Hosts of the instance itself: `ALLOWED_HOSTS` without the purely local addresses or the wildcards.
 #[must_use]
 pub fn own_hosts(allowed: &[String]) -> Vec<String> {
     allowed
@@ -20,7 +20,7 @@ pub fn own_hosts(allowed: &[String]) -> Vec<String> {
         .collect()
 }
 
-/// Hote (sans port) d'un texte `[schema://]hote[:port][/chemin]` ; les crochets d'une adresse IPv6 sont retires.
+/// Host (without port) of a text `[scheme://]host[:port][/path]`; the brackets of an IPv6 address are removed.
 fn host_of(authority_and_path: &str) -> String {
     let authority = authority_and_path
         .split(['/', '?', '#'])
@@ -37,10 +37,10 @@ fn host_of(authority_and_path: &str) -> String {
         .to_ascii_lowercase()
 }
 
-/// `configured` avec l'hote de la requete, si l'hote configure est un des notres ; sinon `configured` tel quel.
+/// `configured` with the request's host, if the configured host is one of ours; otherwise `configured` as is.
 ///
-/// Le schema, le port et le chemin configures sont conserves. Une valeur sans schema (`dominet.local:8889`) reste sans schema.
-/// `request_host` est l'en-tete `Host` (avec son port eventuel).
+/// The configured scheme, port and path are kept. A value without a scheme (`dominet.local:8889`) stays without a scheme.
+/// `request_host` is the `Host` header (with its possible port).
 #[must_use]
 pub fn public_url(configured: &str, request_host: Option<&str>, own_hosts: &[String]) -> String {
     let Some(request_host) = request_host else {
@@ -59,13 +59,13 @@ pub fn public_url(configured: &str, request_host: Option<&str>, own_hosts: &[Str
     {
         return configured.to_string();
     }
-    // Reste apres l'hote : port et chemin.
+    // What remains after the host: port and path.
     let after_host = if rest.starts_with('[') {
         rest.split_once(']').map_or("", |(_, r)| r)
     } else {
         rest.strip_prefix(configured_host.as_str())
             .or_else(|| {
-                // Casse differente dans la configuration : on retire autant de caracteres que l'hote.
+                // Different case in the configuration: we remove as many characters as the host.
                 rest.get(configured_host.len()..)
             })
             .unwrap_or("")
@@ -116,12 +116,12 @@ mod tests {
             ),
             "https://192.168.1.2/webrtc"
         );
-        // Sans schema, sans schema.
+        // Without a scheme, without a scheme.
         assert_eq!(
             public_url("dominet.local:8889", Some("192.168.1.2"), &own),
             "192.168.1.2:8889"
         );
-        // Hote de requete IPv6.
+        // IPv6 request host.
         assert_eq!(
             public_url("http://dominet.local:8889", Some("[fd00::1]:3000"), &own),
             "http://[fd00::1]:8889"
@@ -131,7 +131,7 @@ mod tests {
     #[test]
     fn the_configured_value_is_kept_in_every_other_case() {
         let own = own();
-        // Pas de requete, meme hote, hote configure qui n'est pas le notre (externe, localhost), valeur vide.
+        // No request, same host, configured host that is not ours (external, localhost), empty value.
         assert_eq!(
             public_url("http://dominet.local:8889", None, &own),
             "http://dominet.local:8889"
@@ -153,7 +153,7 @@ mod tests {
             "https://cdn.exemple.com"
         );
         assert_eq!(public_url("", Some("192.168.1.2"), &own), "");
-        // Un nom d'hote ne se compare pas selon la casse.
+        // A host name is not compared case-sensitively.
         assert_eq!(
             public_url("http://DOMINET.local:8889", Some("192.168.1.2"), &own),
             "http://192.168.1.2:8889"

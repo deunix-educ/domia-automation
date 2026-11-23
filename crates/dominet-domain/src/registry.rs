@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Donnees initiales : les reglages applicatifs connus et la navigation par defaut.
+//! Initial data: the known application settings and the default navigation.
 //!
-//! Registre des reglages et navigation par defaut. Les cles sensibles sont secretes : leur valeur est chiffree au repos (ADR 0011).
+//! Settings registry and default navigation. Sensitive keys are secret: their value is encrypted at rest (ADR 0011).
 
 use crate::navbar::{NavPosition, NavbarDraft};
 use crate::setting::{SettingDraft, SettingKey, SettingType, is_sensitive_key};
 
-/// Un reglage connu : sa forme et sa valeur par defaut.
+/// A known setting: its shape and default value.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct SettingSpec {
     pub key: &'static str,
@@ -17,16 +17,16 @@ pub struct SettingSpec {
 }
 
 impl SettingSpec {
-    /// Secret si la cle designe une cle API, un mot de passe ou un jeton.
+    /// Secret if the key designates an API key, a password or a token.
     #[must_use]
     pub fn is_secret(&self) -> bool {
         is_sensitive_key(self.key)
     }
 
-    /// Brouillon d'ecriture avec la valeur par defaut ou la valeur fournie.
+    /// Write draft with the default value or the supplied value.
     ///
     /// # Panics
-    /// Jamais pour les entrees de [`SETTINGS`] (cles verifiees par les tests).
+    /// Never for the entries of [`SETTINGS`] (keys checked by the tests).
     #[must_use]
     pub fn draft(&self, value: &str) -> SettingDraft {
         SettingDraft {
@@ -58,7 +58,7 @@ const fn spec(
 
 use SettingType::{Bool, Float, Int, Str};
 
-/// Les 17 reglages applicatifs.
+/// The 17 application settings.
 pub const SETTINGS: [SettingSpec; 17] = [
     spec(
         "EMAIL_RECIPIENT",
@@ -181,13 +181,13 @@ pub const SETTINGS: [SettingSpec; 17] = [
     ),
 ];
 
-/// Le reglage de ce nom, s'il est connu.
+/// The setting of that name, if it is known.
 #[must_use]
 pub fn setting_spec(key: &str) -> Option<&'static SettingSpec> {
     SETTINGS.iter().find(|s| s.key == key)
 }
 
-/// Navigation par defaut : haut puis bas. L'icone et le libelle de Zigbee2MQTT etaient inverses dans le seed reference.
+/// Default navigation: top then bottom. The Zigbee2MQTT icon and label were swapped in the reference seed.
 #[must_use]
 pub fn default_navbar() -> Vec<NavbarDraft> {
     let item =
@@ -226,7 +226,7 @@ pub fn default_navbar() -> Vec<NavbarDraft> {
             10,
             "activity",
             "Observabilite",
-            // reference avait une page `/observability/` ; ici ce sont les tableaux Grafana (les alertes ont leur propre lien).
+            // The reference had an `/observability/` page; here these are the Grafana dashboards (the alerts have their own link).
             "/grafana/",
             "_self",
             false,
@@ -297,7 +297,7 @@ mod tests {
     fn every_default_matches_its_declared_type_and_validates() {
         for s in &SETTINGS {
             if s.default.is_empty() {
-                continue; // un reglage non renseigne (identifiants SMS)
+                continue; // a setting not set (SMS identifiers)
             }
             assert!(
                 SettingValue::parse(s.default, s.value_type).is_ok(),
@@ -308,7 +308,7 @@ mod tests {
             assert!(s.draft(s.default).validate().is_ok(), "{}", s.key);
         }
         for s in SETTINGS.iter().filter(|s| s.default.is_empty()) {
-            // Une valeur vide n'est valide que pour du texte.
+            // An empty value is only valid for text.
             assert_eq!(s.value_type, SettingType::Str, "{}", s.key);
         }
     }

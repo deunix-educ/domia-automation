@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Regles d'authentification : politique de mot de passe et blocage anti brute-force.
+//! Authentication rules: password policy and anti brute-force lock-out.
 
 use chrono::{DateTime, Duration, Utc};
 
 use crate::error::ValidationError;
 
-/// Regles sur les mots de passe choisis par un utilisateur.
+/// Rules on the passwords chosen by a user.
 #[derive(Debug, Clone, Copy)]
 pub struct PasswordPolicy;
 
-/// Motif de refus d'un mot de passe (permet a l'interface de traduire le message).
+/// Reason a password is refused (lets the interface translate the message).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PasswordViolation {
     TooShort,
@@ -19,7 +19,7 @@ pub enum PasswordViolation {
 }
 
 impl PasswordViolation {
-    /// Message technique (francais) utilise par l'API et la CLI.
+    /// Technical message (French) used by the API and the CLI.
     #[must_use]
     pub fn message(self) -> String {
         match self {
@@ -39,10 +39,10 @@ impl PasswordViolation {
 
 impl PasswordPolicy {
     pub const MIN_LEN: usize = 10;
-    /// Borne haute : evite qu'un mot de passe geant serve a saturer le CPU (hachage).
+    /// Upper bound: prevents a giant password from being used to saturate the CPU (hashing).
     pub const MAX_LEN: usize = 128;
 
-    /// Premier motif de refus, ou `None` si le mot de passe est accepte.
+    /// First reason for refusal, or `None` if the password is accepted.
     #[must_use]
     pub fn violation(password: &str, username: &str) -> Option<PasswordViolation> {
         let n = password.chars().count();
@@ -60,7 +60,7 @@ impl PasswordPolicy {
     }
 
     /// # Errors
-    /// Refuse un mot de passe trop court ou trop long, uniquement numerique, ou identique au nom d'utilisateur.
+    /// Refuses a password that is too short or too long, purely numeric, or identical to the username.
     pub fn check(password: &str, username: &str) -> Result<(), ValidationError> {
         match Self::violation(password, username) {
             Some(v) => Err(ValidationError(v.message())),
@@ -69,26 +69,26 @@ impl PasswordPolicy {
     }
 }
 
-/// Compteurs d'echecs recents utilises pour decider d'un blocage.
+/// Recent failure counters used to decide on a lock-out.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct AttemptStats {
-    /// Echecs de ce compte depuis cette adresse IP (depuis la derniere connexion reussie).
+    /// Failures of this account from this IP address (since the last successful login).
     pub failures_pair: u32,
-    /// Echecs de ce compte depuis n'importe quelle adresse (depuis la derniere connexion reussie).
+    /// Failures of this account from any address (since the last successful login).
     pub failures_user: u32,
-    /// Echecs depuis cette adresse IP, tous comptes confondus.
+    /// Failures from this IP address, all accounts together.
     pub failures_ip: u32,
     pub last_failure_at: Option<DateTime<Utc>>,
 }
 
-/// Blocage progressif : un seuil par couple (compte, IP), un par compte (attaque distribuee) et un par IP
-/// (balayage de comptes). Le blocage dure `lock` apres le dernier echec.
+/// Progressive lock-out: one threshold per (account, IP) pair, one per account (distributed attack) and one per IP
+/// (account sweep). The lock-out lasts `lock` after the last failure.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct LockoutPolicy {
     pub max_failures_pair: u32,
     pub max_failures_user: u32,
     pub max_failures_ip: u32,
-    /// Fenetre dans laquelle les echecs sont comptes.
+    /// Window in which failures are counted.
     pub window: Duration,
     pub lock: Duration,
 }
@@ -106,7 +106,7 @@ impl Default for LockoutPolicy {
 }
 
 impl LockoutPolicy {
-    /// Duree restante de blocage, ou `None` si la connexion est autorisee.
+    /// Remaining lock-out duration, or `None` if the login is allowed.
     #[must_use]
     pub fn retry_after(&self, stats: &AttemptStats, now: DateTime<Utc>) -> Option<Duration> {
         let over = stats.failures_pair >= self.max_failures_pair
@@ -134,7 +134,7 @@ mod tests {
         assert_eq!(v("1234567890123", "bob"), Some(AllDigits));
         assert_eq!(v("Bobbobbobbob", "bobbobbobbob"), Some(SameAsUsername));
         assert_eq!(v("correct horse battery", "bob"), None);
-        // Le message de l'API reste celui de la violation.
+        // The API message stays that of the violation.
         let err = PasswordPolicy::check("court", "bob").unwrap_err();
         assert_eq!(err.0, TooShort.message());
     }

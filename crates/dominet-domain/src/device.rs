@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Appareils, groupes, libelles, historique d'etat, sources MQTT et stations meteo (R3, ADR 0025).
+//! Devices, groups, labels, state history, MQTT sources and weather stations (R3, ADR 0025).
 //!
-//! Les regles qui decident ce que devient un message MQTT (type deduit des `exposes`, lignes d'historique d'un etat) sont
-//! ici, pures, pour etre appliquees de la meme facon par l'ecoute MQTT, les tests de rejeu et les pages. Elles reprennent
-//! **a l'identique** l'implementation de reference, y compris ses particularites, parce que le critere
-//! d'acceptation de R3 est un rejeu qui donne les memes resultats ; chaque particularite est signalee.
+//! The rules that decide what an MQTT message becomes (type deduced from the `exposes`, history rows of a state) are
+//! here, pure, to be applied the same way by MQTT listening, the replay tests and the pages. They take over
+//! the reference implementation **identically**, including its quirks, because the acceptance criterion
+//! of R3 is a replay that gives the same results; each quirk is flagged.
 
 use std::str::FromStr;
 
@@ -29,7 +29,7 @@ pub struct MqttSourceId(pub i64);
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct WeatherStationId(pub i64);
 
-/// Topic de base de Zigbee2MQTT.
+/// Zigbee2MQTT base topic.
 pub const Z2M_BASE_TOPIC: &str = "zigbee2mqtt";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -56,7 +56,7 @@ impl DeviceType {
         Self::Generic,
     ];
 
-    /// Valeur stockee, identique a l'implementation de reference.
+    /// Stored value, identical to the reference implementation.
     #[must_use]
     pub fn as_str(self) -> &'static str {
         match self {
@@ -83,12 +83,12 @@ impl FromStr for DeviceType {
     }
 }
 
-// ------------------------------------------------------------------ exposes Zigbee2MQTT
+// ------------------------------------------------------------------ Zigbee2MQTT exposes
 
-/// Aplatit les `exposes` **comme l'implementation de reference pour deduire le type** : seuls les elements `composite` sont
-/// remplaces par leurs `features`. Particularite conservee : un `light`, un `switch` ou un `cover` Zigbee2MQTT (qui portent
-/// aussi des `features`) ne sont **pas** aplatis, donc `brightness` ou `state` n'y sont pas vus et l'appareil reste
-/// `generic`. Le rejeu contre l'implementation de reference verifie cette equivalence ; la corriger est une amelioration a decider a part.
+/// Flattens the `exposes` **like the reference implementation to deduce the type**: only the `composite` elements are
+/// replaced by their `features`. Quirk kept: a Zigbee2MQTT `light`, `switch` or `cover` (which also carry
+/// `features`) are **not** flattened, so `brightness` or `state` are not seen there and the device stays
+/// `generic`. The replay against the reference implementation checks this equivalence; fixing it is an improvement to decide separately.
 #[must_use]
 pub fn flatten_composites(exposes: &[Value]) -> Vec<&Value> {
     let mut out = vec![];
@@ -104,7 +104,7 @@ pub fn flatten_composites(exposes: &[Value]) -> Vec<&Value> {
     out
 }
 
-/// Aplatit **toutes** les `features` (pour lister les proprietes et leurs unites).
+/// Flattens **all** the `features` (to list the properties and their units).
 #[must_use]
 pub fn flatten_features(exposes: &[Value]) -> Vec<&Value> {
     let mut out = vec![];
@@ -117,7 +117,7 @@ pub fn flatten_features(exposes: &[Value]) -> Vec<&Value> {
     out
 }
 
-/// Type d'un appareil deduit de ses `exposes`.
+/// Type of a device deduced from its `exposes`.
 #[must_use]
 pub fn infer_device_type(exposes: &[Value]) -> DeviceType {
     let flat = flatten_composites(exposes);
@@ -125,7 +125,7 @@ pub fn infer_device_type(exposes: &[Value]) -> DeviceType {
         flat.iter()
             .any(|f| f.get("property").and_then(Value::as_str) == Some(p))
     };
-    // Noms des elements binaires de premier niveau (non aplatis), comme `feature_names` en reference.
+    // Names of the top-level binary elements (not flattened), like `feature_names` in the reference.
     let binary_names: Vec<&str> = exposes
         .iter()
         .filter(|e| e.get("type").and_then(Value::as_str) == Some("binary"))
@@ -149,7 +149,7 @@ pub fn infer_device_type(exposes: &[Value]) -> DeviceType {
     }
 }
 
-/// Unite de chaque propriete exposee.
+/// Unit of each exposed property.
 #[must_use]
 pub fn exposed_units(exposes: &[Value]) -> Vec<(String, String)> {
     flatten_features(exposes)
@@ -168,7 +168,7 @@ pub fn exposed_units(exposes: &[Value]) -> Vec<(String, String)> {
         .collect()
 }
 
-/// Un appareil decrit par `zigbee2mqtt/bridge/devices`.
+/// A device described by `zigbee2mqtt/bridge/devices`.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Discovered {
     pub friendly_name: String,
@@ -189,8 +189,8 @@ fn text(v: &Value, key: &str, max: usize) -> String {
 }
 
 impl Discovered {
-    /// Lit un element de `bridge/devices` ; `None` pour le coordinateur ou un nom vide (ignores, comme en reference).
-    /// Les textes sont tronques aux longueurs des colonnes (reference aurait leve une erreur de base).
+    /// Reads an element of `bridge/devices`; `None` for the coordinator or an empty name (ignored, as in the reference).
+    /// The texts are truncated to the column lengths (the reference would have raised a database error).
     #[must_use]
     pub fn from_bridge_entry(entry: &Value) -> Option<Self> {
         if entry.get("type").and_then(Value::as_str) == Some("Coordinator") {
@@ -223,16 +223,16 @@ impl Discovered {
         })
     }
 
-    /// Type d'un appareil **nouveau** (un appareil existant garde le sien).
+    /// Type of a **new** device (an existing device keeps its own).
     #[must_use]
     pub fn device_type(&self) -> DeviceType {
         infer_device_type(&self.exposes)
     }
 }
 
-// ------------------------------------------------------------------ noms et topics
+// ------------------------------------------------------------------ names and topics
 
-/// Un nom d'appareil sert a construire des topics : ni caractere de controle, ni joker MQTT, ni '/' de tete ou de queue.
+/// A device name is used to build topics: no control character, no MQTT wildcard, no leading or trailing '/'.
 #[must_use]
 pub fn is_valid_friendly_name(name: &str) -> bool {
     !name.is_empty()
@@ -243,13 +243,13 @@ pub fn is_valid_friendly_name(name: &str) -> bool {
         && !name.contains("//")
 }
 
-/// Prefixe de topic : comme un nom, mais peut etre vide.
+/// Topic prefix: like a name, but may be empty.
 #[must_use]
 pub fn is_valid_base_topic(base: &str) -> bool {
     base.is_empty() || (is_valid_friendly_name(base) && base.chars().count() <= 128)
 }
 
-/// Filtre d'abonnement MQTT valide : `+` occupe un niveau entier, `#` est le dernier niveau et l'occupe entier.
+/// Valid MQTT subscription filter: `+` occupies a whole level, `#` is the last level and occupies it entirely.
 #[must_use]
 pub fn is_valid_topic_filter(filter: &str) -> bool {
     if filter.is_empty()
@@ -266,7 +266,7 @@ pub fn is_valid_topic_filter(filter: &str) -> bool {
     })
 }
 
-/// Topic de **publication** : non vide, 256 caracteres au plus, ni joker MQTT ni caractere de controle.
+/// **Publication** topic: non-empty, 256 characters at most, no MQTT wildcard or control character.
 #[must_use]
 pub fn is_valid_publish_topic(topic: &str) -> bool {
     !topic.is_empty()
@@ -276,7 +276,7 @@ pub fn is_valid_publish_topic(topic: &str) -> bool {
             .any(|c| c == '+' || c == '#' || c.is_control())
 }
 
-// ------------------------------------------------------------------ appareil
+// ------------------------------------------------------------------ device
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Device {
@@ -303,7 +303,7 @@ pub struct Device {
 }
 
 impl Device {
-    /// Topic de l'etat : `{base_topic}/{friendly_name}` (ou le seul nom si le prefixe est vide).
+    /// State topic: `{base_topic}/{friendly_name}` (or the name alone if the prefix is empty).
     #[must_use]
     pub fn state_topic(&self) -> String {
         if self.base_topic.is_empty() {
@@ -313,20 +313,20 @@ impl Device {
         }
     }
 
-    /// Topic des commandes.
+    /// Commands topic.
     #[must_use]
     pub fn command_topic(&self) -> String {
         format!("{}/set", self.state_topic())
     }
 
-    /// Identifiant du tableau de bord Grafana de l'appareil (deterministe, jamais stocke).
+    /// Identifier of the device's Grafana dashboard (deterministic, never stored).
     #[must_use]
     pub fn grafana_uid(&self) -> String {
         format!("dominet-device-{}", self.id.0)
     }
 }
 
-/// Parametres modifiables d'un appareil (l'etat, la disponibilite et ce que decouvre Zigbee2MQTT ne le sont pas).
+/// Editable parameters of a device (the state, the availability and what Zigbee2MQTT discovers are not).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct DeviceDraft {
     pub friendly_name: String,
@@ -366,7 +366,7 @@ impl DeviceDraft {
     pub const DESCRIPTION_MAX: usize = 256;
     pub const ICON_MAX: usize = 32;
 
-    /// Brouillon minimal (appareil cree a la main).
+    /// Minimal draft (hand-created device).
     #[must_use]
     pub fn new(friendly_name: &str) -> Self {
         Self {
@@ -385,7 +385,7 @@ impl DeviceDraft {
         }
     }
 
-    /// Problemes champ par champ.
+    /// Field-by-field problems.
     #[must_use]
     pub fn problems(&self) -> Vec<(&'static str, Problem)> {
         let mut out = vec![];
@@ -430,9 +430,9 @@ impl DeviceDraft {
     }
 }
 
-// ------------------------------------------------------------------ historique
+// ------------------------------------------------------------------ history
 
-/// Une ligne d'historique d'une cle suivie.
+/// A history row of a tracked key.
 #[derive(Debug, Clone, PartialEq)]
 pub struct LogEntry {
     pub key: String,
@@ -440,9 +440,9 @@ pub struct LogEntry {
     pub value_str: String,
 }
 
-/// Lignes d'historique d'un etat pour les cles suivies, dans l'ordre de `tracked_keys` :
-/// booleen -> `value_num` 0/1 et `value_str` `True`/`False` ; nombre -> `value_num` ; texte -> `value_str` (tronque a
-/// 128 caracteres) ; tout autre type (objet, tableau, null) et les cles absentes sont ignores.
+/// History rows of a state for the tracked keys, in the order of `tracked_keys`:
+/// boolean -> `value_num` 0/1 and `value_str` `True`/`False`; number -> `value_num`; text -> `value_str` (truncated to
+/// 128 characters); any other type (object, array, null) and absent keys are ignored.
 #[must_use]
 pub fn log_entries(tracked_keys: &[String], state: &Value) -> Vec<LogEntry> {
     tracked_keys
@@ -467,7 +467,7 @@ pub fn log_entries(tracked_keys: &[String], state: &Value) -> Vec<LogEntry> {
         .collect()
 }
 
-/// Un point d'historique lu.
+/// A history point read.
 #[derive(Debug, Clone, PartialEq)]
 pub struct LogPoint {
     pub ts: DateTime<Utc>,
@@ -475,7 +475,7 @@ pub struct LogPoint {
     pub value_str: String,
 }
 
-// ------------------------------------------------------------------ groupes et libelles
+// ------------------------------------------------------------------ groups and labels
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct DeviceGroup {
@@ -556,7 +556,7 @@ impl DeviceLabelDraft {
     }
 }
 
-/// Libelles connus des cles Zigbee2MQTT usuelles : (cle, icone Lucide, nom, unite). Reprend `seed_device_labels`.
+/// Known labels of the usual Zigbee2MQTT keys: (key, Lucide icon, name, unit). Takes over `seed_device_labels`.
 pub const KNOWN_LABELS: [(&str, &str, &str, &str); 25] = [
     ("action", "mouse-pointer-click", "Action", ""),
     ("battery", "battery", "Battery", "%"),
@@ -585,7 +585,7 @@ pub const KNOWN_LABELS: [(&str, &str, &str, &str); 25] = [
     ("water_leak", "droplets", "Water leak", ""),
 ];
 
-/// Libelle d'une cle : celui du referentiel `KNOWN_LABELS`, sinon icone neutre, la cle comme nom et aucune unite.
+/// Label of a key: that of the `KNOWN_LABELS` reference list, otherwise a neutral icon, the key as the name and no unit.
 #[must_use]
 pub fn known_label(key: &str) -> DeviceLabelDraft {
     let (icon, name, unit) = KNOWN_LABELS
@@ -602,7 +602,7 @@ pub fn known_label(key: &str) -> DeviceLabelDraft {
     }
 }
 
-// ------------------------------------------------------------------ sources MQTT
+// ------------------------------------------------------------------ MQTT sources
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MqttSource {
@@ -613,10 +613,10 @@ pub struct MqttSource {
     pub active: bool,
     pub log_messages: bool,
     pub auto_device: bool,
-    /// Type des appareils crees automatiquement (`None` = type par defaut, capteur).
+    /// Type of the automatically created devices (`None` = default type, sensor).
     pub auto_device_type: Option<DeviceType>,
     pub base_topic: String,
-    /// Code la reference de la version precedente : conserve et affiche, execute a partir de R4.
+    /// Code of the reference's previous version: kept and displayed, run from R4 on.
     pub handler_code: String,
     pub description: String,
 }
@@ -624,7 +624,7 @@ pub struct MqttSource {
 pub type MqttSourceDraft = MqttSource;
 
 impl MqttSource {
-    /// Brouillon d'une source (l'identifiant est ignore a l'enregistrement).
+    /// Draft of a source (the identifier is ignored when saving).
     #[must_use]
     pub fn draft(name: &str, topic_pattern: &str) -> Self {
         Self {
@@ -675,7 +675,7 @@ impl MqttSource {
     }
 }
 
-// ------------------------------------------------------------------ stations meteo
+// ------------------------------------------------------------------ weather stations
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct WeatherStation {
@@ -694,7 +694,7 @@ pub struct WeatherStation {
 pub type WeatherStationDraft = WeatherStation;
 
 impl WeatherStation {
-    /// Brouillon d'une station.
+    /// Draft of a station.
     #[must_use]
     pub fn draft(name: &str, latitude: f64, longitude: f64) -> Self {
         Self {
@@ -711,7 +711,7 @@ impl WeatherStation {
         }
     }
 
-    /// Topic publie : `meteo/<suffixe>` (annexe A de la ROADMAP, inchange).
+    /// Published topic: `meteo/<suffix>` (appendix A of the ROADMAP, unchanged).
     #[must_use]
     pub fn mqtt_topic(&self) -> String {
         format!("meteo/{}", self.mqtt_topic_suffix)
@@ -776,7 +776,7 @@ impl WeatherStation {
     }
 }
 
-/// Image televersee d'un appareil.
+/// Uploaded image of a device.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct DeviceImage {
     pub content_type: String,
@@ -785,7 +785,7 @@ pub struct DeviceImage {
 }
 
 #[cfg(test)]
-// `assert!(x.is_empty())` sur des listes de problemes typees : plus lisible que la comparaison a un tableau vide annote.
+// `assert!(x.is_empty())` on typed problem lists: more readable than comparing with an annotated empty array.
 #[allow(clippy::assert_is_empty)]
 mod tests {
     use serde_json::json;
@@ -837,19 +837,19 @@ mod tests {
 
     #[test]
     fn only_composites_are_flattened_to_infer_the_type_like_reference() {
-        // Composite : ses features comptent.
+        // Composite: its features count.
         let composite = json!([{"type": "composite", "features": [{"property": "brightness"}]}]);
         assert_eq!(
             infer_device_type(composite.as_array().unwrap()),
             DeviceType::Light
         );
-        // `light` Zigbee2MQTT (a des features mais n'est pas `composite`) : non aplati, l'appareil reste generique.
+        // Zigbee2MQTT `light` (has features but is not `composite`): not flattened, the device stays generic.
         let light = json!([{"type": "light", "features": [{"property": "state"}, {"property": "brightness"}]}]);
         assert_eq!(
             infer_device_type(light.as_array().unwrap()),
             DeviceType::Generic
         );
-        // En revanche les unites voient toutes les features.
+        // On the other hand the units see all the features.
         let units = exposed_units(light.as_array().unwrap());
         assert!(units.is_empty());
         let with_unit = json!([{"type": "light", "features": [{"property": "color_temp", "unit": "mired"}]}, {"property": "temperature", "unit": "°C"}]);
@@ -879,7 +879,7 @@ mod tests {
             ("Bureau", "0x00124b0000000001", "Test", "TH-01")
         );
         assert_eq!(d.device_type(), DeviceType::Sensor);
-        // Coordinateur, nom vide, nom a jokers : ignores.
+        // Coordinator, empty name, name with wildcards: ignored.
         assert!(
             Discovered::from_bridge_entry(
                 &json!({"type": "Coordinator", "friendly_name": "Coordinator"})
@@ -889,13 +889,13 @@ mod tests {
         assert!(Discovered::from_bridge_entry(&json!({"friendly_name": "  "})).is_none());
         assert!(Discovered::from_bridge_entry(&json!({"friendly_name": "a/#"})).is_none());
         assert!(Discovered::from_bridge_entry(&json!("pas un objet")).is_none());
-        // Sans definition (appareil non supporte) : valeurs vides, type generique.
+        // Without a definition (unsupported device): empty values, generic type.
         let bare =
             Discovered::from_bridge_entry(&json!({"friendly_name": "Unknown", "definition": null}))
                 .unwrap();
         assert!(bare.exposes.is_empty() && bare.vendor.is_empty());
         assert_eq!(bare.device_type(), DeviceType::Generic);
-        // Textes tronques aux colonnes.
+        // Texts truncated to the columns.
         let long = Discovered::from_bridge_entry(&json!({"friendly_name": "x", "ieee_address": "i".repeat(200), "definition": {"vendor": "v".repeat(100)}})).unwrap();
         assert_eq!((long.ieee.len(), long.vendor.len()), (64, 64));
     }
@@ -997,7 +997,7 @@ mod tests {
                 ("off", Some(0.0), "False"),
             ]
         );
-        // Texte long tronque ; rien de suivi, rien d'ecrit.
+        // Long text truncated; nothing tracked, nothing written.
         let long = log_entries(&tracked(&["s"]), &json!({"s": "é".repeat(300)}));
         assert_eq!(long[0].value_str.chars().count(), 128);
         assert!(log_entries(&[], &state).is_empty());

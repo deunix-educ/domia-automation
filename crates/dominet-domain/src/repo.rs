@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Ports de stockage : les adaptateurs (`dominet-store`) les implementent, le serveur les consomme.
+//! Storage ports: the adapters (`dominet-store`) implement them, the server consumes them.
 //!
-//! Les methodes renvoient `impl Future + Send` pour rester utilisables depuis des taches Tokio.
+//! The methods return `impl Future + Send` so as to stay usable from Tokio tasks.
 
 use std::future::Future;
 
@@ -44,15 +44,15 @@ use crate::user::{Credentials, NewUser, User, UserId, UserProfile};
 pub type RepoResult<T> = Result<T, RepoError>;
 
 pub trait UserRepo {
-    /// Cree un compte. `Conflict` si le nom existe deja (sans tenir compte de la casse).
+    /// Creates an account. `Conflict` if the name already exists (case ignored).
     fn create(&self, new: &NewUser) -> impl Future<Output = RepoResult<User>> + Send;
     fn find_by_id(&self, id: UserId) -> impl Future<Output = RepoResult<Option<User>>> + Send;
-    /// Recherche insensible a la casse.
+    /// Case-insensitive search.
     fn find_by_username(
         &self,
         username: &str,
     ) -> impl Future<Output = RepoResult<Option<User>>> + Send;
-    /// Compte + condensat du mot de passe (connexion).
+    /// Account + password hash (login).
     fn find_credentials(
         &self,
         username: &str,
@@ -63,7 +63,7 @@ pub trait UserRepo {
         id: UserId,
         profile: &UserProfile,
     ) -> impl Future<Output = RepoResult<User>> + Send;
-    /// Remplace le condensat et date le changement (invalide les anciennes sessions cote serveur).
+    /// Replaces the hash and dates the change (invalidates the old sessions on the server side).
     fn set_password_hash(
         &self,
         id: UserId,
@@ -71,22 +71,22 @@ pub trait UserRepo {
     ) -> impl Future<Output = RepoResult<()>> + Send;
     fn touch_last_login(&self, id: UserId) -> impl Future<Output = RepoResult<()>> + Send;
     fn delete(&self, id: UserId) -> impl Future<Output = RepoResult<()>> + Send;
-    /// Nombre de comptes administrateurs actifs (pour interdire de retirer le dernier).
+    /// Number of active administrator accounts (to forbid removing the last one).
     fn count_active_admins(&self) -> impl Future<Output = RepoResult<i64>> + Send;
 }
 
 pub trait SettingRepo {
-    /// Tous les reglages, tries par categorie puis cle.
+    /// All the settings, sorted by category then key.
     fn list(&self) -> impl Future<Output = RepoResult<Vec<AppSetting>>> + Send;
     fn get(&self, key: &str) -> impl Future<Output = RepoResult<Option<AppSetting>>> + Send;
-    /// Cree le reglage ou remplace sa valeur, son type, sa categorie et sa description.
-    /// `stored_value` est la valeur deja prete a stocker (chiffree si `draft.is_secret`).
+    /// Creates the setting or replaces its value, type, category and description.
+    /// `stored_value` is the value already ready to store (encrypted if `draft.is_secret`).
     fn upsert(
         &self,
         draft: &SettingDraft,
         stored_value: &str,
     ) -> impl Future<Output = RepoResult<AppSetting>> + Send;
-    /// Cree le reglage seulement s'il n'existe pas ; renvoie `true` si cree (donnees initiales).
+    /// Creates the setting only if it does not exist; returns `true` if created (initial data).
     fn insert_if_absent(
         &self,
         draft: &SettingDraft,
@@ -96,7 +96,7 @@ pub trait SettingRepo {
 }
 
 pub trait NavbarRepo {
-    /// Entrees triees : haut puis bas, par ordre puis libelle.
+    /// Entries sorted: top then bottom, by order then label.
     fn list(&self) -> impl Future<Output = RepoResult<Vec<NavbarItem>>> + Send;
     fn get(&self, id: NavbarItemId) -> impl Future<Output = RepoResult<Option<NavbarItem>>> + Send;
     fn create(&self, draft: &NavbarDraft) -> impl Future<Output = RepoResult<NavbarItem>> + Send;
@@ -106,7 +106,7 @@ pub trait NavbarRepo {
         draft: &NavbarDraft,
     ) -> impl Future<Output = RepoResult<NavbarItem>> + Send;
     fn delete(&self, id: NavbarItemId) -> impl Future<Output = RepoResult<()>> + Send;
-    /// Cree l'entree si aucune n'a deja la meme position et le meme libelle ; `true` si creee.
+    /// Creates the entry if none already has the same position and label; `true` if created.
     fn insert_if_absent(
         &self,
         draft: &NavbarDraft,
@@ -125,7 +125,7 @@ pub trait LocationRepo {
     fn delete(&self, id: LocationId) -> impl Future<Output = RepoResult<()>> + Send;
 }
 
-/// Regles d'alerte Prometheus (R7 lot 2). `list` rend l'ordre du fichier : groupe puis nom.
+/// Prometheus alert rules (R7 lot 2). `list` returns the file's order: group then name.
 pub trait PrometheusRuleRepo {
     fn list(&self) -> impl Future<Output = RepoResult<Vec<PrometheusRule>>> + Send;
     fn get(
@@ -142,21 +142,21 @@ pub trait PrometheusRuleRepo {
         draft: &PrometheusRuleDraft,
     ) -> impl Future<Output = RepoResult<PrometheusRule>> + Send;
     fn delete(&self, id: PrometheusRuleId) -> impl Future<Output = RepoResult<()>> + Send;
-    /// Cree la regle si aucune n'a ce nom ; `true` si creee (graine des regles livrees).
+    /// Creates the rule if none has this name; `true` if created (seed of the shipped rules).
     fn insert_if_absent(
         &self,
         draft: &PrometheusRuleDraft,
     ) -> impl Future<Output = RepoResult<bool>> + Send;
 }
 
-/// Regles d'alerte Grafana (R7 lot 2). `list` rend l'ordre du fichier : dossier, groupe puis titre.
+/// Grafana alert rules (R7 lot 2). `list` returns the file's order: folder, group then title.
 pub trait GrafanaRuleRepo {
     fn list(&self) -> impl Future<Output = RepoResult<Vec<GrafanaRule>>> + Send;
     fn get(
         &self,
         id: GrafanaRuleId,
     ) -> impl Future<Output = RepoResult<Option<GrafanaRule>>> + Send;
-    /// Cree la regle ; un `uid` vide est tire du titre et rendu unique (`titre`, `titre-1`, ...).
+    /// Creates the rule; an empty `uid` is derived from the title and made unique (`title`, `title-1`, ...).
     fn create(
         &self,
         draft: &GrafanaRuleDraft,
@@ -167,48 +167,48 @@ pub trait GrafanaRuleRepo {
         draft: &GrafanaRuleDraft,
     ) -> impl Future<Output = RepoResult<GrafanaRule>> + Send;
     fn delete(&self, id: GrafanaRuleId) -> impl Future<Output = RepoResult<()>> + Send;
-    /// Cree la regle si aucune n'a cet `uid` ; `true` si creee.
+    /// Creates the rule if none has this `uid`; `true` if created.
     fn insert_if_absent(
         &self,
         draft: &GrafanaRuleDraft,
     ) -> impl Future<Output = RepoResult<bool>> + Send;
 }
 
-/// Journal des tentatives de connexion (blocage anti brute-force).
-/// Tableaux de bord. Le premier tableau d'un compte est toujours son tableau par defaut ; designer un tableau comme
-/// defaut retire ce statut aux autres du meme compte, dans la meme transaction.
+/// Log of login attempts (anti brute-force lock-out).
+/// Dashboards. An account's first dashboard is always its default dashboard; designating a dashboard as
+/// default removes that status from the others of the same account, in the same transaction.
 pub trait DashboardRepo {
-    /// Tableaux d'un compte, par nom.
+    /// An account's dashboards, by name.
     fn list_for_owner(
         &self,
         owner: UserId,
     ) -> impl Future<Output = RepoResult<Vec<Dashboard>>> + Send;
-    /// Tous les tableaux (administration), par proprietaire puis par nom.
+    /// All the dashboards (administration), by owner then by name.
     fn list_all(&self) -> impl Future<Output = RepoResult<Vec<Dashboard>>> + Send;
     fn get(&self, id: DashboardId) -> impl Future<Output = RepoResult<Option<Dashboard>>> + Send;
-    /// `NotFound` si le proprietaire n'existe pas.
+    /// `NotFound` if the owner does not exist.
     fn create(
         &self,
         owner: UserId,
         draft: &DashboardDraft,
     ) -> impl Future<Output = RepoResult<Dashboard>> + Send;
-    /// Renomme ; `draft.is_default` ne peut qu'activer le statut (un tableau par defaut le reste jusqu'a ce qu'un autre le devienne).
+    /// Renames; `draft.is_default` can only enable the status (a default dashboard stays so until another one becomes it).
     fn update(
         &self,
         id: DashboardId,
         draft: &DashboardDraft,
     ) -> impl Future<Output = RepoResult<Dashboard>> + Send;
-    /// Supprime le tableau et ses widgets.
+    /// Deletes the dashboard and its widgets.
     fn delete(&self, id: DashboardId) -> impl Future<Output = RepoResult<()>> + Send;
 }
 
-/// Widgets d'un tableau. `Conflict { constraint: "widget_no_overlap" }` si le rectangle chevauche un autre widget du tableau.
+/// Widgets of a dashboard. `Conflict { constraint: "widget_no_overlap" }` if the rectangle overlaps another widget of the dashboard.
 pub trait WidgetRepo {
-    /// Widgets d'un tableau, par ligne puis colonne.
+    /// Widgets of a dashboard, by row then column.
     fn list(&self, dashboard: DashboardId) -> impl Future<Output = RepoResult<Vec<Widget>>> + Send;
     fn get(&self, id: WidgetId) -> impl Future<Output = RepoResult<Option<Widget>>> + Send;
-    /// `NotFound` si le tableau n'existe pas ; `Conflict` si le rectangle chevauche un autre widget. Les ecritures de widgets
-    /// d'un meme tableau sont serialisees (verrou du tableau).
+    /// `NotFound` if the dashboard does not exist; `Conflict` if the rectangle overlaps another widget. The widget writes
+    /// of one dashboard are serialised (dashboard lock).
     fn create(
         &self,
         dashboard: DashboardId,
@@ -219,7 +219,7 @@ pub trait WidgetRepo {
         id: WidgetId,
         draft: &WidgetDraft,
     ) -> impl Future<Output = RepoResult<Widget>> + Send;
-    /// Deplace le widget (position seulement, taille inchangee).
+    /// Moves the widget (position only, size unchanged).
     fn move_to(
         &self,
         id: WidgetId,
@@ -230,75 +230,75 @@ pub trait WidgetRepo {
 }
 
 pub trait LoginAttemptRepo {
-    /// Enregistre une tentative ; le nom est range en minuscules.
+    /// Records an attempt; the name is stored in lower case.
     fn record(
         &self,
         username: &str,
         ip: &str,
         succeeded: bool,
     ) -> impl Future<Output = RepoResult<()>> + Send;
-    /// Echecs depuis `since` (voir `AttemptStats` pour les trois compteurs).
+    /// Failures since `since` (see `AttemptStats` for the three counters).
     fn stats(
         &self,
         username: &str,
         ip: &str,
         since: DateTime<Utc>,
     ) -> impl Future<Output = RepoResult<AttemptStats>> + Send;
-    /// Supprime les tentatives plus anciennes que `before` ; renvoie le nombre de lignes supprimees.
+    /// Deletes the attempts older than `before`; returns the number of rows deleted.
     fn purge_before(&self, before: DateTime<Utc>) -> impl Future<Output = RepoResult<u64>> + Send;
 }
 
-/// Criteres de la liste des appareils.
+/// Criteria of the devices list.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct DeviceFilter {
     pub group: Option<DeviceGroupId>,
     pub location: Option<LocationId>,
     pub device_type: Option<DeviceType>,
-    /// Ne garder que les appareils actifs.
+    /// Keep only the active devices.
     pub active_only: bool,
 }
 
-/// Appareils. Les operations `apply_state`, `set_available`, `upsert_discovered`, `upsert_auto` et `touch_by_topic` sont celles de
-/// l'ecoute MQTT : elles reprennent la semantique de l'implementation de reference (voir `device.rs`) et sont **idempotentes**
-/// (les doublons QoS 1 ne changent rien d'autre que `last_seen`).
+/// Devices. The operations `apply_state`, `set_available`, `upsert_discovered`, `upsert_auto` and `touch_by_topic` are those of
+/// MQTT listening: they take over the reference implementation's semantics (see `device.rs`) and are **idempotent**
+/// (QoS 1 duplicates change nothing but `last_seen`).
 pub trait DeviceRepo {
-    /// Appareils par nom.
+    /// Devices by name.
     fn list(&self, filter: &DeviceFilter) -> impl Future<Output = RepoResult<Vec<Device>>> + Send;
     fn get(&self, id: DeviceId) -> impl Future<Output = RepoResult<Option<Device>>> + Send;
     fn find_by_name(
         &self,
         friendly_name: &str,
     ) -> impl Future<Output = RepoResult<Option<Device>>> + Send;
-    /// `Conflict` si le nom existe deja.
+    /// `Conflict` if the name already exists.
     fn create(&self, draft: &DeviceDraft) -> impl Future<Output = RepoResult<Device>> + Send;
-    /// Modifie les parametres ; l'etat, la disponibilite et la decouverte ne changent pas.
+    /// Modifies the parameters; the state, the availability and the discovery do not change.
     fn update(
         &self,
         id: DeviceId,
         draft: &DeviceDraft,
     ) -> impl Future<Output = RepoResult<Device>> + Send;
     fn delete(&self, id: DeviceId) -> impl Future<Output = RepoResult<()>> + Send;
-    /// `bridge/devices` : cree l'appareil (type deduit, prefixe `base_topic`, cle masquee `update`) ou met a jour sa description.
-    /// Renvoie l'appareil et `true` s'il vient d'etre cree.
+    /// `bridge/devices`: creates the device (type deduced, `base_topic` prefix, masked key `update`) or updates its description.
+    /// Returns the device and `true` if it has just been created.
     fn upsert_discovered(
         &self,
         d: &Discovered,
         base_topic: &str,
     ) -> impl Future<Output = RepoResult<(Device, bool)>> + Send;
-    /// Message d'etat : **remplace** l'etat, `last_seen = maintenant`, `available = true` ; seulement si l'appareil est actif.
-    /// `None` si aucun appareil actif de ce nom.
+    /// State message: **replaces** the state, `last_seen = now`, `available = true`; only if the device is active.
+    /// `None` if there is no active device of that name.
     fn apply_state(
         &self,
         friendly_name: &str,
         state: &serde_json::Value,
     ) -> impl Future<Output = RepoResult<Option<Device>>> + Send;
-    /// Message de disponibilite (sans effet sur `last_seen`) ; `None` si le nom est inconnu.
+    /// Availability message (no effect on `last_seen`); `None` if the name is unknown.
     fn set_available(
         &self,
         friendly_name: &str,
         available: bool,
     ) -> impl Future<Output = RepoResult<Option<Device>>> + Send;
-    /// Source MQTT en `auto_device` : cree ou met a jour (et **reactive**) l'appareil, remplace son etat.
+    /// MQTT source as `auto_device`: creates or updates (and **reactivates**) the device, replaces its state.
     fn upsert_auto(
         &self,
         friendly_name: &str,
@@ -306,7 +306,7 @@ pub trait DeviceRepo {
         device_type: DeviceType,
         state: &serde_json::Value,
     ) -> impl Future<Output = RepoResult<(Device, bool)>> + Send;
-    /// Marque vus (disponibles, `last_seen`) les appareils actifs dont `{base_topic}/{nom}` ou `base_topic` egale le topic.
+    /// Marks as seen (available, `last_seen`) the active devices whose `{base_topic}/{name}` or `base_topic` equals the topic.
     fn touch_by_topic(&self, topic: &str)
     -> impl Future<Output = RepoResult<Vec<DeviceId>>> + Send;
 }
@@ -323,18 +323,18 @@ pub trait DeviceGroupRepo {
         id: DeviceGroupId,
         d: &DeviceGroupDraft,
     ) -> impl Future<Output = RepoResult<DeviceGroup>> + Send;
-    /// Les appareils du groupe restent, sans groupe.
+    /// The group's devices stay, without a group.
     fn delete(&self, id: DeviceGroupId) -> impl Future<Output = RepoResult<()>> + Send;
 }
 
 pub trait DeviceLabelRepo {
-    /// Par cle.
+    /// By key.
     fn list(&self) -> impl Future<Output = RepoResult<Vec<DeviceLabel>>> + Send;
     fn get(
         &self,
         id: DeviceLabelId,
     ) -> impl Future<Output = RepoResult<Option<DeviceLabel>>> + Send;
-    /// `Conflict` si la cle existe deja.
+    /// `Conflict` if the key already exists.
     fn create(&self, d: &DeviceLabelDraft) -> impl Future<Output = RepoResult<DeviceLabel>> + Send;
     fn update(
         &self,
@@ -342,26 +342,26 @@ pub trait DeviceLabelRepo {
         d: &DeviceLabelDraft,
     ) -> impl Future<Output = RepoResult<DeviceLabel>> + Send;
     fn delete(&self, id: DeviceLabelId) -> impl Future<Output = RepoResult<()>> + Send;
-    /// Cree les libelles dont la cle n'existe pas encore ; renvoie le nombre cree.
+    /// Creates the labels whose key does not exist yet; returns the number created.
     fn create_missing(
         &self,
         drafts: &[DeviceLabelDraft],
     ) -> impl Future<Output = RepoResult<u64>> + Send;
-    /// Toutes les cles presentes dans l'etat d'au moins un appareil (pour `seed-labels`).
+    /// All the keys present in the state of at least one device (for `seed-labels`).
     fn state_keys(&self) -> impl Future<Output = RepoResult<Vec<String>>> + Send;
 }
 
-/// Historique des cles suivies.
+/// History of the tracked keys.
 pub trait StateLogRepo {
-    /// Ecrit les lignes a l'instant `ts` (a la seconde) ; une ligne existante du meme (appareil, cle, instant) est **remplacee**.
-    /// Renvoie le nombre de lignes ecrites.
+    /// Writes the rows at instant `ts` (to the second); an existing row of the same (device, key, instant) is **replaced**.
+    /// Returns the number of rows written.
     fn record(
         &self,
         device: DeviceId,
         ts: DateTime<Utc>,
         entries: &[LogEntry],
     ) -> impl Future<Output = RepoResult<u64>> + Send;
-    /// Points d'une cle depuis `since`, du plus ancien au plus recent, au plus `limit`.
+    /// Points of a key since `since`, from oldest to most recent, at most `limit`.
     fn points(
         &self,
         device: DeviceId,
@@ -369,8 +369,8 @@ pub trait StateLogRepo {
         since: DateTime<Utc>,
         limit: i64,
     ) -> impl Future<Output = RepoResult<Vec<LogPoint>>> + Send;
-    /// Plus petite et plus grande valeur **numerique** d'une cle sur `[from, to[` (les valeurs texte sont ignorees) ; `None` sans
-    /// aucune valeur. C'est ce qu'agrege le bilan d'energie.
+    /// Smallest and largest **numeric** value of a key over `[from, to[` (text values are ignored); `None` without
+    /// any value. This is what the energy summary aggregates.
     fn min_max(
         &self,
         device: DeviceId,
@@ -378,12 +378,12 @@ pub trait StateLogRepo {
         from: DateTime<Utc>,
         to: DateTime<Utc>,
     ) -> impl Future<Output = RepoResult<(Option<f64>, Option<f64>)>> + Send;
-    /// Supprime les lignes anterieures a `before` ; renvoie le nombre supprime.
+    /// Deletes the rows older than `before`; returns the number deleted.
     fn purge_before(&self, before: DateTime<Utc>) -> impl Future<Output = RepoResult<u64>> + Send;
 }
 
 pub trait DeviceImageRepo {
-    /// `NotFound` si l'appareil n'existe pas.
+    /// `NotFound` if the device does not exist.
     fn put(
         &self,
         device: DeviceId,
@@ -393,7 +393,7 @@ pub trait DeviceImageRepo {
     fn get(&self, device: DeviceId)
     -> impl Future<Output = RepoResult<Option<DeviceImage>>> + Send;
     fn delete(&self, device: DeviceId) -> impl Future<Output = RepoResult<()>> + Send;
-    /// Appareils qui ont une image, avec sa date de mise a jour (sans lire les images).
+    /// Devices that have an image, with its update date (without reading the images).
     fn with_images(
         &self,
     ) -> impl Future<Output = RepoResult<Vec<(DeviceId, DateTime<Utc>)>>> + Send;
@@ -431,24 +431,24 @@ pub trait WeatherRepo {
     fn delete(&self, id: WeatherStationId) -> impl Future<Output = RepoResult<()>> + Send;
 }
 
-// ------------------------------------------------------------------ R4 : scenes, automations, alertes, energie
+// ------------------------------------------------------------------ R4: scenes, automations, alerts, energy
 
 pub trait SceneRepo {
-    /// Par nom, avec leurs actions (dans l'ordre de publication).
+    /// By name, with their actions (in publication order).
     fn list(&self) -> impl Future<Output = RepoResult<Vec<Scene>>> + Send;
     fn get(&self, id: SceneId) -> impl Future<Output = RepoResult<Option<Scene>>> + Send;
     fn find_by_name(&self, name: &str) -> impl Future<Output = RepoResult<Option<Scene>>> + Send;
-    /// `Conflict` si le nom existe deja ou si un appareil n'existe pas.
+    /// `Conflict` if the name already exists or if a device does not exist.
     fn create(&self, d: &SceneDraft) -> impl Future<Output = RepoResult<Scene>> + Send;
-    /// Remplace aussi les actions, dans une seule transaction.
+    /// Also replaces the actions, in a single transaction.
     fn update(&self, id: SceneId, d: &SceneDraft)
     -> impl Future<Output = RepoResult<Scene>> + Send;
-    /// Les widgets qui la visaient perdent leur scene (`ON DELETE SET NULL`).
+    /// The widgets that targeted it lose their scene (`ON DELETE SET NULL`).
     fn delete(&self, id: SceneId) -> impl Future<Output = RepoResult<()>> + Send;
 }
 
 pub trait AutomationRepo {
-    /// Par nom.
+    /// By name.
     fn list(&self) -> impl Future<Output = RepoResult<Vec<Automation>>> + Send;
     fn list_enabled(&self) -> impl Future<Output = RepoResult<Vec<Automation>>> + Send;
     fn get(&self, id: AutomationId) -> impl Future<Output = RepoResult<Option<Automation>>> + Send;
@@ -459,7 +459,7 @@ pub trait AutomationRepo {
         d: &AutomationDraft,
     ) -> impl Future<Output = RepoResult<Automation>> + Send;
     fn delete(&self, id: AutomationId) -> impl Future<Output = RepoResult<()>> + Send;
-    /// Un declenchement de plus : `trigger_count + 1` et `last_triggered = at`.
+    /// One more trigger: `trigger_count + 1` and `last_triggered = at`.
     fn record_trigger(
         &self,
         id: AutomationId,
@@ -467,40 +467,40 @@ pub trait AutomationRepo {
     ) -> impl Future<Output = RepoResult<()>> + Send;
 }
 
-/// Journal d'execution des automations.
+/// Execution log of the automations.
 pub trait AutomationRunRepo {
     fn record(&self, run: &AutomationRun) -> impl Future<Output = RepoResult<()>> + Send;
-    /// Les plus recentes d'abord.
+    /// Most recent first.
     fn recent(
         &self,
         automation: AutomationId,
         limit: i64,
     ) -> impl Future<Output = RepoResult<Vec<AutomationRun>>> + Send;
-    /// Toutes automations confondues, les plus recentes d'abord.
+    /// All automations together, most recent first.
     fn recent_all(&self, limit: i64)
     -> impl Future<Output = RepoResult<Vec<AutomationRun>>> + Send;
     fn purge_before(&self, before: DateTime<Utc>) -> impl Future<Output = RepoResult<u64>> + Send;
 }
 
-/// Travaux du planificateur.
+/// Scheduler jobs.
 pub trait ScheduleRepo {
-    /// Tous, par nom.
+    /// All, by name.
     fn list(&self) -> impl Future<Output = RepoResult<Vec<Job>>> + Send;
-    /// Cree le travail de ce nom ou le remplace. Si l'horaire, la tache, ses arguments, le fuseau ou l'activation changent,
-    /// le prochain passage est oublie (a recalculer) ; sinon il est conserve.
+    /// Creates the job of this name or replaces it. If the schedule, the task, its arguments, the time zone or the activation change,
+    /// the next run is forgotten (to be recomputed); otherwise it is kept.
     fn upsert(&self, d: &JobDraft) -> impl Future<Output = RepoResult<Job>> + Send;
-    /// Supprime les travaux **d'automations** qui ne sont pas dans `keep` ; renvoie leur nombre.
+    /// Deletes the **automation** jobs that are not in `keep`; returns their number.
     fn prune_automation_jobs(
         &self,
         keep: &[AutomationId],
     ) -> impl Future<Output = RepoResult<u64>> + Send;
-    /// Memorise le prochain passage (`None` = a recalculer).
+    /// Stores the next run (`None` = to recompute).
     fn set_next(
         &self,
         id: JobId,
         next: Option<DateTime<Utc>>,
     ) -> impl Future<Output = RepoResult<()>> + Send;
-    /// Fin d'un passage : `ran_at` si la tache a tourne (pas pour un passage manque), son statut, le passage suivant.
+    /// End of a run: `ran_at` if the task ran (not for a missed run), its status, the next run.
     fn record(
         &self,
         id: JobId,
@@ -508,33 +508,33 @@ pub trait ScheduleRepo {
         status: &str,
         next: Option<DateTime<Utc>>,
     ) -> impl Future<Output = RepoResult<()>> + Send;
-    /// Prochain passage des travaux d'automations actifs.
+    /// Next run of the active automation jobs.
     fn automation_next_runs(
         &self,
     ) -> impl Future<Output = RepoResult<Vec<(AutomationId, Option<DateTime<Utc>>)>>> + Send;
 }
 
 pub trait AlertRuleRepo {
-    /// Par appareil puis par nom.
+    /// By device then by name.
     fn list(&self) -> impl Future<Output = RepoResult<Vec<AlertRule>>> + Send;
-    /// Les regles **activees** d'un appareil (evaluees a chaque etat).
+    /// The **enabled** rules of a device (evaluated at every state).
     fn list_enabled_for_device(
         &self,
         device: DeviceId,
     ) -> impl Future<Output = RepoResult<Vec<AlertRule>>> + Send;
     fn get(&self, id: AlertRuleId) -> impl Future<Output = RepoResult<Option<AlertRule>>> + Send;
-    /// `Conflict` si l'appareil n'existe pas.
+    /// `Conflict` if the device does not exist.
     fn create(&self, d: &AlertRuleDraft) -> impl Future<Output = RepoResult<AlertRule>> + Send;
     fn update(
         &self,
         id: AlertRuleId,
         d: &AlertRuleDraft,
     ) -> impl Future<Output = RepoResult<AlertRule>> + Send;
-    /// Les alertes deja creees restent, sans regle.
+    /// The alerts already created stay, without a rule.
     fn delete(&self, id: AlertRuleId) -> impl Future<Output = RepoResult<()>> + Send;
 }
 
-/// Une alerte a creer.
+/// An alert to create.
 #[derive(Debug, Clone, PartialEq)]
 pub struct NewAlert {
     pub rule: AlertRuleId,
@@ -545,27 +545,27 @@ pub struct NewAlert {
 }
 
 pub trait AlertRepo {
-    /// Les plus recentes d'abord ; `None` = tous les statuts.
+    /// Most recent first; `None` = all statuses.
     fn list(
         &self,
         status: Option<AlertStatus>,
         limit: i64,
     ) -> impl Future<Output = RepoResult<Vec<Alert>>> + Send;
-    /// L'alerte **en cours** la plus recente de la regle pour cet appareil (les acquittees et resolues n'y sont pas).
+    /// The most recent **ongoing** alert of the rule for this device (the acknowledged and resolved ones are not there).
     fn latest_firing(
         &self,
         rule: AlertRuleId,
         device: DeviceId,
     ) -> impl Future<Output = RepoResult<Option<Alert>>> + Send;
     fn create(&self, new: &NewAlert) -> impl Future<Output = RepoResult<Alert>> + Send;
-    /// Resout les alertes en cours de la regle pour cet appareil ; renvoie leur nombre.
+    /// Resolves the ongoing alerts of the rule for this device; returns their number.
     fn resolve_firing(
         &self,
         rule: AlertRuleId,
         device: DeviceId,
         at: DateTime<Utc>,
     ) -> impl Future<Output = RepoResult<u64>> + Send;
-    /// Acquitte une alerte **en cours** ; `None` si elle n'existe pas ou n'est plus en cours.
+    /// Acknowledges an **ongoing** alert; `None` if it does not exist or is no longer ongoing.
     fn acknowledge(
         &self,
         id: AlertId,
@@ -582,20 +582,20 @@ pub trait AlertRepo {
 }
 
 pub trait EnergyRepo {
-    /// Cree ou remplace le bilan du jour.
+    /// Creates or replaces the day's summary.
     fn upsert(&self, day: &EnergyDay) -> impl Future<Output = RepoResult<()>> + Send;
     fn get(
         &self,
         day: chrono::NaiveDate,
     ) -> impl Future<Output = RepoResult<Option<EnergyDay>>> + Send;
-    /// Les `days` derniers jours enregistres, du plus ancien au plus recent.
+    /// The last `days` recorded days, from oldest to most recent.
     fn recent(&self, days: u32) -> impl Future<Output = RepoResult<Vec<EnergyDay>>> + Send;
 }
 
-// ------------------------------------------------------------------ R5 : relais Android et messagerie
+// ------------------------------------------------------------------ R5: Android relay and messaging
 
 pub trait AndroidDeviceRepo {
-    /// Appareils d'un utilisateur (`None` : tous, pour un administrateur), du plus recent au plus ancien.
+    /// A user's devices (`None`: all, for an administrator), most recent to oldest.
     fn list_for_owner(
         &self,
         owner: Option<UserId>,
@@ -604,39 +604,39 @@ pub trait AndroidDeviceRepo {
         &self,
         id: AndroidDeviceId,
     ) -> impl Future<Output = RepoResult<Option<AndroidDevice>>> + Send;
-    /// Cree l'appareil et renvoie son jeton **en clair, une seule fois** : seule son empreinte SHA-256 est stockee.
+    /// Creates the device and returns its token **in clear, once**: only its SHA-256 fingerprint is stored.
     fn create(
         &self,
         owner: UserId,
         d: &AndroidDeviceDraft,
     ) -> impl Future<Output = RepoResult<(AndroidDevice, String)>> + Send;
-    /// Nouveau jeton (l'ancien cesse de fonctionner) ; `NotFound` si l'appareil n'existe pas.
+    /// New token (the old one stops working); `NotFound` if the device does not exist.
     fn regenerate_token(
         &self,
         id: AndroidDeviceId,
     ) -> impl Future<Output = RepoResult<String>> + Send;
     fn delete(&self, id: AndroidDeviceId) -> impl Future<Output = RepoResult<()>> + Send;
-    /// Appareil dont le jeton (forme canonique) a cette empreinte.
+    /// Device whose token (canonical form) has this fingerprint.
     fn find_by_token(
         &self,
         token: &str,
     ) -> impl Future<Output = RepoResult<Option<AndroidDevice>>> + Send;
-    /// Passe l'appareil en ligne ou hors ligne ; `last_seen = at` dans les deux cas.
+    /// Sets the device online or offline; `last_seen = at` in both cases.
     fn set_online(
         &self,
         id: AndroidDeviceId,
         online: bool,
         at: DateTime<Utc>,
     ) -> impl Future<Output = RepoResult<()>> + Send;
-    /// L'appareil en ligne vu en dernier (de n'importe quel proprietaire) : celui qui envoie les SMS de la messagerie.
+    /// The online device seen last (of any owner): the one that sends the messaging SMS.
     fn most_recent_online(&self) -> impl Future<Output = RepoResult<Option<AndroidDevice>>> + Send;
-    /// Au demarrage du serveur : plus aucune connexion n'existe, tous les appareils passent hors ligne.
+    /// At server start-up: no connection exists any more, all the devices go offline.
     fn set_all_offline(&self) -> impl Future<Output = RepoResult<u64>> + Send;
 }
 
 pub trait SmsRepo {
     fn insert(&self, s: &NewSms) -> impl Future<Output = RepoResult<SmsMessage>> + Send;
-    /// Les plus recents d'abord ; `device` filtre, sinon tous les appareils de `owner` (`None` : tous).
+    /// Most recent first; `device` filters, otherwise all the devices of `owner` (`None`: all).
     fn list(
         &self,
         owner: Option<UserId>,
@@ -644,15 +644,15 @@ pub trait SmsRepo {
         limit: i64,
     ) -> impl Future<Output = RepoResult<Vec<SmsMessage>>> + Send;
     fn get(&self, id: SmsId) -> impl Future<Output = RepoResult<Option<SmsMessage>>> + Send;
-    /// Marque lus les SMS recus d'un appareil.
+    /// Marks as read the SMS received by a device.
     fn mark_read(&self, device: AndroidDeviceId) -> impl Future<Output = RepoResult<u64>> + Send;
     fn unread_count(&self, owner: Option<UserId>) -> impl Future<Output = RepoResult<i64>> + Send;
 }
 
 pub trait CallRepo {
-    /// Applique un plan du cycle de vie ; renvoie l'entree creee ou modifiee.
+    /// Applies a life-cycle plan; returns the entry created or modified.
     fn apply(&self, plan: &CallPlan) -> impl Future<Output = RepoResult<Option<CallLog>>> + Send;
-    /// Appel encore ouvert (sans fin) du meme numero, le plus recent.
+    /// Call still open (without an end) of the same number, the most recent.
     fn find_open(
         &self,
         device: AndroidDeviceId,
@@ -670,15 +670,15 @@ pub trait CallRepo {
 pub trait SmsOutboxRepo {
     fn enqueue(&self, n: &NewOutbox) -> impl Future<Output = RepoResult<SmsOutbox>> + Send;
     fn get(&self, id: OutboxId) -> impl Future<Output = RepoResult<Option<SmsOutbox>>> + Send;
-    /// Etat d'envoi des SMS du navigateur donnes (ceux qui n'ont pas de ligne n'apparaissent pas).
+    /// Sending state of the given browser SMS (those without a row do not appear).
     fn for_sms(&self, ids: &[SmsId]) -> impl Future<Output = RepoResult<Vec<SmsOutbox>>> + Send;
-    /// En attente pour cet appareil, du plus ancien au plus recent.
+    /// Pending for this device, from oldest to most recent.
     fn pending_for_device(
         &self,
         device: AndroidDeviceId,
     ) -> impl Future<Output = RepoResult<Vec<SmsOutbox>>> + Send;
-    /// Accuse de l'application. Ne change que les lignes `pending` de **cet appareil** : renvoie `None` si l'identifiant est inconnu,
-    /// appartient a un autre appareil ou a deja recu un accuse.
+    /// Acknowledgement from the application. Only changes the `pending` rows of **this device**: returns `None` if the identifier is unknown,
+    /// belongs to another device or has already received an acknowledgement.
     fn ack(
         &self,
         device: AndroidDeviceId,
@@ -687,7 +687,7 @@ pub trait SmsOutboxRepo {
         error: &str,
         at: DateTime<Utc>,
     ) -> impl Future<Output = RepoResult<Option<SmsOutbox>>> + Send;
-    /// Passe en `failed` (message `error`) les lignes `pending` creees avant `before` ; renvoie les lignes modifiees.
+    /// Sets to `failed` (message `error`) the `pending` rows created before `before`; returns the rows modified.
     fn expire(
         &self,
         before: DateTime<Utc>,
@@ -697,7 +697,7 @@ pub trait SmsOutboxRepo {
 }
 
 pub trait MessageRepo {
-    /// Message `sending` et un destinataire par entree de `deliveries` (`(utilisateur, e-mail, SMS)`), dans une transaction.
+    /// `sending` message and one recipient per entry of `deliveries` (`(user, e-mail, SMS)`), in a transaction.
     fn create(
         &self,
         sender: UserId,
@@ -707,14 +707,14 @@ pub trait MessageRepo {
         deliveries: &[(UserId, DeliveryStatus, DeliveryStatus)],
     ) -> impl Future<Output = RepoResult<(Message, Vec<Delivery>)>> + Send;
     fn get(&self, id: MessageId) -> impl Future<Output = RepoResult<Option<Message>>> + Send;
-    /// Les plus recents d'abord.
+    /// Most recent first.
     fn list(
         &self,
         limit: i64,
         offset: i64,
     ) -> impl Future<Output = RepoResult<Vec<Message>>> + Send;
     fn deliveries(&self, id: MessageId) -> impl Future<Output = RepoResult<Vec<Delivery>>> + Send;
-    /// Messages recus par un compte avec son propre envoi, les plus recents d'abord.
+    /// Messages received by an account with its own sending, most recent first.
     fn inbox(
         &self,
         user: UserId,
@@ -722,7 +722,7 @@ pub trait MessageRepo {
     ) -> impl Future<Output = RepoResult<Vec<(Message, Delivery)>>> + Send;
     fn delivery(&self, id: DeliveryId)
     -> impl Future<Output = RepoResult<Option<Delivery>>> + Send;
-    /// Met a jour l'etat e-mail et/ou SMS d'un destinataire (`None` : inchange) ; `error` s'ajoute s'il n'est pas vide.
+    /// Updates the e-mail and/or SMS state of a recipient (`None`: unchanged); `error` is appended if it is not empty.
     fn set_delivery(
         &self,
         id: DeliveryId,
@@ -730,7 +730,7 @@ pub trait MessageRepo {
         sms: Option<DeliveryStatus>,
         error: &str,
     ) -> impl Future<Output = RepoResult<Option<Delivery>>> + Send;
-    /// Passe le message en `sent` (avec `sent_at`) s'il n'a plus d'envoi en attente ; renvoie le message dans son etat final.
+    /// Sets the message to `sent` (with `sent_at`) if it has no pending sending any more; returns the message in its final state.
     fn finish_if_complete(
         &self,
         id: MessageId,
@@ -743,17 +743,17 @@ pub trait MessageRepo {
     ) -> impl Future<Output = RepoResult<()>> + Send;
 }
 
-/// Cameras (R6, ADR 0043). Les secrets du brouillon sont deja chiffres.
+/// Cameras (R6, ADR 0043). The draft's secrets are already encrypted.
 pub trait CameraRepo {
-    /// Par priorite puis par nom.
+    /// By priority then by name.
     fn list(&self) -> impl Future<Output = RepoResult<Vec<Camera>>> + Send;
     fn get(&self, id: CameraId) -> impl Future<Output = RepoResult<Option<Camera>>> + Send;
     fn get_by_uuid(
         &self,
         uuid: CameraUuid,
     ) -> impl Future<Output = RepoResult<Option<Camera>>> + Send;
-    /// `uuid` : l'identifiant public voulu (le serveur le tire avant d'enregistrer, car il lie les secrets chiffres) ; `None` : la
-    /// base en tire un. `Conflict` s'il existe deja.
+    /// `uuid`: the wanted public identifier (the server draws it before saving, because it binds the encrypted secrets); `None`: the
+    /// database draws one. `Conflict` if it already exists.
     fn create(
         &self,
         uuid: Option<CameraUuid>,
@@ -764,14 +764,14 @@ pub trait CameraRepo {
         id: CameraId,
         draft: &CameraDraft,
     ) -> impl Future<Output = RepoResult<Camera>> + Send;
-    /// Supprime la camera et, en cascade, ses presets, enregistrements, snapshots et evenements.
+    /// Deletes the camera and, in cascade, its presets, recordings, snapshots and events.
     fn delete(&self, id: CameraId) -> impl Future<Output = RepoResult<()>> + Send;
     fn touch_last_seen(
         &self,
         id: CameraId,
         at: DateTime<Utc>,
     ) -> impl Future<Output = RepoResult<()>> + Send;
-    /// Enregistre ce que la synchronisation ONVIF a appris (fabricant, modele, profil principal, PTZ).
+    /// Records what the ONVIF synchronisation learned (manufacturer, model, main profile, PTZ).
     fn apply_onvif(
         &self,
         id: CameraId,
@@ -790,15 +790,15 @@ pub trait CameraRepo {
 }
 
 pub trait PtzPresetRepo {
-    /// Par position puis par nom.
+    /// By position then by name.
     fn list(&self, camera: CameraId) -> impl Future<Output = RepoResult<Vec<PtzPreset>>> + Send;
-    /// `Conflict` si le nom existe deja pour cette camera.
+    /// `Conflict` if the name already exists for this camera.
     fn create(
         &self,
         camera: CameraId,
         draft: &PtzPresetDraft,
     ) -> impl Future<Output = RepoResult<PtzPreset>> + Send;
-    /// Cree le preset ou, s'il existe deja un preset de ce nom pour cette camera, remplace son jeton et sa position (comme la reference).
+    /// Creates the preset or, if a preset of this name already exists for this camera, replaces its token and position (like the reference).
     fn upsert(
         &self,
         camera: CameraId,
@@ -809,27 +809,27 @@ pub trait PtzPresetRepo {
 }
 
 pub trait RecordingRepo {
-    /// `Conflict` si le fichier est deja indexe.
+    /// `Conflict` if the file is already indexed.
     fn create(
         &self,
         camera: CameraId,
         new: &NewRecording,
     ) -> impl Future<Output = RepoResult<Recording>> + Send;
     fn get(&self, id: RecordingId) -> impl Future<Output = RepoResult<Option<Recording>>> + Send;
-    /// Les plus recents d'abord.
+    /// Most recent first.
     fn list(
         &self,
         camera: CameraId,
         limit: i64,
     ) -> impl Future<Output = RepoResult<Vec<Recording>>> + Send;
-    /// Les segments dont le debut tombe dans `[from, to)`, du plus ancien au plus recent (page d'une journee).
+    /// The segments whose start falls in `[from, to)`, from oldest to most recent (page of a day).
     fn list_between(
         &self,
         camera: CameraId,
         from: DateTime<Utc>,
         to: DateTime<Utc>,
     ) -> impl Future<Output = RepoResult<Vec<Recording>>> + Send;
-    /// Segments pas encore archives (`pending`, `uploading`, `error`), les plus anciens d'abord.
+    /// Segments not yet archived (`pending`, `uploading`, `error`), oldest first.
     fn list_unarchived(
         &self,
         limit: i64,
@@ -858,13 +858,13 @@ pub trait SnapshotRepo {
         size_bytes: i32,
     ) -> impl Future<Output = RepoResult<Snapshot>> + Send;
     fn get(&self, id: SnapshotId) -> impl Future<Output = RepoResult<Option<Snapshot>>> + Send;
-    /// Les plus recents d'abord.
+    /// Most recent first.
     fn list(
         &self,
         camera: CameraId,
         limit: i64,
     ) -> impl Future<Output = RepoResult<Vec<Snapshot>>> + Send;
-    /// Snapshots de toutes les cameras (ou d'une seule), entre `from` (inclus) et `to` (exclu) si donnes, les plus recents d'abord.
+    /// Snapshots of all the cameras (or of just one), between `from` (inclusive) and `to` (exclusive) if given, most recent first.
     fn list_filtered(
         &self,
         camera: Option<CameraId>,
@@ -872,7 +872,7 @@ pub trait SnapshotRepo {
         to: Option<DateTime<Utc>>,
         limit: i64,
     ) -> impl Future<Output = RepoResult<Vec<Snapshot>>> + Send;
-    /// Les snapshots d'une camera au-dela des `keep` plus recents (a supprimer), les plus anciens d'abord.
+    /// The snapshots of a camera beyond the `keep` most recent ones (to delete), oldest first.
     fn excess(
         &self,
         camera: CameraId,
@@ -881,7 +881,7 @@ pub trait SnapshotRepo {
     fn delete(&self, id: SnapshotId) -> impl Future<Output = RepoResult<()>> + Send;
 }
 
-/// Mouvements et detections d'objets.
+/// Motions and object detections.
 pub trait EventRepo {
     fn record_motion(
         &self,
@@ -894,7 +894,7 @@ pub trait EventRepo {
         camera: CameraId,
         limit: i64,
     ) -> impl Future<Output = RepoResult<Vec<MotionEvent>>> + Send;
-    /// Un mouvement a-t-il eu lieu entre `from` et `to` (type d'un segment enregistre) ?
+    /// Did a motion take place between `from` and `to` (type of a recorded segment)?
     fn motion_between(
         &self,
         camera: CameraId,
@@ -928,9 +928,9 @@ pub trait DetectorConfigRepo {
     ) -> impl Future<Output = RepoResult<DetectorConfig>> + Send;
 }
 
-/// Jetons d'acces MCP (ADR 0059). La valeur d'un jeton n'arrive jamais ici : seulement son empreinte SHA-256.
+/// MCP access tokens (ADR 0059). A token's value never arrives here: only its SHA-256 fingerprint.
 pub trait McpTokenRepo {
-    /// Enregistre un jeton (`hash` : 32 octets, `prefix` : le debut visible de la valeur).
+    /// Records a token (`hash`: 32 bytes, `prefix`: the visible beginning of the value).
     fn create(
         &self,
         new: &NewMcpToken,
@@ -939,21 +939,21 @@ pub trait McpTokenRepo {
         now: DateTime<Utc>,
         created_by: Option<UserId>,
     ) -> impl Future<Output = RepoResult<McpToken>> + Send;
-    /// Tous les jetons, les plus recents d'abord (actifs, expires et revoques).
+    /// All the tokens, most recent first (active, expired and revoked).
     fn list(&self) -> impl Future<Output = RepoResult<Vec<McpToken>>> + Send;
-    /// Le jeton de cette empreinte s'il est **actif** a `now` (ni revoque, ni expire).
+    /// The token with this fingerprint if it is **active** at `now` (neither revoked nor expired).
     fn find_active(
         &self,
         hash: &[u8],
         now: DateTime<Utc>,
     ) -> impl Future<Output = RepoResult<Option<McpToken>>> + Send;
-    /// Note l'usage ; n'ecrit pas plus d'une fois par minute et par jeton.
+    /// Notes the usage; writes at most once a minute per token.
     fn touch(
         &self,
         id: McpTokenId,
         now: DateTime<Utc>,
     ) -> impl Future<Output = RepoResult<()>> + Send;
-    /// Revoque ; `true` si le jeton etait actif (une revocation deja faite ne change pas sa date).
+    /// Revokes; `true` if the token was active (a revocation already done does not change its date).
     fn revoke(
         &self,
         id: McpTokenId,
@@ -961,28 +961,28 @@ pub trait McpTokenRepo {
     ) -> impl Future<Output = RepoResult<bool>> + Send;
 }
 
-/// Journal d'audit MCP.
+/// MCP audit log.
 pub trait McpAuditRepo {
-    /// Ecrit une ligne et renvoie son numero. Une action qui change quelque chose ecrit sa ligne **avant** de s'executer, avec
-    /// l'issue `pending`, puis la ferme par [`McpAuditRepo::complete`].
+    /// Writes a line and returns its number. An action that changes something writes its line **before** running, with
+    /// the outcome `pending`, then closes it with [`McpAuditRepo::complete`].
     fn record(
         &self,
         entry: &NewAuditEntry,
         now: DateTime<Utc>,
     ) -> impl Future<Output = RepoResult<i64>> + Send;
-    /// Fixe l'issue et le detail d'une ligne ecrite `pending`.
+    /// Sets the outcome and detail of a line written as `pending`.
     fn complete(
         &self,
         id: i64,
         outcome: &str,
         detail: &str,
     ) -> impl Future<Output = RepoResult<()>> + Send;
-    /// Les plus recentes d'abord, d'un seul type si `kind` est donne ; `limit` est borne par l'appelant.
+    /// Most recent first, of a single type if `kind` is given; `limit` is bounded by the caller.
     fn recent(
         &self,
         kind: Option<AuditKind>,
         limit: i64,
     ) -> impl Future<Output = RepoResult<Vec<McpAuditEntry>>> + Send;
-    /// Supprime ce qui est plus ancien que `before` ; renvoie le nombre de lignes.
+    /// Deletes what is older than `before`; returns the number of rows.
     fn purge_before(&self, before: DateTime<Utc>) -> impl Future<Output = RepoResult<u64>> + Send;
 }

@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Regles d'affichage des widgets du tableau de bord, pures et testees sans navigateur (R2 lot 4) :
-//! choix automatique de la presentation d'un appareil, lignes d'etat (unites), adresse d'un panneau Grafana.
+//! Display rules of the dashboard widgets, pure and tested without a browser (R2 lot 4):
+//! automatic choice of a device's presentation, state rows (units), address of a Grafana panel.
 
 use serde_json::Value;
 
 use crate::dashboard::Presentation;
 use crate::device::DeviceType;
 
-/// Presentation d'un appareil : celle demandee ; pour `Auto`, celle de son **type** quand il est precis, sinon (type
-/// `generic`, ou appareil Zigbee2MQTT dont les `exposes` composites n'ont pas permis de deviner le type) celle deduite de
-/// son etat.
+/// Presentation of a device: the requested one; for `Auto`, that of its **type** when it is precise, otherwise (type
+/// `generic`, or a Zigbee2MQTT device whose composite `exposes` did not allow guessing the type) the one deduced from
+/// its state.
 #[must_use]
 pub fn presentation_for(
     requested: Presentation,
@@ -32,8 +32,8 @@ pub fn presentation_for(
     }
 }
 
-/// Presentation a utiliser pour un appareil : celle demandee, ou (pour `Auto`) celle deduite des proprietes de son etat.
-/// Faute de table d'appareils (R3), le type de l'appareil se lit dans les cles de l'etat publie.
+/// Presentation to use for a device: the requested one, or (for `Auto`) the one deduced from the properties of its state.
+/// For lack of a devices table (R3), the device's type is read from the keys of the published state.
 #[must_use]
 pub fn resolve_presentation(requested: Presentation, state: &Value) -> Presentation {
     if requested != Presentation::Auto {
@@ -82,7 +82,7 @@ pub fn resolve_presentation(requested: Presentation, state: &Value) -> Presentat
     }
 }
 
-/// Proprietes de diagnostic, masquees du choix de presentation et placees en fin de liste.
+/// Diagnostic properties, hidden from the presentation choice and placed at the end of the list.
 fn is_diagnostic(key: &str) -> bool {
     matches!(
         key,
@@ -90,20 +90,20 @@ fn is_diagnostic(key: &str) -> bool {
     )
 }
 
-/// Une ligne d'etat prete a afficher.
+/// A state row ready to display.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct StateRow {
     pub key: String,
-    /// Nom lisible de la cle (libelle de l'appareil) ; vide = a deduire de la cle.
+    /// Readable name of the key (the device's label); empty = to deduce from the key.
     pub name: String,
     pub value: String,
     pub unit: String,
     pub is_bool: bool,
-    /// Valeur booleenne vraie (significatif si `is_bool`).
+    /// True boolean value (meaningful if `is_bool`).
     pub on: bool,
 }
 
-/// Unite usuelle d'une propriete Zigbee2MQTT.
+/// Usual unit of a Zigbee2MQTT property.
 #[must_use]
 pub fn unit_of(key: &str) -> &'static str {
     match key {
@@ -135,15 +135,15 @@ fn format_number(n: &serde_json::Number) -> String {
     }
 }
 
-/// Lignes d'etat d'un appareil, triees par nom, diagnostic en dernier. Les objets et tableaux sont resumes en JSON compact
-/// tronque (jamais de HTML : le texte est echappe par l'affichage).
+/// State rows of a device, sorted by name, diagnostics last. Objects and arrays are summarised as truncated compact JSON
+/// (never HTML: the text is escaped by the display).
 #[must_use]
 pub fn state_rows(state: &Value) -> Vec<StateRow> {
     state_rows_with(state, &[], &[])
 }
 
-/// Comme [`state_rows`], avec les libelles de la table des appareils (nom, unite) et les cles masquees de l'appareil.
-/// Un libelle sans unite laisse l'unite usuelle de la cle.
+/// Like [`state_rows`], with the labels of the devices table (name, unit) and the device's hidden keys.
+/// A label without a unit leaves the key's usual unit.
 #[must_use]
 pub fn state_rows_with(
     state: &Value,
@@ -192,7 +192,7 @@ pub fn state_rows_with(
     rows
 }
 
-/// Origine (`schema://hote[:port]`) d'une adresse http(s), en minuscules ; `None` si ce n'en est pas une.
+/// Origin (`scheme://host[:port]`) of an http(s) address, in lower case; `None` if it is not one.
 #[must_use]
 pub fn http_origin(url: &str) -> Option<String> {
     let (scheme, rest) = url.split_once("://")?;
@@ -200,7 +200,7 @@ pub fn http_origin(url: &str) -> Option<String> {
         return None;
     }
     let authority = rest.split(['/', '?', '#']).next()?;
-    // Pas d'identifiants dans l'adresse (user:pass@hote) : refus plutot que contournement.
+    // No credentials in the address (user:pass@host): refusal rather than a workaround.
     if authority.is_empty() || authority.contains('@') || authority.contains(char::is_whitespace) {
         return None;
     }
@@ -211,13 +211,13 @@ pub fn http_origin(url: &str) -> Option<String> {
     ))
 }
 
-/// Adresse a charger dans l'iframe d'un widget Grafana.
+/// Address to load in the iframe of a Grafana widget.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum GrafanaSrc {
     Url(String),
-    /// Rien d'exploitable dans la configuration (ou `GRAFANA_PUBLIC_URL` vide pour un panneau par uid / appareil).
+    /// Nothing usable in the configuration (or empty `GRAFANA_PUBLIC_URL` for a panel by uid / device).
     NotConfigured,
-    /// `panel_url` d'une autre origine que `GRAFANA_PUBLIC_URL` : la CSP la bloquerait, on ne la charge pas.
+    /// `panel_url` of an origin other than `GRAFANA_PUBLIC_URL`: the CSP would block it, we do not load it.
     Forbidden,
 }
 
@@ -228,8 +228,8 @@ fn with_query(url: &str, extra: &str) -> String {
     format!("{url}{sep}{extra}")
 }
 
-/// Calcule l'adresse du panneau (memes cas que l'implementation de reference) : `panel_url`, sinon appareil + `key`, sinon
-/// `dashboard_uid` (+ `panel_id`). `base` est `GRAFANA_PUBLIC_URL`. Seule l'origine de `base` est autorisee.
+/// Computes the panel address (same cases as the reference implementation): `panel_url`, otherwise device + `key`, otherwise
+/// `dashboard_uid` (+ `panel_id`). `base` is `GRAFANA_PUBLIC_URL`. Only the origin of `base` is allowed.
 #[must_use]
 pub fn grafana_src(config: &Value, device_id: Option<i64>, base: Option<&str>) -> GrafanaSrc {
     let base = base
@@ -345,7 +345,7 @@ mod tests {
         );
         let by = |k: &str| rows.iter().find(|r| r.key == k).unwrap();
         assert!(rows.iter().all(|r| r.key != "update"), "cle masquee");
-        // Le libelle donne le nom et, s'il en a une, l'unite ; sans unite, l'unite usuelle reste.
+        // The label gives the name and, if it has one, the unit; without a unit, the usual unit stays.
         assert_eq!(
             (
                 by("temperature").name.as_str(),
@@ -357,7 +357,7 @@ mod tests {
             (by("battery").name.as_str(), by("battery").unit.as_str()),
             ("Battery", "%")
         );
-        // Pas d'unite pour une valeur qui n'est pas un nombre ; cle sans libelle : nom vide (deduit de la cle a l'affichage).
+        // No unit for a value that is not a number; key without a label: empty name (deduced from the key at display time).
         assert_eq!(by("power").unit, "");
         assert_eq!((by("x").name.as_str(), by("x").unit.as_str()), ("", ""));
     }
@@ -373,11 +373,11 @@ mod tests {
         assert_eq!(p(Some(T::Switch)), P::DeviceSwitch);
         assert_eq!(p(Some(T::Cover)), P::DeviceCover);
         assert_eq!(p(Some(T::Climate)), P::DeviceClimate);
-        // Type generique (dont les lampes Zigbee2MQTT, voir ADR 0025) ou inconnu : l'etat decide.
+        // Generic type (including Zigbee2MQTT lights, see ADR 0025) or unknown: the state decides.
         assert_eq!(p(Some(T::Generic)), P::DeviceLight);
         assert_eq!(p(Some(T::Remote)), P::DeviceLight);
         assert_eq!(p(None), P::DeviceLight);
-        // La presentation demandee l'emporte toujours.
+        // The requested presentation always wins.
         assert_eq!(
             presentation_for(P::DeviceFan, Some(T::Sensor), &state),
             P::DeviceFan
@@ -483,7 +483,7 @@ mod tests {
             GrafanaSrc::NotConfigured
         );
         assert_eq!(grafana_src(&json!({}), None, b), GrafanaSrc::NotConfigured);
-        // Un uid ou une cle ne peut pas injecter de parametres.
+        // A uid or a key cannot inject parameters.
         assert_eq!(
             grafana_src(&json!({"dashboard_uid": "a&x=1#"}), None, b),
             GrafanaSrc::Url("https://g.example/d/ax1?kiosk=tv&theme=dark&refresh=30s".into())

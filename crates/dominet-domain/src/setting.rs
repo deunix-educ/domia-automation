@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Reglages applicatifs types.
+//! Typed application settings.
 
 use std::fmt;
 use std::str::FromStr;
@@ -8,26 +8,26 @@ use chrono::{DateTime, Utc};
 
 use crate::error::ValidationError;
 
-/// Fragments qui designent une cle sensible (des reglages sensibles).
+/// Fragments that designate a sensitive key (sensitive settings).
 const SENSITIVE_MARKERS: [&str; 4] = ["KEY", "PASSWORD", "TOKEN", "SECRET"];
 
-/// Texte affiche a la place d'une valeur sensible.
+/// Text displayed in place of a sensitive value.
 pub const MASK: &str = "********";
 
-/// Vrai si la cle designe un secret (cle API, mot de passe, jeton...).
+/// True if the key designates a secret (API key, password, token...).
 #[must_use]
 pub fn is_sensitive_key(key: &str) -> bool {
     let up = key.to_ascii_uppercase();
     SENSITIVE_MARKERS.iter().any(|m| up.contains(m))
 }
 
-/// Cle de reglage : 1 a 64 caracteres, majuscules, chiffres et `_`.
+/// Setting key: 1 to 64 characters, upper case, digits and `_`.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SettingKey(String);
 
 impl SettingKey {
     /// # Errors
-    /// Refuse une cle vide, trop longue ou hors `[A-Z0-9_]`.
+    /// Refuses an empty key, one that is too long or outside `[A-Z0-9_]`.
     pub fn parse(raw: &str) -> Result<Self, ValidationError> {
         if raw.is_empty()
             || raw.len() > 64
@@ -90,7 +90,7 @@ impl FromStr for SettingType {
     }
 }
 
-/// Valeur typee d'un reglage.
+/// Typed value of a setting.
 #[derive(Debug, Clone, PartialEq)]
 pub enum SettingValue {
     Str(String),
@@ -100,10 +100,10 @@ pub enum SettingValue {
 }
 
 impl SettingValue {
-    /// Interprete un texte selon le type. Booleens acceptes : 1/true/yes/oui et 0/false/no/non.
+    /// Interprets a text according to the type. Accepted booleans: 1/true/yes/oui and 0/false/no/non.
     ///
     /// # Errors
-    /// Refuse un texte incompatible avec le type (le message dit lequel est attendu).
+    /// Refuses a text incompatible with the type (the message says which one is expected).
     pub fn parse(raw: &str, ty: SettingType) -> Result<Self, ValidationError> {
         let raw = raw.trim();
         match ty {
@@ -128,7 +128,7 @@ impl SettingValue {
         }
     }
 
-    /// Forme texte stockee en base.
+    /// Text form stored in the database.
     #[must_use]
     pub fn to_raw(&self) -> String {
         match self {
@@ -140,7 +140,7 @@ impl SettingValue {
     }
 }
 
-/// Reglage tel que stocke. Si `is_secret`, `value` est un chiffre (ADR 0011), jamais une valeur en clair.
+/// Setting as stored. If `is_secret`, `value` is a cipher text (ADR 0011), never a clear value.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AppSetting {
     pub key: String,
@@ -153,7 +153,7 @@ pub struct AppSetting {
 }
 
 impl AppSetting {
-    /// Valeur a afficher : masquee pour un secret non vide.
+    /// Value to display: masked for a non-empty secret.
     #[must_use]
     pub fn display_value(&self) -> &str {
         if self.is_secret && !self.value.is_empty() {
@@ -163,17 +163,17 @@ impl AppSetting {
         }
     }
 
-    /// Valeur typee (invalide pour un secret chiffre : il faut d'abord le dechiffrer).
+    /// Typed value (invalid for an encrypted secret: it must be decrypted first).
     ///
     /// # Errors
-    /// Retourne l'erreur d'interpretation si la valeur ne correspond pas au type.
+    /// Returns the interpretation error if the value does not match the type.
     pub fn typed(&self) -> Result<SettingValue, ValidationError> {
         SettingValue::parse(&self.value, self.value_type)
     }
 }
 
-/// Reglage a creer ou a ecrire ; `value` est ici la valeur **en clair** (le depot ou la couche de
-/// chiffrement la transforme si `is_secret`).
+/// Setting to create or write; `value` is here the **clear** value (the repository or the
+/// encryption layer transforms it if `is_secret`).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SettingDraft {
     pub key: SettingKey,
@@ -185,10 +185,10 @@ pub struct SettingDraft {
 }
 
 impl SettingDraft {
-    /// Verifie que la valeur correspond au type et que les cles sensibles sont bien marquees secretes.
+    /// Checks that the value matches the type and that sensitive keys are indeed marked secret.
     ///
     /// # Errors
-    /// Retourne la premiere regle violee.
+    /// Returns the first rule violated.
     pub fn validate(&self) -> Result<(), ValidationError> {
         SettingValue::parse(&self.value, self.value_type)?;
         if is_sensitive_key(self.key.as_str()) && !self.is_secret {

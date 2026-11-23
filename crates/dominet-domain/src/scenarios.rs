@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Scenarios de test tires du `context.yaml` de la **production reference** (R4) : appareils, scenes, automations et regle d'alerte
-//! reels, utilises comme jeux d'essai. Aucun import en base de production : le fichier JSON (`tests/fixtures/automation/
-//! prod-context.json`) vient de `tools/context-to-json.sh`.
+//! Test scenarios drawn from the `context.yaml` of the **reference production** (R4): real devices, scenes, automations and alert rule,
+//! used as test data. No import into a production database: the JSON file (`tests/fixtures/automation/
+//! prod-context.json`) comes from `tools/context-to-json.sh`.
 
 use std::collections::BTreeMap;
 
@@ -12,12 +12,12 @@ use crate::automation::{AutomationDraft, Problems};
 use crate::device::{DeviceId, DeviceType};
 use crate::scene::SceneId;
 
-/// Le JSON de la production, pour les tests des autres crates (fonctionnalite `scenarios`).
+/// The production's JSON, for the tests of the other crates (`scenarios` feature).
 #[cfg(any(test, feature = "scenarios"))]
 pub const PROD_CONTEXT_JSON: &str =
     include_str!("../../../tests/fixtures/automation/prod-context.json");
 
-/// Les deux plugins de la production, portes en Rhai (R4 lot 5) d'apres leur nom : l'implementation de reference d'origine n'est pas dans le
+/// The production's two plugins, ported to Rhai (R4 lot 5) according to their name: the original reference implementation is not in the
 /// `context.yaml`.
 pub const PROD_SCRIPT_LEFT: &str = include_str!("../data/volet-sb-est-gauche.rhai");
 pub const PROD_SCRIPT_RIGHT: &str = include_str!("../data/volet-sb-est-droite.rhai");
@@ -26,17 +26,17 @@ pub const PROD_SCRIPT_RIGHT: &str = include_str!("../data/volet-sb-est-droite.rh
 pub struct ProdDevice {
     pub name: String,
     pub device_type: DeviceType,
-    /// Deduit du topic de commande (`<base>/<nom>/set`).
+    /// Deduced from the command topic (`<base>/<name>/set`).
     pub base_topic: String,
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct ProdScene {
-    /// Numero dans la base de la production (les automations y font reference).
+    /// Number in the production database (the automations refer to it).
     pub pk: i64,
     pub name: String,
     pub icon: String,
-    /// (nom d'appareil, commande), dans l'ordre.
+    /// (device name, command), in order.
     pub actions: Vec<(String, Value)>,
 }
 
@@ -79,7 +79,7 @@ fn s(v: &Value, key: &str) -> Result<String, String> {
 
 impl ProdContext {
     /// # Errors
-    /// Texte de la premiere anomalie du fichier.
+    /// Text of the first anomaly of the file.
     pub fn parse(json: &str) -> Result<Self, String> {
         let root: Value = serde_json::from_str(json).map_err(|e| e.to_string())?;
         let devices = root["devices"]
@@ -168,11 +168,11 @@ impl ProdContext {
 }
 
 impl ProdAutomation {
-    /// Brouillon d'automation. `scene_of` traduit le numero de scene de la production en celui de la base de test.
-    /// Les actions `script` : les deux de la production recoivent leur portage Rhai.
+    /// Automation draft. `scene_of` translates the production's scene number into the test database's.
+    /// The `script` actions: the production's two receive their Rhai port.
     ///
     /// # Errors
-    /// Les problemes de validation du domaine.
+    /// The domain's validation problems.
     pub fn draft(&self, scene_of: &BTreeMap<i64, SceneId>) -> Result<AutomationDraft, Problems> {
         let mut action_config = self.action_config.clone();
         if self.action_type == "scene"
@@ -260,7 +260,7 @@ mod tests {
             2,
             "les deux plugins deviennent des scripts"
         );
-        // Les scenes solaires visent les scenes de la base de test.
+        // The solar scenes target the scenes of the test database.
         let solar: Vec<i64> = drafts
             .iter()
             .filter_map(|d| match d.action {

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Emplacements physiques (pieces, zones).
+//! Physical locations (rooms, zones).
 
 use crate::error::{Problem, ValidationError};
 
@@ -14,7 +14,7 @@ pub struct Location {
     pub active: bool,
 }
 
-/// Emplacement a creer ou a remplacer.
+/// Location to create or replace.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct LocationDraft {
     pub name: String,
@@ -26,7 +26,7 @@ impl LocationDraft {
     pub const NAME_MAX: usize = 64;
     pub const DESCRIPTION_MAX: usize = 128;
 
-    /// Tous les problemes, champ par champ (`validate` ne rapporte que le premier, en francais).
+    /// All the problems, field by field (`validate` only reports the first one, in French).
     #[must_use]
     pub fn problems(&self) -> Vec<(&'static str, Problem)> {
         let mut out = vec![];
@@ -52,7 +52,7 @@ impl LocationDraft {
     }
 
     /// # Errors
-    /// Nom de 1 a 64 caracteres, description de 128 caracteres maximum.
+    /// Name of 1 to 64 characters, description of 128 characters at most.
     pub fn validate(&self) -> Result<(), ValidationError> {
         if self.name.trim().is_empty() || self.name.chars().count() > 64 {
             return Err(ValidationError::new("name: 1 to 64 characters"));

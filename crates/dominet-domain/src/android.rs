@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Relais Android (R5, ADR 0037) : appareils, SMS, journal d'appels et **protocole de l'application Kotlin** (non modifiee).
+//! Android relay (R5, ADR 0037): devices, SMS, call log and the **Kotlin application's protocol** (unmodified).
 //!
-//! Les trames sont celles de `CommWebSocket.kt` : l'application envoie `sms_received`, `call_event` et `sms_sent_ack`, comprend
-//! `auth_ok`, `send_sms` et `pong` et ignore tout le reste. Les champs absents prennent les valeurs par defaut de l'implementation de reference
-//! (`data.get(...)`), un JSON illisible est ignore.
+//! The frames are those of `CommWebSocket.kt`: the application sends `sms_received`, `call_event` and `sms_sent_ack`, understands
+//! `auth_ok`, `send_sms` and `pong` and ignores everything else. Absent fields take the reference implementation's default values
+//! (`data.get(...)`), unreadable JSON is ignored.
 
 use chrono::{DateTime, Utc};
 use serde_json::{Value, json};
@@ -19,7 +19,7 @@ macro_rules! id {
 }
 id!(AndroidDeviceId, SmsId, CallId, OutboxId);
 
-// ------------------------------------------------------------------ appareils
+// ------------------------------------------------------------------ devices
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AndroidDevice {
@@ -32,7 +32,7 @@ pub struct AndroidDevice {
     pub created_at: DateTime<Utc>,
 }
 
-/// Ce que l'utilisateur saisit pour enregistrer un appareil.
+/// What the user enters to register a device.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AndroidDeviceDraft {
     pub name: String,
@@ -40,7 +40,7 @@ pub struct AndroidDeviceDraft {
 }
 
 impl AndroidDeviceDraft {
-    /// Problemes champ par champ (`name`, `phone_number`).
+    /// Field-by-field problems (`name`, `phone_number`).
     #[must_use]
     pub fn problems(&self) -> Vec<(&'static str, Problem)> {
         let mut out = vec![];
@@ -58,8 +58,8 @@ impl AndroidDeviceDraft {
     }
 }
 
-/// Forme canonique d'un jeton lu dans une adresse (`/ws/android/device/<jeton>/`) : UUID en minuscules avec tirets, ou `None`.
-/// Un jeton mal forme est traite comme un jeton inconnu (fermeture 4001), jamais comme une erreur.
+/// Canonical form of a token read from an address (`/ws/android/device/<token>/`): lower-case UUID with hyphens, or `None`.
+/// A malformed token is treated as an unknown token (closing 4001), never as an error.
 #[must_use]
 pub fn canonical_token(text: &str) -> Option<String> {
     let uuid = uuid::Uuid::parse_str(text).ok()?;
@@ -118,7 +118,7 @@ pub struct NewSms {
     pub sent_at: DateTime<Utc>,
 }
 
-/// Numero admis pour un envoi (`SendSmsForm.clean_to` de la reference) : `+` facultatif, puis 6 a 20 chiffres, espaces, tirets ou parentheses.
+/// Number allowed for sending (the reference's `SendSmsForm.clean_to`): optional `+`, then 6 to 20 digits, spaces, hyphens or parentheses.
 #[must_use]
 pub fn is_valid_sms_number(raw: &str) -> bool {
     let t = raw.trim();
@@ -131,7 +131,7 @@ pub fn is_valid_sms_number(raw: &str) -> bool {
             .all(|c| c.is_ascii_digit() || matches!(c, ' ' | '-' | '(' | ')'))
 }
 
-/// Un SMS a envoyer depuis le navigateur.
+/// An SMS to send from the browser.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SmsDraft {
     pub to: String,
@@ -139,7 +139,7 @@ pub struct SmsDraft {
 }
 
 impl SmsDraft {
-    /// Problemes champ par champ (`to`, `body`).
+    /// Field-by-field problems (`to`, `body`).
     #[must_use]
     pub fn problems(&self) -> Vec<(&'static str, Problem)> {
         let mut out = vec![];
@@ -159,7 +159,7 @@ impl SmsDraft {
     }
 }
 
-// ------------------------------------------------------------------ file d'envoi (accuses)
+// ------------------------------------------------------------------ sending queue (acknowledgements)
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum OutboxStatus {
@@ -186,12 +186,12 @@ impl OutboxStatus {
     }
 }
 
-/// D'ou vient un SMS demande a un appareil.
+/// Where an SMS requested from a device comes from.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum OutboxOrigin {
-    /// Envoi depuis la page des SMS.
+    /// Sending from the SMS page.
     Browser(SmsId),
-    /// Destinataire d'un message de la messagerie.
+    /// Recipient of a message of the messaging system.
     Messaging(crate::messaging::DeliveryId),
 }
 
@@ -216,7 +216,7 @@ pub struct NewOutbox {
     pub origin: OutboxOrigin,
 }
 
-// ------------------------------------------------------------------ appels
+// ------------------------------------------------------------------ calls
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum CallDirection {
@@ -257,7 +257,7 @@ pub struct CallLog {
 }
 
 impl CallLog {
-    /// Duree `mm:ss`.
+    /// `mm:ss` duration.
     #[must_use]
     pub fn duration_display(&self) -> String {
         format!("{:02}:{:02}", self.duration / 60, self.duration % 60)
@@ -275,7 +275,7 @@ pub struct NewCall {
     pub duration: i32,
 }
 
-/// Etat d'un appel tel que l'application le raconte. Tout texte inconnu reste admis (reference l'acceptait) et n'ouvre ni ne ferme rien.
+/// State of a call as the application tells it. Any unknown text stays allowed (the reference accepted it) and neither opens nor closes anything.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum CallState {
     Ringing,
@@ -312,7 +312,7 @@ impl CallState {
     }
 }
 
-// ------------------------------------------------------------------ trames application -> serveur
+// ------------------------------------------------------------------ application -> server frames
 
 /// `sms_received`.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -320,7 +320,7 @@ pub struct IncomingSms {
     pub from: String,
     pub contact_name: String,
     pub body: String,
-    /// `None` : absent ou illisible, l'instant de reception est utilise.
+    /// `None`: absent or unreadable, the reception time is used.
     pub timestamp: Option<DateTime<Utc>>,
 }
 
@@ -337,7 +337,7 @@ pub struct CallEvent {
 /// `sms_sent_ack`.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SmsAck {
-    /// Identifiant renvoye tel que recu dans `send_sms` ; absent ou 0 : rien a rapprocher.
+    /// Identifier sent back as received in `send_sms`; absent or 0: nothing to match.
     pub message_id: Option<i64>,
     pub success: bool,
     pub error: String,
@@ -348,9 +348,9 @@ pub enum DeviceFrame {
     SmsReceived(IncomingSms),
     CallEvent(CallEvent),
     SmsSentAck(SmsAck),
-    /// `ping` JSON (l'application ne l'envoie pas ; reference y repondait `pong`).
+    /// JSON `ping` (the application does not send it; the reference answered `pong` to it).
     Ping,
-    /// Type inconnu : ignore.
+    /// Unknown type: ignored.
     Other,
 }
 
@@ -361,7 +361,7 @@ fn text(v: &Value, key: &str) -> String {
     }
 }
 
-/// Date ISO 8601 de l'application (`ISO_OFFSET_DATE_TIME`), avec les tolerances de `parse_datetime` de reference : espace au lieu de `T`.
+/// ISO 8601 date from the application (`ISO_OFFSET_DATE_TIME`), with the tolerances of the reference's `parse_datetime`: space instead of `T`.
 #[must_use]
 pub fn parse_timestamp(text: &str) -> Option<DateTime<Utc>> {
     let t = text.trim();
@@ -371,13 +371,13 @@ pub fn parse_timestamp(text: &str) -> Option<DateTime<Utc>> {
         .map(|d| d.with_timezone(&Utc))
 }
 
-/// Entier d'un JSON : Gson ecrit les nombres entiers tels quels, mais `75.0` est tolere (partie entiere).
+/// Integer from a JSON: Gson writes whole numbers as they are, but `75.0` is tolerated (integer part).
 #[allow(clippy::cast_possible_truncation)]
 fn json_int(v: &Value) -> Option<i64> {
     v.as_i64().or_else(|| v.as_f64().map(|f| f as i64))
 }
 
-/// Lit une trame envoyee par l'application. `None` si ce n'est pas un objet JSON (ignore comme la reference).
+/// Reads a frame sent by the application. `None` if it is not a JSON object (ignored like the reference).
 #[must_use]
 pub fn parse_device_frame(raw: &str) -> Option<DeviceFrame> {
     let v: Value = serde_json::from_str(raw).ok()?;
@@ -412,7 +412,7 @@ pub fn parse_device_frame(raw: &str) -> Option<DeviceFrame> {
     })
 }
 
-// ------------------------------------------------------------------ trames serveur -> application
+// ------------------------------------------------------------------ server -> application frames
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ServerFrame {
@@ -425,7 +425,7 @@ pub enum ServerFrame {
         message_id: i64,
     },
     Pong,
-    /// Comprise par une future application ; l'actuelle l'ignore.
+    /// Understood by a future application; the current one ignores it.
     AlertNotification {
         alert_id: i64,
         rule_name: String,
@@ -435,7 +435,7 @@ pub enum ServerFrame {
 }
 
 impl ServerFrame {
-    /// JSON envoye a l'application (memes cles que reference).
+    /// JSON sent to the application (same keys as the reference).
     #[must_use]
     pub fn to_json(&self) -> String {
         match self {
@@ -460,27 +460,27 @@ impl ServerFrame {
     }
 }
 
-// ------------------------------------------------------------------ cycle de vie d'un appel
+// ------------------------------------------------------------------ life cycle of a call
 
-/// Ce qu'un `call_event` change dans le journal.
+/// What a `call_event` changes in the log.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum CallPlan {
-    /// Nouvelle entree.
+    /// New entry.
     Create(NewCall),
-    /// L'appel ouvert est modifie.
+    /// The open call is modified.
     Update {
         id: CallId,
         direction: Option<CallDirection>,
         ended_at: DateTime<Utc>,
         duration: Option<i32>,
     },
-    /// Rien n'est ecrit (etat sans effet, ou appel inconnu pour un etat qui ne cree rien).
+    /// Nothing is written (state with no effect, or unknown call for a state that creates nothing).
     Nothing,
 }
 
-/// Cycle de vie du journal d'appels (`save_call_event` de la reference) : `ringing` / `outgoing` creent une entree ; `missed` / `ended`
-/// ferment l'appel **ouvert** du meme numero (le plus recent : ecart voulu avec reference, qui prenait le plus ancien), ou, faute d'appel
-/// ouvert, creent une entree deja terminee ; `answered` et les etats inconnus ne changent rien.
+/// Life cycle of the call log (the reference's `save_call_event`): `ringing` / `outgoing` create an entry; `missed` / `ended`
+/// close the **open** call of the same number (the most recent: intended difference with the reference, which took the oldest), or, failing an
+/// open call, create an already finished entry; `answered` and unknown states change nothing.
 #[must_use]
 pub fn plan_call(
     device: AndroidDeviceId,
@@ -629,7 +629,7 @@ mod tests {
                 timestamp: Some(Utc.with_ymd_and_hms(2026, 1, 2, 9, 0, 0).unwrap()),
             }))
         );
-        // Champs absents ou illisibles : valeurs par defaut de la reference.
+        // Absent or unreadable fields: the reference's default values.
         let Some(DeviceFrame::SmsReceived(s)) =
             parse_device_frame(r#"{"type":"sms_received","timestamp":"hier"}"#)
         else {
@@ -735,7 +735,7 @@ mod tests {
             duration: 0,
             received_at: at(10, 0),
         };
-        // ringing / outgoing creent ; la date manquante devient l'instant de reception.
+        // ringing / outgoing create; the missing date becomes the reception time.
         let CallPlan::Create(c) =
             plan_call(dev, &event("ringing", "0612", None, 0), None, at(10, 0))
         else {
@@ -757,7 +757,7 @@ mod tests {
             (c.direction, c.started_at),
             (CallDirection::Outgoing, at(11, 0))
         );
-        // ended ferme l'appel ouvert et garde la duree ; missed le passe en manque.
+        // ended closes the open call and keeps the duration; missed turns it into a missed one.
         assert_eq!(
             plan_call(
                 dev,
@@ -786,7 +786,7 @@ mod tests {
                 duration: None
             }
         );
-        // Sans appel ouvert, missed / ended creent une entree deja terminee.
+        // Without an open call, missed / ended create an already finished entry.
         let CallPlan::Create(c) = plan_call(
             dev,
             &event("missed", "0699", Some(at(12, 0)), 0),
@@ -808,7 +808,7 @@ mod tests {
             panic!()
         };
         assert_eq!((c.direction, c.duration), (CallDirection::Incoming, 42));
-        // answered et les etats inconnus ne font rien.
+        // answered and unknown states do nothing.
         for state in ["answered", "inconnu"] {
             assert_eq!(
                 plan_call(dev, &event(state, "0612", None, 0), Some(&open), at(10, 6)),

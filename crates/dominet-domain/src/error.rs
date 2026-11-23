@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Erreurs du domaine.
+//! Domain errors.
 
-/// Une valeur refusee par une regle metier ; le message est destine a l'utilisateur.
+/// A value refused by a business rule; the message is meant for the user.
 #[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
 #[error("{0}")]
 pub struct ValidationError(pub String);
@@ -12,15 +12,15 @@ impl ValidationError {
     }
 }
 
-/// Motif de refus d'un champ de formulaire (permet a l'interface de traduire le message et de le placer sous le
-/// bon champ). Le texte francais de [`ValidationError`] reste pour l'API et la CLI.
+/// Reason a form field is refused (lets the interface translate the message and put it under the
+/// right field). The French text of [`ValidationError`] stays for the API and the CLI.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Problem {
     Required,
     TooLong {
         max: usize,
     },
-    /// Format ou valeur non admis (le champ porte une aide sur la forme attendue).
+    /// Format or value not allowed (the field carries a hint about the expected form).
     Invalid,
     OutOfRange {
         min: i64,
@@ -28,15 +28,15 @@ pub enum Problem {
     },
 }
 
-/// Erreur d'un depot (port de stockage), independante de la technologie sous-jacente.
+/// Error of a repository (storage port), independent of the underlying technology.
 #[derive(Debug, thiserror::Error)]
 pub enum RepoError {
     #[error("introuvable")]
     NotFound,
-    /// Unicite ou reference violee ; `constraint` nomme la contrainte pour un message precis cote UI.
+    /// Uniqueness or reference violated; `constraint` names the constraint for a precise message on the UI side.
     #[error("conflit ({constraint})")]
     Conflict { constraint: String },
-    /// L'operation laisserait la base sans aucun administrateur actif.
+    /// The operation would leave the database without any active administrator.
     #[error("dernier administrateur actif")]
     LastAdmin,
     #[error("stockage indisponible")]
