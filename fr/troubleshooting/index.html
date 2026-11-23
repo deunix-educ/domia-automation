@@ -1965,6 +1965,11 @@
 <td><code>make prod-logs S=&lt;service&gt; N=100</code></td>
 </tr>
 <tr>
+<td>Zigbee2MQTT boucle avec <code>network commissioning timed out</code> ; l'installeur avertit que la clé contient peut-être déjà un réseau</td>
+<td>La clé avait un réseau Zigbee, mais le dossier Zigbee2MQTT est vide : il essaie d'en créer un <strong>nouveau</strong></td>
+<td><code>docker stop dominet-zigbee2mqtt-1</code> d'abord. Si la clé contenait des appareils appairés, remettre son dossier Zigbee2MQTT d'origine (<code>database.db</code>, <code>coordinator_backup.json</code>, <code>configuration.yaml</code>) dans <code>deploy/zigbee2mqtt</code>. Sinon débrancher et rebrancher la clé (port USB 2.0, rallonge) puis <code>make prod-up</code></td>
+</tr>
+<tr>
 <td>Grafana redémarre et le journal dit <code>invalid email address for SMTP from_address config</code> (nginx et l'application l'attendent)</td>
 <td><code>DEFAULT_FROM_EMAIL</code> se termine par une adresse IP (par exemple <code>dominet@192.168.1.104</code>)</td>
 <td>Mettre <code>DEFAULT_FROM_EMAIL=dominet@dominet.local</code> dans <code>.env</code>, puis <code>make prod-up</code>. <code>make prod-doctor</code> le signale</td>

@@ -1882,7 +1882,7 @@
 <ul>
 <li>Until the first publication every installation silently falls back to the build (a few seconds lost on the failed pull, and a message saying so).</li>
 <li>A downloaded image is trusted as published: it is not verified against the source on the machine. Anyone who wants to can set <code>DOMINET_PULL=0</code>.</li>
-<li>The arm64 image has never been built yet; its first build is part of the Raspberry Pi 5 test (P4).</li>
+<li>The arm64 image was built and run on a Raspberry Pi 5 (2026-11-23, <a href="../0063-arm64-support-levels/">ADR 0063</a>) and published together with the amd64 one as a multi-architecture image.</li>
 <li><code>latest</code> moves with each publication; pin <code>DOMINET_IMAGE_VERSION</code> to a release tag to avoid surprises on <code>make prod-update</code>.</li>
 </ul>
 

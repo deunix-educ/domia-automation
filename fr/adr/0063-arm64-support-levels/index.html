@@ -1849,6 +1849,17 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#resultat-2026-11-23" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Résultat (2026-11-23)
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -1889,6 +1900,8 @@
 <li>Le nombre de caméras sur un Pi est inconnu et probablement bien inférieur à celui de la machine de référence ; rien dans la documentation n'en promet un.</li>
 <li>La publication d'une image arm64 (ADR 0062) devrait attendre une construction native et un démarrage réussis sur un Pi 5.</li>
 </ul>
+<h2 id="resultat-2026-11-23">Résultat (2026-11-23)<a class="headerlink" href="#resultat-2026-11-23" title="Permanent link">&para;</a></h2>
+<p>La condition est remplie sur un Raspberry Pi 5 (8 Go, NVMe, Debian 13) : construction native en 67 minutes, pile démarrée, interface qui répond. L'image arm64 a été fusionnée avec l'amd64 en <code>:1.0.1</code> et <code>:latest</code> multi-architecture (les sources compilées n'avaient pas changé depuis la 1.0.1). Le premier essai a révélé un défaut sans rapport avec la construction : en arm64, <code>docker pull</code> téléchargeait l'image amd64 sans erreur et elle remplaçait la construction locale ; <code>prod.sh</code> ne télécharge plus que l'architecture de la machine. Le nombre de caméras et la charge de la détection restent à mesurer.</p>
 
 
 

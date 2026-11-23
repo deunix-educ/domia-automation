@@ -1882,7 +1882,7 @@
 <ul>
 <li>Jusqu'à la première publication, toute installation se rabat sans bruit sur la construction (quelques secondes perdues sur le téléchargement raté, avec un message qui le dit).</li>
 <li>Une image téléchargée est crue sur parole : elle n'est pas comparée au code source de la machine. Qui le souhaite fixe <code>DOMINET_PULL=0</code>.</li>
-<li>L'image arm64 n'a encore jamais été construite ; sa première construction fait partie de l'essai sur Raspberry Pi 5 (P4).</li>
+<li>L'image arm64 a été construite et lancée sur un Raspberry Pi 5 (2026-11-23, <a href="../0063-arm64-support-levels/">ADR 0063</a>) et publiée avec l'amd64 sous forme d'image multi-architecture.</li>
 <li><code>latest</code> bouge à chaque publication ; fixer <code>DOMINET_IMAGE_VERSION</code> sur une étiquette de version évite les surprises à <code>make prod-update</code>.</li>
 </ul>
 

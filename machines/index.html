@@ -1963,9 +1963,9 @@
 <td>Same image as the reference. Expected to do at least as well; hardware decoding needs an Intel GPU with VAAPI</td>
 </tr>
 <tr>
-<td>Raspberry Pi 5, 8 GB</td>
-<td><strong>not tested yet</strong></td>
-<td>arm64 image never built or run to date; see below</td>
+<td>Raspberry Pi 5, 8 GB, NVMe SSD</td>
+<td><strong>installs and runs</strong> (2026-11-23)</td>
+<td>arm64 image built and started on the machine, then published; the number of cameras is not measured yet; see below</td>
 </tr>
 <tr>
 <td>Other arm64 or amd64 Linux with Docker</td>
@@ -1975,13 +1975,15 @@
 </tbody>
 </table>
 <h2 id="raspberry-pi-5-what-to-expect-what-is-unknown">Raspberry Pi 5: what to expect, what is unknown<a class="headerlink" href="#raspberry-pi-5-what-to-expect-what-is-unknown" title="Permanent link">&para;</a></h2>
+<p>What was verified on a Raspberry Pi 5 (8 GB, NVMe SSD, Debian 13 arm64, Docker 29): the image builds natively in about 67 minutes (no swap problem with 2 GB of swap), the whole stack starts, the database schema is applied, an administrator account is created, and the interface answers in about 10 ms (median) with the stack idle, at 55 °C and never throttled. The stack at rest uses about 1 GB of memory. Not measured: number of cameras, detection load.</p>
 <p>Known from the design (not from measurements):</p>
 <ul>
 <li><strong>Operating system</strong>: 64-bit Raspberry Pi OS (Debian 13 based) or Debian 13 arm64; Docker with the Compose plugin 2.24 or newer. A 32-bit system cannot run the images.</li>
 <li><strong>Storage</strong>: use an <strong>SSD</strong> (USB 3 or NVMe), not an SD card. The database and the video recordings write continuously; an SD card wears out. The installer warns when <code>/</code> is on an SD card.</li>
 <li><strong>Video decoding</strong>: the Intel hardware decoder (VAAPI) is not available on arm64; video is decoded by the processor, so the number of cameras it holds is lower than on the reference machine. The figure is unknown until measured.</li>
 <li><strong>Object detection</strong> (YOLO on CPU): not measured on arm64. Keep it off at first, then enable it on one camera and watch the load.</li>
-<li><strong>First installation</strong>: building the image on the Pi takes a long time (expect well over 40 minutes) and needs memory; prefer a published image (<a href="../adr/0062-published-images-with-local-build-fallback/">ADR 0062</a>). Building on another arm64 machine and publishing is also possible.</li>
+<li><strong>First installation</strong>: the published image now exists for arm64, so the installer downloads it instead of building (a local build took about 67 minutes on a Pi 5; it remains the fallback, <a href="../adr/0062-published-images-with-local-build-fallback/">ADR 0062</a>).</li>
+<li><strong>Memory figures</strong>: for <code>docker stats</code> to show the memory of the containers, the kernel needs the memory cgroup: add <code>cgroup_enable=memory cgroup_memory=1</code> to the line of <code>/boot/firmware/cmdline.txt</code> and reboot. Without it the machine card shows <code>0B</code> for every service.</li>
 <li><strong>Zigbee dongle</strong>: works the same way (<code>/dev/ttyUSB0</code> or <code>/dev/ttyACM0</code>).</li>
 <li><strong>Power and cooling</strong>: use the official power supply and a heat sink or fan; <code>vcgencmd get_throttled</code> (reported by the machine card) shows whether the Pi was ever throttled.</li>
 </ul>

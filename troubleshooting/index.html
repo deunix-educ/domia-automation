@@ -1965,6 +1965,11 @@
 <td><code>make prod-logs S=&lt;service&gt; N=100</code></td>
 </tr>
 <tr>
+<td>Zigbee2MQTT loops with <code>network commissioning timed out</code>; the installer warns that the dongle may already hold a network</td>
+<td>The dongle had a Zigbee network, but the Zigbee2MQTT folder is empty: it tries to create a <strong>new</strong> network</td>
+<td><code>docker stop dominet-zigbee2mqtt-1</code> first. If the dongle held paired devices, restore its original Zigbee2MQTT folder (<code>database.db</code>, <code>coordinator_backup.json</code>, <code>configuration.yaml</code>) into <code>deploy/zigbee2mqtt</code>. Otherwise unplug and replug the dongle (USB 2.0 port, extension cable) and <code>make prod-up</code></td>
+</tr>
+<tr>
 <td>Grafana restarts and the log says <code>invalid email address for SMTP from_address config</code> (nginx and the application then wait for it)</td>
 <td><code>DEFAULT_FROM_EMAIL</code> ends with an IP address (for example <code>dominet@192.168.1.104</code>)</td>
 <td>Set <code>DEFAULT_FROM_EMAIL=dominet@dominet.local</code> in <code>.env</code>, then <code>make prod-up</code>. <code>make prod-doctor</code> reports it</td>
