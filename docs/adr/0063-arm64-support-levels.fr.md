@@ -22,3 +22,6 @@ Option C.
 - La première construction arm64 peut révéler d'autres blocages (un outil téléchargé sans binaire arm64, la mémoire à l'édition de liens WebAssembly) ; ils seront corrigés alors, pas devinés maintenant.
 - Le nombre de caméras sur un Pi est inconnu et probablement bien inférieur à celui de la machine de référence ; rien dans la documentation n'en promet un.
 - La publication d'une image arm64 (ADR 0062) devrait attendre une construction native et un démarrage réussis sur un Pi 5.
+
+## Résultat (2026-11-23)
+La condition est remplie sur un Raspberry Pi 5 (8 Go, NVMe, Debian 13) : construction native en 67 minutes, pile démarrée, interface qui répond. L'image arm64 a été fusionnée avec l'amd64 en `:1.0.1` et `:latest` multi-architecture (les sources compilées n'avaient pas changé depuis la 1.0.1). Le premier essai a révélé un défaut sans rapport avec la construction : en arm64, `docker pull` téléchargeait l'image amd64 sans erreur et elle remplaçait la construction locale ; `prod.sh` ne télécharge plus que l'architecture de la machine. Le nombre de caméras et la charge de la détection restent à mesurer.

@@ -16,5 +16,5 @@ Option C. `tools/prod.sh pull-image` (appelé par `make prod-up`, donc par `./in
 ## Conséquences
 - Jusqu'à la première publication, toute installation se rabat sans bruit sur la construction (quelques secondes perdues sur le téléchargement raté, avec un message qui le dit).
 - Une image téléchargée est crue sur parole : elle n'est pas comparée au code source de la machine. Qui le souhaite fixe `DOMINET_PULL=0`.
-- L'image arm64 n'a encore jamais été construite ; sa première construction fait partie de l'essai sur Raspberry Pi 5 (P4).
+- L'image arm64 a été construite et lancée sur un Raspberry Pi 5 (2026-11-23, [ADR 0063](0063-arm64-support-levels.md)) et publiée avec l'amd64 sous forme d'image multi-architecture.
 - `latest` bouge à chaque publication ; fixer `DOMINET_IMAGE_VERSION` sur une étiquette de version évite les surprises à `make prod-update`.

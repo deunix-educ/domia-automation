@@ -22,3 +22,6 @@ Option C.
 - The first arm64 build may reveal other blockers (a tool download without arm64 binary, memory during the WebAssembly link); they will be fixed then, not guessed now.
 - The camera count on a Pi is unknown and probably well below the reference machine's; nothing in the documentation promises a figure.
 - Publishing an arm64 image (ADR 0062) should wait for one successful native build and start-up on a Pi 5.
+
+## Outcome (2026-11-23)
+The condition was met on a Raspberry Pi 5 (8 GB, NVMe, Debian 13): native build in 67 minutes, stack started, interface answering. The arm64 image was merged with the amd64 one into a multi-architecture `:1.0.1` and `:latest` (the compiled sources had not changed since 1.0.1). The first run exposed a defect that had nothing to do with the build: on arm64 `docker pull` fetched the amd64 image without error and it replaced the local build; `prod.sh` now pulls only the machine's architecture. Camera count and detection load remain unmeasured.

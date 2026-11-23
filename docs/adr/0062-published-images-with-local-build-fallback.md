@@ -16,5 +16,5 @@ Option C. `tools/prod.sh pull-image` (called by `make prod-up`, therefore by `./
 ## Consequences
 - Until the first publication every installation silently falls back to the build (a few seconds lost on the failed pull, and a message saying so).
 - A downloaded image is trusted as published: it is not verified against the source on the machine. Anyone who wants to can set `DOMINET_PULL=0`.
-- The arm64 image has never been built yet; its first build is part of the Raspberry Pi 5 test (P4).
+- The arm64 image was built and run on a Raspberry Pi 5 (2026-11-23, [ADR 0063](0063-arm64-support-levels.md)) and published together with the amd64 one as a multi-architecture image.
 - `latest` moves with each publication; pin `DOMINET_IMAGE_VERSION` to a release tag to avoid surprises on `make prod-update`.
