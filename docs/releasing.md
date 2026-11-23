@@ -48,4 +48,11 @@ Going back is not a real option: assume everything pushed is copied within minut
 
 ## 5. Later releases
 
-`make ci-full`, update `CHANGELOG.md`, bump the version, tag, `tools/publish-image.sh`, `make docs-deploy`. Migrations never edit an applied file; a rewording needs an entry like the one in `crates/dominet-store/src/lib.rs`.
+`make ci-full`, update `CHANGELOG.md`, bump the version, commit, tag, then the artefacts:
+
+1. **Image for both architectures, built natively** (emulation is far too slow). On the amd64 machine: `make image image-smoke`, then `docker tag dominet:dev <image>:X.Y.Z-amd64 && docker push <image>:X.Y.Z-amd64`. On an arm64 machine (a Raspberry Pi 5 took about 67 minutes cold): check out the tag, `DOMINET_PULL=0 make prod-up`, then tag and push `:X.Y.Z-arm64`. Merge: `docker buildx imagetools create -t <image>:X.Y.Z -t <image>:latest <image>@sha256:<amd64 digest> <image>:X.Y.Z-arm64`, and check with `docker buildx imagetools inspect <image>:latest`. Do **not** delete the `-amd64` and `-arm64` tags: they are the manifests the index points to.
+2. If no compiled source changed since the previous release (documentation or scripts only), the existing images can stay: no new version is needed.
+3. `make docs-deploy` (or build the site and push `gh-pages` yourself). Check the commit author of `gh-pages`: `mkdocs gh-deploy` uses the local git identity and may leave it empty.
+4. The GitHub release, from the tag, with the `CHANGELOG.md` section as notes.
+
+Before anything, a clone on a clean machine must still install: `git clone`, `./install.sh`. Migrations never edit an applied file; a rewording needs an entry like the one in `crates/dominet-store/src/lib.rs`.

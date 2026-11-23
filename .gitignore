@@ -30,3 +30,6 @@ __pycache__/
 
 # Donnees locales (images de detection, etc.) : jamais versionnees
 /data/
+
+# Notes privees de l'agent (jamais commitees)
+/CLAUDE.local.md

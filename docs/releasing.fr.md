@@ -48,4 +48,11 @@ Revenir en arrière n'est pas une vraie option : tout ce qui a été poussé est
 
 ## 5. Versions suivantes
 
-`make ci-full`, mettre à jour `CHANGELOG.md`, monter la version, étiqueter, `tools/publish-image.sh`, `make docs-deploy`. Une migration appliquée n'est jamais modifiée ; une reformulation demande une entrée comme celle de `crates/dominet-store/src/lib.rs`.
+`make ci-full`, mettre à jour `CHANGELOG.md`, monter la version, commiter, étiqueter, puis les artefacts :
+
+1. **Image pour les deux architectures, construite en natif** (l'émulation est bien trop lente). Sur la machine amd64 : `make image image-smoke`, puis `docker tag dominet:dev <image>:X.Y.Z-amd64 && docker push <image>:X.Y.Z-amd64`. Sur une machine arm64 (un Raspberry Pi 5 a pris environ 67 minutes à froid) : extraire l'étiquette, `DOMINET_PULL=0 make prod-up`, puis étiqueter et pousser `:X.Y.Z-arm64`. Fusionner : `docker buildx imagetools create -t <image>:X.Y.Z -t <image>:latest <image>@sha256:<condensat amd64> <image>:X.Y.Z-arm64`, et vérifier avec `docker buildx imagetools inspect <image>:latest`. **Ne supprimez pas** les étiquettes `-amd64` et `-arm64` : ce sont les manifestes que l'index référence.
+2. Si aucun source compilé n'a changé depuis la version précédente (documentation ou scripts seulement), les images existantes peuvent rester : pas de nouvelle version nécessaire.
+3. `make docs-deploy` (ou construire le site et pousser `gh-pages` soi-même). Vérifiez l'auteur du commit de `gh-pages` : `mkdocs gh-deploy` utilise l'identité git locale et peut la laisser vide.
+4. La release GitHub, depuis l'étiquette, avec la section de `CHANGELOG.md` comme notes.
+
+Avant tout, un clone sur une machine propre doit encore s'installer : `git clone`, `./install.sh`. Une migration appliquée n'est jamais modifiée ; une reformulation demande une entrée comme celle de `crates/dominet-store/src/lib.rs`.
