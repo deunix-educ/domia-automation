@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Role `video`, derniere image et snapshots indexes (R6 lot 6) : de vrais `ffmpeg` sur des sources `lavfi` (ignore sans `ffmpeg`), un vrai
-//! dossier temporaire, une vraie base.
+//! `video` role, last image and indexed snapshots (R6 lot 6): real `ffmpeg`s on `lavfi` sources (ignored without `ffmpeg`), a real
+//! temporary folder, a real database.
 
 mod common;
 
@@ -28,7 +28,7 @@ fn have_ffmpeg() -> bool {
     ok
 }
 
-/// Dossier temporaire propre a un test, supprime a la fin.
+/// Temporary folder specific to a test, deleted at the end.
 struct TempDir(PathBuf);
 
 impl TempDir {
@@ -111,18 +111,18 @@ async fn the_video_role_follows_the_cameras_and_keeps_their_last_image_on_disk(p
     let dir = TempDir::new();
     let st = test_state(pool, &dir.0, "500");
     dominet_server::frames::spawn_role(&st);
-    // Une camera active : une source, et sa derniere image apparait.
+    // An active camera: a source, and its last image appears.
     let (cam, _) = st.cameras.save(None, input("Salon", true)).await.unwrap();
     let latest = latest_dir(&dir.0).join(format!("{}.jpg", cam.uuid));
     wait_for("derniere image", || latest.exists()).await;
     let bytes = std::fs::read(&latest).unwrap();
     assert!(bytes.starts_with(&[0xFF, 0xD8]) && bytes.ends_with(&[0xFF, 0xD9]));
     assert!(st.frames.has(cam.uuid));
-    // Une camera inactive n'a pas de source.
+    // An inactive camera has no source.
     let (off, _) = st.cameras.save(None, input("Cave", false)).await.unwrap();
     tokio::time::sleep(Duration::from_millis(600)).await;
     assert!(!st.frames.has(off.uuid));
-    // Desactivee : la source s'arrete et la derniere image disparait.
+    // Deactivated: the source stops and the last image disappears.
     st.cameras
         .save(Some(cam.id), input("Salon", false))
         .await
@@ -143,7 +143,7 @@ async fn the_last_image_is_written_at_most_once_per_second_and_atomically(pool: 
     st.frames.reconcile(std::slice::from_ref(&cam));
     let latest = latest_dir(&dir.0).join(format!("{}.jpg", cam.uuid));
     wait_for("derniere image", || latest.exists()).await;
-    // 10 images par seconde en entree (2 par defaut en production) : on ne reecrit pas plus d'une fois par seconde.
+    // 10 images per second as input (2 by default in production): we do not rewrite more than once per second.
     let mut changes = 0;
     let mut last = std::fs::metadata(&latest).unwrap().modified().unwrap();
     let start = std::time::Instant::now();
@@ -153,7 +153,7 @@ async fn the_last_image_is_written_at_most_once_per_second_and_atomically(pool: 
             changes += 1;
             last = now;
         }
-        // A tout instant le fichier est un JPEG complet (renommage atomique).
+        // At any moment the file is a complete JPEG (atomic rename).
         let bytes = std::fs::read(&latest).unwrap();
         assert!(bytes.ends_with(&[0xFF, 0xD9]), "fichier incomplet lu");
         tokio::time::sleep(Duration::from_millis(20)).await;
@@ -180,11 +180,11 @@ async fn the_latest_image_is_served_only_while_it_is_recent_and_fresh_waits_for_
     assert_eq!(image.bytes, JPEG);
     assert!(image.age < Duration::from_secs(5));
 
-    // Une image qui n'est pas un JPEG n'est jamais servie.
+    // An image that is not a JPEG is never served.
     std::fs::write(&path, b"<html>pas une image</html>").unwrap();
     assert!(st.snapshots.latest(cam.uuid).await.is_none());
 
-    // Une image trop vieille : la camera n'envoie plus rien.
+    // An image that is too old: the camera no longer sends anything.
     std::fs::write(&path, JPEG).unwrap();
     let old = std::time::SystemTime::now() - Duration::from_secs(120);
     std::fs::File::options()
@@ -198,7 +198,7 @@ async fn the_latest_image_is_served_only_while_it_is_recent_and_fresh_waits_for_
         "image de plus d'une minute"
     );
 
-    // `fresh` attend une image posterieure a l'appel.
+    // `fresh` waits for an image later than the call.
     let writer = {
         let path = path.clone();
         tokio::spawn(async move {
@@ -245,7 +245,7 @@ async fn indexed_snapshots_are_files_and_rows_pruned_beyond_the_cap_and_removed_
     }
     st.snapshots.index(&other, t0, &JPEG).await.unwrap();
 
-    // Plafond de 3 par camera : les deux plus anciens sont partis, fichier compris ; l'autre camera n'est pas touchee.
+    // Cap of 3 per camera: the two oldest are gone, file included; the other camera is not touched.
     let kept = st
         .snapshots
         .list(Some(cam.id), None, None, 50)
@@ -267,7 +267,7 @@ async fn indexed_snapshots_are_files_and_rows_pruned_beyond_the_cap_and_removed_
         "3 + 1 de l'autre camera"
     );
 
-    // Lecture, filtre par jour, refus d'un non-JPEG.
+    // Read, filter by day, refusal of a non-JPEG.
     let (row, bytes) = st.snapshots.read(made[3].id).await.unwrap().unwrap();
     assert_eq!(
         (row.id, bytes.as_slice()),
@@ -291,12 +291,12 @@ async fn indexed_snapshots_are_files_and_rows_pruned_beyond_the_cap_and_removed_
         0
     );
 
-    // Suppression a la main : ligne et fichier.
+    // Manual deletion: row and file.
     st.snapshots.delete(made[4].id).await.unwrap();
     assert!(!dir.0.join(&made[4].file).exists());
     assert!(st.snapshots.delete(made[4].id).await.is_err());
 
-    // Supprimer la camera supprime son dossier et sa derniere image.
+    // Deleting the camera deletes its folder and its last image.
     let last = latest_dir(&dir.0).join(format!("{}.jpg", cam.uuid));
     std::fs::create_dir_all(last.parent().unwrap()).unwrap();
     std::fs::write(&last, JPEG).unwrap();
@@ -314,7 +314,7 @@ async fn a_capture_needs_a_recent_image(pool: PgPool) {
     let dir = TempDir::new();
     let st = test_state(pool, &dir.0, "500");
     let (cam, _) = st.cameras.save(None, input("Salon", true)).await.unwrap();
-    // Aucune image : la capture le dit au lieu d'inventer.
+    // No image: the capture says so instead of inventing one.
     let started = std::time::Instant::now();
     assert!(matches!(
         st.snapshots.capture(&cam).await,
@@ -324,7 +324,7 @@ async fn a_capture_needs_a_recent_image(pool: PgPool) {
         started.elapsed() >= Duration::from_secs(3),
         "elle a attendu une image fraiche"
     );
-    // Avec une image recente, elle est indexee.
+    // With a recent image, it is indexed.
     let path = latest_dir(&dir.0).join(format!("{}.jpg", cam.uuid));
     std::fs::create_dir_all(path.parent().unwrap()).unwrap();
     std::fs::write(&path, JPEG).unwrap();

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Serveur de test relie au Mosquitto de dev (`make dev-up`) et ecouteur des messages publies sous un prefixe de topics a lui
-//! (le broker garde des messages Zigbee2MQTT retenus et les tests tournent en parallele).
+//! Test server linked to the dev Mosquitto (`make dev-up`) and listener of the messages published under a topic prefix of its
+//! own (the broker keeps retained Zigbee2MQTT messages and the tests run in parallel).
 
 use std::collections::BTreeMap;
 use std::time::Duration;
@@ -29,7 +29,7 @@ pub async fn connected(c: &dominet_mqtt::MqttClient) {
     .expect("connexion au broker de dev");
 }
 
-/// Serveur de test relie au broker, et un ecouteur des commandes publiees sous `prefix/`.
+/// Test server linked to the broker, and a listener of the commands published under `prefix/`.
 pub async fn setup(
     pool: PgPool,
     tag: &str,
@@ -59,8 +59,8 @@ pub async fn setup(
         .client
         .set_subscriptions(BTreeMap::from([(format!("{prefix}/#"), 1)]));
     tokio::time::sleep(Duration::from_millis(500)).await;
-    // Base Zigbee2MQTT a part : le client du serveur ne recoit pas les messages retenus du vrai bridge de dev (qui
-    // creeraient des appareils de meme nom que ceux du test).
+    // A separate Zigbee2MQTT base: the server's client does not receive the real dev bridge's retained messages (which
+    // would create devices with the same names as the test's).
     st.settings
         .set("Z2M_BASE_TOPIC", &format!("{prefix}z2m"))
         .await
@@ -88,7 +88,7 @@ pub async fn device(st: &AppState, name: &str, prefix: &str, active: bool) -> De
     st.store.devices().create(&draft).await.unwrap().id
 }
 
-/// Un second client, pour publier ce que le serveur doit recevoir (etats d'appareils, messages).
+/// A second client, to publish what the server must receive (device states, messages).
 pub async fn publisher(tag: &str) -> dominet_mqtt::MqttClient {
     let client = start(&MqttSettings::new(
         "127.0.0.1",

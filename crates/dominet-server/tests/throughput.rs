@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Debit soutenu de l'ingestion de bout en bout (critere d'acceptation de R3) : un second client publie **2 000 messages par seconde**
-//! pendant 5 s (QoS 1) sur le Mosquitto de dev ; le serveur les recoit, les ecrit en base (etat, historique) et les diffuse. A la fin,
-//! chaque appareil porte son dernier etat (aucune perte) ; le retard sur la derniere publication est affiche et borne par `WAIT`.
+//! Sustained end-to-end ingestion throughput (R3 acceptance criterion): a second client publishes **2000 messages per second**
+//! for 5 s (QoS 1) on the dev Mosquitto; the server receives them, writes them to the database (state, history) and broadcasts them. At the end,
+//! each device carries its last state (no loss); the lag behind the last publication is printed and bounded by `WAIT`.
 //!
-//! Le chiffre mesure est affiche (`cargo test -p dominet-server --test throughput -- --nocapture`) ; voir `docs/measures.md`.
+//! The measured figure is printed (`cargo test -p dominet-server --test throughput -- --nocapture`); see `docs/measures.md`.
 
 mod common;
 
@@ -19,7 +19,7 @@ use sqlx::PgPool;
 const DEVICES: i64 = 50;
 const RATE: u64 = 2_000;
 const SECONDS: u64 = 5;
-/// Attente maximale des etats finaux apres la derniere publication : c'est la seule borne du retard d'ingestion.
+/// Maximum wait for the final states after the last publication: this is the only bound on the ingestion lag.
 const WAIT: Duration = Duration::from_secs(120);
 
 fn port() -> String {
@@ -49,7 +49,7 @@ async fn two_thousand_messages_per_second_are_ingested_without_loss_of_final_sta
             ("MQTT_CLIENT_ID", &format!("dominet-test-load-{pid}")),
         ],
     );
-    // Prefixe propre au test : le broker de dev est partage.
+    // Prefix specific to the test: the dev broker is shared.
     let prefix = format!("load{pid}");
     st.settings.set("Z2M_BASE_TOPIC", &prefix).await.ok();
     for n in 0..DEVICES {
@@ -67,9 +67,9 @@ async fn two_thousand_messages_per_second_are_ingested_without_loss_of_final_sta
     ))
     .client;
     connected(&publisher).await;
-    tokio::time::sleep(Duration::from_millis(800)).await; // abonnement pris en compte
+    tokio::time::sleep(Duration::from_millis(800)).await; // subscription acknowledged
 
-    // 2 000 messages / s : 20 messages toutes les 10 ms, pendant 5 s, repartis sur les appareils.
+    // 2000 messages / s: 20 messages every 10 ms, for 5 s, spread over the devices.
     let total = RATE * SECONDS;
     let per_tick = usize::try_from(RATE / 100).unwrap();
     let started = Instant::now();
@@ -104,11 +104,11 @@ async fn two_thousand_messages_per_second_are_ingested_without_loss_of_final_sta
     let published_in = started.elapsed();
     let last_seq = i64::try_from((total - 1) / u64::try_from(DEVICES).unwrap()).unwrap();
 
-    // Attente de l'etat final de chaque appareil.
+    // Waiting for each device's final state.
     let finished = tokio::time::timeout(WAIT, async {
         loop {
             let done: i64 = sqlx::query_scalar("SELECT count(*) FROM device WHERE friendly_name LIKE 'charge/%' AND (state->>'seq')::bigint >= $1")
-                .bind(last_seq - 1) // le dernier tour de chaque appareil (deux derniers seq possibles selon l'ordre d'arrivee)
+                .bind(last_seq - 1) // the last round of each device (two possible last seq values depending on arrival order)
                 .fetch_one(&pool)
                 .await
                 .unwrap();
@@ -145,9 +145,9 @@ async fn two_thousand_messages_per_second_are_ingested_without_loss_of_final_sta
         rate > 1_800.0,
         "le test n'a pas tenu le debit voulu : {rate:.0} msg/s"
     );
-    // Pas de borne plus serree sur le retard : il est deja borne par l'attente ci-dessus (`WAIT`), et il depend de la machine
-    // (construction de debogage, hook pre-push en priorite basse : 0,2 s au repos, 14 a 34 s mesures sous charge le
-    // 2026-11-14). Le chiffre de reference est celui affiche ; ce test garantit qu'AUCUN etat final ne se perd.
+    // No tighter bound on the lag: it is already bounded by the wait above (`WAIT`), and it depends on the machine
+    // (debug build, pre-push hook at low priority: 0.2 s at rest, 14 to 34 s measured under load on
+    // 2026-11-14). The reference figure is the one printed; this test guarantees that NO final state is lost.
     client.shutdown();
     publisher.shutdown();
 }

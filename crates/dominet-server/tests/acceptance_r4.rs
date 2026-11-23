@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Acceptation de R4 : **tout le `context.yaml` de la production a la fois** (29 appareils, 3 scenes, 7 automations dont les deux
-//! plugins portes en Rhai, la regle canicule) fait tourner ensemble le moteur, l'evaluation des alertes et le planificateur sur le
-//! Mosquitto de dev. Les memes scenarios sont verifies un a un, en detail, par `scenes.rs`, `automations.rs`, `alerts.rs` ;
-//! ici on verifie qu'ils ne se genent pas.
+//! R4 acceptance: **the whole production `context.yaml` at once** (29 devices, 3 scenes, 7 automations including the two
+//! plugins ported to Rhai, the heatwave rule) runs the engine, the alert evaluation and the scheduler together on the
+//! dev Mosquitto. The same scenarios are checked one by one, in detail, by `scenes.rs`, `automations.rs`, `alerts.rs`;
+//! here we check that they do not get in each other's way.
 
 mod common;
 
@@ -22,7 +22,7 @@ use dominet_server::scheduler::ServerRunner;
 use serde_json::{Value, json};
 use sqlx::PgPool;
 
-/// Les elements de `wanted` apparaissent dans `seen`, dans cet ordre (d'autres messages peuvent s'intercaler).
+/// The elements of `wanted` appear in `seen`, in that order (other messages may be interleaved).
 fn in_order(seen: &[(String, Value)], wanted: &[(String, Value)]) -> bool {
     let mut it = seen.iter();
     wanted.iter().all(|w| it.any(|s| s == w))
@@ -36,7 +36,7 @@ async fn the_whole_production_context_runs_together_without_getting_in_each_othe
     let z2m = format!("{prefix}z2m");
     let (st, mut seen, listener) = setup(pool, "accept", &prefix).await;
     let ctx = ProdContext::parse(PROD_CONTEXT_JSON).unwrap();
-    // L'installation de la production, sous le prefixe du test.
+    // The production installation, under the test's prefix.
     let mut devices = BTreeMap::new();
     for d in &ctx.devices {
         devices.insert(d.name.clone(), device(&st, &d.name, &prefix, true).await);
@@ -70,8 +70,8 @@ async fn the_whole_production_context_runs_together_without_getting_in_each_othe
     st.alert_rules_changed.notify_one();
     let mut toasts = st.hub.subscribe(&Topic::Notifications);
 
-    // 1. La telecommande, le plugin Rhai du volet, la canicule : on repete jusqu'a la premiere reaction de chacun (le moteur et
-    //    l'evaluation relisent leurs listes en tache de fond), sans jamais depasser 30 declenchements par minute.
+    // 1. The remote control, the shutter's Rhai plugin, the heatwave: we repeat until each one's first reaction (the engine and
+    //    the evaluation re-read their lists in the background), never exceeding 30 triggers per minute.
     let remote = publisher("accept").await;
     let mut collected: Vec<(String, Value)> = vec![];
     let mut drain = |collected: &mut Vec<(String, Value)>| {
@@ -98,7 +98,7 @@ async fn the_whole_production_context_runs_together_without_getting_in_each_othe
                 false,
             )
             .unwrap();
-        // Le relais du volet vient de parler (il publie sa position tant qu'il bouge) : un appui l'arrete.
+        // The shutter relay has just spoken (it publishes its position while it moves): a press stops it.
         remote
             .publish(
                 &format!("{z2m}/Relais-SB-est"),
@@ -159,7 +159,7 @@ async fn the_whole_production_context_runs_together_without_getting_in_each_othe
     .expect("alert banner");
     assert!(toast.contains("meteo_locale : 36.5"), "{toast}");
 
-    // 2. Le coucher du soleil de la production (planificateur) : « Fermeture du soir », six commandes dans l'ordre.
+    // 2. The production's sunset (scheduler): "Evening closing", six commands in order.
     let scheduler = Scheduler::new(
         st.store.schedule(),
         st.store.automations(),

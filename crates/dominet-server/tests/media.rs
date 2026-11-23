@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Images d'appareils : televersement par formulaire (administrateurs), service avec `ETag` (comptes connectes).
+//! Device images: upload by form (administrators), serving with `ETag` (logged-in accounts).
 
 mod common;
 
@@ -20,7 +20,7 @@ fn png(w: u32, h: u32) -> Vec<u8> {
     out
 }
 
-/// Corps `multipart/form-data` d'un champ fichier.
+/// `multipart/form-data` body of a file field.
 fn multipart(field: &str, file: &[u8]) -> (String, Vec<u8>) {
     let boundary = "----dominet-test-boundary";
     let mut body = format!(
@@ -56,7 +56,7 @@ async fn an_administrator_uploads_an_image_everyone_signed_in_can_see_it_with_et
     let upload = format!("/api/devices/{id}/image");
     let (ct, body) = multipart("image", &png(1600, 1200));
 
-    // Droits : ni anonyme ni simple compte ne televerse ; sans image, 404.
+    // Rights: neither anonymous nor plain account can upload; without an image, 404.
     for who in [&mut anon, &mut user] {
         let (status, _, _) = who
             .send_bytes(Method::POST, &upload, &ct, body.clone(), &[])
@@ -71,7 +71,7 @@ async fn an_administrator_uploads_an_image_everyone_signed_in_can_see_it_with_et
         StatusCode::NOT_FOUND
     );
 
-    // Televersement : redirection vers la page de l'appareil ; l'image est reduite et reencodee en JPEG.
+    // Upload: redirect to the device's page; the image is reduced and re-encoded as JPEG.
     let (status, headers, _) = admin
         .send_bytes(Method::POST, &upload, &ct, body, &[])
         .await;
@@ -95,7 +95,7 @@ async fn an_administrator_uploads_an_image_everyone_signed_in_can_see_it_with_et
     let shown = image::load_from_memory(&bytes).unwrap();
     assert_eq!((shown.width(), shown.height()), (400, 300));
 
-    // Revalidation : 304 sans corps tant que l'image ne change pas.
+    // Revalidation: 304 without a body as long as the image does not change.
     let etag = headers[header::ETAG].to_str().unwrap().to_string();
     let (status, _, bytes) = user
         .send_bytes(
@@ -112,7 +112,7 @@ async fn an_administrator_uploads_an_image_everyone_signed_in_can_see_it_with_et
         StatusCode::UNAUTHORIZED
     );
 
-    // Un fichier qui n'est pas une image est refuse et ne remplace rien.
+    // A file that is not an image is refused and replaces nothing.
     let (ct, junk) = multipart("image", b"<script>alert(1)</script>");
     let (status, headers, _) = admin
         .send_bytes(Method::POST, &upload, &ct, junk, &[])
@@ -139,7 +139,7 @@ async fn an_administrator_uploads_an_image_everyone_signed_in_can_see_it_with_et
         StatusCode::OK
     );
 
-    // Appareil inconnu ; suppression (administrateur seulement).
+    // Unknown device; deletion (administrator only).
     let (ct, body) = multipart("image", &png(10, 10));
     let (status, _, _) = admin
         .send_bytes(

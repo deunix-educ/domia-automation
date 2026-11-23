@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Tests d'integration de l'authentification : routeur complet, vraie base (isolee par test).
+//! Authentication integration tests: full router, real database (isolated per test).
 
 mod common;
 
@@ -81,7 +81,7 @@ async fn session_lifecycle_login_me_logout(pool: PgPool) {
         StatusCode::NO_CONTENT
     );
     assert_eq!(c.get("/api/auth/me").await.status, StatusCode::UNAUTHORIZED);
-    // L'ancien cookie ne reouvre rien : la session est supprimee cote serveur.
+    // The old cookie reopens nothing: the session is deleted on the server side.
     c.cookie = Some(stale_cookie);
     assert_eq!(c.get("/api/auth/me").await.status, StatusCode::UNAUTHORIZED);
     assert_eq!(st.store.sessions().count().await.unwrap(), 0);
@@ -143,9 +143,9 @@ async fn five_failures_lock_the_pair_even_for_the_right_password(pool: PgPool) {
     assert!((1..=900).contains(&retry), "{retry}");
     assert!(locked.headers.get(header::SET_COOKIE).is_none());
 
-    // Un autre compte depuis la meme IP n'est pas touche (seuil par couple et par IP bien plus haut).
+    // Another account from the same IP is not touched (the per-pair and per-IP threshold is much higher).
     assert_eq!(c.login("carol", PASSWORD).await.status, StatusCode::OK);
-    // Le meme compte depuis une autre IP non plus (le seuil par compte est de 20).
+    // Nor is the same account from another IP (the per-account threshold is 20).
     assert_eq!(
         c.from([192, 168, 1, 77])
             .login("bob", PASSWORD)
@@ -180,7 +180,7 @@ async fn a_distributed_attack_on_one_account_is_stopped_at_twenty_failures(pool:
     add_user(&st, "bob", Role::User).await;
     let base = Client::new(&st);
     for i in 0..20u8 {
-        let mut c = base.from([10, 0, 0, i]); // 20 IP differentes, 1 echec chacune
+        let mut c = base.from([10, 0, 0, i]); // 20 different IPs, 1 failure each
         assert_eq!(
             c.login("bob", "mauvais mot de passe").await.status,
             StatusCode::UNAUTHORIZED
@@ -198,7 +198,7 @@ async fn a_distributed_attack_on_one_account_is_stopped_at_twenty_failures(pool:
 async fn login_rotates_the_session_id_against_fixation(pool: PgPool) {
     let st = state(pool, &[]);
     add_user(&st, "bob", Role::User).await;
-    // Session pre-existante (celle qu'un attaquant aurait imposee a la victime).
+    // Pre-existing session (the one an attacker would have imposed on the victim).
     let mut planted = tower_sessions::session::Record {
         id: Id::default(),
         data: std::collections::HashMap::from([("fixed".to_string(), json!(true))]),
@@ -225,7 +225,7 @@ async fn login_rotates_the_session_id_against_fixation(pool: PgPool) {
             .is_none(),
         "l'ancienne session est detruite"
     );
-    // Et l'identifiant impose ne donne aucun acces.
+    // And the imposed identifier gives no access.
     c.cookie = Some(format!("dominet_session={}", planted.id));
     assert_eq!(c.get("/api/auth/me").await.status, StatusCode::UNAUTHORIZED);
 }
@@ -431,7 +431,7 @@ async fn cross_site_posts_are_refused_before_anything_happens(pool: PgPool) {
         .status,
         StatusCode::OK
     );
-    // Lecture : jamais bloquee par le controle d'origine.
+    // Read: never blocked by the origin check.
     assert_eq!(
         c.send(
             Method::GET,
@@ -443,7 +443,7 @@ async fn cross_site_posts_are_refused_before_anything_happens(pool: PgPool) {
         .status,
         StatusCode::OK
     );
-    // Un navigateur annonce le contexte cross-site meme sans Origin.
+    // A browser announces the cross-site context even without Origin.
     let sec = c
         .send(
             Method::POST,
@@ -484,7 +484,7 @@ async fn a_session_older_than_the_maximum_age_is_refused_and_deleted(pool: PgPoo
     c.login("bob", PASSWORD).await;
     assert_eq!(c.get("/api/auth/me").await.status, StatusCode::OK);
 
-    // On vieillit artificiellement la connexion de 2 jours directement dans le store.
+    // We artificially age the login by 2 days directly in the store.
     let id: Id = c
         .cookie
         .as_ref()
@@ -535,7 +535,7 @@ async fn behind_a_trusted_proxy_attempts_are_recorded_against_the_real_client(po
         )
         .await;
     assert_eq!(r.status, StatusCode::UNAUTHORIZED);
-    // Un client direct qui forge l'en-tete n'est pas cru.
+    // A direct client that forges the header is not believed.
     let mut direct = Client::new(&st);
     direct
         .send(
@@ -598,7 +598,7 @@ async fn password_change_has_the_same_lockout_as_login(pool: PgPool) {
             .await;
         assert_eq!(r.status, StatusCode::UNAUTHORIZED);
     }
-    // Le cinquieme echec atteint le seuil : le sixieme essai est bloque.
+    // The fifth failure reaches the threshold: the sixth attempt is blocked.
     let fifth = c
         .send(
             Method::POST,
@@ -623,8 +623,8 @@ async fn password_change_has_the_same_lockout_as_login(pool: PgPool) {
         .parse()
         .unwrap();
     assert!((1..=900).contains(&retry), "{retry}");
-    // Rien n'a change : la session est ouverte et l'ancien mot de passe vaut toujours (le blocage touche aussi la
-    // connexion de ce couple compte/adresse, ce qui est voulu).
+    // Nothing changed: the session is open and the old password still works (the lock-out also affects the
+    // login of this account/address pair, which is intended).
     assert_eq!(c.get("/api/auth/me").await.status, StatusCode::OK);
     assert_eq!(
         c.login("bob", PASSWORD).await.status,
@@ -648,7 +648,7 @@ async fn a_correct_current_password_resets_the_failure_count(pool: PgPool) {
         )
         .await;
     }
-    // Bon mot de passe actuel, nouveau trop court : refuse pour la politique, mais l'ancien est prouve.
+    // Correct current password, new one too short: refused for the policy, but the old one is proven.
     let weak = c
         .send(
             Method::POST,

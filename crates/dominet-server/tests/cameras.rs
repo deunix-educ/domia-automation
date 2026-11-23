@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Service des cameras (R6 lot 2) : secrets chiffres, modification sans renvoyer les secrets, synchronisation MediaMTX contre
-//! le faux serveur.
+//! Camera service (R6 lot 2): encrypted secrets, modification without sending the secrets back, MediaMTX synchronisation against
+//! the fake server.
 
 mod common;
 
@@ -40,7 +40,7 @@ async fn rig(pool: PgPool) -> (dominet_server::AppState, FakeMediaMtx) {
 }
 
 async fn stored(pool: &PgPool, column: &str) -> String {
-    // Colonnes fixes (pas de saisie utilisateur) : requetes litterales.
+    // Fixed columns (no user input): literal queries.
     let sql = match column {
         "rtsp" => "SELECT rtsp_pass_enc FROM camera",
         "onvif" => "SELECT onvif_pass_enc FROM camera",
@@ -70,7 +70,7 @@ async fn a_camera_is_saved_with_encrypted_secrets_and_a_mediamtx_path(pool: PgPo
             .unwrap(),
         "mot-de-passe"
     );
-    // Le secret est lie a la camera et au champ : recopie ailleurs, il ne se dechiffre plus.
+    // The secret is bound to the camera and the field: copied elsewhere, it no longer decrypts.
     assert!(
         st.cameras
             .open(cam.uuid, "onvif_pass", &cam.config.rtsp_pass)
@@ -121,7 +121,7 @@ async fn an_update_without_a_secret_keeps_it_and_follows_the_options(pool: PgPoo
         (json!(true), json!("tcp"))
     );
 
-    // Un nouveau secret remplace l'ancien.
+    // A new secret replaces the old one.
     let (cam3, _) = st
         .cameras
         .save(Some(cam.id), input("Porte", "autre"))
@@ -183,7 +183,7 @@ async fn what_onvif_learned_survives_a_form_save(pool: PgPool) {
         ),
         ("Q3R", "profile_1")
     );
-    // Le PTZ, lui, est dans le formulaire : l'administrateur decide.
+    // PTZ, for its part, is in the form: the administrator decides.
     assert!(!again.config.ptz);
 }
 
@@ -198,7 +198,7 @@ async fn onvif_proposes_ptz_once_then_the_administrator_decides(pool: PgPool) {
         .unwrap();
     st.cameras.onvif_sync(cam.id).await.unwrap();
     assert!(st.cameras.get(cam.id).await.unwrap().unwrap().config.ptz);
-    // L'administrateur decoche (camera sans moteur malgre le service PTZ annonce) : une nouvelle synchronisation ne le recoche pas.
+    // The administrator unticks (camera without a motor despite the announced PTZ service): a new synchronisation does not tick it again.
     st.cameras
         .save(Some(cam.id), onvif_input("Q3R", fake.port(), ""))
         .await
@@ -221,13 +221,13 @@ async fn invalid_input_and_a_missing_master_key_are_refused(pool: PgPool) {
         "rien n'est envoye a MediaMTX"
     );
 
-    // Sans cle maitresse, un secret ne s'enregistre pas (jamais en clair).
+    // Without a master key, a secret cannot be saved (never in clear).
     let bare = state(pool, &[]);
     assert!(matches!(
         bare.cameras.save(None, input("Sans cle", "secret")).await,
         Err(CameraError::MasterKeyMissing)
     ));
-    // ... mais une camera sans mot de passe passe.
+    // ... but a camera without a password goes through.
     assert!(
         bare.cameras
             .save(None, input("Sans mot de passe", ""))
@@ -298,7 +298,7 @@ async fn without_a_mediamtx_url_nothing_is_synchronised(pool: PgPool) {
 async fn an_unreadable_secret_is_reported_and_its_path_is_kept(pool: PgPool) {
     let (st, fake) = rig(pool.clone()).await;
     let (cam, _) = st.cameras.save(None, input("A", "x")).await.unwrap();
-    // Autre cle maitresse : le secret n'est plus lisible.
+    // Another master key: the secret is no longer readable.
     let other = state(
         pool,
         &[
@@ -365,7 +365,7 @@ async fn onvif_sync_reads_the_camera_and_records_what_it_learned(pool: PgPool) {
 
 #[sqlx::test(migrator = "dominet_store::MIGRATOR")]
 async fn onvif_sync_uses_the_stream_credentials_when_onvif_has_none_of_its_own(pool: PgPool) {
-    // Les identifiants ONVIF vides sont remplis a l'enregistrement par ceux du flux (comme la reference) : la camera repond.
+    // Empty ONVIF credentials are filled at registration with the stream's (like the reference): the camera answers.
     let fake = FakeOnvif::start(Family::Vatilon, "admin", "partage").await;
     let (st, _mtx) = rig(pool).await;
     let (cam, _) = st
@@ -374,13 +374,13 @@ async fn onvif_sync_uses_the_stream_credentials_when_onvif_has_none_of_its_own(p
         .await
         .unwrap();
     assert!(st.cameras.onvif_sync(cam.id).await.is_ok());
-    // Un mauvais mot de passe est reporte, sans toucher a la fiche.
+    // A wrong password is reported, without touching the record.
     let (bad, _) = st
         .cameras
         .save(Some(cam.id), onvif_input("Ascam", fake.port(), "autre"))
         .await
         .unwrap();
-    // Le mot de passe ONVIF deja copie reste l'ancien (donc bon) : on force un echec en changeant les deux.
+    // The already copied ONVIF password stays the old one (hence correct): we force a failure by changing both.
     let mut wrong = onvif_input("Ascam", fake.port(), "");
     wrong.onvif_pass = SecretInput::Set("faux".into());
     st.cameras.save(Some(bad.id), wrong).await.unwrap();
@@ -434,7 +434,7 @@ async fn add_by_ip_creates_an_onvif_camera_once_and_syncs_it_when_it_has_credent
         "path MediaMTX cree"
     );
 
-    // Deuxieme ajout de la meme adresse : la camera existante, rien de nouveau.
+    // Second addition of the same address: the existing camera, nothing new.
     let (again, created) = st
         .cameras
         .add_by_ip("127.0.0.1", Some(fake.port()), "", "", None)
@@ -466,7 +466,7 @@ async fn add_by_ip_without_credentials_still_adds_and_refuses_bad_addresses(pool
     }
 }
 
-// ------------------------------------------------------------------ decouverte (role discovery <-> role web)
+// ------------------------------------------------------------------ discovery (discovery role <-> web role)
 
 use std::time::Duration;
 
@@ -497,7 +497,7 @@ async fn a_request_goes_through_the_discovery_role_and_reaches_the_browsers_topi
     )])
     .await;
     let (st, _mtx) = rig(pool.clone()).await;
-    // Une camera deja enregistree a une autre adresse n'est pas « connue » ; celle de la reponse l'est.
+    // A camera already registered at another address is not "known"; the one of the response is.
     st.cameras
         .save(None, {
             let mut i = input("Deja la", "");
@@ -517,7 +517,7 @@ async fn a_request_goes_through_the_discovery_role_and_reaches_the_browsers_topi
             listen: Duration::from_millis(1500),
         },
     );
-    // Les ecoutes PostgreSQL s'etablissent en tache de fond : on redemande jusqu'a la premiere reponse.
+    // The PostgreSQL listeners set themselves up in the background: we ask again until the first answer.
     let mut first = None;
     for _ in 0..40 {
         discovery::request(&pool).await.unwrap();
@@ -532,7 +532,7 @@ async fn a_request_goes_through_the_discovery_role_and_reaches_the_browsers_topi
     let DiscoveryEvent::Found { device } = next_event(&mut topic).await else {
         panic!("appareil attendu")
     };
-    // Le repondeur est en 127.0.0.1 : c'est l'adresse d'ou vient la reponse, et la camera de ce test l'a deja.
+    // The responder is on 127.0.0.1: it is the address the response comes from, and this test's camera already has it.
     assert_eq!(
         (device.ip.as_str(), device.port, device.name.as_str()),
         ("127.0.0.1", 8899, "NVT")
@@ -541,7 +541,7 @@ async fn a_request_goes_through_the_discovery_role_and_reaches_the_browsers_topi
     assert_eq!(next_event(&mut topic).await, DiscoveryEvent::Done);
 }
 
-// ------------------------------------------------------------------ jour / nuit (R6 lot 5)
+// ------------------------------------------------------------------ day / night (R6 lot 5)
 
 use dominet_domain::camera::NightApi;
 use dominet_server::cameras::{NightAction, NightError};
@@ -589,7 +589,7 @@ async fn goform_night_falls_back_to_the_stream_credentials(pool: PgPool) {
         .save(None, night_input(NightApi::Goform, fake.port()))
         .await
         .unwrap();
-    // Pas d'identifiant web : ceux du flux (`admin` / `flux-secret`).
+    // No web identifier: those of the stream (`admin` / `flux-secret`).
     let out = st.cameras.night(cam.id, "ircut").await.unwrap().to_json();
     assert_eq!(
         (out["mode"].as_i64(), out["was"].as_i64()),
@@ -613,7 +613,7 @@ async fn night_refuses_what_it_cannot_do_and_says_why(pool: PgPool) {
         st.cameras.night(none.id, "danse").await,
         Err(CameraError::Night(NightError::UnknownAction(_)))
     ));
-    // Camera inactive ou inconnue : introuvable.
+    // Inactive or unknown camera: not found.
     let mut off = night_input(NightApi::Onvif, 80);
     off.draft.active = false;
     let (off, _) = st.cameras.save(None, off).await.unwrap();

@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Moteur d'automations de bout en bout sur le Mosquitto de dev (R4 lot 3, `make dev-up`) : un etat ou un message publie sur
-//! le broker traverse l'ingestion, declenche l'automation, et sa commande ressort sur le broker. Les trois automations de la
-//! telecommande de la production deplacent le volet ; une automation `mqtt_message` sur un topic sans source s'abonne toute
-//! seule ; un changement de l'administration est pris en compte a chaud.
+//! End-to-end automation engine on the dev Mosquitto (R4 lot 3, `make dev-up`): a state or a message published on
+//! the broker goes through ingestion, triggers the automation, and its command comes out on the broker. The three
+//! production remote-control automations move the shutter; an `mqtt_message` automation on a topic without a source subscribes
+//! by itself; an administration change is taken into account live.
 
 mod common;
 
@@ -20,13 +20,13 @@ use sqlx::PgPool;
 #[sqlx::test(migrator = "dominet_store::MIGRATOR")]
 async fn the_production_remote_control_moves_the_shutter_through_the_broker(pool: PgPool) {
     let prefix = format!("auto{}", std::process::id());
-    let z2m = format!("{prefix}z2m"); // base Zigbee2MQTT choisie par `setup`
+    let z2m = format!("{prefix}z2m"); // Zigbee2MQTT base chosen by `setup`
     let (st, mut seen, listener) = setup(pool, "auto-prod", &prefix).await;
     let ctx = ProdContext::parse(PROD_CONTEXT_JSON).unwrap();
     for name in ["Tele-commande", "Volet-salon"] {
         device(&st, name, &prefix, true).await;
     }
-    // Les trois automations « TC Salon » de la production, dont le topic de commande est ramene sous le prefixe du test.
+    // The production's three "TC Salon" automations, whose command topic is brought under the test's prefix.
     let mut created = 0;
     for a in ctx
         .automations
@@ -54,7 +54,7 @@ async fn the_production_remote_control_moves_the_shutter_through_the_broker(pool
                 false,
             )
             .unwrap();
-        // Z2M republie un etat vide d'action juste apres : il ne declenche rien.
+        // Z2M republishes an empty action state right after: it triggers nothing.
         remote
             .publish(
                 &state_topic,
@@ -64,8 +64,8 @@ async fn the_production_remote_control_moves_the_shutter_through_the_broker(pool
             )
             .unwrap();
     };
-    // Le moteur recharge ses automations en tache de fond : on appuie jusqu'a la premiere reaction (les appuis qui precedent le
-    // rechargement sont ecartes a la source), puis on ecarte les doublons eventuels.
+    // The engine reloads its automations in the background: we press until the first reaction (the presses that precede the
+    // reload are dropped at the source), then we discard any duplicates.
     let store = st.store.clone();
     let mut loaded = false;
     for _ in 0..30 {
@@ -90,7 +90,7 @@ async fn the_production_remote_control_moves_the_shutter_through_the_broker(pool
         json!({"state": "OPEN"}),
     );
     assert_eq!(next(&mut seen).await, open);
-    tokio::time::sleep(Duration::from_millis(1100)).await; // une seconde de separation (regroupement des rafales)
+    tokio::time::sleep(Duration::from_millis(1100)).await; // one second apart (burst coalescing)
     while tokio::time::timeout(Duration::from_millis(400), seen.recv())
         .await
         .is_ok()
@@ -111,8 +111,8 @@ async fn the_production_remote_control_moves_the_shutter_through_the_broker(pool
         );
         tokio::time::sleep(Duration::from_millis(1100)).await;
     }
-    // Compteurs et journal. Le compteur s'ecrit apres la publication : on attend qu'il rattrape, sans quoi une machine chargee
-    // (le hook de push tourne en basse priorite) lit un total en retard.
+    // Counters and log. The counter is written after the publication: we wait for it to catch up, otherwise a loaded machine
+    // (the push hook runs at low priority) reads a late total.
     let count = |all: &[dominet_domain::automation::Automation]| -> i32 {
         all.iter().map(|a| a.trigger_count).sum()
     };
@@ -192,8 +192,8 @@ async fn an_mqtt_message_automation_subscribes_by_itself_follows_changes_and_act
             )
             .unwrap();
     };
-    press("double"); // filtre : rien
-    // Appuis repetes jusqu'a la premiere reaction (le moteur et l'abonnement se mettent en place en tache de fond).
+    press("double"); // filter: nothing
+    // Repeated presses until the first reaction (the engine and the subscription set themselves up in the background).
     let store = st.store.clone();
     let mut fired = false;
     for _ in 0..30 {
@@ -234,7 +234,7 @@ async fn an_mqtt_message_automation_subscribes_by_itself_follows_changes_and_act
         .unwrap()
         .trigger_count;
 
-    // Desactivee depuis l'administration : prise en compte a chaud, plus rien ne part.
+    // Deactivated from the administration: taken into account live, nothing goes out any more.
     let mut off = created.draft.clone();
     off.enabled = false;
     st.store
@@ -329,7 +329,7 @@ async fn the_production_solar_automations_run_their_scenes_through_the_scheduler
     };
     let sunset = due("Volets — coucher du soleil").await;
     let sunrise = due("Volets — lever du soleil").await;
-    // Au coucher : « Fermeture du soir » (6 commandes, dans l'ordre) ; au lever : « Ouverture du matin » (4).
+    // At sunset: "Evening closing" (6 commands, in order); at sunrise: "Morning opening" (4).
     for (when, scene) in [
         (sunset, "Fermeture du soir"),
         (sunrise, "Ouverture du matin"),
@@ -365,7 +365,7 @@ async fn the_production_plugins_and_a_source_handler_run_as_rhai_through_the_bro
     let z2m = format!("{prefix}z2m");
     let (st, mut seen, listener) = setup(pool, "auto-rhai", &prefix).await;
     device(&st, "Volet-SB-est", &prefix, true).await;
-    // Le relais commande par les scripts : il n'a jamais parle, donc il n'est pas en mouvement.
+    // The relay commanded by the scripts: it has never spoken, so it is not moving.
     device(&st, "Relais-SB-est", &prefix, true).await;
     let ctx = ProdContext::parse(PROD_CONTEXT_JSON).unwrap();
     for a in ctx
@@ -377,7 +377,7 @@ async fn the_production_plugins_and_a_source_handler_run_as_rhai_through_the_bro
         assert!(dominet_automation::script::check(&draft.script).is_ok());
         st.store.automations().create(&draft).await.unwrap();
     }
-    // Source avec code de traitement : republie la puissance lue sur un autre topic.
+    // Source with processing code: republishes the power read on another topic.
     let mut source = MqttSource::draft("Compteur", &format!("{prefix}in/#"));
     source.handler_code = format!(r#"publish("{prefix}/out/set", #{{ w: payload.papp }});"#);
     st.store.mqtt_sources().create(&source).await.unwrap();
@@ -386,7 +386,7 @@ async fn the_production_plugins_and_a_source_handler_run_as_rhai_through_the_bro
 
     let remote = publisher("auto-rhai").await;
     let state_topic = format!("{z2m}/Volet-SB-est");
-    // Appuis repetes jusqu'a la premiere reaction (rechargement en tache de fond).
+    // Repeated presses until the first reaction (reload in the background).
     let mut got = None;
     for _ in 0..30 {
         remote
@@ -411,7 +411,7 @@ async fn the_production_plugins_and_a_source_handler_run_as_rhai_through_the_bro
         }
     }
     let mut messages = vec![got.expect("aucune commande recue")];
-    // Le code de la source : meme attente active (son abonnement se met en place en tache de fond).
+    // The source's code: same active wait (its subscription sets itself up in the background).
     for _ in 0..30 {
         remote
             .publish(

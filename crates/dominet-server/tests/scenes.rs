@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Activation des scenes sur le Mosquitto de dev (`make dev-up`, R4 lot 2) : les commandes partent **dans l'ordre**, une
-//! commande en echec n'arrete pas les suivantes, et les trois scenes de la production publient exactement leurs 6 / 4 / 4
-//! commandes sur les bons topics. Chaque test utilise un prefixe de topics a lui (le broker garde des messages Zigbee2MQTT
-//! retenus et les tests tournent en parallele).
+//! Scene activation on the dev Mosquitto (`make dev-up`, R4 lot 2): the commands go out **in order**, a
+//! failing command does not stop the following ones, and the production's three scenes publish exactly their 6 / 4 / 4
+//! commands on the right topics. Each test uses its own topic prefix (the broker keeps retained Zigbee2MQTT messages
+//! and the tests run in parallel).
 
 mod common;
 
@@ -53,7 +53,7 @@ async fn commands_are_published_in_order_and_a_failure_does_not_stop_the_next(po
     ] {
         assert_eq!(next(&mut seen).await, (topic, payload));
     }
-    // Par nom (API de script) : meme effet ; une scene desactivee ou inconnue ne part pas.
+    // By name (script API): same effect; a deactivated or unknown scene does not go out.
     assert!(matches!(
         scenes::activate_by_name(&st, "Soiree").await,
         SceneOutcome::Activated { sent: 3, .. }

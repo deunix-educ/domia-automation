@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! `check_prometheus_alerts` : les messages et les SMS que Rust envoie sont ceux du **vrai implementation de reference**,
-//! passage apres passage (alertes en attente ignorees, silence d'une heure, « RESOLVED » d'une alerte resolue, severite absente).
+//! `check_prometheus_alerts`: the messages and SMS that Rust sends are those of the **real reference implementation**,
+//! pass after pass (pending alerts ignored, one-hour silence, "RESOLVED" of a resolved alert, missing severity).
 
 use std::time::{Duration, Instant};
 
@@ -56,7 +56,7 @@ mod live {
 
     type Alerts = Arc<Mutex<Value>>;
 
-    /// Corps lisible d'un e-mail recu : le tiret long force un codage (base64 ou quoted-printable) que le faux SMTP laisse tel quel.
+    /// Readable body of a received e-mail: the em dash forces an encoding (base64 or quoted-printable) that the fake SMTP leaves as is.
     fn decoded(mail: &dominet_notify::testing::ReceivedMail) -> String {
         use base64::Engine;
         let body = mail.body();
@@ -107,7 +107,7 @@ mod live {
         panic!("delai depasse : {what}");
     }
 
-    /// Faux Prometheus : sert la liste courante des alertes sur `/api/v1/alerts`.
+    /// Fake Prometheus: serves the current list of alerts on `/api/v1/alerts`.
     async fn fake_prometheus(alerts: Alerts) -> String {
         let app = Router::new()
             .route(
@@ -174,7 +174,7 @@ mod live {
         state.channels = dominet_server::notify::Channels::new(&state.config, settings);
         dominet_server::prometheus_alerts::spawn(&state);
 
-        // Deux alertes distinctes : deux e-mails (l'objet de la reference), un seul SMS (la critique, 160 caracteres au plus).
+        // Two distinct alerts: two e-mails (the reference's subject), a single SMS (the critical one, 160 characters at most).
         wait_for("deux e-mails", || smtp.mails().len() >= 2).await;
         let mails = smtp.mails();
         assert!(
@@ -201,11 +201,11 @@ mod live {
                 .starts_with("[DomiNet — FIRING] DominetDown")
         );
 
-        // Les passages suivants se taisent (silence d'une heure).
+        // The following passes stay quiet (one-hour silence).
         tokio::time::sleep(Duration::from_millis(2500)).await;
         assert_eq!(smtp.mails().len(), 2, "pas de doublon");
 
-        // L'alerte critique disparait : « RESOLVED » par e-mail, sans SMS.
+        // The critical alert disappears: "RESOLVED" by e-mail, without SMS.
         *alerts.lock().unwrap() = json!([
             {"state": "firing", "labels": {"alertname": "Lent", "severity": "warning"}, "annotations": {"summary": "Lent"}},
         ]);

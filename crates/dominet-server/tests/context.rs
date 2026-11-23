@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! `dominet dump-context` : le document construit depuis la base, puis son YAML.
+//! `dominet dump-context`: the document built from the database, then its YAML.
 
 mod common;
 
@@ -61,7 +61,7 @@ async fn the_context_lists_active_devices_by_type_then_name_with_their_state_sch
         .keys()
         .map(String::as_str)
         .collect();
-    // Tri par type puis par nom ; l'appareil inactif est absent.
+    // Sorted by type then name; the inactive device is absent.
     assert_eq!(names, ["Lampe", "Abc", "Sonde salon"]);
     let sonde = &doc["devices"]["Sonde salon"];
     assert_eq!(sonde["type"], "sensor");
@@ -86,7 +86,7 @@ async fn the_context_lists_active_devices_by_type_then_name_with_their_state_sch
             "{empty}: rien n'est configure dans cette base"
         );
     }
-    // Pas de regle Grafana dans cette base : la rubrique est vide (le contenu est teste avec les regles, dans `rules.rs`).
+    // No Grafana rule in this database: the section is empty (the content is tested with the rules, in `rules.rs`).
     assert_eq!(doc["grafana_rules"], json!([]));
     let yaml = to_yaml(&doc);
     assert!(yaml.starts_with("devices:\n"));
@@ -130,7 +130,7 @@ async fn the_context_lists_active_scenes_automations_and_alert_rules(pool: PgPoo
     z.device_type = DeviceType::Sensor;
     let cave = st.store.devices().create(&z).await.unwrap();
 
-    // Scenes : une active avec deux commandes, une inactive (absente).
+    // Scenes: one active with two commands, one inactive (absent).
     let mut soir = SceneDraft::new("Soir");
     soir.icon = "moon".into();
     soir.actions = vec![
@@ -148,7 +148,7 @@ async fn the_context_lists_active_scenes_automations_and_alert_rules(pool: PgPoo
     off.active = false;
     st.store.scenes().create(&off).await.unwrap();
 
-    // Automations : tri par type de declencheur puis nom ; la desactivee est absente.
+    // Automations: sorted by trigger type then name; the deactivated one is absent.
     let notify = |m: &str| Action::Notification {
         message: m.into(),
         sms: false,
@@ -172,7 +172,7 @@ async fn the_context_lists_active_scenes_automations_and_alert_rules(pool: PgPoo
         st.store.automations().create(&a).await.unwrap();
     }
 
-    // Regles d'alerte : tri par appareil ; la desactivee est absente.
+    // Alert rules: sorted by device; the deactivated one is absent.
     let mut r1 = AlertRuleDraft::new("Trop chaud", lampe.id, "temperature");
     r1.threshold_num = Some(30.0);
     r1.notify_sms = true;

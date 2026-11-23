@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Outils communs aux tests d'integration : etat de test, "navigateur" minimal avec cookie, comptes.
-#![allow(dead_code)] // chaque fichier de test n'utilise qu'une partie de ces outils
+//! Tools shared by the integration tests: test state, minimal "browser" with a cookie, accounts.
+#![allow(dead_code)] // each test file only uses part of these tools
 
 pub mod broker;
 
@@ -51,7 +51,7 @@ pub struct Resp {
     pub body: Value,
 }
 
-/// Navigateur minimal : garde le cookie de session et envoie toujours la meme IP de pair.
+/// Minimal browser: keeps the session cookie and always sends the same peer IP.
 pub struct Client {
     pub app: Router,
     pub cookie: Option<String>,
@@ -119,7 +119,7 @@ impl Client {
         }
     }
 
-    /// Requete avec un corps binaire (televersement) ; renvoie statut, en-tetes et corps brut.
+    /// Request with a binary body (upload); returns status, headers and raw body.
     pub async fn send_bytes(
         &mut self,
         method: Method,

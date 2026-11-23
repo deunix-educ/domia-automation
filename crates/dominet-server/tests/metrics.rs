@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! `/metrics` (R7 lot 1, ADR 0051) : format Prometheus, etiquettes bornees, ecouteur a part, aucun secret.
+//! `/metrics` (R7 lot 1, ADR 0051): Prometheus format, bounded labels, separate listener, no secret.
 
 use std::sync::Arc;
 
@@ -43,7 +43,7 @@ async fn requests_are_counted_by_route_and_status_never_by_raw_url() {
     let st = state();
     let _ = metrics::handle();
     let app = web::router(st.clone());
-    // Une route connue, une inconnue avec un « identifiant » : seule la famille doit apparaitre.
+    // A known route, an unknown one with an "identifier": only the family must appear.
     text(app.clone(), "/healthz").await;
     text(
         app.clone(),
@@ -66,7 +66,7 @@ async fn requests_are_counted_by_route_and_status_never_by_raw_url() {
     assert!(
         body.contains("dominet_build_info") || body.contains("dominet_http_requests_in_flight")
     );
-    // Cardinalite bornee et rien de sensible : ni l'identifiant, ni l'URL brute, ni le mot de passe de la base.
+    // Bounded cardinality and nothing sensitive: neither the identifier, nor the raw URL, nor the database password.
     assert!(
         !body.contains("0b9a0f0e"),
         "le jeton ne doit pas figurer dans les metriques"
@@ -115,7 +115,7 @@ async fn the_listener_serves_metrics_on_its_own_port_and_the_public_router_does_
             .starts_with("text/plain"),
         "type de contenu Prometheus"
     );
-    // Le routeur public n'expose pas /metrics (il le traite comme une URL inconnue).
+    // The public router does not expose /metrics (it treats it as an unknown URL).
     let (status, _) = text(web::router(st), "/metrics").await;
     assert_eq!(status, StatusCode::NOT_FOUND);
 }

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Role `mqtt` de bout en bout sur le Mosquitto de dev (`make dev-up`) : le client demarre depuis la configuration, un message
-//! d'etat publie sur le broker arrive en base et sur le hub, puis le role s'arrete proprement.
+//! `mqtt` role end to end on the dev Mosquitto (`make dev-up`): the client starts from the configuration, a state message
+//! published on the broker reaches the database and the hub, then the role stops cleanly.
 
 mod common;
 
@@ -44,7 +44,7 @@ async fn a_state_published_on_the_broker_reaches_the_database_the_history_and_th
             ("MQTT_CLIENT_ID", &id),
         ],
     );
-    // L'appareil est amorce comme le ferait `bridge/devices`.
+    // The device is primed as `bridge/devices` would do.
     let name = format!("test/{id}");
     let mut draft = DeviceDraft::new(&name);
     draft.device_type = DeviceType::Sensor;
@@ -70,7 +70,7 @@ async fn a_state_published_on_the_broker_reaches_the_database_the_history_and_th
         )
         .unwrap();
 
-    // Le hub a retenu l'etat (diffusion), la base aussi, et la cle suivie est dans l'historique.
+    // The hub retained the state (broadcast), the database too, and the tracked key is in the history.
     let topic = Topic::Device(device.id.0);
     let retained = tokio::time::timeout(Duration::from_secs(10), async {
         loop {
@@ -92,7 +92,7 @@ async fn a_state_published_on_the_broker_reaches_the_database_the_history_and_th
     assert_eq!(dto.state, json!({"temperature": 21.5, "linkquality": 90}));
     let stored = st.store.devices().get(device.id).await.unwrap().unwrap();
     assert_eq!(stored.state, dto.state);
-    // L'historique s'ecrit apres la diffusion : on lui laisse un instant plutot que de lire une seule fois.
+    // The history is written after the broadcast: we give it a moment rather than reading only once.
     let mut points = Vec::new();
     for _ in 0..100 {
         points = st
@@ -153,7 +153,7 @@ async fn known_states_are_republished_to_the_hub_at_startup(pool: PgPool) {
     client.shutdown();
 }
 
-/// Attend que `check` devienne vrai (10 s au plus).
+/// Waits until `check` becomes true (10 s at most).
 async fn until<F: std::future::Future<Output = bool>>(what: &str, mut check: impl FnMut() -> F) {
     tokio::time::timeout(Duration::from_secs(10), async {
         while !check().await {
@@ -198,7 +198,7 @@ async fn a_source_added_at_runtime_is_subscribed_creates_its_device_and_feeds_th
     .client;
     connected(&publisher).await;
 
-    // Aucune source : le message est ignore. On l'ajoute « depuis l'administration » (base puis signal).
+    // No source: the message is ignored. We add it "from the administration" (database then signal).
     let prefix = format!("src{}", std::process::id());
     let topic = format!("{prefix}/compteur/prod");
     let mut source = dominet_domain::device::MqttSource::draft("Compteur", &format!("{prefix}/#"));
@@ -207,7 +207,7 @@ async fn a_source_added_at_runtime_is_subscribed_creates_its_device_and_feeds_th
     source.base_topic = prefix.clone();
     st.store.mqtt_sources().create(&source).await.unwrap();
     st.sources_changed.notify_one();
-    tokio::time::sleep(Duration::from_millis(800)).await; // abonnement pris en compte par le broker
+    tokio::time::sleep(Duration::from_millis(800)).await; // subscription acknowledged by the broker
 
     publisher
         .publish(&topic, r#"{"power": 1200, "unit": "W"}"#, 1, false)
@@ -223,7 +223,7 @@ async fn a_source_added_at_runtime_is_subscribed_creates_its_device_and_feeds_th
     assert_eq!(device.state["power"], 1200);
     assert!(st.hub.retained(&Topic::Device(device.id.0)).is_some());
 
-    // Cle suivie ajoutee : le message suivant va a l'historique et a ReductStore.
+    // Tracked key added: the next message goes to the history and to ReductStore.
     let mut draft = DeviceDraft::new(name);
     draft.base_topic = prefix.clone();
     draft.tracked_keys = vec!["power".into()];
@@ -271,7 +271,7 @@ async fn a_source_added_at_runtime_is_subscribed_creates_its_device_and_feeds_th
         Some("1300")
     );
 
-    // Source supprimee : plus de traitement des messages de son filtre.
+    // Source deleted: its filter's messages are no longer processed.
     let sources = st.store.mqtt_sources().list().await.unwrap();
     st.store.mqtt_sources().delete(sources[0].id).await.unwrap();
     st.sources_changed.notify_one();
@@ -307,7 +307,7 @@ async fn commands_and_pairing_requests_are_published_on_the_broker(pool: PgPool)
             ("MQTT_CLIENT_ID", &id),
         ],
     );
-    // Appareil sur un prefixe a lui : la commande part sur `<prefixe>/<nom>/set`.
+    // Device on a prefix of its own: the command goes out on `<prefix>/<name>/set`.
     let prefix = format!("cmd{}", std::process::id());
     let mut draft = DeviceDraft::new("Lampe test");
     draft.base_topic = prefix.clone();
@@ -317,7 +317,7 @@ async fn commands_and_pairing_requests_are_published_on_the_broker(pool: PgPool)
     inactive.active = false;
     let inactive = st.store.devices().create(&inactive).await.unwrap();
 
-    // Sans client MQTT dans l'etat : refus immediat.
+    // Without an MQTT client in the state: immediate refusal.
     let command = json!({"state": "ON", "brightness": 128});
     assert_eq!(
         send_command(&st, device.id, &command).await,
@@ -328,7 +328,7 @@ async fn commands_and_pairing_requests_are_published_on_the_broker(pool: PgPool)
         CommandOutcome::Unavailable
     );
 
-    // Un second client ecoute ce que le serveur publie.
+    // A second client listens to what the server publishes.
     let listener = start(&MqttSettings::new(
         "127.0.0.1",
         port.parse().unwrap(),

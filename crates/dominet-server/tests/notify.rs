@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Canaux d'envoi branches sur les reglages (R5 lot 2) : faux SMTP et faux Free Mobile, base isolee.
+//! Sending channels wired to the settings (R5 lot 2): fake SMTP and fake Free Mobile, isolated database.
 
 use dominet_notify::testing::{FakeFreeMobile, FakeSmtp};
 use dominet_notify::{NotifyError, Security};
@@ -57,7 +57,7 @@ async fn alert_mail_goes_to_the_recipient_setting_with_the_sender_setting(pool: 
     );
     assert_eq!(m.header("subject"), ["[DomiNet Alerte Critique] Canicule"]);
 
-    // Sans destinataire, retombe sur l'expediteur comme la reference ; les reglages sont lus a chaque envoi.
+    // Without a recipient, falls back on the sender like the reference; the settings are read at every sending.
     settings.set("EMAIL_RECIPIENT", "").await.unwrap();
     ch.send_alert_email("s", "c").await.unwrap();
     assert_eq!(smtp.mails()[1].to[0], "maison@example.com");
@@ -94,7 +94,7 @@ async fn sms_uses_the_credentials_of_the_settings_and_the_configured_url(pool: P
         Some(SecretBox::new(&key)),
     );
     let ch = Channels::new(&config(None, &fm.url()), settings.clone());
-    // Sans identifiants : rien n'est envoye.
+    // Without credentials: nothing is sent.
     assert!(matches!(
         ch.send_sms_free("x").await,
         Err(NotifyError::NotConfigured(_))
@@ -111,7 +111,7 @@ async fn sms_uses_the_credentials_of_the_settings_and_the_configured_url(pool: P
     );
     assert_eq!(r.msg, "[DomiNet] Canicule - salon : 31.5");
 
-    // La cle est chiffree au repos, et un refus de Free Mobile ne la divulgue pas.
+    // The key is encrypted at rest, and a Free Mobile refusal does not disclose it.
     let stored: String =
         sqlx::query_scalar("SELECT value FROM app_setting WHERE key = 'SMS_FREE_KEY'")
             .fetch_one(&pool)

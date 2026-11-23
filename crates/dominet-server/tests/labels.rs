@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! `dominet seed-labels` : libelles manquants des cles d'etat des appareils.
+//! `dominet seed-labels`: missing labels of the devices' state keys.
 
-// `assert!(x.is_empty())` : plus lisible que la comparaison a un tableau vide annote.
+// `assert!(x.is_empty())`: more readable than comparing with an annotated empty array.
 #![allow(clippy::assert_is_empty)]
 
 mod common;
@@ -26,14 +26,14 @@ async fn missing_labels_come_from_the_known_table_and_are_never_overwritten(pool
         )
         .await
         .unwrap();
-    // Simulation : rien n'est ecrit.
+    // Simulation: nothing is written.
     let dry = seed_labels_data(&st.store, true).await.unwrap();
     assert_eq!(
         dry.iter().map(|l| l.key.as_str()).collect::<Vec<_>>(),
         ["co2_ppm", "temperature"]
     );
     assert!(st.store.device_labels().list().await.unwrap().is_empty());
-    // Ecriture, puis idempotence ; un libelle modifie par l'administrateur reste tel quel.
+    // Write, then idempotence; a label modified by the administrator stays as is.
     assert_eq!(seed_labels_data(&st.store, false).await.unwrap().len(), 2);
     assert!(seed_labels_data(&st.store, false).await.unwrap().is_empty());
     let labels = st.store.device_labels().list().await.unwrap();

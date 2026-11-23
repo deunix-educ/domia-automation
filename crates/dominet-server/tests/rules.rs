@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Ecriture et rechargement des regles d'alerte (R7 lot 2) : faux Prometheus et faux Grafana, base isolee, dossier temporaire.
+//! Writing and reloading of the alert rules (R7 lot 2): fake Prometheus and fake Grafana, isolated database, temporary folder.
 
 use std::sync::{Arc, Mutex};
 
@@ -19,7 +19,7 @@ use dominet_server::settings::SettingsService;
 use dominet_store::PgStore;
 use sqlx::PgPool;
 
-/// Ce que le faux service a recu : (chemin, en-tete Authorization).
+/// What the fake service received: (path, Authorization header).
 type Seen = Arc<Mutex<Vec<(String, Option<String>)>>>;
 
 struct Fake {
@@ -145,7 +145,7 @@ async fn grafana_reload_uses_the_configured_account(pool: PgPool) {
     );
     let seen = grafana.seen.lock().unwrap().clone();
     assert_eq!(seen[0].0, "/api/admin/provisioning/alerting/reload");
-    // « admin:pw-de-grafana » en Basic.
+    // "admin:pw-de-grafana" in Basic.
     assert_eq!(
         seen[0].1.as_deref(),
         Some("Basic YWRtaW46cHctZGUtZ3JhZmFuYQ==")
@@ -181,7 +181,7 @@ async fn a_refused_or_unreachable_reload_is_reported_but_the_file_is_kept(pool: 
     );
     assert!(!status.is_ok() && file.exists());
 
-    // Rien n'ecoute sur le port : meme resultat, sans faire echouer l'ecriture.
+    // Nothing listens on the port: same result, without making the writing fail.
     let svc = RulesService::new(
         store.clone(),
         &config(&[
@@ -197,7 +197,7 @@ async fn a_refused_or_unreachable_reload_is_reported_but_the_file_is_kept(pool: 
         }
     );
 
-    // Sans adresse : fichier ecrit, rechargement « a faire a la main ». Sans chemin : rien du tout.
+    // Without an address: file written, reload "to be done by hand". Without a path: nothing at all.
     let svc = RulesService::new(
         store.clone(),
         &config(&[("PROMETHEUS_RULES_PATH", file.display().to_string())]),
@@ -219,7 +219,7 @@ async fn a_refused_or_unreachable_reload_is_reported_but_the_file_is_kept(pool: 
 #[sqlx::test(migrator = "dominet_store::MIGRATOR")]
 async fn an_unwritable_destination_is_a_failure_not_a_panic(pool: PgPool) {
     let store = PgStore::new(pool);
-    // Le « dossier parent » est un fichier : impossible de creer le fichier de regles.
+    // The "parent folder" is a file: the rules file cannot be created.
     let blocker =
         std::env::temp_dir().join(format!("dominet-rules-blocker-{}", std::process::id()));
     std::fs::write(&blocker, "x").unwrap();
@@ -259,7 +259,7 @@ async fn seed_creates_the_shipped_rules_once_and_never_brings_back_a_deleted_one
     );
     assert_eq!(rules.list().await.unwrap().len(), all.len() - 1);
 
-    // Simulation : compte sans ecrire.
+    // Simulation: counts without writing.
     let dry = PgStore::new(store.pool().clone());
     for r in dry.prometheus_rules().list().await.unwrap() {
         dry.prometheus_rules().delete(r.id).await.unwrap();
@@ -286,7 +286,7 @@ async fn the_context_lists_active_grafana_rules_like_reference_does(pool: PgPool
         rules.len() - 1,
         "les regles coupees ne sont pas dans le contexte"
     );
-    // Tri par source (postgresql avant prometheus) puis identifiant.
+    // Sorted by source (postgresql before prometheus) then identifier.
     let order: Vec<_> = listed.iter().map(|r| r["uid"].as_str().unwrap()).collect();
     assert_eq!(
         order,

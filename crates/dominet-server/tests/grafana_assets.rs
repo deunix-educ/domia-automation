@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Tableaux et fichiers de provisionnement Grafana / Prometheus (R7 lot 3, ADR 0053) : chaque requete SQL des tableaux **s'execute**
-//! contre le schema de DomiNet (les variables et macros de Grafana sont remplacees), et chaque metrique citee par un tableau ou
-//! une regle livree existe — metriques de DomiNet (`metrics::names()`) ou de MediaMTX 1.21.3 (noms releves sur le vrai binaire).
+//! Grafana / Prometheus dashboards and provisioning files (R7 lot 3, ADR 0053): every SQL query of the dashboards **runs**
+//! against DomiNet's schema (Grafana's variables and macros are replaced), and every metric cited by a dashboard or
+//! a shipped rule exists: DomiNet metrics (`metrics::names()`) or MediaMTX 1.21.3 (names taken from the real binary).
 
 use std::collections::BTreeSet;
 use std::path::PathBuf;
@@ -32,7 +32,7 @@ fn dashboards() -> Vec<(String, Value)> {
     out
 }
 
-/// Toutes les requetes d'un tableau : (nature, texte) ; `sql` pour PostgreSQL, `promql` pour Prometheus.
+/// All the queries of a dashboard: (kind, text); `sql` for PostgreSQL, `promql` for Prometheus.
 fn queries(doc: &Value) -> Vec<(&'static str, String)> {
     let mut out = vec![];
     for panel in doc["panels"].as_array().into_iter().flatten() {
@@ -53,7 +53,7 @@ fn queries(doc: &Value) -> Vec<(&'static str, String)> {
     out
 }
 
-/// Rend une requete executable : macros de Grafana et variables remplacees par des valeurs.
+/// Makes a query executable: Grafana's macros and variables replaced by values.
 fn concrete(sql: &str) -> String {
     sql.replace("$__timeFilter(ts)", "ts >= now() - interval '1 hour'")
         .replace("$__timeFilter(day)", "day >= current_date - 30")
@@ -79,7 +79,7 @@ async fn every_sql_query_of_the_dashboards_runs_against_the_rust_schema(pool: Pg
                 !sql.contains("$__") && !sql.contains("${"),
                 "{file} : macro ou variable non remplacee dans {sql}"
             );
-            // `EXPLAIN` fait analyser la requete par PostgreSQL (tables, colonnes, types) sans lire de donnees.
+            // `EXPLAIN` makes PostgreSQL analyse the query (tables, columns, types) without reading data.
             sqlx::query(sqlx::AssertSqlSafe(format!("EXPLAIN {sql}")))
                 .execute(&pool)
                 .await
@@ -93,7 +93,7 @@ async fn every_sql_query_of_the_dashboards_runs_against_the_rust_schema(pool: Pg
     );
 }
 
-/// La requete SQL d'un panneau du tableau « Energie » (par son titre), macros remplacees.
+/// The SQL query of a panel of the "Energy" dashboard (by its title), macros replaced.
 fn energy_sql(title: &str) -> String {
     let (_, doc) = dashboards()
         .into_iter()
@@ -111,8 +111,8 @@ fn energy_sql(title: &str) -> String {
 #[sqlx::test(migrator = "dominet_store::MIGRATOR")]
 async fn the_energy_dashboard_computes_the_self_consumption_rate(pool: PgPool) {
     use sqlx::Row;
-    // Jour 1 : 10 kWh produits, 6 kWh consommes (3 + 1 Linky, 2 PAC) -> 6 kWh autoconsommes, surplus 4.
-    // Jour 2 : 2 kWh produits, 7 kWh consommes -> tout est autoconsomme (2), deficit 5. Jour 3 : pas de soleil.
+    // Day 1: 10 kWh produced, 6 kWh consumed (3 + 1 Linky, 2 heat pump) -> 6 kWh self-consumed, surplus 4.
+    // Day 2: 2 kWh produced, 7 kWh consumed -> everything is self-consumed (2), deficit 5. Day 3: no sun.
     for (day, hp, hc, solar, pac) in [
         ("2026-11-10", 3000, 1000, 10_000, 2000),
         ("2026-11-11", 5000, 0, 2000, 2000),
@@ -130,8 +130,8 @@ async fn the_energy_dashboard_computes_the_self_consumption_rate(pool: PgPool) {
         .await
         .unwrap();
     }
-    // Sur la periode : (6000 + 2000) / (10000 + 2000) = 66,7 %.
-    // (PostgreSQL rend du NUMERIC : on le convertit pour le lire en f64.)
+    // Over the period: (6000 + 2000) / (10000 + 2000) = 66.7 %.
+    // (PostgreSQL returns NUMERIC: we convert it to read it as f64.)
     let sql = format!(
         "SELECT v::float8 FROM ({}) t(v)",
         energy_sql("Autoconsommation sur la période")
@@ -143,7 +143,7 @@ async fn the_energy_dashboard_computes_the_self_consumption_rate(pool: PgPool) {
         .get::<Option<f64>, _>(0)
         .unwrap_or(f64::NAN);
     assert!((rate - 66.666).abs() < 0.01, "taux de la periode : {rate}");
-    // Par jour : 60 %, 100 %, et pas de valeur (et non 0 %) un jour sans production.
+    // Per day: 60%, 100%, and no value (not 0%) on a day without production.
     let sql = format!(
         "SELECT rate::float8 FROM ({}) t(time, rate)",
         energy_sql("Autoconsommation par jour (%)")
@@ -157,7 +157,7 @@ async fn the_energy_dashboard_computes_the_self_consumption_rate(pool: PgPool) {
     assert!((rates[0].unwrap() - 60.0).abs() < 0.01);
     assert!((rates[1].unwrap() - 100.0).abs() < 0.01);
     assert_eq!(rates[2], None);
-    // Le bilan net par jour est celui de la page : production - (Linky + PAC), en kWh.
+    // The net balance per day is the page's: production - (Linky + heat pump), in kWh.
     let sql = format!(
         "SELECT net::float8 FROM ({}) t(time, solar, linky, pac, net)",
         energy_sql("Énergie par jour (kWh)")
@@ -183,8 +183,8 @@ async fn the_shipped_grafana_sql_rule_runs_too(pool: PgPool) {
     }
 }
 
-/// Noms de metriques cites par une expression `PromQL` : les identifiants en `snake_case` qui ne sont ni des fonctions, ni des
-/// etiquettes, ni des mots-cles.
+/// Metric names cited by a `PromQL` expression: the `snake_case` identifiers that are neither functions, nor
+/// labels, nor keywords.
 fn metric_names(expr: &str) -> BTreeSet<String> {
     const WORDS: [&str; 25] = [
         "sum",
@@ -284,7 +284,7 @@ fn every_metric_cited_by_a_dashboard_or_a_shipped_rule_exists() {
     assert!(exprs.len() >= 30);
     for (origin, expr) in exprs {
         for metric in metric_names(&expr) {
-            // Les series histogramme de DomiNet se terminent par `_bucket` / `_sum` / `_count`.
+            // DomiNet's histogram series end with `_bucket` / `_sum` / `_count`.
             let base = ["_bucket", "_sum", "_count"]
                 .iter()
                 .find_map(|s| metric.strip_suffix(s))

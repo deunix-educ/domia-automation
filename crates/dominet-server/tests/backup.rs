@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Sauvegarde et restauration (R7 lot 4, ADR 0054) : la base est sauvegardee par `pg_dump` (celui du conteneur de la stack de dev),
-//! restauree dans une AUTRE base jetable, et les deux sont comparees table par table ; sommes de controle, retention, archive du volume
-//! ReductStore (aller-retour, chemins hors dossier refuses) et echecs de clients.
+//! Backup and restore (R7 lot 4, ADR 0054): the database is backed up by `pg_dump` (the dev stack container's),
+//! restored into ANOTHER throw-away database, and the two are compared table by table; checksums, retention, archive of the ReductStore
+//! volume (round trip, paths outside the folder refused) and client failures.
 
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -22,8 +22,8 @@ fn tmp(tag: &str) -> PathBuf {
     dir
 }
 
-/// Adresse de la base de test (ou d'une autre base du meme serveur) : celle de `DATABASE_URL` (stack de dev ou base jetable du hook
-/// pre-push), avec son identifiant et son mot de passe.
+/// Address of the test database (or of another database on the same server): that of `DATABASE_URL` (dev stack or the pre-push hook's
+/// throw-away database), with its identifier and password.
 fn url_of(pool: &PgPool, database: Option<&str>) -> String {
     let mut url = url::Url::parse(&std::env::var("DATABASE_URL").expect("DATABASE_URL")).unwrap();
     let name = database.map_or_else(
@@ -72,7 +72,7 @@ async fn fill(pool: &PgPool) {
         .unwrap();
 }
 
-/// Empreinte du contenu de chaque table (lignes triees) : deux bases identiques ont les memes.
+/// Fingerprint of each table's content (sorted rows): two identical databases have the same ones.
 async fn fingerprint(pool: &PgPool) -> Vec<(String, i64, String)> {
     let tables: Vec<String> = sqlx::query_scalar(
         "SELECT table_name::text FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE' ORDER BY 1",
@@ -93,7 +93,7 @@ async fn fingerprint(pool: &PgPool) -> Vec<(String, i64, String)> {
     out
 }
 
-/// Colonnes et index : la restauration recree le meme schema.
+/// Columns and indexes: the restore recreates the same schema.
 async fn schema(pool: &PgPool) -> Vec<String> {
     let mut out: Vec<String> = sqlx::query_scalar(
         "SELECT table_name || '.' || column_name || ':' || data_type || ':' || is_nullable FROM information_schema.columns WHERE table_schema = 'public'",
@@ -162,7 +162,7 @@ async fn a_backup_restores_into_another_database_with_the_same_schema_and_data(p
             .all(|e| !e.file_name().to_string_lossy().ends_with(".tmp"))
     );
 
-    // Restauration dans une base VIERGE (la sauvegarde recree tout), puis comparaison.
+    // Restore into a BLANK database (the backup recreates everything), then comparison.
     let admin = PgPool::connect_with(pool.connect_options().as_ref().clone().database("postgres"))
         .await
         .unwrap();
@@ -195,10 +195,10 @@ async fn a_backup_restores_into_another_database_with_the_same_schema_and_data(p
         "les accents et les tirets survivent"
     );
 
-    // Une deuxieme restauration par-dessus (--clean) donne le meme resultat : on peut restaurer sur une base en service.
+    // A second restore on top (--clean) gives the same result: one can restore onto a database in service.
     restore.restore_postgres(&report.postgres.path).unwrap();
     assert_eq!(fingerprint(&target).await, fingerprint(&pool).await);
-    // `latest` et la liste voient la sauvegarde.
+    // `latest` and the list see the backup.
     assert_eq!(svc.latest("postgres").unwrap(), report.postgres.path);
     assert_eq!(
         svc.list().len(),
@@ -260,7 +260,7 @@ async fn a_failing_client_leaves_no_half_written_backup(pool: PgPool) {
         fs::read_dir(dir.join("postgres")).map_or(true, |mut d| d.next().is_none()),
         "aucun fichier, pas meme temporaire"
     );
-    // Programme introuvable : erreur claire, pas de panique.
+    // Program not found: clear error, no panic.
     let svc = BackupService::new(&config(
         &url_of(&pool, None),
         &dir,
@@ -272,7 +272,7 @@ async fn a_failing_client_leaves_no_half_written_backup(pool: PgPool) {
         svc.run_blocking(Utc::now()),
         Err(BackupError::Io { .. })
     ));
-    // Pas de destination : refus net.
+    // No destination: flat refusal.
     let none =
         Config::from_lookup(|k| (k == "DATABASE_URL").then(|| "postgres://u:p@h/d".to_string()))
             .unwrap();
@@ -349,7 +349,7 @@ async fn old_backups_are_pruned_but_the_newest_of_each_kind_always_stays(pool: P
         "la somme part avec son fichier"
     );
 
-    // Meme si TOUT est plus vieux que la retention, la plus recente reste : on ne se retrouve jamais sans rien.
+    // Even if EVERYTHING is older than the retention, the most recent one stays: we never end up with nothing.
     for (_, p) in svc.list() {
         let t = std::time::SystemTime::now() - std::time::Duration::from_hours(9600);
         fs::File::options()
@@ -392,7 +392,7 @@ fn the_reductstore_volume_survives_a_round_trip_and_never_writes_outside_its_tar
         "/bin/true",
     );
     let svc = BackupService::new(&cfg);
-    // `/bin/true` tient lieu de `pg_dump` : sortie vide, valide (sauvegarde vide) ; seule l'archive du volume nous interesse ici.
+    // `/bin/true` stands in for `pg_dump`: empty output, valid (empty backup); only the volume archive interests us here.
     let report = svc.run_blocking(Utc::now()).unwrap();
     let archive = report.reductstore.expect("archive du volume").path;
 
@@ -412,14 +412,14 @@ fn the_reductstore_volume_survives_a_round_trip_and_never_writes_outside_its_tar
         dest.join("vide").is_dir(),
         "un dossier vide est restaure aussi"
     );
-    // Cible non vide : refus, sauf --force.
+    // Non-empty target: refused, unless --force.
     assert!(matches!(
         BackupService::restore_reductstore(&archive, &dest, false),
         Err(BackupError::Refused(_))
     ));
     assert!(BackupService::restore_reductstore(&archive, &dest, true).is_ok());
 
-    // Une archive piegee (chemin `../`) n'ecrit rien hors du dossier cible.
+    // A booby-trapped archive (`../` path) writes nothing outside the target folder.
     let evil = tmp("rs-evil");
     let evil_tar = evil.join("evil.tar.gz");
     {

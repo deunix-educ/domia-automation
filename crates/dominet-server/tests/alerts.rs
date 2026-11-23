@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Alertes de bout en bout sur le Mosquitto de dev (R4 lot 6) : un etat publie sur le broker declenche l'alerte de la regle de la
-//! production (canicule : `meteo_locale.temperature > 35`, cooldown 60 min), le bandeau et le nombre d'alertes en cours sont
-//! diffuses, le cooldown retient la suivante, et le retour a la normale resout l'alerte.
+//! End-to-end alerts on the dev Mosquitto (R4 lot 6): a state published on the broker triggers the production rule's alert (heatwave:
+//! `meteo_locale.temperature > 35`, cooldown 60 min), the banner and the number of ongoing alerts are
+//! broadcast, the cooldown holds back the next one, and the return to normal resolves the alert.
 
 mod common;
 
@@ -38,7 +38,7 @@ async fn the_production_heatwave_rule_fires_through_the_broker_then_cools_down_a
 
     let remote = publisher("alerts").await;
     let topic = format!("{z2m}/meteo_locale");
-    // Etats normaux, puis la canicule : l'evaluation se met en place en tache de fond, on repete l'etat chaud jusqu'a l'alerte.
+    // Normal states, then the heatwave: the evaluation sets itself up in the background, we repeat the hot state until the alert.
     remote
         .publish(&topic, json!({"temperature": 22.5}).to_string(), 1, false)
         .unwrap();
@@ -54,7 +54,7 @@ async fn the_production_heatwave_rule_fires_through_the_broker_then_cools_down_a
         }
     }
     assert!(fired, "aucune alerte declenchee");
-    // Le bandeau et le nombre d'alertes en cours.
+    // The banner and the number of ongoing alerts.
     let toast = tokio::time::timeout(Duration::from_secs(5), async {
         loop {
             if let Ok(m) = toasts.recv().await
@@ -75,7 +75,7 @@ async fn the_production_heatwave_rule_fires_through_the_broker_then_cools_down_a
         "{retained:?}"
     );
 
-    // Cooldown de 60 min : d'autres etats chauds ne creent rien.
+    // 60 min cooldown: more hot states create nothing.
     for t in [37.0, 38.2] {
         remote
             .publish(&topic, json!({"temperature": t}).to_string(), 1, false)
@@ -84,7 +84,7 @@ async fn the_production_heatwave_rule_fires_through_the_broker_then_cools_down_a
     }
     assert_eq!(st.store.alerts().list(None, 10).await.unwrap().len(), 1);
 
-    // Retour a la normale : resolue, et le compte retombe a zero.
+    // Return to normal: resolved, and the count falls back to zero.
     remote
         .publish(&topic, json!({"temperature": 24.0}).to_string(), 1, false)
         .unwrap();

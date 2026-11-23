@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Tests d'integration des sondes de sante et des middlewares (routeur complet, sans reseau).
+//! Integration tests of the health probes and the middlewares (full router, without network).
 //!
-//! Les tests avec base utilisent `#[sqlx::test]` (base isolee, `DATABASE_URL` = stack de dev : `make dev-up`).
+//! Tests with a database use `#[sqlx::test]` (isolated database, `DATABASE_URL` = dev stack: `make dev-up`).
 
 use std::sync::Arc;
 
@@ -30,7 +30,7 @@ fn state(pool: PgPool) -> AppState {
     )
 }
 
-/// Pool vers un port ferme : la base est "absente".
+/// Pool towards a closed port: the database is "absent".
 fn dead_pool() -> PgPool {
     PgPoolOptions::new()
         .acquire_timeout(std::time::Duration::from_millis(300))

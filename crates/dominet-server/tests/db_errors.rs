@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Verifie sur une vraie base que les erreurs SQL sont traduites en `AppError` utiles.
+//! Checks on a real database that SQL errors are translated into useful `AppError`s.
 
 use axum::http::StatusCode;
 use axum::response::IntoResponse;
@@ -42,7 +42,7 @@ async fn missing_row_becomes_not_found(pool: PgPool) {
 
 #[sqlx::test(migrator = "dominet_store::MIGRATOR")]
 async fn check_violation_is_an_internal_error_that_hides_the_sql(pool: PgPool) {
-    // Une contrainte CHECK violee par du code applicatif est un bug : 500 sans detail pour le client.
+    // A CHECK constraint violated by application code is a bug: 500 without detail for the client.
     let err =
         sqlx::query("INSERT INTO users (username, password_hash, role) VALUES ('x', 'h', 'root')")
             .execute(&pool)

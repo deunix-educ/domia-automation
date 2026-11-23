@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Publishers de bout en bout : API meteo et onduleur **simules** -> publisher -> Mosquitto de dev -> source MQTT -> appareil en base.
+//! Publishers end to end: **simulated** weather API and inverter -> publisher -> dev Mosquitto -> MQTT source -> device in the database.
 
 mod common;
 
@@ -64,7 +64,7 @@ async fn simulated_weather_and_inverter_reach_devices_through_the_broker_and_the
             ("SOLARMAX_INTERVAL_SECS", "1"),
         ],
     );
-    // Les sources qui transforment les messages en appareils (comme `dominet seed-weather` et la source SolarMax de la production).
+    // The sources that turn the messages into devices (like `dominet seed-weather` and the production's SolarMax source).
     let mut meteo = MqttSource::draft("Météo", "meteo/#");
     meteo.base_topic = "meteo".into();
     meteo.auto_device = true;
@@ -110,7 +110,7 @@ async fn simulated_weather_and_inverter_reach_devices_through_the_broker_and_the
 
 #[sqlx::test(migrator = "dominet_store::MIGRATOR")]
 async fn without_a_station_or_an_inverter_host_nothing_is_requested(pool: PgPool) {
-    // API injoignable (port ferme) et aucune station : le publisher meteo ne tente rien ; pas de SOLARMAX_HOST : pas d'onduleur.
+    // Unreachable API (closed port) and no station: the weather publisher tries nothing; no SOLARMAX_HOST: no inverter.
     let pid = std::process::id();
     let port = port();
     let mut st = state(
@@ -127,7 +127,7 @@ async fn without_a_station_or_an_inverter_host_nothing_is_requested(pool: PgPool
     st.mqtt = Some(client.clone());
     publishers::spawn(&st, &client);
     tokio::time::sleep(Duration::from_millis(800)).await;
-    // Le broker de dev peut garder des messages Zigbee2MQTT retenus : on ne regarde que ce que les publishers auraient cree.
+    // The dev broker may keep retained Zigbee2MQTT messages: we only look at what the publishers would have created.
     let all = st
         .store
         .devices()

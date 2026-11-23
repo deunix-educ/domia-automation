@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Tests du coeur des commandes `createsuperuser` et `passwd` (base isolee par test).
+//! Tests of the core of the `createsuperuser` and `passwd` commands (database isolated per test).
 
 use dominet_domain::RepoError;
 use dominet_domain::auth::LockoutPolicy;
@@ -140,7 +140,7 @@ async fn passwd_changes_the_hash_and_revokes_the_sessions_of_that_account_only(p
         sessions.load(&ids[1]).await.unwrap().is_some(),
         "celles d'alice intactes"
     );
-    // Et le nouveau mot de passe fonctionne a la connexion.
+    // And the new password works at login.
     assert!(
         auth.authenticate("bob", "un tout nouveau mot de passe", "10.0.0.1")
             .await

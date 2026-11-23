@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Energie cote serveur (R4 lot 7) : `seed-energy`, travail de 00:05 (`compute_daily_energy`), API JSON `/api/energy/` et page.
+//! Server-side energy (R4 lot 7): `seed-energy`, the 00:05 job (`compute_daily_energy`), the `/api/energy/` JSON API and the page.
 
 mod common;
 
@@ -31,7 +31,7 @@ async fn seed_energy_adds_the_missing_keys_without_removing_any_and_reports_miss
         .await
         .unwrap();
     let names = EnergyDevices::default();
-    // Simulation : rien n'est ecrit.
+    // Simulation: nothing is written.
     let dry = seed_energy_data(&st.store, &names, true).await.unwrap();
     assert_eq!(
         dry,
@@ -56,7 +56,7 @@ async fn seed_energy_adds_the_missing_keys_without_removing_any_and_reports_miss
         .unwrap()
         .unwrap();
     assert_eq!(linky.tracked_keys, ["PAPP", "HCHP"]);
-    // Ecriture : les cles existantes restent, les manquantes sont ajoutees ; puis idempotent.
+    // Write: existing keys stay, missing ones are added; then idempotent.
     seed_energy_data(&st.store, &names, false).await.unwrap();
     let linky = st
         .store
@@ -131,7 +131,7 @@ async fn the_nightly_job_computes_yesterday_or_the_requested_day_and_replaces_it
             pac_wh: 0
         })
     );
-    // Sans date : hier (jour local) ; une date illisible est une erreur claire.
+    // Without a date: yesterday (local day); an unreadable date is a clear error.
     assert!(
         runner
             .run(&job(json!({})))
@@ -146,7 +146,7 @@ async fn the_nightly_job_computes_yesterday_or_the_requested_day_and_replaces_it
             .unwrap_err()
             .contains("invalid date")
     );
-    // Un travail inconnu echoue proprement.
+    // An unknown job fails cleanly.
     let mut other = job(json!({}));
     other.draft.task = "inconnue".into();
     assert!(

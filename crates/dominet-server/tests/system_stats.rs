@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Contrat de `GET /api/system-stats/` : memes cles que l'implementation de reference (+ `temperature`), compte connecte exigible,
-//! valeur lue dans le dernier etat du sujet `system`.
+//! Contract of `GET /api/system-stats/`: same keys as the reference implementation (+ `temperature`), logged-in account required,
+//! value read from the last state of the `system` subject.
 
 mod common;
 
@@ -50,7 +50,7 @@ async fn an_ordinary_account_reads_the_reference_shaped_document(pool: PgPool) {
     let r = c.get("/api/system-stats/").await;
     assert_eq!(r.status, StatusCode::OK);
     let b = &r.body;
-    // Les cles historiques des statistiques systeme, plus `temperature`.
+    // The historical keys of the system statistics, plus `temperature`.
     assert_eq!(
         keys(b),
         ["cpu", "disk", "memory", "temperature", "updated_at"]

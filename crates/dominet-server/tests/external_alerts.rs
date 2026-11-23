@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Lecture des alertes de Prometheus et de Grafana (R13 lot E1) contre de faux services HTTP.
+//! Reading of Prometheus and Grafana alerts (R13 lot E1) against fake HTTP services.
 
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -28,7 +28,7 @@ fn prometheus(alerts: Value) -> Router {
     )
 }
 
-/// Grafana : refuse sans le bon compte, sinon repond avec la liste.
+/// Grafana: refuses without the right account, otherwise answers with the list.
 fn grafana(alerts: Value, up: Arc<AtomicBool>) -> Router {
     Router::new()
         .route(
@@ -88,7 +88,7 @@ async fn prometheus_and_grafana_alerts_are_read_counted_and_ordered() {
     assert_eq!(all[1].name, "Canicule");
     assert_eq!(all[1].source, Source::Grafana);
     assert_eq!(all[1].since.as_deref(), Some("2026-11-18T09:00:00Z"));
-    // Une deuxieme lecture identique ne change rien : la pastille n'est pas rediffusee pour rien.
+    // A second identical read changes nothing: the badge is not rebroadcast for nothing.
     assert!(!alerts.refresh().await);
 }
 
@@ -96,14 +96,14 @@ async fn prometheus_and_grafana_alerts_are_read_counted_and_ordered() {
 async fn an_unreachable_or_refusing_source_is_reported_not_hidden() {
     let up = Arc::new(AtomicBool::new(true));
     let graf = serve(grafana(json!([]), up.clone())).await;
-    // Mauvais mot de passe : Grafana refuse, la source est injoignable (et non « sans alerte »).
+    // Wrong password: Grafana refuses, the source is unreachable (and not "no alert").
     let wrong =
         ExternalAlerts::with_endpoints(None, Some((graf.clone(), "admin".into(), "faux".into())));
     wrong.refresh().await;
     assert_eq!(wrong.snapshot().grafana, SourceState::Unreachable);
     assert_eq!(wrong.snapshot().prometheus, SourceState::NotConfigured);
 
-    // Bon compte : une liste vide veut dire « tout va bien ». Puis le service tombe : on le dit.
+    // Right account: an empty list means "all is well". Then the service goes down: we say so.
     let right = ExternalAlerts::with_endpoints(None, Some((graf, "admin".into(), "secret".into())));
     right.refresh().await;
     assert_eq!(right.snapshot().grafana, SourceState::Ok(vec![]));
@@ -112,7 +112,7 @@ async fn an_unreachable_or_refusing_source_is_reported_not_hidden() {
     assert_eq!(right.snapshot().grafana, SourceState::Unreachable);
     assert_eq!(right.firing(), 0);
 
-    // Rien de configure : rien n'est lu.
+    // Nothing configured: nothing is read.
     let none = ExternalAlerts::with_endpoints(None, None);
     assert!(!none.is_configured());
     assert!(!none.refresh().await);

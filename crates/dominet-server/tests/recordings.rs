@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Enregistrements (R6 lot 7) : indexation des segments, archivage dans le **vrai ReductStore de la stack de dev** (bucket jetable),
-//! suppression du fichier local, lecture depuis l'archive, enregistrement manuel contre le faux MediaMTX.
+//! Recordings (R6 lot 7): segment indexing, archiving into the **real dev-stack ReductStore** (throw-away bucket),
+//! deletion of the local file, reading from the archive, manual recording against the fake MediaMTX.
 //!
-//! `REDUCTSTORE_URL` (defaut `http://127.0.0.1:18383`) et `REDUCTSTORE_TOKEN` (defaut `dominet-dev-token`).
+//! `REDUCTSTORE_URL` (default `http://127.0.0.1:18383`) and `REDUCTSTORE_TOKEN` (default `dominet-dev-token`).
 
 mod common;
 
@@ -21,7 +21,7 @@ use dominet_server::recordings::{RecordingError, SegmentBody};
 use dominet_surveillance::testing::FakeMediaMtx;
 use sqlx::PgPool;
 
-/// Dossier temporaire propre a un test, supprime a la fin.
+/// Temporary folder specific to a test, deleted at the end.
 struct TempDir(PathBuf);
 
 impl TempDir {
@@ -76,7 +76,7 @@ fn segment(root: &Path, camera: CameraUuid, name: &str, bytes: &[u8]) -> PathBuf
     std::fs::create_dir_all(&dir).unwrap();
     let path = dir.join(name);
     std::fs::write(&path, bytes).unwrap();
-    // Ancien : le segment est termine.
+    // Old: the segment is finished.
     File::options()
         .write(true)
         .open(&path)
@@ -104,7 +104,7 @@ fn test_state(
     state(pool, &vars)
 }
 
-/// Acces direct au bucket jetable d'un etat de test (verifications et nettoyage).
+/// Direct access to the throw-away bucket of a test state (checks and cleanup).
 async fn raw_bucket(st: &dominet_server::AppState) -> std::sync::Arc<reduct_rs::Bucket> {
     let cfg = st.config.reductstore.as_ref().unwrap();
     dominet_store::video::ReductVideo::new(
@@ -122,7 +122,7 @@ async fn raw_bucket(st: &dominet_server::AppState) -> std::sync::Arc<reduct_rs::
 }
 
 async fn drop_bucket(st: &dominet_server::AppState) {
-    // Le bucket jetable disparait avec ses segments.
+    // The throw-away bucket disappears with its segments.
     let _ = raw_bucket(st).await.remove().await;
 }
 
@@ -142,7 +142,7 @@ async fn segments_are_indexed_typed_archived_and_the_local_file_goes_away(pool: 
         .unwrap();
 
     let t0 = Utc.with_ymd_and_hms(2026, 11, 8, 12, 0, 0).unwrap();
-    // Un mouvement dans la fenetre du deuxieme segment.
+    // A motion in the second segment's window.
     st.store
         .camera_events()
         .record_motion(cam.id, t0 + chrono::Duration::seconds(75), 0.4)
@@ -160,9 +160,9 @@ async fn segments_are_indexed_typed_archived_and_the_local_file_goes_away(pool: 
         "2026-11-08_12-01-00-000000.mp4",
         b"segment-deux",
     );
-    // Camera qui n'enregistre pas : jamais indexee ni touchee.
+    // A camera that does not record: never indexed or touched.
     let ignored = segment(tmp.path(), off.uuid, "2026-11-08_12-00-00-000000.mp4", b"x");
-    // Encore en ecriture : attendu au prochain passage.
+    // Still being written: expected at the next pass.
     let fresh = tmp
         .path()
         .join(cam.uuid.to_string())
@@ -187,11 +187,11 @@ async fn segments_are_indexed_typed_archived_and_the_local_file_goes_away(pool: 
     );
     assert_eq!(list[0].size_bytes, Some(10));
 
-    // Archive sure : plus de fichier local pour les segments pousses ; les autres sont intacts.
+    // Safe archive: no more local file for the pushed segments; the others are intact.
     assert!(!first.exists() && !second.exists());
     assert!(ignored.exists() && fresh.exists());
 
-    // Le segment se relit depuis ReductStore, avec les etiquettes de la reference.
+    // The segment is read back from ReductStore, with the reference's labels.
     let body = st
         .recordings
         .open(cam.uuid, &list[0])
@@ -220,10 +220,10 @@ async fn segments_are_indexed_typed_archived_and_the_local_file_goes_away(pool: 
         Some(cam.uuid.to_string().as_str())
     );
 
-    // Un deuxieme passage ne recree rien.
+    // A second pass recreates nothing.
     assert_eq!(st.recordings.scan().await.unwrap().indexed, 0);
 
-    // Suppression : archive, fichier et ligne.
+    // Deletion: archive, file and row.
     st.recordings.delete(cam.uuid, &list[0]).await.unwrap();
     assert!(
         st.store
@@ -246,7 +246,7 @@ async fn segments_are_indexed_typed_archived_and_the_local_file_goes_away(pool: 
 #[sqlx::test(migrator = "dominet_store::MIGRATOR")]
 async fn a_failed_push_keeps_the_file_and_is_retried(pool: PgPool) {
     let tmp = TempDir::new();
-    // Un ReductStore injoignable : le segment est indexe, l'echec est note, le fichier reste.
+    // An unreachable ReductStore: the segment is indexed, the failure is noted, the file stays.
     let broken = test_state(
         pool.clone(),
         tmp.path(),
@@ -277,13 +277,13 @@ async fn a_failed_push_keeps_the_file_and_is_retried(pool: PgPool) {
         .remove(0);
     assert_eq!(rec.status, RecordingStatus::Error);
     assert!(rec.error.contains("ReductStore"), "{}", rec.error);
-    // Servi depuis le disque en attendant.
+    // Served from the disk in the meantime.
     assert!(matches!(
         broken.recordings.open(cam.uuid, &rec).await.unwrap(),
         Some(SegmentBody::Local(_))
     ));
 
-    // Le serveur revient : le meme segment est repris au passage suivant.
+    // The server comes back: the same segment is picked up at the next pass.
     let good = test_state(pool, tmp.path(), &[], &bucket("b2"), &reduct_url());
     let report = good.recordings.scan().await.unwrap();
     assert_eq!((report.indexed, report.archived, report.failed), (0, 1, 0));
@@ -326,7 +326,7 @@ async fn without_an_archive_segments_stay_on_disk_and_are_served_from_it(pool: P
         st.recordings.open(cam.uuid, &rec).await.unwrap(),
         Some(SegmentBody::Local(p)) if p == path
     ));
-    // Un chemin hors du dossier n'est jamais servi, meme s'il est en base.
+    // A path outside the folder is never served, even if it is in the database.
     let mut outside = rec.clone();
     outside.segment_path = "/etc/passwd".into();
     assert!(
@@ -364,7 +364,7 @@ async fn manual_recording_toggles_the_mediamtx_record_flag_only_in_manual_mode(p
         .await
         .unwrap();
     let name = manual.uuid.to_string();
-    // Un path en mode manuel demarre sans enregistrer.
+    // A path in manual mode starts without recording.
     assert_ne!(fake.path(&name).unwrap()["record"].as_bool(), Some(true));
     assert_eq!(st.recordings.manual_state(manual.uuid).await, Some(false));
 

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Tests des reglages applicatifs : service (types, secrets chiffres, cache, seed) et routes `/api/settings`.
+//! Tests of the application settings: service (types, encrypted secrets, cache, seed) and `/api/settings` routes.
 
 mod common;
 
@@ -20,7 +20,7 @@ fn with_key() -> (String, [(&'static str, String); 1]) {
     (k.clone(), [("DOMINET_MASTER_KEY", k)])
 }
 
-/// Etat de test avec (ou sans) cle maitresse.
+/// Test state with (or without) a master key.
 fn state_with(pool: PgPool, key: Option<&str>) -> dominet_server::AppState {
     match key {
         Some(k) => state(pool, &[("DOMINET_MASTER_KEY", k)]),
@@ -36,7 +36,7 @@ async fn raw_value(pool: &PgPool, key: &str) -> Option<String> {
         .unwrap()
 }
 
-// ------------------------------------------------------------------ lecture
+// ------------------------------------------------------------------ reading
 
 #[sqlx::test(migrator = "dominet_store::MIGRATOR")]
 async fn unknown_settings_use_their_defaults_before_any_seed(pool: PgPool) {
@@ -87,7 +87,7 @@ async fn list_returns_the_thirteen_settings_sorted_with_their_origin(pool: PgPoo
     );
 }
 
-// ------------------------------------------------------------------ ecriture
+// ------------------------------------------------------------------ writing
 
 #[sqlx::test(migrator = "dominet_store::MIGRATOR")]
 async fn values_are_validated_against_their_type_and_normalized(pool: PgPool) {
@@ -180,7 +180,7 @@ async fn a_secret_cannot_be_written_without_the_master_key(pool: PgPool) {
         None,
         "rien n'est ecrit en clair"
     );
-    // Vider un secret n'a rien a proteger : permis, et stocke tel quel (pas de chiffre d'une chaine vide).
+    // Clearing a secret has nothing to protect: allowed, and stored as is (no ciphertext of an empty string).
     let cleared = st.settings.set("SMS_FREE_KEY", "").await.unwrap();
     assert_eq!((cleared.value.as_str(), cleared.is_set), ("", false));
     assert_eq!(raw_value(&pool, "SMS_FREE_KEY").await.as_deref(), Some(""));
@@ -226,7 +226,7 @@ async fn a_ciphertext_copied_to_another_setting_is_refused(pool: PgPool) {
     let (key, _) = with_key();
     let st = state_with(pool.clone(), Some(&key));
     st.settings.set("SMS_FREE_KEY", "secret").await.unwrap();
-    // Un attaquant (ou une erreur) recopie le chiffre dans un autre reglage secret simule.
+    // An attacker (or an error) copies the ciphertext into another simulated secret setting.
     let stolen = raw_value(&pool, "SMS_FREE_KEY").await.unwrap();
     sqlx::query("UPDATE app_setting SET is_secret = TRUE, value = $1 WHERE key = 'SMS_FREE_KEY'")
         .bind(&stolen)
@@ -270,7 +270,7 @@ async fn writes_update_the_cache_and_notify_subscribers(pool: PgPool) {
     );
     assert_eq!(events.try_recv().unwrap(), "Z2M_BASE_TOPIC");
 
-    // Une modification faite hors du service n'est vue qu'apres invalidation.
+    // A change made outside the service is only seen after invalidation.
     sqlx::query("UPDATE app_setting SET value = 'autre' WHERE key = 'Z2M_BASE_TOPIC'")
         .execute(&pool)
         .await
@@ -373,7 +373,7 @@ async fn a_dry_run_reports_but_writes_nothing(pool: PgPool) {
 
 #[sqlx::test(migrator = "dominet_store::MIGRATOR")]
 async fn a_failing_seed_writes_nothing_at_all(pool: PgPool) {
-    // Secret fourni sans cle maitresse : refuse, et aucun des autres reglages n'est ecrit non plus.
+    // Secret supplied without a master key: refused, and none of the other settings is written either.
     let st = state_with(pool.clone(), None);
     let err = seed_data(
         &st.settings,
@@ -387,7 +387,7 @@ async fn a_failing_seed_writes_nothing_at_all(pool: PgPool) {
     assert_eq!(st.store.settings().list().await.unwrap().len(), 0);
     assert_eq!(st.store.navbar().list().await.unwrap().len(), 0);
 
-    // Valeur de type invalide dans l'environnement : meme comportement.
+    // Invalid-type value in the environment: same behaviour.
     let err = seed_data(
         &st.settings,
         &st.store,
@@ -511,7 +511,7 @@ async fn an_admin_can_update_a_setting_and_gets_clear_errors(pool: PgPool) {
         (unknown.status, code(&unknown)),
         (StatusCode::NOT_FOUND, "not_found")
     );
-    // Origine etrangere : refusee avant toute ecriture.
+    // Foreign origin: refused before any write.
     let csrf = admin
         .send(
             Method::PUT,

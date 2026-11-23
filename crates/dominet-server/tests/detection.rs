@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//! Mouvement et detection d'objets (R6 lot 8) : de vrais `ffmpeg` sur des sources `lavfi` / une image fixe, le vrai modele YOLO
-//! (`make fetch-model`, sinon le test le dit), le Mosquitto de la stack de dev, un faux SMTP. Aucun envoi reel.
+//! Motion and object detection (R6 lot 8): real `ffmpeg`s on `lavfi` sources / a still image, the real YOLO model
+//! (`make fetch-model`, otherwise the test says so), the dev stack's Mosquitto, a fake SMTP. Nothing is really sent.
 
 mod common;
 
@@ -89,7 +89,7 @@ fn input(name: &str, mode: RecordingMode, yolo: bool, classes: &[&str]) -> Camer
     }
 }
 
-/// Etat de test : MQTT sur le broker de dev, faux SMTP, sources d'images choisies par nom de camera.
+/// Test state: MQTT on the dev broker, fake SMTP, image sources chosen by camera name.
 struct Rig {
     st: dominet_server::AppState,
     smtp: FakeSmtp,
@@ -100,7 +100,7 @@ struct Rig {
 
 fn source_args(name: &str) -> Vec<String> {
     let args: Vec<&str> = match name {
-        // Une luminosite qui oscille (0,8 Hz) : la premiere et la derniere image de la fenetre different presque toujours.
+        // An oscillating brightness (0.8 Hz): the first and the last image of the window almost always differ.
         "bouge" => vec![
             "-re",
             "-f",
@@ -108,7 +108,7 @@ fn source_args(name: &str) -> Vec<String> {
             "-i",
             "mandelbrot=size=320x180:rate=10",
         ],
-        // Une image qui ne bouge pas.
+        // An image that does not move.
         "fixe" => vec![
             "-re",
             "-f",
@@ -217,7 +217,7 @@ async fn wait_frames(st: &dominet_server::AppState, camera: dominet_domain::came
     panic!("pas d'images");
 }
 
-/// Evalue jusqu'a obtenir un mouvement : la luminosite oscillante de la source de test s'annule parfois entre deux images eloignees.
+/// Evaluates until a motion is obtained: the test source's oscillating brightness sometimes cancels out between two distant images.
 async fn until_moving(
     st: &dominet_server::AppState,
     camera: &dominet_domain::camera::Camera,
@@ -303,14 +303,14 @@ async fn motion_is_detected_published_notified_and_throttled_per_camera(pool: Pg
     assert_eq!(events.len(), 1);
     assert!((events[0].confidence - ratio).abs() < 1e-9);
 
-    // MQTT : meme charge utile que reference.
+    // MQTT: same payload as the reference.
     let msg = message_for(&mut r.mqtt, &moving.uuid.to_string(), "motion").await;
     assert_eq!(msg["camera_uuid"], moving.uuid.to_string());
     assert_eq!(msg["camera_name"], "bouge");
     assert!(msg["confidence"].as_f64().unwrap() > 0.01);
     assert!(msg["timestamp"].as_str().unwrap().contains('T'));
 
-    // Notification : un e-mail, puis plus rien tant que le delai de la camera court ; l'evenement, lui, est enregistre.
+    // Notification: one e-mail, then nothing as long as the camera's delay runs; the event, for its part, is recorded.
     for _ in 0..50 {
         if !r.smtp.mails().is_empty() {
             break;
@@ -347,7 +347,7 @@ async fn without_enough_recent_frames_there_is_no_verdict(pool: PgPool) {
             .save(None, input("rien", RecordingMode::Motion, false, &[]))
             .await
             .unwrap();
-    // Aucune source : pas de fenetre.
+    // No source: no window.
     assert_eq!(
         r.st.detector.check_motion(&r.st, &cam).await,
         MotionOutcome::NoWindow
@@ -389,7 +389,7 @@ async fn yolo_filters_by_camera_saves_the_annotated_frame_and_tells_everyone(poo
     r.st.frames.reconcile(&cameras);
     wait_frames(&r.st, wants_bus.uuid).await;
 
-    // Detecteur global coupe : rien, meme avec YOLO sur la camera.
+    // Global detector off: nothing, even with YOLO on the camera.
     assert!(
         r.st.detector
             .detect(&r.st, &wants_bus, DetectionTrigger::Motion)
@@ -398,14 +398,14 @@ async fn yolo_filters_by_camera_saves_the_annotated_frame_and_tells_everyone(poo
     );
     cfg.enabled = true;
     r.st.store.detector_config().update(&cfg).await.unwrap();
-    // YOLO coupe sur la camera : rien.
+    // YOLO off on the camera: nothing.
     assert!(
         r.st.detector
             .detect(&r.st, &yolo_off, DetectionTrigger::Motion)
             .await
             .is_none()
     );
-    // Classe non voulue : aucun evenement.
+    // Unwanted class: no event.
     assert!(
         r.st.detector
             .detect(&r.st, &wants_plane, DetectionTrigger::Motion)
@@ -421,7 +421,7 @@ async fn yolo_filters_by_camera_saves_the_annotated_frame_and_tells_everyone(poo
     assert_eq!(event.class_names(), ["bus"]);
     assert_eq!(event.triggered_by, DetectionTrigger::Motion);
     assert!(event.labels[0].confidence > 0.5);
-    // Image annotee, ecrite sous le nom de la reference (`<uuid>_<date>.jpg`) et lisible.
+    // Annotated image, written under the reference's name (`<uuid>_<date>.jpg`) and readable.
     assert!(
         event.frame_path.starts_with(&wants_bus.uuid.to_string()),
         "{}",
@@ -441,7 +441,7 @@ async fn yolo_filters_by_camera_saves_the_annotated_frame_and_tells_everyone(poo
         tokio::time::sleep(Duration::from_millis(100)).await;
     }
     assert!(r.smtp.mails()[0].data.contains("bus"));
-    // Sans « enregistrer les images », pas de fichier.
+    // Without "save the images", no file.
     cfg.save_frames = false;
     r.st.store.detector_config().update(&cfg).await.unwrap();
     let again =
