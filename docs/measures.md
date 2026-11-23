@@ -72,9 +72,11 @@ What it says:
 - **6 cameras in 1080p fill 40 % of the machine** in full mode, using about 1.1 GB of memory (about 140 MB per camera plus 0.3 GB of base).
 - Extending the line suggests that around 10 cameras would leave the Pi a margin of about 30 %. **This is an extrapolation**: nothing above 6 cameras was measured, and the synthetic streams are lighter than real ones (see the limits above). Do not plan on more than 6 to 8 cameras before measuring with yours.
 
-**Start from cold**: `make prod-up` after `make prod-down` takes about 24 s until every service reports healthy (images already present).
+**Stack at rest** (machine card, after a few minutes idle, ten services): about 310 MiB for the containers (zigbee2mqtt 87, PostgreSQL 70, Grafana 58, Prometheus 31, the application 28, MediaMTX 15, nginx 8, ReductStore 7, discovery 7, Mosquitto 3) and under 2 % of one core in total; the whole machine uses 1.1 GB of its 8 GB, at 48 °C. The interface answers in 9 to 10 ms (median) and 11 ms (95th percentile). A backup of the nearly empty database takes under a second: it says nothing about a database that has run for months.
 
-Not measured on the Pi: the *stress* scenario (YOLO six times as often), live viewers (WebRTC), the other services under load, a backup.
+**Start from cold**: `make prod-down` takes about 14 s and `make prod-up` 22 to 24 s until every service reports healthy (images already present).
+
+Not measured on the Pi: the *stress* scenario (YOLO six times as often), live viewers (WebRTC), the other services under load, a backup of a database of realistic size.
 
 ## 3. MQTT and WebSocket load (phase R8)
 

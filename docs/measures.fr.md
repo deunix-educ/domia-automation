@@ -72,9 +72,11 @@ Ce que ça dit :
 - **6 caméras en 1080p occupent 40 % de la machine** en mode complet, pour environ 1,1 Go de mémoire (environ 140 Mo par caméra plus 0,3 Go de base).
 - En prolongeant la droite, environ 10 caméras laisseraient au Pi une marge d'environ 30 %. **C'est une extrapolation** : rien au-delà de 6 caméras n'a été mesuré, et les flux synthétiques sont plus légers que de vrais flux (voir les limites ci-dessus). Ne comptez pas sur plus de 6 à 8 caméras avant d'avoir mesuré avec les vôtres.
 
-**Démarrage à froid** : `make prod-up` après `make prod-down` prend environ 24 s jusqu'à ce que tous les services soient sains (images déjà présentes).
+**Pile au repos** (fiche machine, après quelques minutes sans activité, dix services) : environ 310 Mio pour les conteneurs (zigbee2mqtt 87, PostgreSQL 70, Grafana 58, Prometheus 31, l'application 28, MediaMTX 15, nginx 8, ReductStore 7, discovery 7, Mosquitto 3) et moins de 2 % d'un cœur au total ; la machine entière utilise 1,1 Go de ses 8 Go, à 48 °C. L'interface répond en 9 à 10 ms (médiane) et 11 ms (95e centile). Une sauvegarde de la base presque vide dure moins d'une seconde : elle ne dit rien d'une base qui tourne depuis des mois.
 
-Non mesuré sur le Pi : le scénario *stress* (YOLO six fois plus souvent), les spectateurs en direct (WebRTC), les autres services sous charge, une sauvegarde.
+**Démarrage à froid** : `make prod-down` prend environ 14 s et `make prod-up` de 22 à 24 s jusqu'à ce que tous les services soient sains (images déjà présentes).
+
+Non mesuré sur le Pi : le scénario *stress* (YOLO six fois plus souvent), les spectateurs en direct (WebRTC), les autres services sous charge, une sauvegarde d'une base de taille réaliste.
 
 ## 3. Charge MQTT et WebSocket (phase R8)
 
