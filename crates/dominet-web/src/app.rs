@@ -13,6 +13,7 @@ use crate::alerts::AlertsPage;
 use crate::android::{AndroidCallsPage, AndroidDashboardPage, AndroidDevicesPage, AndroidSmsPage};
 use crate::assistant::AssistantPage;
 use crate::automations_admin::AutomationsAdminPage;
+use crate::camera_access::CameraAccessPage;
 use crate::cameras_admin::CamerasAdminPage;
 use crate::dashboard::DashboardPage;
 use crate::dashboards_admin::DashboardsAdminPage;
@@ -129,6 +130,7 @@ pub fn App() -> impl IntoView {
                         <Route path=path!("/surveillance/discovery") view=DiscoveryPage ssr=SsrMode::Async/>
                         <Route path=path!("/login") view=LoginPage ssr=SsrMode::Async/>
                         <Route path=path!("/account") view=AccountPage ssr=SsrMode::Async/>
+                        <Route path=path!("/account/cameras") view=CameraAccessPage ssr=SsrMode::Async/>
                         <Route path=path!("/admin/dashboards") view=DashboardsAdminPage ssr=SsrMode::Async/>
                         <Route path=path!("/admin/widgets") view=WidgetsAdminPage ssr=SsrMode::Async/>
                         <Route path=path!("/admin/locations") view=LocationsPage ssr=SsrMode::Async/>

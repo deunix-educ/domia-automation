@@ -32,6 +32,7 @@ pub mod android;
 pub mod app;
 pub mod automations_admin;
 pub mod browser;
+pub mod camera_access;
 pub mod camera_fns;
 pub mod cameras_admin;
 pub mod chrome;

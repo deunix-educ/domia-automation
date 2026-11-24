@@ -26,6 +26,9 @@ camera_fns.rs	save_camera	admin	config_upsert(camera)	administration	couvert	ide
 camera_fns.rs	delete_camera	admin	config_delete(camera)	administration	couvert	confirm et dry_run
 camera_fns.rs	sync_cameras	admin	cameras_sync	administration	couvert	synchronisation MediaMTX, decidee le 2026-11-16
 camera_fns.rs	viewing_token	user			exclu	jeton de visionnage du navigateur (ADR 0064) : un secret lie a la session web, jamais donne a un assistant
+camera_access.rs	camera_access_page	user			exclu	acces aux cameras d'un compte (ADR 0064) : mots de passe de lecteurs externes, propres a la personne
+camera_access.rs	create_stream_credential	user			exclu	cree un secret montre une seule fois a la personne : jamais par un assistant
+camera_access.rs	revoke_stream_credential	user			exclu	revocation par la personne elle-meme (ADR 0064)
 camera_fns.rs	sync_camera_onvif	admin	cameras_sync	administration	couvert	profils ONVIF, decide le 2026-11-16
 camera_fns.rs	add_camera_by_ip	admin			exclu	saisit des identifiants a partir d une adresse : interface seule (decide le 2026-11-16)
 camera_fns.rs	start_discovery	admin			exclu	balayage du reseau : declenchement humain seulement

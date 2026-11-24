@@ -6,6 +6,7 @@ use leptos::html;
 use leptos::prelude::*;
 use leptos::task::spawn_local;
 use leptos_fluent::{move_tr, tr};
+use leptos_router::components::A;
 use leptos_router::hooks::use_navigate;
 
 use crate::browser;
@@ -48,6 +49,11 @@ pub fn AccountPage() -> impl IntoView {
                 <h1 class="vc-page-title">{move_tr!("account-title")}</h1>
                 <Identity/>
                 <PasswordForm/>
+                <section class="vc-card">
+                    <h2 class="vc-card-title">{move_tr!("camaccess-title")}</h2>
+                    <p class="vc-muted">{move_tr!("account-camera-access-hint")}</p>
+                    <p><A href="/account/cameras" attr:id="account-camera-access">{move_tr!("account-camera-access-link")}</A></p>
+                </section>
             </main>
         </RequireAuth>
     }

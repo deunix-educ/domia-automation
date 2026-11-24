@@ -26,7 +26,7 @@ while [ $# -gt 0 ]; do
     *) SCRIPTS+=("$1"); shift ;;
   esac
 done
-[ ${#SCRIPTS[@]} -gt 0 ] || SCRIPTS=(home auth layout locations admin users realtime system dashboard dashboard_edit r2 mqtt mqtt_sources devices scenes automations alerts energy weather android messaging cameras onvif ptz live recordings events rules mcp mqtt_outage)
+[ ${#SCRIPTS[@]} -gt 0 ] || SCRIPTS=(home auth layout locations admin users realtime system dashboard dashboard_edit r2 mqtt mqtt_sources devices scenes automations alerts energy weather android messaging cameras onvif ptz live recordings events rules mcp mqtt_outage camera_access)
 
 # `live_auth` runs alone: it points the server at its own MediaMTX, which would disturb the other scripts.
 AUTH_LIVE=0
