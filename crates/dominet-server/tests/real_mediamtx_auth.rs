@@ -76,13 +76,13 @@ fn logs_now() -> String {
     )
 }
 
-/// Status of a WHEP offer, with an optional `Authorization` header.
+/// Status and `Location` of a WHEP offer, with an optional `Authorization` header (`"201 /cam1/whep/<id>"`).
 async fn whep(authorization: Option<&str>) -> String {
     let authorization = authorization.map(str::to_string);
     tokio::task::spawn_blocking(move || {
     let offer = "v=0\r\no=- 1 2 IN IP4 127.0.0.1\r\ns=-\r\nt=0 0\r\na=group:BUNDLE 0\r\nm=video 9 UDP/TLS/RTP/SAVPF 96\r\nc=IN IP4 0.0.0.0\r\na=mid:0\r\na=recvonly\r\na=rtcp-mux\r\na=ice-ufrag:abcd\r\na=ice-pwd:abcdefghijklmnopqrstuv12\r\na=fingerprint:sha-256 AB:AB:AB:AB:AB:AB:AB:AB:AB:AB:AB:AB:AB:AB:AB:AB:AB:AB:AB:AB:AB:AB:AB:AB:AB:AB:AB:AB:AB:AB:AB:AB\r\na=setup:actpass\r\na=rtpmap:96 H264/90000\r\na=fmtp:96 level-asymmetry-allowed=1;packetization-mode=1;profile-level-id=42e01f\r\n";
     let mut cmd = Command::new("curl");
-    cmd.args(["-s", "-o", "/dev/null", "-w", "%{http_code}", "-X", "POST"])
+    cmd.args(["-s", "-o", "/dev/null", "-w", "%{http_code} %header{location}", "-X", "POST"])
         .args([
             "-H",
             "Content-Type: application/sdp",
@@ -94,6 +94,30 @@ async fn whep(authorization: Option<&str>) -> String {
     }
     cmd.arg("http://127.0.0.1:28889/cam1/whep");
     String::from_utf8_lossy(&cmd.output().unwrap().stdout).to_string()
+    })
+    .await
+    .unwrap()
+}
+
+/// Status of the `DELETE` of a WHEP session resource.
+async fn whep_delete(location: &str, authorization: Option<&str>) -> String {
+    let url = format!("http://127.0.0.1:28889{location}");
+    let authorization = authorization.map(str::to_string);
+    tokio::task::spawn_blocking(move || {
+        let mut cmd = Command::new("curl");
+        cmd.args([
+            "-s",
+            "-o",
+            "/dev/null",
+            "-w",
+            "%{http_code}",
+            "-X",
+            "DELETE",
+        ]);
+        if let Some(a) = &authorization {
+            cmd.args(["-H", &format!("Authorization: {a}")]);
+        }
+        String::from_utf8_lossy(&cmd.arg(url).output().unwrap().stdout).to_string()
     })
     .await
     .unwrap()
@@ -241,7 +265,11 @@ async fn mediamtx_with_the_shipped_configuration_asks_dominet(pool: PgPool) {
     assert!(!probe("rtsp://alice:view-token@127.0.0.1:28554/cam1").await);
 
     // WebRTC (WHEP): the Bearer viewing token alone.
-    assert_eq!(whep(None).await, "401");
-    assert_eq!(whep(Some("Bearer view-token")).await, "201");
-    assert_eq!(whep(Some("Bearer nope")).await, "401");
+    assert!(whep(None).await.starts_with("401"));
+    let opened = whep(Some("Bearer view-token")).await;
+    assert!(opened.starts_with("201 /cam1/whep/"), "{opened}");
+    assert!(whep(Some("Bearer nope")).await.starts_with("401"));
+    // Closing a session is not authenticated by MediaMTX (the session identifier is the proof): the page does not send its token again.
+    let location = opened.split_once(' ').unwrap().1.trim().to_string();
+    assert_eq!(whep_delete(&location, None).await, "200");
 }

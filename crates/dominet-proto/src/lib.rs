@@ -1181,6 +1181,18 @@ pub struct WidgetDto {
     pub camera: Option<CameraLiveDto>,
 }
 
+/// A short-lived secret that lets the browser read the cameras from MediaMTX (sent as `Authorization: Bearer`, ADR 0064).
+#[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ViewingTokenDto {
+    pub token: String,
+}
+
+impl std::fmt::Debug for ViewingTokenDto {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str("ViewingTokenDto(***)")
+    }
+}
+
 /// What is needed to display a camera's live view: never a source stream address or credentials.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CameraLiveDto {

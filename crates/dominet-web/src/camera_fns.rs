@@ -376,6 +376,25 @@ pub async fn start_discovery() -> Result<(), ServerFnError> {
     Ok(())
 }
 
+/// A viewing token for the signed-in account (ADR 0064): the live view sends it to MediaMTX with its WHEP offer. Valid a few minutes;
+/// the page asks for a new one at each connection.
+///
+/// # Errors
+/// Refused (401) without a session; internal error if the database fails.
+#[server(name = ViewingToken, prefix = "/sf", endpoint = "cameras/viewing-token")]
+pub async fn viewing_token() -> Result<dominet_proto::ViewingTokenDto, ServerFnError> {
+    use crate::server_fns::{internal, require_user};
+
+    let state = expect_context::<dominet_server::AppState>();
+    let user = require_user(&state).await?;
+    let issued = dominet_server::stream_access::issue_viewing(&state, user.id)
+        .await
+        .map_err(|e| internal("creating a viewing token", &e))?;
+    Ok(dominet_proto::ViewingTokenDto {
+        token: issued.value,
+    })
+}
+
 /// Host of the current request (`Host` header).
 #[cfg(feature = "ssr")]
 pub(crate) async fn request_host() -> Option<String> {

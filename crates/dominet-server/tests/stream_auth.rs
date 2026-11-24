@@ -276,3 +276,67 @@ async fn the_control_api_and_publishing_are_decided_by_origin_not_by_credentials
         .await;
     assert_eq!(status, StatusCode::BAD_REQUEST);
 }
+
+#[sqlx::test(migrator = "dominet_store::MIGRATOR")]
+async fn a_token_issued_for_the_browser_is_accepted_and_kept_hashed(pool: PgPool) {
+    let state = state(pool.clone(), &[]);
+    let alice = account(&state, "alice").await;
+    let issued = dominet_server::stream_access::issue_viewing(&state, alice)
+        .await
+        .unwrap();
+    assert!(issued.value.starts_with("dnv_"));
+    assert!(
+        issued.expires_at > Utc::now() && issued.expires_at < Utc::now() + Duration::minutes(6)
+    );
+    // Only the fingerprint is in the database.
+    let stored: Vec<u8> =
+        sqlx::query_scalar("SELECT secret_hash FROM stream_access WHERE user_id = $1")
+            .bind(alice.0)
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+    assert_eq!(stored, digest(&issued.value));
+    let mut c = Client::new(&state);
+    // MediaMTX puts a Bearer token in `token` and nothing in `user`.
+    assert_eq!(
+        ask(&mut c, read("", "", &issued.value)).await.status,
+        StatusCode::OK
+    );
+    // Two tokens for the same account are independent.
+    let second = dominet_server::stream_access::issue_viewing(&state, alice)
+        .await
+        .unwrap();
+    assert_ne!(issued.value, second.value);
+}
+
+#[sqlx::test(migrator = "dominet_store::MIGRATOR")]
+async fn issuing_a_token_tidies_up_the_expired_ones(pool: PgPool) {
+    let state = state(pool.clone(), &[]);
+    let alice = account(&state, "alice").await;
+    let repo = state.store.stream_access();
+    repo.create_viewing(
+        alice,
+        &digest("ancient"),
+        "dnv_a",
+        Utc::now() - Duration::hours(3),
+    )
+    .await
+    .unwrap();
+    repo.create_viewing(
+        alice,
+        &digest("recent"),
+        "dnv_b",
+        Utc::now() - Duration::minutes(10),
+    )
+    .await
+    .unwrap();
+    dominet_server::stream_access::issue_viewing(&state, alice)
+        .await
+        .unwrap();
+    let left: i64 = sqlx::query_scalar("SELECT count(*) FROM stream_access")
+        .fetch_one(&pool)
+        .await
+        .unwrap();
+    // The three-hour-old one is gone; the ten-minute-old one (expired, but recent) and the new one remain.
+    assert_eq!(left, 2);
+}

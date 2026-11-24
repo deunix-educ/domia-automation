@@ -279,7 +279,7 @@ pub mod browser {
     ///
     /// # Errors
     /// [`Failure`]: stream missing, offer refused, browser error.
-    pub async fn connect(whep_url: &str, video_id: &str) -> Result<Session, Failure> {
+    pub async fn connect(whep_url: &str, video_id: &str, token: &str) -> Result<Session, Failure> {
         let win = web_sys::window().ok_or_else(|| Failure::Browser("pas de fenetre".into()))?;
         let pc = RtcPeerConnection::new().map_err(|e| browser_failure(&e))?;
         let init = RtcRtpTransceiverInit::new();
@@ -314,6 +314,10 @@ pub mod browser {
         let headers = web_sys::Headers::new().map_err(|e| browser_failure(&e))?;
         headers
             .set("Content-Type", "application/sdp")
+            .map_err(|e| browser_failure(&e))?;
+        // MediaMTX asks DomiNet to authorise the read: the viewing token is the account's proof (ADR 0064).
+        headers
+            .set("Authorization", &format!("Bearer {token}"))
             .map_err(|e| browser_failure(&e))?;
         opts.set_headers(&headers);
         let req =

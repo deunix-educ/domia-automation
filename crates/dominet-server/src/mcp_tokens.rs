@@ -46,12 +46,18 @@ pub fn hash(value: &str) -> [u8; 32] {
 /// A new random token.
 #[must_use]
 pub fn generate() -> Generated {
+    generate_with(PREFIX)
+}
+
+/// A new random secret of 256 bits that starts with `prefix` (also used by the camera viewing secrets, ADR 0064).
+#[must_use]
+pub fn generate_with(prefix: &str) -> Generated {
     let bytes = aes_gcm::Key::<aes_gcm::Aes256Gcm>::generate();
     let random = URL_SAFE_NO_PAD.encode(bytes.as_slice());
-    let value = format!("{PREFIX}{random}");
+    let value = format!("{prefix}{random}");
     Generated {
         hash: hash(&value),
-        prefix: format!("{PREFIX}{}", &random[..SHOWN_CHARS]),
+        prefix: format!("{prefix}{}", &random[..SHOWN_CHARS]),
         value,
     }
 }

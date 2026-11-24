@@ -38,6 +38,7 @@ pub mod secrets;
 pub mod server;
 pub mod settings;
 pub mod snapshots;
+pub mod stream_access;
 pub mod stream_auth;
 pub mod system_stats;
 pub mod telemetry;

@@ -135,7 +135,12 @@ async fn run(
         } else {
             PlayerState::Reconnecting
         });
-        match connect(&url, &video).await {
+        // A new viewing token at each connection: it only has to be valid when the offer is posted (ADR 0064).
+        let connected = match crate::camera_fns::viewing_token().await {
+            Ok(t) => connect(&url, &video, &t.token).await,
+            Err(_) => Err(Failure::Browser("session".into())),
+        };
+        match connected {
             Ok(session) => {
                 attempt = 0;
                 let mut detector = StallDetector::new(now_ms());
