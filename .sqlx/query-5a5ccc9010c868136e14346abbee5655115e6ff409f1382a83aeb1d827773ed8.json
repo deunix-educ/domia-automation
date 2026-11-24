@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE stream_access SET revoked_at = $3\n             WHERE id = $1 AND user_id = $2 AND kind = 'credential' AND revoked_at IS NULL AND expires_at > $3",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Int8",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "5a5ccc9010c868136e14346abbee5655115e6ff409f1382a83aeb1d827773ed8"
+}

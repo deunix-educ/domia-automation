@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "DELETE FROM stream_access WHERE kind = 'viewing' AND expires_at < $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "89e2da6600c171f7d9b1b9f8e33413f2b3f24095bea5032f4dd4df86a7826624"
+}

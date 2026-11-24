@@ -84,6 +84,7 @@ async fn all_expected_tables_exist(pool: PgPool) {
         "sms_message",
         "sms_outbox",
         "snapshot",
+        "stream_access",
         "users",
         "weather_station",
         "widget",

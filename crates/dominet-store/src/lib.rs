@@ -21,6 +21,7 @@ mod schedule;
 mod sessions;
 mod settings;
 mod sources;
+mod stream_access;
 mod users;
 pub mod video;
 
@@ -45,6 +46,7 @@ pub use schedule::PgSchedule;
 pub use sessions::{PgSessionStore, USER_ID_KEY};
 pub use settings::PgSettings;
 pub use sources::{PgMqttSources, PgWeather};
+pub use stream_access::PgStreamAccess;
 pub use users::PgUsers;
 
 /// Migrations embedded in the binary (`migrations/` folder).

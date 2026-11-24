@@ -199,6 +199,11 @@ impl PgStore {
     }
 
     #[must_use]
+    pub fn stream_access(&self) -> crate::stream_access::PgStreamAccess {
+        crate::stream_access::PgStreamAccess::new(self.pool.clone())
+    }
+
+    #[must_use]
     pub fn mcp_audit(&self) -> crate::mcp::PgMcpAudit {
         crate::mcp::PgMcpAudit::new(self.pool.clone())
     }

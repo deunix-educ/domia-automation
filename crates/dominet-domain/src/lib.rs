@@ -30,6 +30,7 @@ pub mod scene;
 pub mod schedule;
 pub mod setting;
 pub mod solar;
+pub mod stream_access;
 pub mod user;
 pub mod widget_view;
 

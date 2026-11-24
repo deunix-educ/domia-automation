@@ -39,6 +39,9 @@ use crate::observability::{
 use crate::scene::{Scene, SceneDraft, SceneId};
 use crate::schedule::{Job, JobDraft, JobId};
 use crate::setting::{AppSetting, SettingDraft};
+use crate::stream_access::{
+    ActiveStreamAccess, NewStreamCredential, StreamAccess, StreamAccessId, StreamAccessKind,
+};
 use crate::user::{Credentials, NewUser, User, UserId, UserProfile};
 
 pub type RepoResult<T> = Result<T, RepoError>;
@@ -959,6 +962,58 @@ pub trait McpTokenRepo {
         id: McpTokenId,
         now: DateTime<Utc>,
     ) -> impl Future<Output = RepoResult<bool>> + Send;
+}
+
+/// Camera viewing secrets (ADR 0064). A secret's value never arrives here: only its SHA-256 fingerprint.
+pub trait StreamAccessRepo {
+    /// Records a viewing token for an account (valid [`crate::stream_access::VIEWING_TTL_MINUTES`] minutes).
+    fn create_viewing(
+        &self,
+        user: UserId,
+        hash: &[u8],
+        prefix: &str,
+        now: DateTime<Utc>,
+    ) -> impl Future<Output = RepoResult<StreamAccess>> + Send;
+    /// Records a personal stream credential for an account.
+    fn create_credential(
+        &self,
+        user: UserId,
+        new: &NewStreamCredential,
+        hash: &[u8],
+        prefix: &str,
+        now: DateTime<Utc>,
+    ) -> impl Future<Output = RepoResult<StreamAccess>> + Send;
+    /// The secret of this kind with this fingerprint if it is **active** at `now` (neither revoked nor expired) and its
+    /// account is active.
+    fn find_active(
+        &self,
+        kind: StreamAccessKind,
+        hash: &[u8],
+        now: DateTime<Utc>,
+    ) -> impl Future<Output = RepoResult<Option<ActiveStreamAccess>>> + Send;
+    /// Notes the usage; writes at most once a minute per secret.
+    fn touch(
+        &self,
+        id: StreamAccessId,
+        now: DateTime<Utc>,
+    ) -> impl Future<Output = RepoResult<()>> + Send;
+    /// The credentials of an account, most recent first (active, expired and revoked). Viewing tokens are not listed.
+    fn list_credentials(
+        &self,
+        user: UserId,
+    ) -> impl Future<Output = RepoResult<Vec<StreamAccess>>> + Send;
+    /// Revokes a credential of this account; `true` if it was active (another account's credential is never touched).
+    fn revoke(
+        &self,
+        id: StreamAccessId,
+        user: UserId,
+        now: DateTime<Utc>,
+    ) -> impl Future<Output = RepoResult<bool>> + Send;
+    /// Deletes the viewing tokens that expired before `before`; returns how many.
+    fn purge_expired_viewing(
+        &self,
+        before: DateTime<Utc>,
+    ) -> impl Future<Output = RepoResult<u64>> + Send;
 }
 
 /// MCP audit log.
