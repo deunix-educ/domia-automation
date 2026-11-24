@@ -290,6 +290,62 @@ impl MediaMtx {
         }
     }
 
+    /// Closes the open sessions (RTSP and WebRTC) that authenticated as `user`: what revoking a stream credential does to a player
+    /// that is still watching (ADR 0064). A session is matched on the user name MediaMTX recorded for it, so a browser session opened
+    /// with a viewing token (no user name) is not concerned, and neither are the sessions of other accounts. Returns how many
+    /// were closed; a session that ends by itself in the meantime is not an error.
+    ///
+    /// # Errors
+    /// MediaMTX unreachable or unexpected response.
+    pub async fn kick_user(&self, user: &str) -> Result<u32, MediaMtxError> {
+        let mut closed = 0;
+        for kind in ["rtspsessions", "webrtcsessions"] {
+            let mut ids = vec![];
+            let mut page = 0u32;
+            loop {
+                let resp = self
+                    .http
+                    .get(format!(
+                        "{}/v3/{kind}/list?itemsPerPage={}&page={page}",
+                        self.base, self.page_size
+                    ))
+                    .send()
+                    .await
+                    .map_err(|e| Self::unreachable(&e))?;
+                if !resp.status().is_success() {
+                    return Err(Self::error(resp, None).await);
+                }
+                let v: Value = resp.json().await.map_err(|_| MediaMtxError::BadResponse)?;
+                for item in v["items"].as_array().ok_or(MediaMtxError::BadResponse)? {
+                    let same = item["user"]
+                        .as_str()
+                        .is_some_and(|u| !u.is_empty() && u.eq_ignore_ascii_case(user));
+                    if let (true, Some(id)) = (same, item["id"].as_str()) {
+                        ids.push(id.to_string());
+                    }
+                }
+                page += 1;
+                if u64::from(page) >= v["pageCount"].as_u64().unwrap_or(0) {
+                    break;
+                }
+            }
+            for id in ids {
+                let resp = self
+                    .http
+                    .post(format!("{}/v3/{kind}/kick/{id}", self.base))
+                    .send()
+                    .await
+                    .map_err(|e| Self::unreachable(&e))?;
+                if resp.status().is_success() {
+                    closed += 1;
+                } else if resp.status().as_u16() != 404 {
+                    return Err(Self::error(resp, None).await);
+                }
+            }
+        }
+        Ok(closed)
+    }
+
     /// Brings MediaMTX in line with the wanted list: creates or replaces each wanted path, deletes the camera paths (32
     /// hexadecimal digits) that are no longer wanted, touches no other.
     ///

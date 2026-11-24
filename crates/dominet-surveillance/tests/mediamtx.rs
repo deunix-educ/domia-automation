@@ -118,3 +118,21 @@ async fn set_record_changes_only_that_field_and_refuses_an_unknown_path() {
     assert_eq!(fake.path(A).unwrap()["record"], false);
     assert!(api.set_record(B, true).await.unwrap_err().is_not_found());
 }
+
+#[tokio::test]
+async fn kicking_a_user_closes_their_sessions_only() {
+    let fake = FakeMediaMtx::start().await;
+    fake.add_session("rtspsessions", "r1", "alice");
+    fake.add_session("rtspsessions", "r2", "bob");
+    fake.add_session("rtspsessions", "r3", "");
+    fake.add_session("webrtcsessions", "w1", "Alice");
+    fake.add_session("webrtcsessions", "w2", "");
+    let api = MediaMtx::new(&fake.url()).unwrap();
+    // The user name is compared without case, like the accounts; sessions without a user name (a viewing token) are never matched.
+    assert_eq!(api.kick_user("ALICE").await.unwrap(), 2);
+    assert_eq!(fake.kicked(), ["r1", "w1"]);
+    assert_eq!(api.kick_user("alice").await.unwrap(), 0);
+    assert_eq!(api.kick_user("").await.unwrap(), 0);
+    fake.fail_with(Some(500));
+    assert!(api.kick_user("bob").await.is_err());
+}

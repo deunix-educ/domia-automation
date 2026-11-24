@@ -22,6 +22,9 @@ struct Inner {
     /// If present, every request receives this status (simulated outage).
     fail_with: Option<u16>,
     requests: Vec<String>,
+    /// Open sessions by API family (`rtspsessions`, `webrtcsessions`): identifier and user name.
+    sessions: BTreeMap<String, Vec<(String, String)>>,
+    kicked: Vec<String>,
 }
 
 #[derive(Clone)]
@@ -73,6 +76,8 @@ impl FakeMediaMtx {
             .route("/v3/config/paths/replace/{name}", post(replace))
             .route("/v3/config/paths/patch/{name}", patch(patch_path))
             .route("/v3/config/paths/delete/{name}", delete(remove))
+            .route("/v3/{kind}/list", get(list_sessions))
+            .route("/v3/{kind}/kick/{id}", post(kick_session))
             .with_state(inner.clone());
         let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
         let addr = listener.local_addr().unwrap();
@@ -103,6 +108,23 @@ impl FakeMediaMtx {
             .unwrap()
             .paths
             .insert(name.into(), with_name(name, conf));
+    }
+
+    /// An open session (`kind`: `rtspsessions` or `webrtcsessions`) that authenticated as `user` (empty: no user name).
+    pub fn add_session(&self, kind: &str, id: &str, user: &str) {
+        self.inner
+            .lock()
+            .unwrap()
+            .sessions
+            .entry(kind.into())
+            .or_default()
+            .push((id.into(), user.into()));
+    }
+
+    /// Identifiers of the sessions that were kicked, in order.
+    #[must_use]
+    pub fn kicked(&self) -> Vec<String> {
+        self.inner.lock().unwrap().kicked.clone()
     }
 
     /// `Some(code)`: every request receives this code; `None`: back to normal.
@@ -208,4 +230,41 @@ async fn remove(State(s): State<Shared>, Path(name): Path<String>) -> Reply {
     } else {
         err(404, "path not found")
     }
+}
+
+async fn list_sessions(State(s): State<Shared>, Path(kind): Path<String>) -> Reply {
+    if let Some(r) = enter(&s, format!("GET {kind}/list")) {
+        return r;
+    }
+    let g = s.lock().unwrap();
+    let items: Vec<Value> = g
+        .sessions
+        .get(&kind)
+        .map(|v| {
+            v.iter()
+                .map(|(id, user)| json!({"id": id, "user": user}))
+                .collect()
+        })
+        .unwrap_or_default();
+    (
+        StatusCode::OK,
+        Json(json!({"itemCount": items.len(), "pageCount": 1, "items": items})),
+    )
+}
+
+async fn kick_session(State(s): State<Shared>, Path((kind, id)): Path<(String, String)>) -> Reply {
+    if let Some(r) = enter(&s, format!("POST {kind}/kick/{id}")) {
+        return r;
+    }
+    let mut g = s.lock().unwrap();
+    let Some(list) = g.sessions.get_mut(&kind) else {
+        return err(404, "session not found");
+    };
+    let before = list.len();
+    list.retain(|(sid, _)| *sid != id);
+    if list.len() == before {
+        return err(404, "session not found");
+    }
+    g.kicked.push(id);
+    ok()
 }
