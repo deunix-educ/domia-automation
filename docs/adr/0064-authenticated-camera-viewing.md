@@ -1,16 +1,16 @@
 # ADR 0064 — Authenticated camera viewing: MediaMTX asks DomiNet, per-account viewing tokens and personal stream credentials
 
-Status: **accepted** (2026-11-24, validated by the owner). Nothing below is implemented yet; the plan lists the lots, each validated before the next. Closes the "per-viewer camera credentials" point of the roadmap and of [To improve](../to-improve.md).
+Status: **accepted** (2026-11-24, validated by the owner). The spike on MediaMTX 1.21.3 (lot 0, 2026-11-24) is done and its findings are folded in below. Nothing is implemented yet; the plan lists the lots, each validated before the next. Closes the "per-viewer camera credentials" point of the roadmap and of [To improve](../to-improve.md).
 
 ## Context
 Today anyone on the home network can watch every camera: MediaMTX allows `read` and `playback` to everybody (`authInternalUsers`, `user: any`, no password), over RTSP (8554) and WebRTC (8189, and WHEP through nginx on `/webrtc/`). Only publishing, the API and the metrics are restricted to the Docker network and the machine. The interface itself is protected by accounts (any signed-in account may watch), so the video is the one place where the account system does not apply. [Security](../security.md) documents the gap and tells people to keep guests on another network.
 
 What the owner decided (2026-11-23): the authentication is **delegated to DomiNet**, **any signed-in account may watch every camera** (no per-camera rights), and each account can obtain **personal, revocable credentials** for external players (VLC, phone applications).
 
-What the MediaMTX documentation says (read 2026-11-23; the page is not versioned and is probably newer than 1.21.3, so every point marked *to verify* must be checked on the real 1.21.3 binary first):
+What the MediaMTX documentation says (read 2026-11-23; the page is not versioned and is probably newer than 1.21.3, so the points were checked on the real 1.21.3 binary first):
 - `authMethod: http` with `authHTTPAddress`: MediaMTX POSTs `{user, password, token, ip, action, path, protocol, id, query}`; a `20x` status allows, anything else denies. An optional `{"expireAt": "<RFC 3339>"}` body closes the session at that time.
 - RTSP clients first send empty credentials; the server must answer `401` so that the client sends them. Browsers and WHEP clients can send `Authorization: Basic …` or `Authorization: Bearer <token>`.
-- `authHTTPExclude` skips the HTTP call for some actions (`api`, `metrics`, `pprof` by default). *To verify:* whether `publish` can be excluded, whether `authInternalUsers` still applies under `authMethod: http`, and whether a bare Bearer token arrives in `token` or in `password`.
+- `authHTTPExclude` skips the HTTP call for some actions (`api`, `metrics`, `pprof` by default). **Verified on 1.21.3 (lot 0):** `publish` can be excluded (`authHTTPExclude: [{action: publish}]`; the list accepts no `ips` field, so the exclusion holds for every address, which is safe because the publishing port is only reachable from the Docker network); `authInternalUsers` is **ignored** under `authMethod: http` (even `api` calls go through the HTTP call, and are refused if DomiNet is down unless excluded); a bare Bearer token arrives in `token` (no `user`, no `password`); with Basic the password arrives in `password` and is copied into `token`; a `?token=` in the WHEP URL is not read as a token (it only shows in `query`).
 - No caching of the decisions is documented: one HTTP call per authentication, at least two for an RTSP session.
 
 ## Options
@@ -22,12 +22,13 @@ What the MediaMTX documentation says (read 2026-11-23; the page is not versioned
 ## Decision
 Option A.
 - **MediaMTX** runs with `authMethod: http` and `authHTTPAddress: http://dominet:8000/internal/mediamtx/auth`. The route exists only on the Docker network side: nginx does not proxy it, and the handler refuses any caller outside the Docker network.
-- **The decision** (`POST` handler) allows a `read` / `playback` on a camera path only for a valid credential of an active account; `publish`, `api`, `metrics` and `pprof` come from inside the Docker network only; empty credentials get `401` (the RTSP challenge); everything else is denied. A denial is counted in a metric and logged without any secret. Failed Basic attempts count towards the same lock-out as the login (ADR 0004).
-- **Browser:** when the live page opens, a server function (session required) creates a **viewing token**: 256 random bits, stored hashed (SHA-256), bound to the account, valid a few minutes. The WHEP client sends it as `Authorization: Bearer`. It is renewed before it expires.
+- **Excluded from the HTTP call:** `publish` (`authHTTPExclude`). `api` and `metrics` are decided by the handler too (the internal users are ignored): allowed only from inside the Docker network, so DomiNet's own API calls (for example the kick) carry the service credential or come from that network.
+- **The decision** (`POST` handler) allows a `read` / `playback` on a camera path only for a valid credential of an active account; `api`, `metrics` and `pprof` come from inside the Docker network only; empty credentials get `401` (the RTSP challenge); everything else is denied. A denial is counted in a metric and logged without any secret. Failed Basic attempts count towards the same lock-out as the login (ADR 0004).
+- **Browser:** when the live page opens, a server function (session required) creates a **viewing token**: 256 random bits, stored hashed (SHA-256), bound to the account, valid a few minutes. The WHEP client sends it as `Authorization: Bearer`; the handler reads it from `token` (never from `query`). It is renewed before it expires.
 - **External players:** an account page ("My account" → "Camera access") creates a **personal stream credential**: the account's user name and a generated password shown once, stored hashed, revocable, with a last-use date. The page shows the RTSP address to paste into VLC. One account may hold several (one per device).
 - **Same storage model as the MCP tokens** ([ADR 0059](0059-mcp-access-tokens.md)): table with hash, owner, kind, creation and expiry dates, revocation date. No signing key to manage (the `SECRET_KEY` setting was removed).
 - **DomiNet's own reads** (the `video` role decodes MediaMTX's re-stream) use a **service credential** generated by `make prod-init` (`MEDIAMTX_READ_USER`, `MEDIAMTX_READ_PASSWORD`), not an IP exception. Trusting the Docker network range for `read` would be wrong: depending on the Docker proxy mode, LAN traffic can appear to come from the bridge address.
-- **Revocation** takes effect at the next connection. For an open session DomiNet kicks it through the MediaMTX API (`/v3/*conns/kick`, `/v3/webrtcsessions/kick`), using the session `id` that MediaMTX sends in the authentication call. If this proves unreliable, `expireAt` bounds the session instead.
+- **Revocation** takes effect at the next connection. For an open session DomiNet kicks it through the MediaMTX API (`/v3/*conns/kick`, `/v3/webrtcsessions/kick`), using the session `id` that MediaMTX sends in the authentication call (verified: it is the session id of the API, not the one in the WHEP `Location` header; for RTSP use `rtspsessions`, not `rtspconns`). `expireAt` (verified) also bounds a session; it is the fallback.
 
 ## Consequences
 - **Breaking change for viewers:** VLC and phone applications must be given a personal credential before they can watch. The release note and [Security](../security.md) say so, with the migration steps.
@@ -37,7 +38,7 @@ Option A.
 - Out of scope: per-camera rights, Digest authentication, HLS (disabled), end-to-end encryption of RTSP.
 
 ## Plan (one lot at a time, each validated before the next)
-0. **Spike on MediaMTX 1.21.3** (dev stack): settle every point marked *to verify*, with VLC and a browser. If a point fails, this ADR is amended before any code.
+0. **Spike on MediaMTX 1.21.3**: done 2026-11-24 with a throw-away auth server, `ffmpeg` and `curl`. VLC and a real browser are still to try (lot 2 for VLC, lot 3 for the browser).
 1. Table, migration and domain rules (tokens, credentials, expiry), with tests.
 2. Authentication route, MediaMTX configuration (production, demo, dev), service credential, installer and migration scripts.
 3. Browser flow: viewing token and WHEP client, end-to-end test on the live page.
