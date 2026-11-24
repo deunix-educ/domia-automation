@@ -343,7 +343,7 @@ async fn supervise(
             // a network outage prove nothing against VAAPI (measured on the EliteDesk: a camera absent at start-up cut VAAPI).
             vaapi_failed = true;
             tracing::info!(
-                cause = %outcome.stderr.replace('\n', " | "),
+                cause = %outcome.stderr.lines().map(|l| crate::onvif::mask_secrets(l, &[])).collect::<Vec<_>>().join(" | "),
                 "VAAPI decoding unusable, falling back to software decoding"
             );
             continue;

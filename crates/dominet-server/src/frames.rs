@@ -65,11 +65,36 @@ pub fn latest_dir(snapshots_dir: &Path) -> PathBuf {
     snapshots_dir.join("latest")
 }
 
+/// `scheme://host/...` with `user:password@` in front of the host. Both are percent-encoded: a generated password is
+/// alphanumeric, but an administrator may have chosen anything.
+fn url_with_credentials(url: &str, user: &str, password: &str) -> String {
+    fn encode(s: &str) -> String {
+        s.bytes()
+            .map(|b| match b {
+                b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'.' | b'_' | b'~' => {
+                    char::from(b).to_string()
+                }
+                _ => format!("%{b:02X}"),
+            })
+            .collect()
+    }
+    match url.split_once("://") {
+        Some((scheme, rest)) => format!("{scheme}://{}:{}@{rest}", encode(user), encode(password)),
+        None => url.to_string(),
+    }
+}
+
 impl FrameHub {
     /// Reads `<MEDIAMTX_RTSP_URL>/<uuid>`; without this address, no source starts.
     #[must_use]
     pub fn from_config(config: &Config) -> Self {
-        let base = config.mediamtx_rtsp_url.clone();
+        // MediaMTX asks DomiNet to authorise every read, the `video` role's included (ADR 0064): the service account goes in the URL.
+        let base = config.mediamtx_rtsp_url.as_deref().map(|url| {
+            config.mediamtx_read.as_ref().map_or_else(
+                || url.to_string(),
+                |c| url_with_credentials(url, &c.user, c.password.expose()),
+            )
+        });
         let hw = if config.ffmpeg_hwaccel_auto {
             Hwaccel::Auto
         } else {
@@ -242,4 +267,23 @@ pub fn spawn_role(state: &AppState) {
             }
         }
     });
+}
+
+#[cfg(test)]
+mod tests {
+    use super::url_with_credentials;
+
+    #[test]
+    fn the_service_account_goes_in_front_of_the_host_percent_encoded() {
+        assert_eq!(
+            url_with_credentials("rtsp://mediamtx:8554", "dominet-video", "Ab12"),
+            "rtsp://dominet-video:Ab12@mediamtx:8554"
+        );
+        assert_eq!(
+            url_with_credentials("rtsp://mediamtx:8554", "a@b", "p:w/d#?"),
+            "rtsp://a%40b:p%3Aw%2Fd%23%3F@mediamtx:8554"
+        );
+        // Not a URL with a scheme: left as it is rather than guessed at.
+        assert_eq!(url_with_credentials("mediamtx", "u", "p"), "mediamtx");
+    }
 }
