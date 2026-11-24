@@ -8,6 +8,9 @@
 #   tools/e2e.sh --image dominet:dev   server = the Docker image (the test that counts before delivering)
 #   tools/e2e.sh home auth             only these scripts (default: all)
 #   SITE_ROOT=/vide tools/e2e.sh --image I home   checks that the test does fail with an image without static files
+#   tools/e2e.sh live_auth             the live view against the SHIPPED MediaMTX configuration (it asks DomiNet before each read,
+#                                      ADR 0064): a throw-away MediaMTX on free ports, removed at the end. Run alone (it moves the
+#                                      cameras' MediaMTX); needs chromium, ffmpeg and the image bluenviron/mediamtx:1.21.3.
 #
 # Prerequisites: dev stack (`make dev-up`, PostgreSQL 15432) and Firefox. No contact with production: no Mosquitto,
 # cameras, or Zigbee. Everything that is created (database, profile, container, processes) is removed at the end, even on failure.
@@ -24,6 +27,13 @@ while [ $# -gt 0 ]; do
   esac
 done
 [ ${#SCRIPTS[@]} -gt 0 ] || SCRIPTS=(home auth layout locations admin users realtime system dashboard dashboard_edit r2 mqtt mqtt_sources devices scenes automations alerts energy weather android messaging cameras onvif ptz live recordings events rules mcp mqtt_outage)
+
+# `live_auth` runs alone: it points the server at its own MediaMTX, which would disturb the other scripts.
+AUTH_LIVE=0
+if printf '%s\n' "${SCRIPTS[@]}" | grep -qx live_auth; then
+  [ ${#SCRIPTS[@]} -eq 1 ] || { echo "live_auth se lance seul : tools/e2e.sh live_auth" >&2; exit 2; }
+  AUTH_LIVE=1
+fi
 
 PG_CONTAINER="${PG_CONTAINER:-dominet-dev-postgres-1}"
 PG_PORT="${PG_PORT:-15432}"
@@ -49,6 +59,7 @@ cleanup() {
   for f in "$WORK/sim-meteo.pid" "$WORK/sim-sun.pid" "$WORK/sim-smtp.pid" "$WORK/sim-onvif.pid" "$WORK/sim-prom.pid"; do [ -f "$f" ] && kill "$(cat "$f")" 2>/dev/null; done
   [ -n "$SERVER_PID" ] && kill "$SERVER_PID" 2>/dev/null
   [ -n "$IMAGE" ] && docker rm -f "$NAME" >/dev/null 2>&1
+  [ "$AUTH_LIVE" = 1 ] && docker rm -f "$NAME-mtx" >/dev/null 2>&1
   curl -s -X DELETE -H "Authorization: Bearer ${REDUCTSTORE_TOKEN}" "${REDUCTSTORE_URL}/api/v1/b/${REDUCTSTORE_IOT_BUCKET}" >/dev/null 2>&1
   curl -s -X DELETE -H "Authorization: Bearer ${REDUCTSTORE_TOKEN}" "${REDUCTSTORE_URL}/api/v1/b/${REDUCTSTORE_VIDEO_BUCKET}" >/dev/null 2>&1
   psql_admin "DROP DATABASE IF EXISTS ${DB} WITH (FORCE)" 2>/dev/null
@@ -112,6 +123,23 @@ mkdir -p "$WORK/grafana" && chmod 777 "$WORK/grafana"
 export PROMETHEUS_RULES_PATH="$WORK/rules/rules.yml" GRAFANA_ALERTING_PATH="$WORK/rules/rules.yaml" METRICS_ADDR=off
 export E2E_PROMETHEUS_RULES="$PROMETHEUS_RULES_PATH" E2E_GRAFANA_RULES="$GRAFANA_ALERTING_PATH"
 mkdir -p "$WORK/rules" && chmod 777 "$WORK/rules"
+# `live_auth`: the deployment's MediaMTX configuration, with only the ports and DomiNet's address changed, on the host network so that it
+# reaches this run's server on 127.0.0.1. The server reads its re-stream with the service account, like in production.
+if [ "$AUTH_LIVE" = 1 ]; then
+  M_RTSP="$(free_port)"; M_WEBRTC="$(free_port)"; M_ICE="$(free_port)"; M_API="$(free_port)"; M_METRICS="$(free_port)"
+  sed -e "s#http://dominet:8000#http://127.0.0.1:${PORT}#" \
+      -e "s#^apiAddress: :9997#apiAddress: 127.0.0.1:${M_API}#" -e "s#^metricsAddress: :9998#metricsAddress: 127.0.0.1:${M_METRICS}#" \
+      -e "s#^rtspAddress: :8554#rtspAddress: :${M_RTSP}#" -e "s#^webrtcAddress: :8889#webrtcAddress: :${M_WEBRTC}#" \
+      -e "s#^webrtcLocalTCPAddress: :8189#webrtcLocalTCPAddress: :${M_ICE}#" -e "s#^webrtcLocalUDPAddress: :8189#webrtcLocalUDPAddress: :${M_ICE}#" \
+      deploy/mediamtx/mediamtx.yml > "$WORK/mediamtx.yml"
+  grep -q "authMethod: http" "$WORK/mediamtx.yml" || { echo "deploy/mediamtx/mediamtx.yml n'authentifie pas par HTTP" >&2; exit 1; }
+  docker rm -f "$NAME-mtx" >/dev/null 2>&1 || true
+  docker run -d --name "$NAME-mtx" --network host -v "$WORK/mediamtx.yml:/mediamtx.yml:ro" bluenviron/mediamtx:1.21.3 >/dev/null
+  export MEDIAMTX_API_URL="http://127.0.0.1:${M_API}" MEDIAMTX_RTSP_URL="rtsp://127.0.0.1:${M_RTSP}"
+  export MEDIAMTX_READ_USER=dominet-video MEDIAMTX_READ_PASSWORD="$(head -c 24 /dev/urandom | base64 | tr -dc 'A-Za-z0-9' | head -c 24)"
+  export MEDIAMTX_RTSP_PORT="$M_RTSP" MEDIAMTX_INTERNAL_RTSP_PORT="$M_RTSP" MEDIAMTX_WHEP_DOMAIN="127.0.0.1:${M_WEBRTC}"
+  export E2E_MTX_AUTH=1 E2E_RTSP_USER="$MEDIAMTX_READ_USER" E2E_RTSP_PASS="$MEDIAMTX_READ_PASSWORD"
+fi
 # Video role: re-reads the dev MediaMTX's re-stream (published on the machine's 18554); images and snapshots in a throw-away folder.
 export MEDIAMTX_RTSP_URL="${MEDIAMTX_RTSP_URL:-rtsp://127.0.0.1:18554}" SNAPSHOTS_DIR="$WORK/snapshots" E2E_SNAPSHOTS_DIR="$WORK/snapshots"
 mkdir -p "$WORK/snapshots" && chmod 777 "$WORK/snapshots"
@@ -138,7 +166,7 @@ dom() {
 start_server() {
   if [ -n "$IMAGE" ]; then
     docker rm -f "$NAME" >/dev/null 2>&1 || true
-    docker run -d --name "$NAME" --network host -e DATABASE_URL -e DOMINET_MASTER_KEY -e COOKIE_SECURE -e MCP_ENABLED -e HTTP_ADDR -e SYSTEM_STATS_SECS -e RUST_BACKTRACE -e RUST_LOG -e MQTT_HOST -e MQTT_PORT -e MQTT_CLIENT_ID -e REDUCTSTORE_URL -e REDUCTSTORE_TOKEN -e REDUCTSTORE_IOT_BUCKET -e REDUCTSTORE_VIDEO_BUCKET -e RECORDINGS_DIR -e RECORDINGS_SEGMENT_DURATION -e RECORDINGS_SCAN_SECS -e MOTION_INTERVAL_SECS -e DETECTIONS_DIR -e YOLO_MODEL_PATH -e GRAFANA_DASHBOARDS_DIR -e PROMETHEUS_RULES_PATH -e GRAFANA_ALERTING_PATH -e METRICS_ADDR -e OPEN_METEO_URL -e SOLARMAX_HOST -e SOLARMAX_PORT -e SOLARMAX_TOPIC -e SOLARMAX_INTERVAL_SECS -e EMAIL_HOST -e EMAIL_PORT -e EMAIL_USE_TLS -e MEDIAMTX_API_URL -e MEDIAMTX_RTSP_URL -e SNAPSHOTS_DIR -e PROMETHEUS_URL -e PROMETHEUS_ALERTS_POLL_SECS -v "$WORK/snapshots:$WORK/snapshots" -v "$RECORDINGS_DIR:$RECORDINGS_DIR" -v "$WORK/detections:$WORK/detections" -v "$ROOT/models:/models:ro" -v "$WORK/grafana:$WORK/grafana" -v "$WORK/rules:$WORK/rules" ${SITE_ROOT:+-e SITE_ROOT} "$IMAGE" serve >/dev/null
+    docker run -d --name "$NAME" --network host -e DATABASE_URL -e DOMINET_MASTER_KEY -e COOKIE_SECURE -e MCP_ENABLED -e HTTP_ADDR -e SYSTEM_STATS_SECS -e RUST_BACKTRACE -e RUST_LOG -e MQTT_HOST -e MQTT_PORT -e MQTT_CLIENT_ID -e REDUCTSTORE_URL -e REDUCTSTORE_TOKEN -e REDUCTSTORE_IOT_BUCKET -e REDUCTSTORE_VIDEO_BUCKET -e RECORDINGS_DIR -e RECORDINGS_SEGMENT_DURATION -e RECORDINGS_SCAN_SECS -e MOTION_INTERVAL_SECS -e DETECTIONS_DIR -e YOLO_MODEL_PATH -e GRAFANA_DASHBOARDS_DIR -e PROMETHEUS_RULES_PATH -e GRAFANA_ALERTING_PATH -e METRICS_ADDR -e OPEN_METEO_URL -e SOLARMAX_HOST -e SOLARMAX_PORT -e SOLARMAX_TOPIC -e SOLARMAX_INTERVAL_SECS -e EMAIL_HOST -e EMAIL_PORT -e EMAIL_USE_TLS -e MEDIAMTX_API_URL -e MEDIAMTX_RTSP_URL -e MEDIAMTX_READ_USER -e MEDIAMTX_READ_PASSWORD -e SNAPSHOTS_DIR -e PROMETHEUS_URL -e PROMETHEUS_ALERTS_POLL_SECS -v "$WORK/snapshots:$WORK/snapshots" -v "$RECORDINGS_DIR:$RECORDINGS_DIR" -v "$WORK/detections:$WORK/detections" -v "$ROOT/models:/models:ro" -v "$WORK/grafana:$WORK/grafana" -v "$WORK/rules:$WORK/rules" ${SITE_ROOT:+-e SITE_ROOT} "$IMAGE" serve >/dev/null
   else
     ("$BIN" serve > "$WORK/server.log" 2>&1 & echo $! > "$WORK/server.pid")
     SERVER_PID="$(cat "$WORK/server.pid")"
@@ -186,7 +214,8 @@ failed=()
 for s in "${SCRIPTS[@]}"; do
   args=("$BASE" "$ADMIN" "$PASSWORD")
   [ "$s" = realtime ] && args+=("$WORK/restart.sh")
-  if python3 "tests/e2e/$s.py" "${args[@]}" > "$WORK/$s.out" 2>&1 && grep -q '=> 0 echec' "$WORK/$s.out"; then
+  script_file="$s"; [ "$s" = live_auth ] && script_file=live
+  if python3 "tests/e2e/$script_file.py" "${args[@]}" > "$WORK/$s.out" 2>&1 && grep -q '=> 0 echec' "$WORK/$s.out"; then
     echo "  OK    $s ($(grep -c '^PASS' "$WORK/$s.out") verifications)"
   else
     echo "  ECHEC $s"

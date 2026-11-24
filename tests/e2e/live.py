@@ -7,6 +7,9 @@ H.264 en WebRTC), le message explicite au lieu d'un echec muet.
 
 Prerequis : chromium (ou google-chrome), ffmpeg avec libx264, python3 `websockets`, MediaMTX de la stack de dev. Sinon : rien n'est verifie.
 Usage : python3 tests/e2e/live.py url utilisateur_admin mot_de_passe          (variables : MEDIAMTX_API_URL, MEDIAMTX_RTSP_PORT, MEDIAMTX_INTERNAL_RTSP_PORT)
+Mode authentifie (tools/e2e.sh live_auth, ADR 0064) : MediaMTX est celui du deploiement (il interroge DomiNet avant chaque lecture) ;
+E2E_MTX_AUTH=1, E2E_RTSP_USER et E2E_RTSP_PASS (compte de service, pour que la camera de test tire son propre flux). Le meme scenario doit passer :
+le navigateur obtient un jeton de visionnage de son compte ; en plus, une lecture anonyme est refusee.
 """
 import http.cookiejar
 import json
@@ -31,6 +34,7 @@ api = os.environ.get("MEDIAMTX_API_URL", "http://127.0.0.1:19997")
 rtsp_port = os.environ.get("MEDIAMTX_RTSP_PORT", "18554")  # seen from the machine (publication by ffmpeg)
 internal_rtsp_port = os.environ.get("MEDIAMTX_INTERNAL_RTSP_PORT", "8554")  # seen from MediaMTX itself (the camera pulls the test stream)
 whep_domain = os.environ.get("MEDIAMTX_WHEP_DOMAIN", "127.0.0.1:18889")
+mtx_auth = os.environ.get("E2E_MTX_AUTH") == "1"
 
 m = Marionette()
 r = Report()
@@ -70,7 +74,7 @@ r.check("reglage du domaine WebRTC", status == 200, str(status))
 source = f"e2e-src-{os.getpid()}"
 camera = {
     "id": None, "name": f"E2E live {os.getpid()}", "location_id": None, "active": True, "priority": 1, "notes": "",
-    "proto": "rtsp", "ip": "127.0.0.1", "port": int(internal_rtsp_port), "path": source, "rtsp_user": "", "rtsp_pass": "", "fps": 10,
+    "proto": "rtsp", "ip": "127.0.0.1", "port": int(internal_rtsp_port), "path": source, "rtsp_user": os.environ.get("E2E_RTSP_USER", ""), "rtsp_pass": os.environ.get("E2E_RTSP_PASS", ""), "fps": 10,
     "rtsp_any_port": False, "rtsp_transport_tcp": False, "recording_mode": "none", "night_mode_api": "none", "web_port": 80,
     "web_api_key": "", "web_user": "", "web_pass": "", "onvif": False, "onvif_port": 80, "onvif_user": "", "onvif_pass": "", "ptz": False,
     "yolo_enabled": False, "yolo_classes": "", "yolo_min_confidence_pct": 50,
@@ -156,6 +160,26 @@ try:
         ff = start_ffmpeg()
         r.check("flux H.264 de test publie dans MediaMTX", mediamtx_ready(source), "ffmpeg ou MediaMTX")
         r.check("MediaMTX relaie la camera sous son identifiant public", mediamtx_ready(uuid, 25))
+        if mtx_auth:
+            # Without an account's token the offer is refused, with a wrong one too (the page itself is checked below).
+            offer = ("v=0\r\no=- 1 2 IN IP4 127.0.0.1\r\ns=-\r\nt=0 0\r\na=group:BUNDLE 0\r\nm=video 9 UDP/TLS/RTP/SAVPF 96\r\n"
+                     "c=IN IP4 0.0.0.0\r\na=mid:0\r\na=recvonly\r\na=rtcp-mux\r\na=ice-ufrag:abcd\r\na=ice-pwd:abcdefghijklmnopqrstuv12\r\n"
+                     "a=fingerprint:sha-256 " + ":".join(["AB"] * 32) + "\r\na=setup:actpass\r\na=rtpmap:96 H264/90000\r\n"
+                     "a=fmtp:96 level-asymmetry-allowed=1;packetization-mode=1;profile-level-id=42e01f\r\n")
+
+            def whep_status(authorization=None):
+                headers = {"Content-Type": "application/sdp"}
+                if authorization:
+                    headers["Authorization"] = authorization
+                req = urllib.request.Request(f"http://{whep_domain}/{uuid}/whep", data=offer.encode(), method="POST", headers=headers)
+                try:
+                    with urllib.request.urlopen(req, timeout=10) as resp:
+                        return resp.status
+                except urllib.error.HTTPError as e:
+                    return e.code
+
+            r.check("MediaMTX authentifie : une lecture anonyme est refusee (401)", whep_status() == 401, str(whep_status()))
+            r.check("... un jeton inconnu aussi", whep_status("Bearer dnv_unknown") == 401)
 
     # ---------------------------------------------------------------------------------------------- Firefox: explicit message without H.264
     m.goto(url)
