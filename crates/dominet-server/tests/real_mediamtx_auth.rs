@@ -264,6 +264,33 @@ async fn mediamtx_with_the_shipped_configuration_asks_dominet(pool: PgPool) {
     // A viewing token is for the browser, not for RTSP.
     assert!(!probe("rtsp://alice:view-token@127.0.0.1:28554/cam1").await);
 
+    // Revoking a credential closes the sessions its account has open: a real RTSP reader is found by its user name and cut.
+    let mut reader = Command::new("ffmpeg")
+        .args(["-loglevel", "error", "-rtsp_transport", "tcp", "-i"])
+        .arg("rtsp://alice:alice-secret@127.0.0.1:28554/cam1")
+        .args(["-f", "null", "-"])
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .spawn()
+        .unwrap();
+    tokio::time::sleep(Duration::from_secs(3)).await;
+    assert!(
+        reader.try_wait().unwrap().is_none(),
+        "the reader should be playing"
+    );
+    let api = dominet_surveillance::MediaMtx::new("http://127.0.0.1:29997").unwrap();
+    assert_eq!(
+        api.kick_user("bob").await.unwrap(),
+        0,
+        "another account is not concerned"
+    );
+    assert_eq!(api.kick_user("Alice").await.unwrap(), 1);
+    tokio::time::sleep(Duration::from_secs(2)).await;
+    assert!(
+        reader.try_wait().unwrap().is_some(),
+        "the reader must have been cut"
+    );
+
     // WebRTC (WHEP): the Bearer viewing token alone.
     assert!(whep(None).await.starts_with("401"));
     let opened = whep(Some("Bearer view-token")).await;

@@ -169,6 +169,21 @@ impl CameraService {
         self.mediamtx.is_some()
     }
 
+    /// Closes the open sessions of an account that watches with a personal stream credential (see
+    /// [`MediaMtx::kick_user`]); `0` without MediaMTX.
+    ///
+    /// # Errors
+    /// MediaMTX unreachable or unexpected response.
+    pub async fn kick_viewer(
+        &self,
+        username: &str,
+    ) -> Result<u32, dominet_surveillance::MediaMtxError> {
+        match &self.mediamtx {
+            Some(api) => api.kick_user(username).await,
+            None => Ok(0),
+        }
+    }
+
     /// All the cameras, by priority then by name.
     ///
     /// # Errors
