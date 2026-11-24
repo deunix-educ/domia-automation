@@ -130,6 +130,11 @@ const METRICS: &[(&str, Kind, &str)] = &[
         "Firing alerts read from Prometheus.",
     ),
     (
+        "dominet_stream_auth_total",
+        Kind::Counter,
+        "Camera viewing decisions asked by MediaMTX, by action and outcome (allowed, denied, locked, refused, error).",
+    ),
+    (
         "dominet_backup_runs_total",
         Kind::Counter,
         "Backups run, by result (ok, error).",

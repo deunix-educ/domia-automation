@@ -31,6 +31,13 @@ impl fmt::Debug for Secret {
     }
 }
 
+/// A user name and a password that DomiNet itself presents to another service.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ServiceCredential {
+    pub user: String,
+    pub password: Secret,
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum LogFormat {
     Pretty,
@@ -181,6 +188,9 @@ pub struct Config {
     pub mediamtx_api_url: Option<String>,
     /// `MEDIAMTX_RTSP_URL` (e.g. `rtsp://mediamtx:8554`): re-stream that the `video` role reads (`<url>/<uuid>`); without it, no images.
     pub mediamtx_rtsp_url: Option<String>,
+    /// `MEDIAMTX_READ_USER` and `MEDIAMTX_READ_PASSWORD` (both or none): the service credential that DomiNet's own reads of the
+    /// re-stream (`video` role) present to MediaMTX, which asks DomiNet to authorise every read (ADR 0064).
+    pub mediamtx_read: Option<ServiceCredential>,
     /// `SNAPSHOTS_DIR` (default `data/snapshots`): indexed snapshots and, under `latest/`, each camera's last image.
     pub snapshots_dir: String,
     /// `SNAPSHOTS_MAX_PER_CAMERA` (default 500): beyond that, a camera's oldest indexed snapshots are deleted.
@@ -307,6 +317,23 @@ impl Env<'_> {
             }
             Some(_) => {
                 self.fail("DATABASE_URL: must start with postgres:// or postgresql://".into());
+                None
+            }
+        }
+    }
+
+    fn mediamtx_read(&mut self) -> Option<ServiceCredential> {
+        match (
+            self.var("MEDIAMTX_READ_USER"),
+            self.var("MEDIAMTX_READ_PASSWORD"),
+        ) {
+            (Some(user), Some(password)) => Some(ServiceCredential {
+                user,
+                password: Secret::new(password),
+            }),
+            (None, None) => None,
+            _ => {
+                self.fail("MEDIAMTX_READ_USER and MEDIAMTX_READ_PASSWORD: set both or none".into());
                 None
             }
         }
@@ -622,6 +649,7 @@ impl Config {
         let trusted_proxies = env.trusted_proxies();
         let mqtt = env.mqtt();
         let reductstore = env.reductstore();
+        let mediamtx_read = env.mediamtx_read();
         let solarmax = env.solarmax();
         let email = env.email();
         let history_retention_days = env.positive_u32("HISTORY_RETENTION_DAYS", 400, 36_500);
@@ -700,6 +728,7 @@ impl Config {
             grafana_password: env.var("GRAFANA_PASSWORD").map(Secret::new),
             mediamtx_api_url: env.var("MEDIAMTX_API_URL"),
             mediamtx_rtsp_url: env.var("MEDIAMTX_RTSP_URL"),
+            mediamtx_read,
             snapshots_dir: env
                 .var("SNAPSHOTS_DIR")
                 .unwrap_or_else(|| "data/snapshots".to_string()),
@@ -1096,6 +1125,27 @@ mod tests {
         );
         assert_eq!(with(Some("off")).unwrap().metrics_addr, None);
         assert!(with(Some("n'importe quoi")).is_err());
+    }
+
+    #[test]
+    fn the_mediamtx_service_credential_is_both_or_none_and_stays_secret() {
+        assert!(load(&[DB]).unwrap().mediamtx_read.is_none());
+        let c = load(&[
+            DB,
+            ("MEDIAMTX_READ_USER", "dominet-video"),
+            ("MEDIAMTX_READ_PASSWORD", "pw-secret"),
+        ])
+        .unwrap();
+        let read = c.mediamtx_read.as_ref().unwrap();
+        assert_eq!(
+            (read.user.as_str(), read.password.expose()),
+            ("dominet-video", "pw-secret")
+        );
+        assert!(!format!("{c:?}").contains("pw-secret"));
+        for only in [("MEDIAMTX_READ_USER", "u"), ("MEDIAMTX_READ_PASSWORD", "p")] {
+            let e = load(&[DB, only]).unwrap_err().to_string();
+            assert!(e.contains("set both or none"), "{e}");
+        }
     }
 
     #[test]

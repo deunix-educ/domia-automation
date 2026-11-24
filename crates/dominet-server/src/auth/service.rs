@@ -128,6 +128,27 @@ impl AuthService {
     }
 
     /// Replaces an old hash with a new one (failure logged, with no consequence for the login).
+    /// Whether a stream credential may be tried by this user name from this address: the same lock-out as the login (ADR 0004,
+    /// ADR 0064).
+    ///
+    /// # Errors
+    /// [`AuthError::Locked`] while the pair is blocked; storage failure.
+    pub async fn check_stream_attempt(&self, username: &str, ip: &str) -> Result<(), AuthError> {
+        self.ensure_not_locked(username.trim(), ip).await
+    }
+
+    /// Notes a failed stream credential attempt: it counts towards the login lock-out.
+    ///
+    /// # Errors
+    /// Storage failure.
+    pub async fn record_stream_failure(&self, username: &str, ip: &str) -> Result<(), AuthError> {
+        self.store
+            .attempts()
+            .record(username.trim(), ip, false)
+            .await?;
+        Ok(())
+    }
+
     async fn rehash(&self, id: UserId, password: &str) {
         let pw = password.to_string();
         let result = async {

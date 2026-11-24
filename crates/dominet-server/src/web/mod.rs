@@ -95,6 +95,7 @@ fn build(state: AppState, ui: Option<Router>, extra: Option<Router<AppState>>) -
         .merge(detections::routes())
         .merge(crate::android::routes())
         .merge(custom::routes())
+        .merge(crate::stream_auth::routes())
         .merge(docs::routes(&state));
     if let Some(extra) = extra {
         app = app.merge(extra);
