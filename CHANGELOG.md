@@ -5,10 +5,15 @@ All notable changes are listed here. Format based on [Keep a Changelog](https://
 ## [Unreleased]
 
 ### Added
+- **Watching a camera needs an account** (ADR 0064). MediaMTX asks DomiNet before every RTSP and WebRTC read. The browser needs nothing: the live view sends a short-lived token tied to the session. VLC and phone applications use the account's user name and a personal password per device, created on **My account → Camera access** (shown once, revocable, with its last use; revoking closes the account's open sessions). Every account sees every camera. See [Camera access](docs/camera-access.md).
+- `make prod-init` generates `MEDIAMTX_READ_USER` and `MEDIAMTX_READ_PASSWORD` (DomiNet's own account for decoding the video); `make prod-up` adds them to an existing `.env`, and `make prod-doctor` blocks if they are missing.
+- `tools/e2e.sh live_auth` replays the live view against the shipped MediaMTX configuration.
 - The weather widget shows the Open-Meteo attribution ("Weather data by Open-Meteo.com", CC BY 4.0), linked to open-meteo.com.
 - Video load measured on a Raspberry Pi 5 (8 GB, NVMe, software decoding): about 0.25 core per camera, 6 cameras in 1080p at 40 % of the machine in full mode (`docs/measures.md`, section 2). Nothing above 6 cameras was measured.
 
 ### Changed
+- **Breaking, viewers**: a player that opened `rtsp://<host>:8554/<uuid>` without a password is now refused until its owner creates a password on the Camera access page (see above). The production MediaMTX no longer allows anonymous reads; the API and metrics ports stay unpublished, and nginx answers 404 on `/internal/`.
+- Code comments, `make help` and the `--help` texts are in English.
 - `SECRET_KEY` is removed: nothing used it (CSRF protection relies on the `Origin` header, ADR 0004). The installer no longer generates it, the configuration no longer reads it, and a `SECRET_KEY` line left in an existing `.env` is ignored.
 - Licence of wg-easy checked at the source: 14 is CC BY-NC-SA 4.0, 15 is AGPL-3.0 (`docs/licenses.md`). The VPN profile still pins 14 until 15 is tested.
 

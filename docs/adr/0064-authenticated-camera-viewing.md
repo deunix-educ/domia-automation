@@ -1,6 +1,6 @@
 # ADR 0064 — Authenticated camera viewing: MediaMTX asks DomiNet, per-account viewing tokens and personal stream credentials
 
-Status: **accepted** (2026-11-24, validated by the owner). The spike on MediaMTX 1.21.3 (lot 0, 2026-11-24) is done and its findings are folded in below. Nothing is implemented yet; the plan lists the lots, each validated before the next. Closes the "per-viewer camera credentials" point of the roadmap and of [To improve](../to-improve.md).
+Status: **implemented** (2026-11-24, lots 1 to 5; accepted the same day by the owner). The differences between this text and what was built are listed in *As built*. Closes the "per-viewer camera credentials" point of the roadmap and of [To improve](../to-improve.md).
 
 ## Context
 Today anyone on the home network can watch every camera: MediaMTX allows `read` and `playback` to everybody (`authInternalUsers`, `user: any`, no password), over RTSP (8554) and WebRTC (8189, and WHEP through nginx on `/webrtc/`). Only publishing, the API and the metrics are restricted to the Docker network and the machine. The interface itself is protected by accounts (any signed-in account may watch), so the video is the one place where the account system does not apply. [Security](../security.md) documents the gap and tells people to keep guests on another network.
@@ -44,3 +44,13 @@ Option A.
 3. Browser flow: viewing token and WHEP client, end-to-end test on the live page.
 4. "Camera access" page, revocation and session kick.
 5. Documentation (EN and FR), release note, removal of the roadmap and "To improve" entries.
+
+## As built (2026-11-24)
+- **Browser token**: the page asks for a new viewing token at **each connection** (including each reconnection) instead of renewing one in the background: MediaMTX checks it only when the WHEP offer is posted, and a running session is not cut when it expires. Closing a session (`DELETE`) is not authenticated by MediaMTX (checked), so the page does not keep the token.
+- **Revocation**: the open sessions are found by the **user name** MediaMTX records for them (`GET /v3/{rtsp,webrtc}sessions/list`, then `kick/<id>`), not by the `id` of the authentication call. It is stateless and survives a DomiNet restart, but it cannot tell two credentials of the same account apart: revoking one closes the account's sessions, and a device with another password reconnects. A browser session opened with a viewing token has no user name and is not closed. If MediaMTX cannot be reached the revocation still holds (refusal at the next connection, `expireAt` for a session left open).
+- **`expireAt`**: returned for a personal credential (the session ends with the credential) and never for a viewing token.
+- **Lock-out**: only failed attempts with a user name count; the empty first request of an RTSP client does not. Successful attempts are not recorded (one line per RTSP session would fill the table).
+- **Not excluded from the HTTP call**: `publish` (see Decision). **Excluded**: `api`, `metrics`, `pprof`.
+- **Development stack**: its MediaMTX stays open (it runs in Docker, DomiNet on the host). The authenticated behaviour is covered by `tools/e2e.sh live_auth` (browser, throw-away MediaMTX with the shipped configuration) and by the ignored test `real_mediamtx_auth` (RTSP, WHEP, session kick on a real MediaMTX 1.21.3).
+- **Not done**: closing the sessions of an account that is disabled or deleted; an audit trail of credential creations and revocations (they are logged, without the secret); the RTSP port shown by the page is the production one (8554), the demo's is 8555.
+- **Not tried with a real player**: VLC and phone applications were not tried; `ffmpeg` and `curl` stand in for them.

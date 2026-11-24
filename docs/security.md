@@ -8,17 +8,19 @@ DomiNet is designed for **a home network you control**. This page says what is p
 |---|---|---|---|
 | 443 (80 redirects) | nginx, the application, Grafana under `/grafana/` | the LAN | TLS; the application requires a login; the only unauthenticated routes are the login page, the health probe and the certificate download (`/dominet-ca.crt`, also on HTTP so a new device can get it) |
 | 1883 | MQTT (Mosquitto) | the LAN | **password required for every client**, rights per account on a topic; no anonymous listener |
-| 8554 | RTSP (MediaMTX) | the LAN | **no password: anyone on the LAN can watch the camera streams** (see below) |
-| 8189 (udp, tcp) | WebRTC (MediaMTX) | the LAN | no password, same reason |
+| 8554 | RTSP (MediaMTX) | the LAN | **an account is needed**: MediaMTX asks DomiNet before every read ([Camera access](camera-access.md)) |
+| 8189 (udp, tcp) | WebRTC media (MediaMTX) | the LAN | authorised when the browser starts the view (token), not on the media itself: never forward it |
 | 8080 | Zigbee2MQTT interface (only with a dongle) | the LAN | access token (`ZIGBEE_AUTH_TOKEN`) |
 | 51820 (udp) and the wg-easy interface | optional VPN profile | the Internet if you forward it | WireGuard keys; the web interface is protected by `WG_ADMIN_HASH` |
 | 5432 | PostgreSQL | this machine only (`127.0.0.1`) | password |
 | 8181 | Adminer (optional profile) | this machine only (`127.0.0.1`) | database password |
-| 9997, 9998, 9100, Prometheus, Grafana's own port | internal APIs and metrics | the Docker network only | not published |
+| 9997, 9998, 9100, Prometheus, Grafana's own port | internal APIs and metrics | the Docker network only | not published (MediaMTX's API and metrics skip its authentication for that reason) |
 
-## What has no password, on purpose
+## Watching the cameras
 
-Viewing a camera over RTSP or WebRTC needs no password: the browser, the phone applications and VLC read the streams directly. **Publishing** to MediaMTX and its API are restricted to the Docker network and this machine. The consequence is simple: **anyone connected to your home network can watch your cameras**. Keep guests on a separate network or Wi-Fi, and **never forward ports 8554 or 8189 on your router**. Per-viewer credentials are on the improvement list ([To improve](to-improve.md)).
+Watching a camera over RTSP or WebRTC needs an **account**. In the browser nothing changes for you (a short-lived token tied to your session is sent for you); VLC and phone applications need your user name and a personal password per device, created on **My account → Camera access** and revocable at any time. Every account sees every camera. Details and what to do when a player is refused: [Camera access](camera-access.md).
+
+What this does not do: the video itself is not encrypted end to end over RTSP, WebRTC media is authorised when a view starts rather than packet by packet, and a person who has an account can watch every camera. Keep guests on a separate network or Wi-Fi anyway, and **never forward ports 8554 or 8189 on your router**.
 
 ## What is protected
 

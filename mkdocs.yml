@@ -91,6 +91,7 @@ plugins:
             Local assistant: Assistant local
             Alerts: Alertes
             Messaging: Messagerie
+            Camera access: Accès aux caméras
             Settings: Réglages
             Operations: Exploitation
             Observability: Observabilité
@@ -141,6 +142,7 @@ nav:
       - Settings: settings.md
       - Publishers: publishers.md
       - Android: android.md
+      - Camera access: camera-access.md
       - MQTT: mqtt.md
   - Operations:
       - Observability: observability.md

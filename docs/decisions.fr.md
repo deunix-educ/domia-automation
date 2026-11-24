@@ -15,9 +15,9 @@ ReductStore pour l'historique brut, PostgreSQL pour l'état courant et les agré
 ADR : [0002](adr/0002-iot-storage.md), [0018](adr/0018-dashboard-schema.md), [0025](adr/0025-device-schema.md), [0028](adr/0028-mqtt-sources-and-raw-archive.md), [0011](adr/0011-secrets-encryption.md), [0054](adr/0054-backups.md).
 
 ### Sécurité et accès
-Sessions côté serveur avec argon2id ; CSP à nonce ; MQTT avec un seul listener authentifié et des comptes par client ; jetons MCP hachés, à portées, révocables, avec journal d'audit.
+Sessions côté serveur avec argon2id ; CSP à nonce ; MQTT avec un seul listener authentifié et des comptes par client ; jetons MCP hachés, à portées, révocables, avec journal d'audit ; visionnage des caméras autorisé par DomiNet (jeton de visionnage dans le navigateur, mot de passe personnel révocable pour les lecteurs externes).
 
-ADR : [0004](adr/0004-auth-sessions.md), [0016](adr/0016-csp-and-websocket-hub.md), [0057](adr/0057-authenticated-mqtt.md), [0059](adr/0059-mcp-access-tokens.md).
+ADR : [0004](adr/0004-auth-sessions.md), [0016](adr/0016-csp-and-websocket-hub.md), [0057](adr/0057-authenticated-mqtt.md), [0059](adr/0059-mcp-access-tokens.md), [0064](adr/0064-authenticated-camera-viewing.md).
 
 ### Temps réel et MQTT
 `rumqttc` ; sujets WebSocket typés qui gardent le dernier état ; client supervisé qui publie tout de suite ou refuse ; ingestion Zigbee2MQTT ; publishers météo et solaire supervisés.

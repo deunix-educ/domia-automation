@@ -8,17 +8,19 @@ DomiNet est conçu pour **un réseau domestique que vous maîtrisez**. Cette pag
 |---|---|---|---|
 | 443 (80 redirige) | nginx, l'application, Grafana sous `/grafana/` | le LAN | TLS ; l'application demande une connexion ; les seules routes sans authentification sont la page de connexion, la sonde de santé et le téléchargement du certificat (`/dominet-ca.crt`, aussi en HTTP pour qu'un nouvel appareil puisse le récupérer) |
 | 1883 | MQTT (Mosquitto) | le LAN | **mot de passe exigé pour chaque client**, droits par compte sur un sujet ; aucun écouteur anonyme |
-| 8554 | RTSP (MediaMTX) | le LAN | **aucun mot de passe : toute personne du LAN peut regarder les flux des caméras** (voir plus bas) |
-| 8189 (udp, tcp) | WebRTC (MediaMTX) | le LAN | aucun mot de passe, même raison |
+| 8554 | RTSP (MediaMTX) | le LAN | **un compte est nécessaire** : MediaMTX interroge DomiNet avant chaque lecture ([Accès aux caméras](camera-access.md)) |
+| 8189 (udp, tcp) | média WebRTC (MediaMTX) | le LAN | autorisé au démarrage de la vue par le navigateur (jeton), pas sur le média lui-même : ne le redirigez jamais |
 | 8080 | interface de Zigbee2MQTT (seulement avec une clé) | le LAN | jeton d'accès (`ZIGBEE_AUTH_TOKEN`) |
 | 51820 (udp) et l'interface wg-easy | profil VPN facultatif | Internet si vous le redirigez | clés WireGuard ; l'interface web est protégée par `WG_ADMIN_HASH` |
 | 5432 | PostgreSQL | cette machine seulement (`127.0.0.1`) | mot de passe |
 | 8181 | Adminer (profil facultatif) | cette machine seulement (`127.0.0.1`) | mot de passe de la base |
-| 9997, 9998, 9100, Prometheus, port propre de Grafana | API internes et métriques | le réseau Docker seulement | non publiés |
+| 9997, 9998, 9100, Prometheus, port propre de Grafana | API internes et métriques | le réseau Docker seulement | non publiés (l'API et les métriques de MediaMTX échappent à son authentification pour cette raison) |
 
-## Ce qui n'a pas de mot de passe, volontairement
+## Regarder les caméras
 
-Regarder une caméra en RTSP ou en WebRTC n'exige aucun mot de passe : le navigateur, les applications du téléphone et VLC lisent les flux directement. La **publication** vers MediaMTX et son API sont réservées au réseau Docker et à cette machine. La conséquence est simple : **toute personne connectée à votre réseau domestique peut regarder vos caméras**. Mettez les invités sur un autre réseau ou un autre Wi-Fi, et **ne redirigez jamais les ports 8554 ou 8189 sur votre box**. Des identifiants par spectateur figurent dans la liste des améliorations ([À améliorer](to-improve.md)).
+Regarder une caméra en RTSP ou en WebRTC demande un **compte**. Dans le navigateur rien ne change pour vous (un jeton de courte durée, lié à votre session, est envoyé à votre place) ; VLC et les applications du téléphone demandent votre nom d'utilisateur et un mot de passe personnel par appareil, créé dans **Mon compte → Accès aux caméras** et révocable à tout moment. Chaque compte voit toutes les caméras. Détails et conduite à tenir quand un lecteur est refusé : [Accès aux caméras](camera-access.md).
+
+Ce que cela ne fait pas : la vidéo n'est pas chiffrée de bout en bout en RTSP, le média WebRTC est autorisé au démarrage d'une vue et non paquet par paquet, et une personne qui a un compte peut regarder toutes les caméras. Mettez quand même les invités sur un autre réseau ou un autre Wi-Fi, et **ne redirigez jamais les ports 8554 ou 8189 sur votre box**.
 
 ## Ce qui est protégé
 

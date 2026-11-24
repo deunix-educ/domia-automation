@@ -73,7 +73,7 @@ An automatic backup runs daily at 03:00 (`BACKUP_HOUR`): PostgreSQL (`pg_dump`) 
 | Application | `https://<LAN_DOMAIN>` |
 | Documentation | `https://<LAN_DOMAIN>/docs/` (behind the login, FR/EN) |
 | Grafana | `https://<LAN_DOMAIN>/grafana/` (anonymous viewer; administrator `admin` / `GRAFANA_PASSWORD`) |
-| WebRTC video | `https://<LAN_DOMAIN>/webrtc/` (through nginx); RTSP `rtsp://<host>:8554/<uuid>` |
+| WebRTC video | `https://<LAN_DOMAIN>/webrtc/` (through nginx); RTSP `rtsp://<host>:8554/<uuid>` (user name and personal password from My account → Camera access, see [Camera access](docs/camera-access.md)) |
 | Zigbee2MQTT (`zigbee` profile) | `http://<host>:8080`, token `ZIGBEE_AUTH_TOKEN` |
 | Adminer | `ADMINER=1 make prod-up`, then `http://127.0.0.1:8181` (SSH tunnel: `ssh -L 8181:127.0.0.1:8181 user@server`) |
 | MQTT | host port 1883, **password required**; one account per client: `make prod-mqtt-user NAME=linky` (prints the password once; topic `linky/#` by default), `prod-mqtt-users`, `prod-mqtt-del` |

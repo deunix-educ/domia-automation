@@ -20,7 +20,6 @@ Licences and attributions
 - wg-easy: licences verified (14 is non-commercial, 15 is AGPL-3.0); move the VPN profile to 15 (configuration changes) and test it.
 
 Code
-- Authenticated camera viewing, so that watching a camera needs an account or a personal credential (ADR 0064, accepted): lot 0 is a spike on MediaMTX 1.21.3, then lots 1 to 5.
 
 Ideas, not decided
 - A local assistant (a language model) that can also edit existing items reliably; today it reads, drives and creates only (`docs/assistant.md`).

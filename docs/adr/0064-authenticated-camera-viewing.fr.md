@@ -1,6 +1,6 @@
 # ADR 0064 — Visionnage des caméras authentifié : MediaMTX interroge DomiNet, jetons de visionnage par compte et identifiants de flux personnels
 
-Statut : **accepté** (2026-11-24, validé par le propriétaire). Le test sur MediaMTX 1.21.3 (lot 0, 2026-11-24) est fait et ses constats sont intégrés ci-dessous. Rien n'est encore implémenté ; le plan liste les lots, chacun validé avant le suivant. Clôt le point « identifiants de caméra par spectateur » de la feuille de route et de [À améliorer](../to-improve.md).
+Statut : **implémenté** (2026-11-24, lots 1 à 5 ; accepté le même jour par le propriétaire). Les écarts entre ce texte et ce qui a été construit sont dans *Tel que construit*. Clôt le point « identifiants de caméra par spectateur » de la feuille de route et de [À améliorer](../to-improve.md).
 
 ## Contexte
 Aujourd'hui, toute personne connectée au réseau domestique peut regarder toutes les caméras : MediaMTX autorise `read` et `playback` à tout le monde (`authInternalUsers`, `user: any`, sans mot de passe), en RTSP (8554) et en WebRTC (8189, et WHEP par nginx sur `/webrtc/`). Seuls la publication, l'API et les métriques sont réservées au réseau Docker et à la machine. L'interface, elle, est protégée par des comptes (tout compte connecté peut regarder) : la vidéo est donc le seul endroit où le système de comptes ne s'applique pas. [Sécurité](../security.md) documente cet écart et conseille de mettre les invités sur un autre réseau.
@@ -44,3 +44,13 @@ Option A.
 3. Parcours navigateur : jeton de visionnage et client WHEP, test de bout en bout sur la page live.
 4. Page « Accès aux caméras », révocation et coupure des sessions.
 5. Documentation (EN et FR), note de version, retrait des entrées de la feuille de route et de « À améliorer ».
+
+## Tel que construit (2026-11-24)
+- **Jeton du navigateur** : la page demande un nouveau jeton de visionnage à **chaque connexion** (reconnexions comprises) au lieu de le renouveler en arrière-plan : MediaMTX ne le vérifie qu'au moment où l'offre WHEP est postée, et une session en cours n'est pas coupée à son expiration. La fermeture d'une session (`DELETE`) n'est pas authentifiée par MediaMTX (vérifié) : la page ne garde donc pas le jeton.
+- **Révocation** : les sessions ouvertes sont retrouvées par le **nom d'utilisateur** que MediaMTX enregistre (`GET /v3/{rtsp,webrtc}sessions/list`, puis `kick/<id>`), et non par l'`id` de l'appel d'authentification. C'est sans état et cela survit à un redémarrage de DomiNet, mais cela ne distingue pas deux identifiants du même compte : révoquer l'un ferme les sessions du compte, et un appareil muni d'un autre mot de passe se reconnecte. Une session du navigateur ouverte avec un jeton de visionnage n'a pas de nom d'utilisateur et n'est pas fermée. Si MediaMTX est injoignable, la révocation tient quand même (refus à la connexion suivante, `expireAt` pour une session restée ouverte).
+- **`expireAt`** : renvoyé pour un identifiant personnel (la session s'arrête avec l'identifiant) et jamais pour un jeton de visionnage.
+- **Blocage** : seuls les échecs avec un nom d'utilisateur comptent ; la première requête vide d'un client RTSP ne compte pas. Les réussites ne sont pas enregistrées (une ligne par session RTSP remplirait la table).
+- **Non exclu de l'appel HTTP** : `publish` (voir Décision). **Exclus** : `api`, `metrics`, `pprof`.
+- **Pile de développement** : son MediaMTX reste ouvert (il tourne dans Docker, DomiNet sur la machine). Le comportement authentifié est couvert par `tools/e2e.sh live_auth` (navigateur, MediaMTX jetable avec la configuration livrée) et par le test ignoré `real_mediamtx_auth` (RTSP, WHEP, coupure de session sur un vrai MediaMTX 1.21.3).
+- **Non fait** : la fermeture des sessions d'un compte désactivé ou supprimé ; un journal d'audit des créations et révocations d'identifiants (elles sont journalisées, sans le secret) ; le port RTSP affiché par la page est celui de la production (8554), celui de la démo est 8555.
+- **Non essayé avec un vrai lecteur** : VLC et les applications du téléphone n'ont pas été essayés ; `ffmpeg` et `curl` en tiennent lieu.
