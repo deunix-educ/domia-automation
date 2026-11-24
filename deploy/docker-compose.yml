@@ -16,6 +16,9 @@ x-app-env: &app-env
   MQTT_PASSWORD: ${MQTT_PASSWORD}
   MEDIAMTX_API_URL: http://mediamtx:9997
   MEDIAMTX_RTSP_URL: rtsp://mediamtx:8554
+  # Service account of the `video` role: MediaMTX asks DomiNet to authorise every read, its own included (ADR 0064).
+  MEDIAMTX_READ_USER: ${MEDIAMTX_READ_USER:-}
+  MEDIAMTX_READ_PASSWORD: ${MEDIAMTX_READ_PASSWORD:-}
   PROMETHEUS_URL: http://prometheus:9090
   PROMETHEUS_RULES_PATH: /prometheus-rules/rules.yml
   GRAFANA_URL: http://grafana:3000

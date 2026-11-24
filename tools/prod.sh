@@ -64,6 +64,16 @@ cmd_video() {
   fi
 }
 
+# Service account of the `video` role (ADR 0064): MediaMTX asks DomiNet to authorise every read, DomiNet's own included. Written once, never
+# replaced; an installation made before this change gets it at its next make prod-up / prod-update.
+ensure_mediamtx_read() {
+  [ -n "$(val MEDIAMTX_READ_USER)" ] || setvar MEDIAMTX_READ_USER dominet-video
+  if [ -z "$(val MEDIAMTX_READ_PASSWORD)" ]; then
+    setvar MEDIAMTX_READ_PASSWORD "$(rand 32)"
+    say "  MEDIAMTX_READ_USER / MEDIAMTX_READ_PASSWORD generes dans $ENV_FILE (compte de service du decodage video)."
+  fi
+}
+
 cmd_init() {
   if [ -f "$ENV_FILE" ] && grep -qE '^DB_PASSWORD=.+' "$ENV_FILE"; then
     die "$ENV_FILE existe deja avec DB_PASSWORD renseigne. Supprimez-le a la main pour reinitialiser ($ENV_FILE n'est jamais ecrase)."
@@ -82,6 +92,8 @@ cmd_init() {
   setvar DB_PASSWORD "$dbpass"
   setvar REDUCTSTORE_TOKEN "dominet-$(rand 32)"
   setvar MQTT_PASSWORD "$(rand 24)"
+  setvar MEDIAMTX_READ_USER dominet-video
+  setvar MEDIAMTX_READ_PASSWORD "$(rand 32)"
   setvar GRAFANA_PASSWORD "$gpass"
   setvar ZIGBEE_AUTH_TOKEN "$(rand 24)"
   if docker image inspect "$(tag)" >/dev/null 2>&1; then
@@ -209,6 +221,7 @@ cmd_up() {
     setvar DOMINET_MASTER_KEY "$mk"
     say "  DOMINET_MASTER_KEY generee dans $ENV_FILE : SAUVEGARDEZ-LA hors de cette machine."
   fi
+  ensure_mediamtx_read
   compose up -d --wait --wait-timeout 300
 }
 
@@ -292,6 +305,8 @@ cmd_doctor() {
       *@*) bad "DEFAULT_FROM_EMAIL ends with an IP address: Grafana refuses to start (invalid SMTP from_address). Fix: use a name, for example dominet@dominet.local, then make prod-up." ;;
     esac
     [ -n "$(val DOMINET_MASTER_KEY)" ] && ok "DOMINET_MASTER_KEY set (is it copied off this machine?)" || att "DOMINET_MASTER_KEY is empty"
+    if [ -n "$(val MEDIAMTX_READ_USER)" ] && [ -n "$(val MEDIAMTX_READ_PASSWORD)" ]; then ok "MEDIAMTX_READ_USER/PASSWORD set (video decoding account)"
+    else bad "MEDIAMTX_READ_USER or MEDIAMTX_READ_PASSWORD is empty: MediaMTX refuses the video role's reads, no image is decoded. Fix: make prod-up (generates them)."; fi
   fi
   if ! docker info >/dev/null 2>&1; then bad "Docker is not reachable (daemon stopped, or user not in the docker group)."; else
     local free_gb root; root="$(docker info -f '{{.DockerRootDir}}' 2>/dev/null || echo /var/lib/docker)"

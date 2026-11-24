@@ -160,6 +160,11 @@ has "BLOCKING  DEFAULT_FROM_EMAIL ends with an IP address"; check "doctor: a sen
 printf 'DB_PASSWORD=x\nDEFAULT_FROM_EMAIL=dominet@home.local\n' > "$W/ok.env"; chmod 600 "$W/ok.env"
 PATH="$W/bin:$PATH" ENV_FILE="$W/ok.env" CERTS_DIR="$W/nocerts" tools/prod.sh doctor > "$W/out" 2>&1
 ! has "DEFAULT_FROM_EMAIL";                               check "doctor: a sender with a name is not reported" $?
+has "BLOCKING  MEDIAMTX_READ_USER or MEDIAMTX_READ_PASSWORD is empty"; check "doctor: a missing video service account blocks (MediaMTX would refuse the video role)" $?
+printf 'DB_PASSWORD=x\nMEDIAMTX_READ_USER=dominet-video\nMEDIAMTX_READ_PASSWORD=svc-secret-value\n' > "$W/svc.env"; chmod 600 "$W/svc.env"
+PATH="$W/bin:$PATH" ENV_FILE="$W/svc.env" CERTS_DIR="$W/nocerts" tools/prod.sh doctor > "$W/out" 2>&1
+has "OK        MEDIAMTX_READ_USER/PASSWORD set";             check "doctor: a video service account is reported as set" $?
+! grep -q "svc-secret-value" "$W/out";                       check "doctor: the video service password is never shown" $?
 
 stub docker 'case "$*" in
   *" logs "*) echo "error: z2m: Error: network commissioning timed out - most likely network with the same panId";;

@@ -1,27 +1,23 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-# Production and demo MediaMTX (1.21.3). The API (9997), the metrics (9998) and publishing are only accepted from the Docker network
-# and the machine (cameras: MediaMTX pulls their stream, they do not publish); reading (RTSP 8554, WebRTC) is open,
-# ICE addresses announced: MTX_WEBRTCADDITIONALHOSTS (see the compose).
+# Production and demo MediaMTX (1.21.3). Cameras are pulled by MediaMTX (they do not publish); reading (RTSP 8554, WebRTC) needs an
+# account (see below). ICE addresses announced: MTX_WEBRTCADDITIONALHOSTS (see the compose).
 logLevel: info
 logDestinations: [stdout]
 api: true
 apiAddress: :9997
 metrics: yes
 metricsAddress: :9998
-authInternalUsers:
-  - user: any
-    pass:
-    ips: []
-    permissions:
-      - {action: read, path: ""}
-      - {action: playback, path: ""}
-  - user: any
-    pass:
-    ips: ["127.0.0.1", "::1", "172.16.0.0/12", "10.0.0.0/8"]
-    permissions:
-      - {action: publish, path: ""}
-      - {action: api, path: ""}
-      - {action: metrics, path: ""}
+# Authentication (ADR 0064): every read (RTSP, WebRTC) and every publication is decided by DomiNet, which accepts an account's
+# viewing token or personal credential, or the service credential of its own `video` role. `authInternalUsers` is ignored in this mode.
+# The API, the metrics and the profiler skip the HTTP call: DomiNet itself calls the API while it starts (before it can answer)
+# and Prometheus must keep scraping when it is down. Their ports (9997, 9998) are NOT published on the host.
+# `publish` is NOT excluded: the exclusion has no address filter, so it would open publishing to the whole LAN (RTSP 8554 is published).
+authMethod: http
+authHTTPAddress: http://dominet:8000/internal/mediamtx/auth
+authHTTPExclude:
+  - {action: api}
+  - {action: metrics}
+  - {action: pprof}
 rtsp: true
 rtspAddress: :8554
 rtmp: false
