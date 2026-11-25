@@ -34,6 +34,7 @@ async fn require_login(State(state): State<AppState>, req: Request, next: Next) 
         return Redirect::to(&format!("/login?next={encoded}")).into_response();
     }
     let mut res = next.run(Request::from_parts(parts, body)).await;
+    keep_redirect_under_docs(&mut res);
     // Internal documentation: no shared caching.
     if res.status() != StatusCode::NOT_MODIFIED {
         res.headers_mut().insert(
@@ -42,6 +43,27 @@ async fn require_login(State(state): State<AppState>, req: Request, next: Next) 
         );
     }
     res
+}
+
+/// `ServeDir` is nested on `/docs`, so it sees `/fr` and redirects a folder asked without its trailing slash to `/fr/`: outside
+/// the documentation (page not found). Put the prefix back.
+fn keep_redirect_under_docs(res: &mut Response) {
+    if !res.status().is_redirection() {
+        return;
+    }
+    let Some(location) = res
+        .headers()
+        .get(header::LOCATION)
+        .and_then(|v| v.to_str().ok())
+    else {
+        return;
+    };
+    if !location.starts_with('/') || location.starts_with("//") || location.starts_with("/docs") {
+        return;
+    }
+    if let Ok(fixed) = format!("/docs{location}").parse() {
+        res.headers_mut().insert(header::LOCATION, fixed);
+    }
 }
 
 /// Minimal percent-encoding of a path for `?next=` (the non-alphanumeric bytes, except `-_.~`).
