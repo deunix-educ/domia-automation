@@ -4,6 +4,9 @@
 site_name: DomiNet
 site_description: Domotique et videosurveillance auto-hebergees (Rust)
 docs_dir: docs
+# Set by the Dockerfile for the copy served by the application on /docs/ (behind the login): the language switch needs the path, or it
+# points at /fr/ instead of /docs/fr/. Only the path matters; the host is a placeholder (canonical links, unused behind a login).
+site_url: !ENV [DOCS_SITE_URL, null]
 site_dir: target/docs-site
 use_directory_urls: true
 exclude_docs: |

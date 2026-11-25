@@ -54,7 +54,8 @@ COPY requirements-docs.txt ./
 RUN pip install --no-cache-dir -r requirements-docs.txt
 COPY mkdocs.yml DEPLOY.md DEPLOY.fr.md README.md README.fr.md ./
 COPY docs ./docs
-RUN NO_MKDOCS_2_WARNING=1 mkdocs build --strict
+# Served on /docs/: the language switch of the theme needs the path (see mkdocs.yml).
+RUN DOCS_SITE_URL=http://dominet.local/docs/ NO_MKDOCS_2_WARNING=1 mkdocs build --strict
 
 FROM debian:trixie-slim
 LABEL org.opencontainers.image.source="https://github.com/deunix-educ/domia-automation" \
