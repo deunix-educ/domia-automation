@@ -15,6 +15,8 @@ Rien à faire. À l'ouverture d'une vue en direct, la page demande à DomiNet un
 3. **Copiez le mot de passe tout de suite** : il n'est montré qu'une fois et ne peut pas être relu ; seule son empreinte est conservée.
 4. Dans le lecteur, ouvrez `rtsp://<hôte>:8554/<uuid de la caméra>` (la page liste l'adresse de chaque caméra active) et donnez votre **nom d'utilisateur** (celui du compte) et le **mot de passe** de l'appareil.
 
+**Quel lecteur.** `ffplay`, `ffmpeg` et `mpv` fonctionnent (`mpv "rtsp://<utilisateur>:<mot de passe>@<hôte>:8554/<uuid de la caméra>"`). Le **paquet VLC de Debian 13 ne sait pas lire le RTSP du tout**, avec ou sans mot de passe : Debian le compile sans le module `live555`, et VLC se rabat sur un ancien dialecte RTSP que MediaMTX refuse (`invalid SETUP path` dans son journal). Cela a été reproduit sur un MediaMTX sans authentification : cela n'a rien à voir avec cette fonction. Utilisez un autre lecteur, ou VLC en Flatpak (non essayé ici). Les applications du téléphone n'ont pas été essayées non plus.
+
 Créez un mot de passe par appareil. Si un appareil est perdu, **révoquez** son mot de passe : il est refusé dès la prochaine connexion, et les sessions que votre compte a ouvertes sont fermées aussitôt. Un autre de vos appareils, avec son propre mot de passe, se reconnecte tout seul.
 
 La colonne *Dernière utilisation* indique si un mot de passe sert encore avant de le révoquer.

@@ -53,4 +53,4 @@ Option A.
 - **Non exclu de l'appel HTTP** : `publish` (voir Décision). **Exclus** : `api`, `metrics`, `pprof`.
 - **Pile de développement** : son MediaMTX reste ouvert (il tourne dans Docker, DomiNet sur la machine). Le comportement authentifié est couvert par `tools/e2e.sh live_auth` (navigateur, MediaMTX jetable avec la configuration livrée) et par le test ignoré `real_mediamtx_auth` (RTSP, WHEP, coupure de session sur un vrai MediaMTX 1.21.3).
 - **Non fait** : la fermeture des sessions d'un compte désactivé ou supprimé ; un journal d'audit des créations et révocations d'identifiants (elles sont journalisées, sans le secret) ; le port RTSP affiché par la page est celui de la production (8554), celui de la démo est 8555.
-- **Non essayé avec un vrai lecteur** : VLC et les applications du téléphone n'ont pas été essayés ; `ffmpeg` et `curl` en tiennent lieu.
+- **Vrais lecteurs** : `ffplay` lit avec un identifiant personnel. Le paquet VLC de Debian 13 ne sait lire aucun flux RTSP (compilé sans `live555` ; reproduit sans authentification) : VLC n'a donc pas pu servir de test. Les applications du téléphone et VLC en Flatpak n'ont pas été essayés.

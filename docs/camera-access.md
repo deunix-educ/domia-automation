@@ -15,6 +15,8 @@ Nothing to do. When you open a live view, the page asks DomiNet for a **viewing 
 3. **Copy the password now**: it is shown once and cannot be read back; only its fingerprint is stored.
 4. In the player, open `rtsp://<host>:8554/<camera uuid>` (the page lists the address of each active camera) and give your **user name** (the account's) and the **password** of the device.
 
+**Which player.** `ffplay`, `ffmpeg` and `mpv` work (`mpv "rtsp://<user>:<password>@<host>:8554/<camera uuid>"`). The **VLC package of Debian 13 cannot play RTSP at all**, with or without a password: Debian builds it without the `live555` module, so VLC falls back to an old RTSP dialect that MediaMTX refuses (`invalid SETUP path` in its log). This was reproduced against a MediaMTX with no authentication, so it has nothing to do with this feature. Use another player, or the Flatpak build of VLC (not tried here). Phone applications were not tried either.
+
 Create one password per device. If a device is lost, **Revoke** its password: it is refused from the next connection, and the sessions your account has open are closed at once. Another device of yours using its own password reconnects by itself.
 
 The *Last used* column tells you whether a password is still in use before you revoke it.
