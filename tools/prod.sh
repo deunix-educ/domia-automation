@@ -3,7 +3,7 @@
 #
 # Operation of the production stack (R7 lot 6). Called by the `make prod-*` targets; never to be run on a machine you do not
 # want to deploy. Variables: ENV_FILE (default .env), PROJECT (default dominet), CERTS_DIR (default ./certs).
-# Sub-commands: init pull-image compose doctor guard certs export-ca up superuser seed seed-energy health deploy update migrate passwd dump-context backup backups mqtt-user mqtt-del mqtt-users report video log
+# Sub-commands: wg-configure init pull-image compose doctor guard certs export-ca up superuser seed seed-energy health deploy update migrate passwd dump-context backup backups mqtt-user mqtt-del mqtt-users report video log
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -26,11 +26,14 @@ setvar() { # setvar NAME VALUE: replaces or adds NAME=VALUE in the environment f
   fi
 }
 
+# VPN (wg-easy 15): enabled by WG_ADMIN_PASSWORD, or by the WG_ADMIN_HASH of an installation made for wg-easy 14 (a password is then generated).
+vpn_enabled() { [ -n "$(val WG_ADMIN_PASSWORD)" ] || [ -n "$(val WG_ADMIN_HASH)" ]; }
+
 profiles() {
   local p=()
   local zdev; zdev="$(val ZIGBEE_DEVICE)"
   [ -n "$zdev" ] && [ -e "$zdev" ] && p+=(--profile zigbee)
-  [ -n "$(val WG_ADMIN_HASH)" ] && p+=(--profile vpn)
+  vpn_enabled && p+=(--profile vpn)
   [ "${ADMINER:-}" = 1 ] && p+=(--profile adminer)
   [ "${#p[@]}" -eq 0 ] || printf '%s\n' "${p[@]}"
 }
@@ -117,7 +120,7 @@ cmd_init() {
     say "    DOMINET_MASTER_KEY: vide, sera generee par « make prod-deploy » (image construite)"
   fi
   say ""
-  say "  A relire dans $ENV_FILE : EMAIL_* et EMAIL_RECIPIENT (alertes), DYNDNS_HOST + WG_ADMIN_HASH (VPN)."
+  say "  A relire dans $ENV_FILE : EMAIL_* et EMAIL_RECIPIENT (alertes), DYNDNS_HOST + WG_ADMIN_PASSWORD (VPN)."
   say "  SAUVEGARDEZ DOMINET_MASTER_KEY hors de cette machine (sans elle, les secrets chiffres en base sont perdus)."
   say "  Puis : make prod-deploy"
 }
@@ -132,7 +135,7 @@ cmd_guard() {
   for v in LAN_DOMAIN ALLOWED_HOSTS CSRF_TRUSTED_ORIGINS; do
     case "$(val $v)" in *TODO*|"") die "$v non renseigne dans $ENV_FILE";; esac
   done
-  if [ -n "$(val WG_ADMIN_HASH)" ] && [ -z "$(val DYNDNS_HOST)" ]; then die "WG_ADMIN_HASH renseigne mais DYNDNS_HOST vide (VPN)."; fi
+  if vpn_enabled && [ -z "$(val DYNDNS_HOST)" ]; then die "VPN active (WG_ADMIN_PASSWORD) mais DYNDNS_HOST vide."; fi
   local zdev; zdev="$(val ZIGBEE_DEVICE)"
   if [ -n "$zdev" ] && [ -e "$zdev" ] && [ -z "$(val ZIGBEE_AUTH_TOKEN)" ]; then die "dongle $zdev present mais ZIGBEE_AUTH_TOKEN vide."; fi
   if [ -n "$zdev" ] && [ -e "$zdev" ] && [ ! -f "$DEPLOY/zigbee2mqtt/coordinator_backup.json" ] && [ ! -f "$DEPLOY/zigbee2mqtt/database.db" ]; then
@@ -208,11 +211,78 @@ cmd_pull_image() {
   return 1
 }
 
+# wg-easy 15 takes its administrator password in clear on its first start (INIT_PASSWORD). An installation made for version 14 only has
+# WG_ADMIN_HASH: generate one (kept in .env).
+ensure_wg_password() {
+  vpn_enabled || return 0
+  [ -z "$(val WG_ADMIN_PASSWORD)" ] || return 0
+  setvar WG_ADMIN_PASSWORD "$(rand 24)"
+  say "  VPN wg-easy 15 : mot de passe administrateur genere dans $ENV_FILE (WG_ADMIN_PASSWORD), utilisateur admin."
+}
+
+# First configuration of wg-easy 15, through its API (the settings below have no environment variable): once, then it belongs to the
+# administrator. Done only while the firewall rules are still the defaults (those use iptables-legacy, which Docker's nftables
+# ignores, and the device `eth0`). The container has Node and shares the host network: the script runs inside it, nothing to install.
+wg_configure() {
+  vpn_enabled || return 0
+  local nic; nic="$(ip route show default 2>/dev/null | awk '{print $5; exit}')"
+  [ -n "$nic" ] || { say "  VPN : interface reseau par defaut introuvable, regles non configurees (a faire dans l'interface wg-easy)."; return 0; }
+  WG_PASSWORD="$(val WG_ADMIN_PASSWORD)" WG_DEVICE="$nic" compose exec -T -e WG_PASSWORD -e WG_DEVICE wg-easy node - <<'JS' || say "  VPN : configuration automatique non faite (voir docs/deployment.md, section VPN)."
+const base = 'http://127.0.0.1:51821';
+const auth = 'Basic ' + Buffer.from('admin:' + process.env.WG_PASSWORD).toString('base64');
+async function call(path, method = 'GET', body) {
+  const r = await fetch(base + path, { method, headers: { Authorization: auth, 'Content-Type': 'application/json' }, body: body && JSON.stringify(body) });
+  const t = await r.text();
+  if (!r.ok) throw new Error(method + ' ' + path + ' -> ' + r.status);
+  return t ? JSON.parse(t) : {};
+}
+(async () => {
+  let up = false;
+  for (let i = 0; i < 30 && !up; i++) { try { await call('/api/information'); up = true; } catch { await new Promise(r => setTimeout(r, 1000)); } }
+  if (!up) throw new Error('wg-easy does not answer');
+  const hooks = await call('/api/admin/hooks');
+  if (hooks.postUp.includes('iptables-nft')) { console.log('  VPN : deja configure.'); return; }
+  // wg-easy applied its default rules (iptables-legacy) when it first started: remove them, the new hooks only know the nft ones.
+  const before = await call('/api/admin/interface');
+  const { execSync } = require('node:child_process');
+  const legacy = [
+    ['iptables-legacy', '-t nat -D POSTROUTING -s ' + before.ipv4Cidr + ' -o ' + before.device + ' -j MASQUERADE'],
+    ['iptables-legacy', '-D INPUT -p udp -m udp --dport ' + before.port + ' -j ACCEPT'],
+    ['iptables-legacy', '-D FORWARD -i ' + before.name + ' -j ACCEPT'],
+    ['iptables-legacy', '-D FORWARD -o ' + before.name + ' -j ACCEPT'],
+    ['ip6tables-legacy', '-t nat -D POSTROUTING -s ' + before.ipv6Cidr + ' -o ' + before.device + ' -j MASQUERADE'],
+    ['ip6tables-legacy', '-D INPUT -p udp -m udp --dport ' + before.port + ' -j ACCEPT'],
+    ['ip6tables-legacy', '-D FORWARD -i ' + before.name + ' -j ACCEPT'],
+    ['ip6tables-legacy', '-D FORWARD -o ' + before.name + ' -j ACCEPT'],
+  ];
+  // The default hooks may have run more than once (the interface is restarted after the first setup): delete until none is left.
+  for (const [bin, args] of legacy) { for (let i = 0; i < 10; i++) { try { execSync(bin + ' ' + args, { stdio: 'ignore' }); } catch { break; } } }
+  const nft = '/usr/sbin/iptables-nft';
+  const add = [
+    nft + ' -t nat -A POSTROUTING -s {{ipv4Cidr}} -o {{device}} -j MASQUERADE',
+    nft + ' -A INPUT -p udp -m udp --dport {{port}} -j ACCEPT',
+    nft + ' -A FORWARD -i {{interface}} -j ACCEPT',
+    nft + ' -A FORWARD -o {{interface}} -j ACCEPT',
+  ];
+  await call('/api/admin/hooks', 'POST', { preUp: '', postUp: add.join('; '), preDown: '', postDown: add.map(x => x.replace(' -A ', ' -D ')).join('; ') });
+  const itf = await call('/api/admin/interface');
+  for (const k of ['publicKey', 'createdAt', 'updatedAt', 'name']) delete itf[k];
+  itf.device = process.env.WG_DEVICE;
+  await call('/api/admin/interface', 'POST', itf);
+  const uc = await call('/api/admin/userconfig');
+  uc.defaultPersistentKeepalive = 25;
+  await call('/api/admin/userconfig', 'POST', uc);
+  await call('/api/admin/interface/restart', 'POST');
+  console.log('  VPN : regles pare-feu (iptables-nft), interface ' + process.env.WG_DEVICE + ' et keepalive configures.');
+})().catch(e => { console.error('  VPN : ' + e.message); process.exit(1); });
+JS
+}
+
 cmd_up() {
   [ -f "$DEPLOY/zigbee2mqtt/configuration.yaml" ] || { cp "$DEPLOY/zigbee2mqtt/configuration.example.yaml" "$DEPLOY/zigbee2mqtt/configuration.yaml"; say "  zigbee2mqtt/configuration.yaml cree"; }
   local zdev; zdev="$(val ZIGBEE_DEVICE)"
   say "  Zigbee2MQTT : $([ -n "$zdev" ] && [ -e "$zdev" ] && echo "active ($zdev)" || echo "desactive (pas de dongle)")"
-  say "  VPN wg-easy : $([ -n "$(val WG_ADMIN_HASH)" ] && echo active || echo "desactive (WG_ADMIN_HASH vide)")"
+  say "  VPN wg-easy : $(vpn_enabled && echo active || echo "desactive (WG_ADMIN_PASSWORD vide)")"
   [ -f models/yolov8n.onnx ] || make fetch-model
   cmd_pull_image || compose build dominet
   if [ -z "$(val DOMINET_MASTER_KEY)" ]; then
@@ -222,7 +292,9 @@ cmd_up() {
     say "  DOMINET_MASTER_KEY generee dans $ENV_FILE : SAUVEGARDEZ-LA hors de cette machine."
   fi
   ensure_mediamtx_read
+  ensure_wg_password
   compose up -d --wait --wait-timeout 300
+  wg_configure
 }
 
 cmd_superuser() {
@@ -305,6 +377,7 @@ cmd_doctor() {
       *@*) bad "DEFAULT_FROM_EMAIL ends with an IP address: Grafana refuses to start (invalid SMTP from_address). Fix: use a name, for example dominet@dominet.local, then make prod-up." ;;
     esac
     [ -n "$(val DOMINET_MASTER_KEY)" ] && ok "DOMINET_MASTER_KEY set (is it copied off this machine?)" || att "DOMINET_MASTER_KEY is empty"
+    if [ -n "$(val WG_ADMIN_HASH)" ] && [ -z "$(val WG_ADMIN_PASSWORD)" ]; then att "WG_ADMIN_HASH belongs to wg-easy 14: the VPN now uses WG_ADMIN_PASSWORD (generated by make prod-up)."; fi
     if [ -n "$(val MEDIAMTX_READ_USER)" ] && [ -n "$(val MEDIAMTX_READ_PASSWORD)" ]; then ok "MEDIAMTX_READ_USER/PASSWORD set (video decoding account)"
     else bad "MEDIAMTX_READ_USER or MEDIAMTX_READ_PASSWORD is empty: MediaMTX refuses the video role's reads, no image is decoded. Fix: make prod-up (generates them)."; fi
   fi
@@ -451,6 +524,7 @@ case "${1:-}" in
   seed) cmd_seed ;;
   seed-energy) if [ -n "${DRY:-}" ]; then dominet dominet dominet seed-energy --dry-run; else dominet dominet dominet seed-energy; fi ;;
   health) cmd_health ;;
+  wg-configure) wg_configure ;;
   deploy) cmd_deploy ;;
   update) cmd_update ;;
   migrate) dominet dominet dominet migrate ;;

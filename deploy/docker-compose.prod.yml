@@ -108,29 +108,35 @@ services:
       mosquitto: {condition: service_healthy}
     networks: [dominet-net]
 
-  # `vpn` profile: remote access through WireGuard (host network, iptables-nft). Active if WG_ADMIN_HASH is set.
+  # `vpn` profile: remote access through WireGuard, wg-easy 15 (AGPL-3.0), host network. Active if WG_ADMIN_PASSWORD is set.
+  # wg-easy 15 reads these INIT_* values on its FIRST start only; everything else (firewall rules, NAT device, keepalive) is set once by
+  # `tools/prod.sh up` through its API (see wg_configure), then belongs to the administrator (web interface on http://<host>:51821).
   wg-easy:
-    image: ghcr.io/wg-easy/wg-easy:14
+    image: ghcr.io/wg-easy/wg-easy:15
     profiles: [vpn]
     restart: unless-stopped
     network_mode: host
     cap_add: [NET_ADMIN, SYS_MODULE]
+    devices:
+      - /dev/net/tun:/dev/net/tun
     volumes:
-      - wg-easy-data:/etc/wireguard
+      - wg-easy15-data:/etc/wireguard
       - /lib/modules:/lib/modules:ro
     environment:
-      WG_HOST: ${DYNDNS_HOST:-}
-      PASSWORD_HASH: ${WG_ADMIN_HASH:-}
-      WG_DEFAULT_DNS: "1.1.1.1"
-      WG_DEFAULT_ADDRESS: ${WG_DEFAULT_ADDRESS:-10.20.0.x}
-      # Routes sent to the clients: tunnel + LAN to reach DomiNet. Distinct from WG_SUBNET.
-      WG_ALLOWED_IPS: ${WG_ALLOWED_IPS:-10.20.0.0/24}
-      WG_MTU: "1420"
-      WG_PERSISTENT_KEEPALIVE: "25"
-      UI_TRAFFIC_STATS: "true"
-      # iptables-nft (nf_tables) works on all modern kernels, unlike iptables-legacy.
-      WG_POST_UP: "/usr/sbin/iptables-nft -t nat -A POSTROUTING -s ${WG_SUBNET:-10.20.0.0/24} -j MASQUERADE; /usr/sbin/iptables-nft -A FORWARD -i wg0 -j ACCEPT; /usr/sbin/iptables-nft -A FORWARD -o wg0 -j ACCEPT"
-      WG_POST_DOWN: "/usr/sbin/iptables-nft -t nat -D POSTROUTING -s ${WG_SUBNET:-10.20.0.0/24} -j MASQUERADE; /usr/sbin/iptables-nft -D FORWARD -i wg0 -j ACCEPT; /usr/sbin/iptables-nft -D FORWARD -o wg0 -j ACCEPT"
+      # Plain HTTP on the home network (like version 14); put it behind HTTPS before exposing the interface elsewhere.
+      INSECURE: "true"
+      PORT: "51821"
+      INIT_ENABLED: "true"
+      INIT_USERNAME: admin
+      INIT_PASSWORD: ${WG_ADMIN_PASSWORD:-}
+      INIT_HOST: ${DYNDNS_HOST:-}
+      INIT_PORT: "51820"
+      INIT_DNS: ${WG_DEFAULT_DNS:-1.1.1.1}
+      # The IPv4 and IPv6 ranges are applied together (the IPv4 one alone is ignored).
+      INIT_IPV4_CIDR: ${WG_SUBNET:-10.20.0.0/24}
+      INIT_IPV6_CIDR: ${WG_SUBNET6:-fd10:20::/64}
+      # Routes sent to the clients: tunnel + LAN to reach DomiNet.
+      INIT_ALLOWED_IPS: ${WG_ALLOWED_IPS:-10.20.0.0/24}
 
 volumes:
-  wg-easy-data:
+  wg-easy15-data:

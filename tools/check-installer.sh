@@ -166,6 +166,21 @@ PATH="$W/bin:$PATH" ENV_FILE="$W/svc.env" CERTS_DIR="$W/nocerts" tools/prod.sh d
 has "OK        MEDIAMTX_READ_USER/PASSWORD set";             check "doctor: a video service account is reported as set" $?
 ! grep -q "svc-secret-value" "$W/out";                       check "doctor: the video service password is never shown" $?
 
+# VPN (wg-easy 15): the profile follows WG_ADMIN_PASSWORD, or the WG_ADMIN_HASH of an installation made for wg-easy 14.
+stub docker 'echo "ARGS: $*"; exit 0'
+printf 'DB_PASSWORD=x\n' > "$W/vpn0.env"; printf 'DB_PASSWORD=x\nWG_ADMIN_PASSWORD=pw-vpn-secret\n' > "$W/vpn1.env"; printf 'DB_PASSWORD=x\nWG_ADMIN_HASH=oldhash\n' > "$W/vpn2.env"
+for f in vpn0 vpn1 vpn2; do chmod 600 "$W/$f.env"; PATH="$W/bin:$PATH" ENV_FILE="$W/$f.env" CERTS_DIR="$W/nocerts" tools/prod.sh compose ps > "$W/$f.out" 2>&1; done
+! grep -q -- "--profile vpn" "$W/vpn0.out";                  check "vpn: no password, no VPN profile" $?
+grep -q -- "--profile vpn" "$W/vpn1.out";                    check "vpn: WG_ADMIN_PASSWORD enables the VPN profile" $?
+grep -q -- "--profile vpn" "$W/vpn2.out";                    check "vpn: the WG_ADMIN_HASH of an installation for wg-easy 14 keeps the profile" $?
+stub ip 'echo "default via 192.168.1.1 dev testnic proto dhcp"'
+PATH="$W/bin:$PATH" ENV_FILE="$W/vpn1.env" CERTS_DIR="$W/nocerts" tools/prod.sh wg-configure > "$W/wg.out" 2>&1
+grep -q -- "-e WG_PASSWORD" "$W/wg.out";                     check "vpn: the first configuration runs inside the wg-easy container" $?
+! grep -q "pw-vpn-secret" "$W/wg.out";                       check "vpn: the password is not passed on the command line" $?
+rm -f "$W/bin/ip"
+PATH="$W/bin:$PATH" ENV_FILE="$W/vpn2.env" CERTS_DIR="$W/nocerts" tools/prod.sh doctor > "$W/out" 2>&1
+has "WARNING   WG_ADMIN_HASH belongs to wg-easy 14";          check "doctor: warns that the hash is no longer used" $?
+
 stub docker 'case "$*" in
   *" logs "*) echo "error: z2m: Error: network commissioning timed out - most likely network with the same panId";;
 esac; exit 0'
