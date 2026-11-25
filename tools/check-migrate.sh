@@ -21,10 +21,11 @@ ok() { echo "  OK    $1"; }
 ko() { echo "  FAIL  $1"; fails=$((fails + 1)); }
 check() { if eval "$2" >/dev/null 2>&1; then ok "$1"; else ko "$1"; fi; }
 rand() { head -c 24 /dev/urandom | base64 | tr -dc 'A-Za-z0-9' | head -c 24; }
-PASS="rehearsal-passphrase-$(rand)"; ADMIN_PW="Admin-$(rand)"
+PASS="rehearsal-passphrase-$(rand)"; ADMIN_PW="Admin-$(rand)"; WG_PW="Wg-$(rand)"
 
 docker image inspect "$IMAGE" >/dev/null 2>&1 || { echo "image $IMAGE missing (make image)" >&2; exit 2; }
 if docker ps --format '{{.Ports}}' | grep -q ':8189->'; then echo "port 8189 is taken (make dev-down first)" >&2; exit 2; fi
+if ss -ltun 2>/dev/null | grep -qE ':(51820|51821) '; then echo "ports 51820/51821 are taken (the VPN of the rehearsal uses the host network)" >&2; exit 2; fi
 
 mkdir -p "$W/certs-src" "$W/certs-dst" "$W/z2m-src" "$W/z2m-dst" "$W/caroot-src" "$W/caroot-dst" "$W/out"
 # A throw-away mkcert authority (created, never installed) and a certificate for localhost.
@@ -50,6 +51,8 @@ GRAFANA_PASSWORD=$(rand)
 ZIGBEE_AUTH_TOKEN=$(rand)
 EMAIL_RECIPIENT=controle@example.org
 DOMINET_MASTER_KEY=$MK
+DYNDNS_HOST=mig.test.invalid
+WG_ADMIN_PASSWORD=$WG_PW
 ZIGBEE_DEVICE=
 VIDEO_DEVICE=
 RENDER_GID=
@@ -80,7 +83,7 @@ rs() { # rs PROJECT ENVFILE put|get NAME [BODY] : raw HTTP to ReductStore from i
 cleanup() {
   if [ -n "${KEEP:-}" ]; then echo "kept: projects $SRC and $DST, folder $W"; return; fi
   for p in "$SRC:$W/src.env" "$DST:$W/dst.env"; do
-    [ -f "${p#*:}" ] && docker compose -p "${p%%:*}" --env-file "${p#*:}" -f deploy/docker-compose.yml -f deploy/docker-compose.prod.yml down -v --remove-orphans >/dev/null 2>&1
+    [ -f "${p#*:}" ] && docker compose -p "${p%%:*}" --env-file "${p#*:}" -f deploy/docker-compose.yml -f deploy/docker-compose.prod.yml --profile vpn down -v --remove-orphans >/dev/null 2>&1
   done
   docker run --rm -v "$W:/w" --entrypoint sh debian:trixie-slim -c "rm -rf /w/*" >/dev/null 2>&1
   rm -rf "$W"
@@ -96,6 +99,12 @@ as_src tools/prod.sh seed >/dev/null 2>&1
 psql_ $SRC "$W/src.env" "INSERT INTO location (name, description) VALUES ('Salon', 'Pièce « principale » — étage 1')" >/dev/null
 NAME=linkytest PASSWORD="mqtt-$(rand)" TOPIC='linky/#' as_src tools/prod.sh mqtt-user >/dev/null 2>&1
 check "MQTT account created" "as_src tools/prod.sh mqtt-users | grep -q linkytest"
+wgapi() { curl -fs -u "admin:$WG_PW" "$@"; }   # wg-easy 15 API (host network, Basic authentication)
+wgkey() { wgapi http://127.0.0.1:51821/api/admin/interface | grep -o '"publicKey":"[^"]*"'; }
+wgapi -H 'Content-Type: application/json' -d '{"name":"migtest-phone","expiresAt":null}' http://127.0.0.1:51821/api/client >/dev/null 2>&1
+check "VPN client created in wg-easy" "wgapi http://127.0.0.1:51821/api/client | grep -q migtest-phone"
+WGKEY_SRC="$(wgkey)"
+check "VPN server key read" "[ -n '$WGKEY_SRC' ]"
 RECORD="record-$(rand)"
 rs $SRC "$W/src.env" put entry1 "$RECORD" >/dev/null 2>&1
 check "ReductStore record written and read back" "[ \"\$(rs $SRC $W/src.env get entry1)\" = \"$RECORD\" ]"
@@ -110,13 +119,14 @@ ARCH="$(ls "$W"/out/dominet-migration-*.tar 2>/dev/null | head -1)"
 check "one archive and its checksum" "[ -s '$ARCH' ] && [ -s '$ARCH.sha256' ]"
 check "the archive contains no readable secret (.env, master key, CA key)" "! tar xOf '$ARCH' . 2>/dev/null | grep -aq '$MK' && ! tar xOf '$ARCH' . 2>/dev/null | grep -aq 'PRIVATE KEY'"
 check "verify with the right passphrase" "as_dst tools/migrate-pack.sh verify '$ARCH'"
+check "verify reports the VPN data" "as_dst tools/migrate-pack.sh verify '$ARCH' | grep -q 'administrator, settings and keys'"
 check "verify refuses a wrong passphrase" "! PP=wrong-passphrase-0000 as_dst tools/migrate-pack.sh verify '$ARCH'"
 cp "$ARCH" "$W/damaged.tar"; cp "$ARCH.sha256" "$W/damaged.tar.sha256"; sed -i "s/  .*/  damaged.tar/" "$W/damaged.tar.sha256"
 printf 'X' | dd of="$W/damaged.tar" bs=1 seek=2000 conv=notrunc 2>/dev/null
 check "verify refuses a damaged archive" "! as_dst tools/migrate-pack.sh verify '$W/damaged.tar'"
 
 echo "== stopping the source (frees the ports)"
-docker compose -p $SRC --env-file "$W/src.env" -f deploy/docker-compose.yml -f deploy/docker-compose.prod.yml down -v --remove-orphans >/dev/null 2>&1
+docker compose -p $SRC --env-file "$W/src.env" -f deploy/docker-compose.yml -f deploy/docker-compose.prod.yml --profile vpn down -v --remove-orphans >/dev/null 2>&1
 check "source stack gone, its volumes with it" "[ -z \"\$(docker volume ls -q --filter name=${SRC}_)\" ]"
 
 echo "== target machine (project $DST), empty"
@@ -142,6 +152,9 @@ check "mkcert authority key restored (devices keep trusting)" "cmp $W/caroot-src
 check "certificate present and signed by that authority" "openssl verify -CAfile $W/caroot-dst/rootCA.pem $W/certs-dst/cert.pem"
 check "ZIGBEE_DEVICE is empty (no dongle here)" "[ -z \"\$(grep '^ZIGBEE_DEVICE=' $W/dst.env | cut -d= -f2)\" ]"
 check "the application answers over HTTPS" "curl -fsk --resolve localhost:$HTTPS:127.0.0.1 https://localhost:$HTTPS/healthz"
+check "VPN: same server key" "[ \"\$(wgkey)\" = \"\$WGKEY_SRC\" ]"
+check "VPN: the client survived" "wgapi http://127.0.0.1:51821/api/client | grep -q migtest-phone"
+check "VPN: same administrator password, firewall rules kept" "wgapi http://127.0.0.1:51821/api/admin/hooks | grep -q iptables-nft"
 check "make prod-doctor has nothing blocking" "as_dst tools/prod.sh doctor"
 
 echo "== an existing installation is not overwritten"

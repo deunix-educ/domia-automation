@@ -55,6 +55,7 @@ decrypt() { MIGRATE_PASS="$PASS" openssl enc -d -aes-256-cbc -pbkdf2 -iter 60000
 # Archive of a Docker volume (or a host folder) read as root, written to stdout.
 vol_tar() { docker run --rm --user 0 -v "$1:/v:ro" --entrypoint tar "$(tag)" czf - -C /v . ; }
 vol_untar() { docker run --rm -i --user 0 -v "$1:/v" --entrypoint tar "$(tag)" xzf - -C /v ; }
+vol_wipe() { docker run --rm --user 0 -v "$1:/v" --entrypoint sh "$(tag)" -c 'find /v -mindepth 1 -delete' ; }
 vol_name() { echo "${PROJECT}_$1"; }
 
 # ------------------------------------------------------------------------------------------------------------ export
@@ -115,8 +116,10 @@ cmd_export() {
   mkdir -p "$S/mosquitto-accounts"
   compose cp mosquitto:/mosquitto/accounts/. "$S/mosquitto-accounts" >/dev/null 2>&1 || say "       (no MQTT accounts folder found)"
   local has_vpn=0 has_graf=0
-  if [ -n "$(val WG_ADMIN_HASH)" ] && docker volume inspect "$(vol_name wg-easy-data)" >/dev/null 2>&1; then
-    vol_tar "$(vol_name wg-easy-data)" > "$S/wg-easy-data.tgz"; has_vpn=1
+  # wg-easy 15: administrator, settings (firewall hooks, device), server keys and clients are in this volume. The wg-easy 14 volume
+  # (wg-easy-data) has another format and is not exported.
+  if docker volume inspect "$(vol_name wg-easy15-data)" >/dev/null 2>&1; then
+    vol_tar "$(vol_name wg-easy15-data)" > "$S/wg-easy15-data.tgz"; has_vpn=1
   fi
   if [ "$grafana" = 1 ]; then vol_tar "$(vol_name grafana-data)" > "$S/grafana-data.tgz"; has_graf=1; fi
 
@@ -143,6 +146,7 @@ cmd_export() {
     echo "has_zigbee=$has_z2m"
     echo "has_mkcert_ca=$has_ca"
     echo "has_vpn=$has_vpn"
+    echo "vpn_format=15"
     echo "has_grafana=$has_graf"
     (cd "$P" && find . -type f ! -name MANIFEST | sort | while read -r f; do echo "sha256 $(sha "$f") ${f#./}"; done)
   } > "$P/MANIFEST"
@@ -207,7 +211,7 @@ summary() { # summary PACKDIR SECRETSDIR
   say "  ReductStore       $([ "$(mf has_reductstore "$p")" = 1 ] && echo included || echo "not included")"
   say "  Zigbee2MQTT       $([ "$(mf has_zigbee "$p")" = 1 ] && echo "included (pairing kept), dongle was $(mf zigbee_device "$p")" || echo "not included")"
   say "  mkcert authority  $([ "$(mf has_mkcert_ca "$p")" = 1 ] && echo "included (devices keep trusting it)" || echo "not included")"
-  say "  VPN keys          $([ "$(mf has_vpn "$p")" = 1 ] && echo included || echo "not included")"
+  say "  VPN (wg-easy)     $(if [ "$(mf has_vpn "$p")" != 1 ]; then echo "not included"; elif [ "$(mf vpn_format "$p")" = 15 ]; then echo "included (administrator, settings and keys)"; else echo "included in the wg-easy 14 format: will NOT be restored (wg-easy 15 starts empty)"; fi)"
   [ -n "$s" ] || true
 }
 
@@ -349,7 +353,15 @@ cmd_import() {
     compose cp "$S/mosquitto-accounts/." mosquitto:/mosquitto/accounts >/dev/null
     compose restart mosquitto >/dev/null 2>&1; say "       MQTT accounts restored"
   fi
-  [ ! -f "$S/wg-easy-data.tgz" ] || { vol_untar "$(vol_name wg-easy-data)" < "$S/wg-easy-data.tgz"; say "       VPN keys restored"; }
+  if [ -f "$S/wg-easy15-data.tgz" ]; then
+    # The stack just started wg-easy on an empty volume: stop it, empty the volume (a SQLite file next to leftovers of another would be
+    # corrupt), restore. The restart in 6/6 brings it back; its first configuration is already in the restored settings.
+    compose stop wg-easy >/dev/null 2>&1 || true
+    vol_wipe "$(vol_name wg-easy15-data)"
+    vol_untar "$(vol_name wg-easy15-data)" < "$S/wg-easy15-data.tgz"; say "       VPN restored (administrator, settings, keys, clients)"
+  elif [ -f "$S/wg-easy-data.tgz" ]; then
+    say "       The archive holds wg-easy 14 VPN data: not restored (wg-easy 15 starts empty; the clients must be created again)."
+  fi
   [ ! -f "$S/grafana-data.tgz" ] || { vol_untar "$(vol_name grafana-data)" < "$S/grafana-data.tgz"; say "       Grafana data restored"; }
 
   say "  5/6  Database$([ "$skip_rs" = 0 ] && [ "$(mf has_reductstore "$P")" = 1 ] && echo " and ReductStore")"
