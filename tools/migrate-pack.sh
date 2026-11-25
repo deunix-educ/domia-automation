@@ -316,7 +316,8 @@ cmd_import() {
       if [ -f "$root/rootCA-key.pem" ] && ! cmp -s "$root/rootCA.pem" "$S/mkcert-ca/rootCA.pem"; then
         say "       This machine already has another mkcert authority: kept (devices will have to trust it)."
       else
-        cp "$S/mkcert-ca/rootCA.pem" "$S/mkcert-ca/rootCA-key.pem" "$root/"; chmod 600 "$root/rootCA-key.pem"
+        # mkcert keeps its key read-only (0400): -f replaces it, as plain cp would fail when the same authority is already here.
+        cp -f "$S/mkcert-ca/rootCA.pem" "$S/mkcert-ca/rootCA-key.pem" "$root/"; chmod 600 "$root/rootCA-key.pem"
         say "       mkcert authority restored in $root (devices keep trusting it)"
       fi
     else
@@ -354,6 +355,12 @@ cmd_import() {
   say "  5/6  Database$([ "$skip_rs" = 0 ] && [ "$(mf has_reductstore "$P")" = 1 ] && echo " and ReductStore")"
   local pgf rsf; pgf="$(basename "$(ls "$P"/postgres/*.sql.gz | head -1)")"
   compose stop dominet dominet-discovery >/dev/null 2>&1 || true
+  # The empty database was migrated to THIS version: a table the archive does not know (a newer migration) would block the dump's
+  # `DROP ... IF EXISTS` through its foreign keys. Start from an empty schema; the dump recreates everything (and the migrations
+  # missing from the archive are applied after it).
+  local dbu dbn; dbu="$(val DB_USER)"; dbn="$(val DB_NAME)"
+  compose exec -T postgres psql -X -q -v ON_ERROR_STOP=1 -U "${dbu:-dominet}" -d "${dbn:-dominet}" \
+    -c 'DROP SCHEMA public CASCADE; CREATE SCHEMA public;' >/dev/null || die "cannot empty the database before the restore"
   # `docker cp` keeps the owner-only mode of the unpacked files; the application runs as another user and must read them.
   chmod -R a+rX "$P/postgres" "$P/reductstore" 2>/dev/null || true
   compose cp "$P/postgres/." dominet:/backups/postgres >/dev/null
