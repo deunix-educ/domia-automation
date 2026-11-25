@@ -40,9 +40,9 @@ Du code GPL-3.0-or-later peut être inclus dans une œuvre AGPL-3.0-or-later (l'
 | `nginx:1.27-alpine` | BSD-2-Clause | connu |
 | `koenkk/zigbee2mqtt:2.1.1` (facultatif) | GPL-3.0 | **vérifié** |
 | `adminer:4.8.1` (facultatif) | Apache-2.0 ou GPL-2.0 | connu |
-| `ghcr.io/wg-easy/wg-easy:14` (VPN facultatif) | **CC BY-NC-SA 4.0 (non commercial)** jusqu'à la version 14, AGPL-3.0 à partir de la version 15 | **vérifié** à la source le 2026-11-23 : le fichier `LICENSE` du tag v14.0.0 est CC BY-NC-SA 4.0, celui du tag v15.0.0 et de `master` est le texte AGPL-3.0 |
+| `ghcr.io/wg-easy/wg-easy:15` (VPN facultatif) | AGPL-3.0 (la version 14 et les précédentes étaient **CC BY-NC-SA 4.0, non commerciales**) | **vérifié** à la source le 2026-11-23 : le fichier `LICENSE` du tag v14.0.0 est CC BY-NC-SA 4.0, celui du tag v15.0.0 et de `master` est le texte AGPL-3.0 |
 
-**Point à trancher avant de recommander le profil VPN** : la version 14 de wg-easy, que `docker-compose.prod.yml` épingle, est réservée à un usage non commercial (CC BY-NC-SA 4.0, constaté dans son fichier `LICENSE`). Pour une installation domestique c'est acceptable, mais le projet ne doit pas la présenter comme librement utilisable par des entreprises. Passer à la version 15 (AGPL-3.0) demande un changement de configuration et un essai ; c'est listé dans [À améliorer](to-improve.md).
+**Profil VPN.** Il utilise wg-easy 15 (AGPL-3.0, comme DomiNet) depuis l'[ADR 0065](adr/0065-wg-easy-15.fr.md) ; la version 14, réservée à un usage non commercial, n'est plus utilisée ni recommandée.
 
 ## Services externes
 

@@ -23,7 +23,7 @@ It checks architecture, Docker and Compose (2.24 or newer), disk space, **ports 
 ## 3. Initialise and review the configuration
 ```bash
 make prod-init       # creates .env (mode 600): generated secrets, detected name and address, detected dongle
-$EDITOR .env         # review: EMAIL_* and EMAIL_RECIPIENT (alerts), LAN_DOMAIN, optionally DYNDNS_HOST + WG_ADMIN_HASH (VPN)
+$EDITOR .env         # review: EMAIL_* and EMAIL_RECIPIENT (alerts), LAN_DOMAIN, optionally DYNDNS_HOST + WG_ADMIN_PASSWORD (VPN)
 make prod-guard      # refuses an empty .env or one left at defaults
 ```
 `make prod-init` prints the Grafana password: note it. **It refuses to overwrite an existing `.env`.** The detected host name must be the one your devices use (`LAN_DOMAIN`).

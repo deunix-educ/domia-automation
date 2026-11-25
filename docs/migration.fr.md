@@ -12,7 +12,8 @@ Une seule archive porte tout : la base, la vidéo et l'historique (ReductStore) 
 | L'autorité mkcert (clé comprise) et le certificat | partie chiffrée | **les appareils continuent de faire confiance à la nouvelle machine**, rien à réinstaller |
 | Dossier Zigbee2MQTT | partie chiffrée | l'appairage est conservé, aucun appareil à réappairer |
 | Comptes MQTT de vos clients du LAN | partie chiffrée | |
-| Clés du VPN, données Grafana | partie chiffrée | Grafana seulement avec `--with-grafana` |
+| VPN (wg-easy 15 : administrateur, réglages, clés du serveur, appareils) | partie chiffrée | une archive au format de wg-easy 14 est signalée et non restaurée (le VPN repart vide) |
+| Données Grafana | partie chiffrée | seulement avec `--with-grafana` |
 
 Non repris : les enregistrements en cours (le volume `recordings` contient des fragments pas encore archivés), les journaux des conteneurs et les images Docker elles-mêmes (la nouvelle machine les télécharge ou les construit).
 

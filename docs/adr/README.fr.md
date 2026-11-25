@@ -69,5 +69,6 @@ anglaise. Un ADR remplacé n'est pas supprimé : son statut renvoie vers celui q
 | [0062](0062-published-images-with-local-build-fallback.md) | Images multi-architecture publiées, construction locale en repli | accepté |
 | [0063](0063-arm64-support-levels.md) | arm64 et Raspberry Pi 5 : prise en charge au mieux, état de test explicite | accepté |
 | [0064](0064-authenticated-camera-viewing.md) | Visionnage des caméras authentifié : MediaMTX interroge DomiNet, jetons de visionnage par compte, identifiants de flux personnels | implémenté |
+| [0065](0065-wg-easy-15.fr.md) | VPN : wg-easy 15 (AGPL-3.0) en réseau hôte, première configuration par son API | implémenté |
 
 Décisions prises hors ADR (voir `PROJECT_CONTEXT.md`) : langues, toolchain épinglée, thème sombre seul, migrations par commande séparée, Mosquitto anonyme.

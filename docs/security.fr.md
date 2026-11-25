@@ -11,7 +11,7 @@ DomiNet est conçu pour **un réseau domestique que vous maîtrisez**. Cette pag
 | 8554 | RTSP (MediaMTX) | le LAN | **un compte est nécessaire** : MediaMTX interroge DomiNet avant chaque lecture ([Accès aux caméras](camera-access.md)) |
 | 8189 (udp, tcp) | média WebRTC (MediaMTX) | le LAN | autorisé au démarrage de la vue par le navigateur (jeton), pas sur le média lui-même : ne le redirigez jamais |
 | 8080 | interface de Zigbee2MQTT (seulement avec une clé) | le LAN | jeton d'accès (`ZIGBEE_AUTH_TOKEN`) |
-| 51820 (udp) et l'interface wg-easy | profil VPN facultatif | Internet si vous le redirigez | clés WireGuard ; l'interface web est protégée par `WG_ADMIN_HASH` |
+| 51820 (udp) et l'interface wg-easy | profil VPN facultatif | Internet si vous le redirigez | clés WireGuard ; l'interface web est protégée par `WG_ADMIN_PASSWORD` (HTTP simple : gardez le port 51821 sur le réseau domestique) |
 | 5432 | PostgreSQL | cette machine seulement (`127.0.0.1`) | mot de passe |
 | 8181 | Adminer (profil facultatif) | cette machine seulement (`127.0.0.1`) | mot de passe de la base |
 | 9997, 9998, 9100, Prometheus, port propre de Grafana | API internes et métriques | le réseau Docker seulement | non publiés (l'API et les métriques de MediaMTX échappent à son authentification pour cette raison) |
@@ -35,7 +35,7 @@ Ce que cela ne fait pas : la vidéo n'est pas chiffrée de bout en bout en RTSP,
 ## Liste de contrôle pour une installation sûre
 
 1. Installez sur une machine joignable seulement depuis votre LAN ; ne redirigez pas les ports 80, 443, 1883, 8554, 8189 ou 8080 sur la box.
-2. Pour l'accès à distance, utilisez le profil WireGuard (un seul port UDP) ou votre propre VPN, avec un `WG_ADMIN_HASH` robuste.
+2. Pour l'accès à distance, utilisez le profil WireGuard (un seul port UDP) ou votre propre VPN, avec un `WG_ADMIN_PASSWORD` robuste (et ne redirigez pas le port 51821).
 3. Gardez `.env` et les archives de migration privés (ils contiennent des clés) ; rangez `DOMINET_MASTER_KEY` dans un gestionnaire de mots de passe.
 4. Installez l'autorité de certification sur vos appareils (`/dominet-ca.crt`) plutôt que de passer outre les avertissements du navigateur.
 5. Mettez à jour régulièrement avec `make prod-update` ; lisez les notes de version (`CHANGELOG.md`).

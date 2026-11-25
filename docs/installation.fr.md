@@ -23,7 +23,7 @@ Il contrôle l'architecture, Docker et Compose (2.24 ou plus), l'espace disque, 
 ## 3. Initialiser et relire la configuration
 ```bash
 make prod-init       # crée .env (droits 600) : secrets générés, nom et adresse détectés, dongle détecté
-$EDITOR .env         # à relire : EMAIL_* et EMAIL_RECIPIENT (alertes), LAN_DOMAIN, éventuellement DYNDNS_HOST + WG_ADMIN_HASH (VPN)
+$EDITOR .env         # à relire : EMAIL_* et EMAIL_RECIPIENT (alertes), LAN_DOMAIN, éventuellement DYNDNS_HOST + WG_ADMIN_PASSWORD (VPN)
 make prod-guard      # refuse un .env vide ou resté aux valeurs par défaut
 ```
 `make prod-init` affiche le mot de passe Grafana : notez-le. **Il refuse d'écraser un `.env` existant.** Le nom d'hôte détecté doit être celui que vos appareils utilisent (`LAN_DOMAIN`).

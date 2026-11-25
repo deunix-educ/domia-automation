@@ -16,9 +16,6 @@ Maintenance
 - Measure a backup on a database of realistic size, and the *stress* video scenario on the Raspberry Pi 5.
 - Document the local name (`dominet.local`) on a home network: avahi must announce on the LAN interface only (`allow-interfaces=`), otherwise a Docker bridge address is advertised; a name already taken gives `dominet-2.local`; some ISP boxes cannot change the DNS.
 
-Licences and attributions
-- wg-easy: licences verified (14 is non-commercial, 15 is AGPL-3.0); move the VPN profile to 15 (configuration changes) and test it.
-
 Code
 
 Ideas, not decided

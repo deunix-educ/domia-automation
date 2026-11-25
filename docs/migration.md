@@ -12,7 +12,8 @@ One archive carries everything: the database, the video and history (ReductStore
 | The mkcert authority (key included) and the certificate | encrypted part | **devices keep trusting the new machine**, nothing to reinstall |
 | Zigbee2MQTT folder | encrypted part | the pairing is kept, no device to pair again |
 | MQTT accounts of your LAN clients | encrypted part | |
-| VPN keys, Grafana data | encrypted part | Grafana only with `--with-grafana` |
+| VPN (wg-easy 15: administrator, settings, server keys, devices) | encrypted part | an archive made with the wg-easy 14 format is reported and not restored (the VPN starts empty) |
+| Grafana data | encrypted part | only with `--with-grafana` |
 
 Not moved: live recordings in progress (the `recordings` volume holds fragments not yet archived), container logs, and the Docker images themselves (the new machine pulls or builds them).
 

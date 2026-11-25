@@ -22,6 +22,5 @@ Proposed method: a single CSS pass (`crates/dominet-web/style/main.css`) then re
 - **Example data in configuration schemas** (names such as "Fermeture du soir") and the French aliases accepted for configuration kinds (`regle_d_alerte`…) stay as they help a French-speaking model.
 
 ## Licences follow-ups
-- **wg-easy**: version 14 (pinned for the optional VPN) is non-commercial (CC BY-NC-SA 4.0) and version 15 is AGPL-3.0, both verified at the source on 2026-11-23; version 15 is a rewrite. Move to 15 (configuration, `wgpw` command in `DEPLOY.md`) and test the VPN profile. See [Licences](licenses.md).
 - **Re-read the pinned tags** (`reduct/store:v1.21.5` and the other images marked "known") before the first public release.
 

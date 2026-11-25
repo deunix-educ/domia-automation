@@ -28,7 +28,7 @@ make prod-deploy    # certificats, construction, démarrage, administrateur, don
 | Variable | Rôle |
 |---|---|
 | `EMAIL_HOST`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`, `EMAIL_RECIPIENT`, `DEFAULT_FROM_EMAIL` | alertes par courriel (application **et** Grafana). Sans `EMAIL_RECIPIENT`, les alertes Grafana n'ont pas de destinataire |
-| `DYNDNS_HOST`, `WG_ADMIN_HASH` | VPN WireGuard (profil `vpn`), voir §5 |
+| `DYNDNS_HOST`, `WG_ADMIN_PASSWORD` | VPN WireGuard (profil `vpn`), voir §5 |
 | `MQTT_USER`, `MQTT_PASSWORD` | compte interne MQTT (DomiNet, Zigbee2MQTT), généré par `prod-init`. **Jamais d'accès anonyme** : chaque client du LAN a son compte (§ 7) |
 | `VIDEO_DEVICE`, `RENDER_GID` | décodage vidéo **matériel** (VAAPI, Intel) : écrits par `prod-init` si `/dev/dri/renderD128` existe ; sur une installation existante, `make prod-video` puis `make prod-up`. Sans eux, le décodage est logiciel (environ trois fois plus de processeur par caméra, voir `docs/R6-mesures.md`) |
 | `DOMINET_MASTER_KEY` | chiffre les secrets en base (mots de passe de caméras). Générée au premier déploiement si vide. **À copier hors de la machine** : sans elle, une restauration perd ces secrets |
@@ -60,7 +60,14 @@ La sauvegarde échouée annule la mise à jour. Les migrations sont rejouées pa
 
 ## 5. Accès extérieur — VPN WireGuard (facultatif)
 
-Renseigner `DYNDNS_HOST` (nom public de la box) et `WG_ADMIN_HASH` (mot de passe de l'interface wg-easy : `docker run --rm ghcr.io/wg-easy/wg-easy:14 wgpw 'motdepasse'`, en doublant les `$` dans `.env`), rediriger UDP 51820 sur la box, puis `make prod-up`. Le profil `vpn` n'est activé que si `WG_ADMIN_HASH` est renseigné. wg-easy est en réseau hôte (`iptables-nft`) ; interface sur le port 51821. Ajoutez au besoin les adresses du tunnel à `WEBRTC_ADDITIONAL_HOSTS` et à `CERT_EXTRA_SANS` (puis `make certs`).
+Renseigner `DYNDNS_HOST` (nom public de la box) et `WG_ADMIN_PASSWORD` (mot de passe de l'interface web de wg-easy, utilisateur `admin`), rediriger UDP 51820 sur la box, puis `make prod-up`. Le profil `vpn` n'est activé que si `WG_ADMIN_PASSWORD` est renseigné. Le VPN est wg-easy 15 (AGPL-3.0) en réseau hôte ; son interface est sur le port 51821, en HTTP simple : gardez-la sur votre réseau domestique et ne redirigez pas ce port.
+
+- **Première configuration.** `make prod-up` règle une seule fois, par l'API de wg-easy, les règles du pare-feu (`iptables-nft`), l'interface réseau utilisée pour la traduction d'adresses (celle par défaut de la machine) et le keepalive (25 s). Ensuite les réglages vous appartiennent : modifiez-les dans l'interface de wg-easy, `make prod-up` n'y touche plus (`tools/prod.sh wg-configure` rejoue la vérification).
+- **Lus une seule fois.** Le mot de passe administrateur, les adresses du tunnel (`WG_SUBNET`, `WG_SUBNET6`), le DNS (`WG_DEFAULT_DNS`) et les routes envoyées aux appareils (`WG_ALLOWED_IPS`) ne sont lus qu'au premier démarrage de wg-easy. Changez-les ensuite dans son interface.
+- **Appareils.** Créez un appareil par téléphone ou ordinateur dans l'interface, puis scannez son code QR ou importez son fichier dans l'application WireGuard.
+- **Mise à jour d'une installation faite pour wg-easy 14.** `WG_ADMIN_HASH` n'est plus utilisé. Le premier `make prod-up` génère `WG_ADMIN_PASSWORD` dans `.env` (`grep '^WG_ADMIN_PASSWORD' .env`) et démarre wg-easy 15 sur un volume neuf et vide (`wg-easy15-data`) : les appareils créés avec la 14 sont à recréer. L'ancien volume `wg-easy-data` reste en place ; vous pouvez le supprimer (`docker volume rm <projet>_wg-easy-data`) quand vous n'en avez plus besoin.
+
+Ajoutez au besoin les adresses du tunnel à `WEBRTC_ADDITIONAL_HOSTS` et à `CERT_EXTRA_SANS` (puis `make certs`).
 
 ## 6. Sauvegardes et restauration
 

@@ -68,5 +68,6 @@ Format: `0000-template.md` (context, options, decision, consequences). A superse
 | [0062](0062-published-images-with-local-build-fallback.md) | Published multi-architecture images, local build as the fallback | accepted |
 | [0063](0063-arm64-support-levels.md) | arm64 and Raspberry Pi 5: best-effort support with explicit test status | accepted |
 | [0064](0064-authenticated-camera-viewing.md) | Authenticated camera viewing: MediaMTX asks DomiNet, per-account viewing tokens, personal stream credentials | implemented |
+| [0065](0065-wg-easy-15.md) | VPN: wg-easy 15 (AGPL-3.0) in host network, first configuration through its API | implemented |
 
 Decisions taken outside ADRs: languages, pinned toolchain, dark theme only, migrations by a separate command.

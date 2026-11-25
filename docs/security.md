@@ -11,7 +11,7 @@ DomiNet is designed for **a home network you control**. This page says what is p
 | 8554 | RTSP (MediaMTX) | the LAN | **an account is needed**: MediaMTX asks DomiNet before every read ([Camera access](camera-access.md)) |
 | 8189 (udp, tcp) | WebRTC media (MediaMTX) | the LAN | authorised when the browser starts the view (token), not on the media itself: never forward it |
 | 8080 | Zigbee2MQTT interface (only with a dongle) | the LAN | access token (`ZIGBEE_AUTH_TOKEN`) |
-| 51820 (udp) and the wg-easy interface | optional VPN profile | the Internet if you forward it | WireGuard keys; the web interface is protected by `WG_ADMIN_HASH` |
+| 51820 (udp) and the wg-easy interface | optional VPN profile | the Internet if you forward it | WireGuard keys; the web interface is protected by `WG_ADMIN_PASSWORD` (plain HTTP: keep port 51821 on the home network) |
 | 5432 | PostgreSQL | this machine only (`127.0.0.1`) | password |
 | 8181 | Adminer (optional profile) | this machine only (`127.0.0.1`) | database password |
 | 9997, 9998, 9100, Prometheus, Grafana's own port | internal APIs and metrics | the Docker network only | not published (MediaMTX's API and metrics skip its authentication for that reason) |
@@ -35,7 +35,7 @@ What this does not do: the video itself is not encrypted end to end over RTSP, W
 ## Checklist for a safe installation
 
 1. Install on a machine reachable only from your LAN; do not forward ports 80, 443, 1883, 8554, 8189 or 8080 on the router.
-2. For remote access use the WireGuard profile (one UDP port) or your own VPN, with a strong `WG_ADMIN_HASH`.
+2. For remote access use the WireGuard profile (one UDP port) or your own VPN, with a strong `WG_ADMIN_PASSWORD` (and do not forward port 51821).
 3. Keep `.env` and the migration archives private (they hold keys); keep `DOMINET_MASTER_KEY` in a password manager.
 4. Install the certificate authority on your devices (`/dominet-ca.crt`) rather than clicking through browser warnings.
 5. Update with `make prod-update` regularly; read the release notes (`CHANGELOG.md`).

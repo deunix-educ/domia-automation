@@ -15,9 +15,9 @@ ReductStore for raw history, PostgreSQL for current state and aggregates; one re
 ADR: [0002](adr/0002-iot-storage.md), [0018](adr/0018-dashboard-schema.md), [0025](adr/0025-device-schema.md), [0028](adr/0028-mqtt-sources-and-raw-archive.md), [0011](adr/0011-secrets-encryption.md), [0054](adr/0054-backups.md).
 
 ### Security and access
-Server-side sessions with argon2id; a nonce-based CSP; MQTT with one authenticated listener and per-client accounts; hashed, scoped, revocable MCP tokens with an audit trail; camera viewing authorised by DomiNet (viewing token in the browser, personal revocable password for external players).
+Server-side sessions with argon2id; a nonce-based CSP; MQTT with one authenticated listener and per-client accounts; hashed, scoped, revocable MCP tokens with an audit trail; camera viewing authorised by DomiNet (viewing token in the browser, personal revocable password for external players). The optional VPN is wg-easy 15 (AGPL-3.0), set up once through its API.
 
-ADR: [0004](adr/0004-auth-sessions.md), [0016](adr/0016-csp-and-websocket-hub.md), [0057](adr/0057-authenticated-mqtt.md), [0059](adr/0059-mcp-access-tokens.md), [0064](adr/0064-authenticated-camera-viewing.md).
+ADR: [0004](adr/0004-auth-sessions.md), [0016](adr/0016-csp-and-websocket-hub.md), [0057](adr/0057-authenticated-mqtt.md), [0059](adr/0059-mcp-access-tokens.md), [0064](adr/0064-authenticated-camera-viewing.md), [0065](adr/0065-wg-easy-15.md).
 
 ### Real time and MQTT
 `rumqttc`; typed WebSocket topics that keep the last state; a supervised client that publishes at once or refuses; Zigbee2MQTT ingestion; supervised weather and solar publishers.
