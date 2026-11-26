@@ -149,6 +149,7 @@ check "ReductStore record identical" "[ \"\$(rs $DST $W/dst.env get entry1)\" = 
 check "MQTT account restored" "as_dst tools/prod.sh mqtt-users | grep -q linkytest"
 check "Zigbee2MQTT files identical (pairing kept)" "diff -r $W/z2m-src $W/z2m-dst"
 check "mkcert authority key restored (devices keep trusting)" "cmp $W/caroot-src/rootCA-key.pem $W/caroot-dst/rootCA-key.pem && cmp $W/caroot-src/rootCA.pem $W/caroot-dst/rootCA.pem"
+check "public certificate files are readable by nginx (644), the key stays private (600)" "[ \"\$(stat -c %a $W/certs-dst/cert.pem)\" = 644 ] && [ \"\$(stat -c %a $W/certs-dst/dominet-ca.crt)\" = 644 ] && [ \"\$(stat -c %a $W/certs-dst/key.pem)\" = 600 ]"
 check "certificate present and signed by that authority" "openssl verify -CAfile $W/caroot-dst/rootCA.pem $W/certs-dst/cert.pem"
 check "ZIGBEE_DEVICE is empty (no dongle here)" "[ -z \"\$(grep '^ZIGBEE_DEVICE=' $W/dst.env | cut -d= -f2)\" ]"
 check "the application answers over HTTPS" "curl -fsk --resolve localhost:$HTTPS:127.0.0.1 https://localhost:$HTTPS/healthz"

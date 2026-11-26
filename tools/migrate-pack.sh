@@ -312,7 +312,9 @@ cmd_import() {
   else setvar "$ENV_FILE" VIDEO_DEVICE ""; setvar "$ENV_FILE" RENDER_GID ""; fi
 
   say "  2/6  Certificates and authority"
-  if [ -d "$S/certs" ]; then mkdir -p "$CERTS_DIR"; cp -a "$S/certs/." "$CERTS_DIR/"; chmod 600 "$CERTS_DIR/key.pem" 2>/dev/null || true; fi
+  if [ -d "$S/certs" ]; then mkdir -p "$CERTS_DIR"; cp -a "$S/certs/." "$CERTS_DIR/"; chmod 600 "$CERTS_DIR/key.pem" 2>/dev/null || true
+    # The archive is unpacked under umask 077: the certificate and the authority are public and nginx (another user) must read them.
+    chmod 644 "$CERTS_DIR/cert.pem" "$CERTS_DIR/dominet-ca.crt" 2>/dev/null || true; fi
   local root; root="$(ca_root || true)"
   if [ -d "$S/mkcert-ca" ]; then
     if [ -n "$root" ]; then
