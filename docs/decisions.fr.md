@@ -32,7 +32,7 @@ ADR : [0006](adr/0006-rhai-sandbox.md), [0031](adr/0031-automation-schema.md), [
 ### Messagerie et relais téléphone
 Canaux SMTP et SMS dans une crate à part ; le relais Android garde son contrat WebSocket ; jetons d'appareil hachés et affichés une fois ; envoi asynchrone avec statuts en direct.
 
-ADR : [0037](adr/0037-android-relay-and-messaging.md), [0038](adr/0038-delivery-channels.md), [0039](adr/0039-android-relay-server.md), [0040](adr/0040-android-pages.md), [0041](adr/0041-asynchronous-messaging.md).
+ADR : [0037](adr/0037-android-relay-and-messaging.md), [0038](adr/0038-delivery-channels.md), [0039](adr/0039-android-relay-server.md), [0040](adr/0040-android-pages.md), [0041](adr/0041-asynchronous-messaging.md), [0066](adr/0066-android-application.md).
 
 ### Surveillance et vidéo
 `ffmpeg` en sous-processus supervisé derrière un trait `FrameSource` ; client ONVIF minimal écrit à la main ; YOLOv8n par ONNX Runtime ; live WHEP en WASM via MediaMTX ; MediaMTX enregistre et l'application indexe ; détection de mouvement en Rust pur.

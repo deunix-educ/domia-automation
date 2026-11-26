@@ -32,7 +32,7 @@ ADR: [0006](adr/0006-rhai-sandbox.md), [0031](adr/0031-automation-schema.md), [0
 ### Messaging and the phone relay
 SMTP and SMS channels in a crate of their own; the Android relay keeps its WebSocket contract; hashed device tokens shown once; asynchronous sending with live status.
 
-ADR: [0037](adr/0037-android-relay-and-messaging.md), [0038](adr/0038-delivery-channels.md), [0039](adr/0039-android-relay-server.md), [0040](adr/0040-android-pages.md), [0041](adr/0041-asynchronous-messaging.md).
+ADR: [0037](adr/0037-android-relay-and-messaging.md), [0038](adr/0038-delivery-channels.md), [0039](adr/0039-android-relay-server.md), [0040](adr/0040-android-pages.md), [0041](adr/0041-asynchronous-messaging.md), [0066](adr/0066-android-application.md).
 
 ### Surveillance and video
 `ffmpeg` as a supervised subprocess behind a `FrameSource` trait; a minimal hand-written ONVIF client; YOLOv8n through ONNX Runtime; WHEP live view in WASM through MediaMTX; MediaMTX records and the application indexes; pure-Rust motion detection.

@@ -13,7 +13,7 @@
     <string name="label_server_name">Nom du serveur</string>
     <string name="label_ws_url">URL WebSocket complète</string>
     <string name="hint_server_name">Par exemple : Maison</string>
-    <string name="ws_url_hint">Collez l\'URL affichée pour cet appareil sur la page « Appareils Android » de DomiNet (l\'hôte et le jeton y sont inclus).</string>
+    <string name="ws_url_hint">Saisissez wss://&lt;serveur&gt;/ws/android/device/&lt;jeton&gt;/ avec le jeton affiché une seule fois à la création de l\'appareil, page Android, Appareils de DomiNet.</string>
 
     <string name="save">Enregistrer</string>
     <string name="cancel">Annuler</string>

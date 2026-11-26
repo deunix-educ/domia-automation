@@ -18,7 +18,7 @@
     <string name="label_ws_url">Full WebSocket URL</string>
     <string name="hint_server_name">For example: Home</string>
     <string name="hint_ws_url" translatable="false">wss://dominet.local/ws/android/device/&lt;token&gt;/</string>
-    <string name="ws_url_hint">Paste the URL shown for this device on the Android devices page of DomiNet (the host and the token are in it).</string>
+    <string name="ws_url_hint">Enter wss://&lt;server&gt;/ws/android/device/&lt;token&gt;/ with the token shown once when the device is created on the Android, Devices page of DomiNet.</string>
 
     <!-- Buttons -->
     <string name="save">Save</string>

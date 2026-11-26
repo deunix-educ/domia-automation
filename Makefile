@@ -7,7 +7,7 @@ SHELL := /bin/bash
 export DATABASE_URL ?= postgres://dominet:dominet-dev@127.0.0.1:15432/dominet
 export SQLX_OFFLINE ?= true
 
-.PHONY: fetch-model dev-run dev-discovery help build test fmt lint wasm front e2e e2e-image image-smoke deny audit ci ci-full hooks image dev-up dev-down dev-reset dev-ps dev-replay db-migrate sqlx-prepare sqlx-check preflight check-installer check-migrate prod-export prod-import prod-doctor prod-init prod-guard prod-deploy prod-up prod-migrate prod-seed prod-seed-energy prod-update prod-superuser prod-health prod-passwd prod-dump-context prod-backup prod-backups prod-report prod-video prod-mqtt-user prod-mqtt-del prod-mqtt-users prod-logs prod-ps prod-down i18n-new i18n-status certs export-ca demo-up demo-down docs docs-serve docs-deploy
+.PHONY: fetch-model dev-run dev-discovery help build test fmt lint wasm front e2e e2e-image image-smoke deny audit ci ci-full hooks image dev-up dev-down dev-reset dev-ps dev-replay db-migrate sqlx-prepare sqlx-check preflight check-installer check-migrate prod-export prod-import prod-doctor prod-init prod-guard prod-deploy prod-up prod-migrate prod-seed prod-seed-energy prod-update prod-superuser prod-health prod-passwd prod-dump-context prod-backup prod-backups prod-report prod-video prod-mqtt-user prod-mqtt-del prod-mqtt-users prod-logs prod-ps prod-down i18n-new i18n-status certs export-ca android-apk demo-up demo-down docs docs-serve docs-deploy
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-10s %s\n", $$1, $$2}'
@@ -162,6 +162,9 @@ prod-guard: ## Refuse to continue if .env is missing, empty or keeps default val
 
 certs: ## TLS certificate (mkcert if installed, otherwise self-signed openssl) in certs/
 	@tools/prod.sh certs
+
+android-apk: ## Build the signed Android APK (DomoComm) into dist/ (needs the SDK and the signing key, see docs/android.md)
+	@tools/build-android.sh
 
 export-ca: ## Export the local authority to certs/dominet-ca.crt (served on /dominet-ca.crt)
 	@tools/prod.sh export-ca
