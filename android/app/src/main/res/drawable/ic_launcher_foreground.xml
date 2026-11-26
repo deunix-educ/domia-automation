@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
+<!-- Foreground of the launcher icon: a phone with a house, and signal waves (DomoComm) -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <group android:pivotX="54" android:pivotY="54" android:scaleX="0.82" android:scaleY="0.82">
+        <path
+            android:pathData="M46,24 H62 A8,8 0 0 1 70,32 V76 A8,8 0 0 1 62,84 H46 A8,8 0 0 1 38,76 V32 A8,8 0 0 1 46,24 Z"
+            android:strokeColor="#00d4aa"
+            android:strokeWidth="5"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round"/>
+        <path
+            android:pathData="M54,40 L63,48 L60,48 L60,60 L48,60 L48,48 L45,48 Z"
+            android:fillColor="#00d4aa"/>
+        <path
+            android:pathData="M78,42 A16,16 0 0 1 78,66"
+            android:strokeColor="#3fb950"
+            android:strokeWidth="4"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round"/>
+        <path
+            android:pathData="M86,34 A28,28 0 0 1 86,74"
+            android:strokeColor="#3fb950"
+            android:strokeWidth="4"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round"/>
+        <path
+            android:pathData="M30,42 A16,16 0 0 0 30,66"
+            android:strokeColor="#3fb950"
+            android:strokeWidth="4"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round"/>
+        <path
+            android:pathData="M22,34 A28,28 0 0 0 22,74"
+            android:strokeColor="#3fb950"
+            android:strokeWidth="4"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round"/>
+    </group>
+</vector>
