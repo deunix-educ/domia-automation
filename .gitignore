@@ -33,3 +33,13 @@ __pycache__/
 
 # The agent's private notes (never committed)
 /CLAUDE.local.md
+
+# Android application (android/): build output and signing material
+/android/.gradle/
+/android/.kotlin/
+/android/build/
+/android/app/build/
+/android/local.properties
+/android/*.jks
+/android/*.keystore
+/android/keystore.properties

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
+<resources>
+    <!-- Dark theme, like the DomiNet interface -->
+    <style name="Theme.DomoComm" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="colorPrimary">#00d4aa</item>
+        <item name="colorPrimaryVariant">#00a884</item>
+        <item name="colorOnPrimary">#000000</item>
+        <item name="colorSurface">#161b22</item>
+        <item name="colorOnSurface">#e6edf3</item>
+        <item name="android:windowBackground">#0d1117</item>
+        <item name="android:statusBarColor">#161b22</item>
+    </style>
+</resources>

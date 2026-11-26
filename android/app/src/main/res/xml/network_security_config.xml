@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
+<!--
+    Network security.
+    The server of a home installation usually has a certificate signed by a local authority (mkcert, see the
+    DomiNet documentation). Install that authority on the phone (Settings > Security > Encryption and credentials >
+    Install a certificate > CA certificate); the "user" entry below makes the application trust it.
+    No authority is built into the application. Clear text (ws://, http://) is refused.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <!-- Authorities of the system (public sites) -->
+            <certificates src="system"/>
+            <!-- Authorities installed by the user on this phone -->
+            <certificates src="user"/>
+        </trust-anchors>
+    </base-config>
+</network-security-config>

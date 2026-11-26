@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
+<resources>
+    <string name="app_subtitle">Pont SMS et appels pour DomiNet</string>
+
+    <string name="label_servers">Serveurs configurés</string>
+    <string name="add_server">Ajouter un serveur</string>
+    <string name="no_servers_hint">Aucun serveur. Appuyez sur + pour en ajouter un.</string>
+    <string name="default_server_name">Serveur principal</string>
+
+    <string name="dialog_add_server">Ajouter un serveur</string>
+    <string name="dialog_edit_server">Modifier le serveur</string>
+    <string name="label_server_name">Nom du serveur</string>
+    <string name="label_ws_url">URL WebSocket complète</string>
+    <string name="hint_server_name">Par exemple : Maison</string>
+    <string name="ws_url_hint">Collez l\'URL affichée pour cet appareil sur la page « Appareils Android » de DomiNet (l\'hôte et le jeton y sont inclus).</string>
+
+    <string name="save">Enregistrer</string>
+    <string name="cancel">Annuler</string>
+    <string name="delete">Supprimer</string>
+    <string name="edit">Modifier</string>
+    <string name="start_service">Démarrer</string>
+    <string name="stop_service">Arrêter</string>
+    <string name="confirm_delete">Supprimer ce serveur ?</string>
+
+    <string name="status_stopped">Service arrêté</string>
+    <string name="status_running">Service actif</string>
+    <string name="status_connecting">Connexion en cours…</string>
+
+    <string name="saved">Serveur enregistré.</string>
+    <string name="fill_all_fields">Remplissez le nom et l\'URL.</string>
+    <string name="service_started">Service démarré.</string>
+    <string name="permissions_required">Les permissions SMS sont nécessaires pour relayer les messages.</string>
+    <string name="permissions_partial">Démarré sans : %1$s. Accordez-les dans les réglages Android pour utiliser les fonctions correspondantes.</string>
+    <string name="perm_sms">SMS</string>
+    <string name="perm_phone">téléphone</string>
+    <string name="perm_call_log">journal d\'appels</string>
+    <string name="perm_contacts">contacts</string>
+    <string name="no_servers">Ajoutez au moins un serveur avant de démarrer.</string>
+    <string name="url_invalid">L\'URL doit commencer par wss:// ou ws://</string>
+
+    <string name="notif_channel">Service DomoComm</string>
+    <string name="notif_channel_description">Relais des SMS et des appels vers DomiNet</string>
+    <string name="notif_connecting">Connexion en cours…</string>
+    <string name="notif_none">Aucun serveur configuré</string>
+    <string name="notif_offline">Hors ligne, reconnexion…</string>
+    <plurals name="notif_all">
+        <item quantity="one">Connecté (%1$d serveur)</item>
+        <item quantity="other">Connecté (%1$d serveurs)</item>
+    </plurals>
+    <plurals name="notif_some">
+        <item quantity="one">Connecté %1$d/%2$d serveur</item>
+        <item quantity="other">Connecté %1$d/%2$d serveurs</item>
+    </plurals>
+</resources>

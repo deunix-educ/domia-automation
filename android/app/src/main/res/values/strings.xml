@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
+<resources>
+    <string name="app_name" translatable="false">DomoComm</string>
+    <string name="app_title" translatable="false">DomoComm</string>
+    <string name="app_subtitle">SMS and calls bridge for DomiNet</string>
+
+    <!-- Server list -->
+    <string name="label_servers">Configured servers</string>
+    <string name="add_server">Add a server</string>
+    <string name="no_servers_hint">No server yet. Tap + to add one.</string>
+    <string name="default_server_name">Main server</string>
+
+    <!-- Add / edit dialog -->
+    <string name="dialog_add_server">Add a server</string>
+    <string name="dialog_edit_server">Edit the server</string>
+    <string name="label_server_name">Server name</string>
+    <string name="label_ws_url">Full WebSocket URL</string>
+    <string name="hint_server_name">For example: Home</string>
+    <string name="hint_ws_url" translatable="false">wss://dominet.local/ws/android/device/&lt;token&gt;/</string>
+    <string name="ws_url_hint">Paste the URL shown for this device on the Android devices page of DomiNet (the host and the token are in it).</string>
+
+    <!-- Buttons -->
+    <string name="save">Save</string>
+    <string name="cancel">Cancel</string>
+    <string name="delete">Delete</string>
+    <string name="edit">Edit</string>
+    <string name="start_service">Start</string>
+    <string name="stop_service">Stop</string>
+    <string name="confirm_delete">Delete this server?</string>
+
+    <!-- Status -->
+    <string name="status_stopped">Service stopped</string>
+    <string name="status_running">Service running</string>
+    <string name="status_connecting">Connecting...</string>
+
+    <!-- Messages -->
+    <string name="saved">Server saved.</string>
+    <string name="fill_all_fields">Fill in the name and the URL.</string>
+    <string name="service_started">Service started.</string>
+    <string name="permissions_required">The SMS permissions are needed to relay messages.</string>
+    <string name="permissions_partial">Started without: %1$s. Grant them in the Android settings to use the matching features.</string>
+    <string name="perm_sms">SMS</string>
+    <string name="perm_phone">phone</string>
+    <string name="perm_call_log">call log</string>
+    <string name="perm_contacts">contacts</string>
+    <string name="no_servers">Add at least one server before starting.</string>
+    <string name="url_invalid">The URL must start with wss:// or ws://</string>
+
+    <!-- Notification -->
+    <string name="notif_channel">DomoComm service</string>
+    <string name="notif_channel_description">Relay of SMS and calls to DomiNet</string>
+    <string name="notif_connecting">Connecting...</string>
+    <string name="notif_none">No server configured</string>
+    <string name="notif_offline">Offline, reconnecting...</string>
+    <plurals name="notif_all">
+        <item quantity="one">Connected (%1$d server)</item>
+        <item quantity="other">Connected (%1$d servers)</item>
+    </plurals>
+    <plurals name="notif_some">
+        <item quantity="one">Connected %1$d/%2$d server</item>
+        <item quantity="other">Connected %1$d/%2$d servers</item>
+    </plurals>
+</resources>

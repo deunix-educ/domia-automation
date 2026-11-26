@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
+<!--
+    Main screen: list of servers and a button to add one.
+    CoordinatorLayout puts the button at the bottom right.
+-->
+<androidx.coordinatorlayout.widget.CoordinatorLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#0d1117">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <!-- Title -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/app_title"
+            android:textSize="22sp"
+            android:textColor="#00d4aa"
+            android:textStyle="bold"
+            android:layout_marginTop="24dp"
+            android:layout_marginBottom="4dp"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/app_subtitle"
+            android:textSize="13sp"
+            android:textColor="#8b949e"
+            android:layout_marginBottom="16dp"/>
+
+        <!-- Status bar and start/stop button -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:background="#161b22"
+            android:padding="12dp"
+            android:layout_marginBottom="16dp">
+
+            <View
+                android:id="@+id/status_indicator"
+                android:layout_width="12dp"
+                android:layout_height="12dp"
+                android:background="@drawable/ic_status_offline"
+                android:layout_marginEnd="10dp"/>
+
+            <TextView
+                android:id="@+id/tv_status"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/status_stopped"
+                android:textColor="#e6edf3"
+                android:textSize="13sp"/>
+
+            <Button
+                android:id="@+id/btn_start_stop"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:text="@string/start_service"
+                android:backgroundTint="#00d4aa"
+                android:textColor="#000000"
+                android:textStyle="bold"
+                android:textSize="12sp"
+                android:paddingHorizontal="16dp"/>
+        </LinearLayout>
+
+        <!-- Title of the list -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/label_servers"
+            android:textColor="#8b949e"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="8dp"/>
+
+        <!-- Empty state -->
+        <TextView
+            android:id="@+id/tv_empty"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/no_servers_hint"
+            android:textColor="#484f58"
+            android:textSize="13sp"
+            android:gravity="center"
+            android:padding="24dp"
+            android:visibility="gone"/>
+
+        <!-- List of servers -->
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recycler_servers"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:paddingBottom="72dp"
+            android:clipToPadding="false"/>
+
+    </LinearLayout>
+
+    <!-- Button to add a server -->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fab_add"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_margin="16dp"
+        app:backgroundTint="#00d4aa"
+        android:tint="#000000"
+        android:src="@android:drawable/ic_input_add"
+        app:elevation="6dp"
+        android:contentDescription="@string/add_server"/>
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>
