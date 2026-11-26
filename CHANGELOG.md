@@ -16,6 +16,7 @@ All notable changes are listed here. Format based on [Keep a Changelog](https://
 - Code comments, `make help` and the `--help` texts are in English.
 - `SECRET_KEY` is removed: nothing used it (CSRF protection relies on the `Origin` header, ADR 0004). The installer no longer generates it, the configuration no longer reads it, and a `SECRET_KEY` line left in an existing `.env` is ignored.
 - **VPN: wg-easy 15** (AGPL-3.0) replaces version 14, which was licensed for non-commercial use only (ADR 0065, `docs/licenses.md`). The profile follows `WG_ADMIN_PASSWORD` (user `admin`); `make prod-up` sets once, through the wg-easy API, the firewall rules (`iptables-nft`), the NAT interface and the keepalive. `make prod-export` and `make prod-import` carry the VPN (administrator, settings, server keys, devices). **Breaking, installations that used the VPN with wg-easy 14**: `WG_ADMIN_HASH` is no longer used; the first `make prod-up` generates `WG_ADMIN_PASSWORD` in `.env` and starts wg-easy 15 on a new empty volume, so the devices must be created again (the old volume is left in place). A migration archive that holds wg-easy 14 data is reported and its VPN part is not restored.
+- `make certs` reloads nginx when the stack is running. Before, a renewed certificate (a new name, such as the VPN address) was served only after the next restart, and browsers kept receiving the old one.
 
 ## [1.0.2] - 2026-11-23
 

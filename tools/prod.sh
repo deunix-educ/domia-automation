@@ -177,6 +177,16 @@ cmd_certs() {
   fi
   chmod 600 "$CERTS_DIR/key.pem"
   say "  Certificat dans $CERTS_DIR/ (valable pour $domain, localhost, $ip $extra)"
+  reload_nginx
+}
+
+# nginx reads the certificate at start and on reload only: without this, a renewed certificate (new names, new date)
+# is not served until the next restart, and the old one stays in use. Does nothing when nginx is not running (first install).
+reload_nginx() {
+  [ -f "$ENV_FILE" ] || return 0
+  [ -n "$(compose ps -q nginx 2>/dev/null)" ] || return 0
+  if compose exec -T nginx nginx -s reload >/dev/null 2>&1; then say "  nginx a recharge le certificat."
+  else say "  Attention : nginx n'a pas pu etre recharge, relancez-le (make prod-up) pour servir le nouveau certificat."; fi
 }
 
 cmd_export_ca() {
@@ -391,8 +401,8 @@ cmd_doctor() {
   fi
   if [ -f "$CERTS_DIR/cert.pem" ]; then
     if openssl x509 -checkend 0 -noout -in "$CERTS_DIR/cert.pem" >/dev/null 2>&1; then
-      openssl x509 -checkend 2592000 -noout -in "$CERTS_DIR/cert.pem" >/dev/null 2>&1 && ok "certificate valid for more than 30 days" || att "certificate expires within 30 days. Fix: make certs, then restart nginx."
-    else bad "certificate expired. Fix: make certs, then restart nginx."; fi
+      openssl x509 -checkend 2592000 -noout -in "$CERTS_DIR/cert.pem" >/dev/null 2>&1 && ok "certificate valid for more than 30 days" || att "certificate expires within 30 days. Fix: make certs (it reloads nginx)."
+    else bad "certificate expired. Fix: make certs (it reloads nginx)."; fi
   else att "no certificate in $CERTS_DIR (make certs)"; fi
   say ""; say "== Services"
   if ! compose ps >/dev/null 2>&1; then att "the stack does not answer (is it started? make prod-up)"; else

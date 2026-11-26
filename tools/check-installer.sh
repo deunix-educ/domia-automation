@@ -188,6 +188,24 @@ PATH="$W/bin:$PATH" ENV_FILE="$W/ok.env" CERTS_DIR="$W/nocerts" tools/prod.sh do
 has "BLOCKING  Zigbee2MQTT cannot create its Zigbee network"; check "doctor: a failed Zigbee network creation blocks" $?
 has "docker stop dominet-zigbee2mqtt-1";                  check "doctor: tells to stop the retries first" $?
 
+# make certs reloads nginx when it runs (it reads the certificate at start and on reload only), and does nothing otherwise.
+mkdir -p "$W/ca"; : > "$W/ca/rootCA.pem"
+stub mkcert 'case "$1" in
+  -install) exit 0;;
+  -CAROOT) echo "'"$W"'/ca"; exit 0;;
+esac
+while [ $# -gt 0 ]; do case "$1" in -cert-file|-key-file) : > "$2"; shift;; esac; shift; done; exit 0'
+stub docker 'echo "ARGS: $*" >> "'"$W"'/docker.log"; case "$*" in *" ps -q nginx"*) echo abc123;; esac; exit 0'
+: > "$W/docker.log"
+PATH="$W/bin:$PATH" ENV_FILE="$W/ok.env" CERTS_DIR="$W/c1" tools/prod.sh certs > "$W/out" 2>&1
+grep -q "exec -T nginx nginx -s reload" "$W/docker.log";     check "certs: reloads nginx when it is running" $?
+has "nginx a recharge le certificat";                         check "certs: says that nginx reloaded the certificate" $?
+stub docker 'echo "ARGS: $*" >> "'"$W"'/docker.log"; exit 0'
+: > "$W/docker.log"
+PATH="$W/bin:$PATH" ENV_FILE="$W/ok.env" CERTS_DIR="$W/c2" tools/prod.sh certs > "$W/out" 2>&1
+! grep -q "nginx -s reload" "$W/docker.log";                 check "certs: nothing to reload when nginx is not running" $?
+rm -f "$W/bin/mkcert"
+
 after="$(git status --porcelain 2>/dev/null | md5sum)"
 [ "$before" = "$after" ];                                 check "a dry run leaves the working tree untouched" $?
 
