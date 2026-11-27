@@ -10,6 +10,8 @@
       
       
       
+        <link rel="canonical" href="https://deunix-educ.github.io/domia-automation/fr/releasing/">
+      
       
         <link rel="prev" href="../security/">
       
@@ -25,7 +27,7 @@
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.1">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
       
@@ -33,10 +35,10 @@
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.57a0d79d.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
       
         
-        <link rel="stylesheet" href="../../assets/stylesheets/palette.fb2fffe2.min.css">
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
       
       
 
@@ -1262,6 +1264,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../camera-access/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Accès aux caméras
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../mqtt/" class="md-nav__link">
         
   
@@ -2018,7 +2048,14 @@ make docs-deploy                              # construit le site et pousse la b
 <p>Seulement après un « feu vert » explicite du propriétaire : Settings, General, Danger Zone, <strong>Change visibility</strong>. Activez ensuite GitHub Pages depuis la branche <code>gh-pages</code>, rendez le paquet public sur GHCR et refaites l'installation sur machine propre depuis les adresses publiques.</p>
 <p>Revenir en arrière n'est pas une vraie option : tout ce qui a été poussé est copié en quelques minutes. Si un secret fuit, <strong>changez-le d'abord</strong>, puis réécrivez l'historique.</p>
 <h2 id="5-versions-suivantes">5. Versions suivantes<a class="headerlink" href="#5-versions-suivantes" title="Permanent link">&para;</a></h2>
-<p><code>make ci-full</code>, mettre à jour <code>CHANGELOG.md</code>, monter la version, étiqueter, <code>tools/publish-image.sh</code>, <code>make docs-deploy</code>. Une migration appliquée n'est jamais modifiée ; une reformulation demande une entrée comme celle de <code>crates/dominet-store/src/lib.rs</code>.</p>
+<p><code>make ci-full</code>, mettre à jour <code>CHANGELOG.md</code>, monter la version, commiter, étiqueter, puis les artefacts :</p>
+<ol>
+<li><strong>Image pour les deux architectures, construite en natif</strong> (l'émulation est bien trop lente). Sur la machine amd64 : <code>make image image-smoke</code>, puis <code>docker tag dominet:dev &lt;image&gt;:X.Y.Z-amd64 &amp;&amp; docker push &lt;image&gt;:X.Y.Z-amd64</code>. Sur une machine arm64 (un Raspberry Pi 5 a pris environ 67 minutes à froid) : extraire l'étiquette, <code>DOMINET_PULL=0 make prod-up</code>, puis étiqueter et pousser <code>:X.Y.Z-arm64</code>. Fusionner : <code>docker buildx imagetools create -t &lt;image&gt;:X.Y.Z -t &lt;image&gt;:latest &lt;image&gt;@sha256:&lt;condensat amd64&gt; &lt;image&gt;:X.Y.Z-arm64</code>, et vérifier avec <code>docker buildx imagetools inspect &lt;image&gt;:latest</code>. <strong>Ne supprimez pas</strong> les étiquettes <code>-amd64</code> et <code>-arm64</code> : ce sont les manifestes que l'index référence.</li>
+<li>Si aucun source compilé n'a changé depuis la version précédente (documentation ou scripts seulement), les images existantes peuvent rester : pas de nouvelle version nécessaire.</li>
+<li><code>make docs-deploy</code> (ou construire le site et pousser <code>gh-pages</code> soi-même). Vérifiez l'auteur du commit de <code>gh-pages</code> : <code>mkdocs gh-deploy</code> utilise l'identité git locale et peut la laisser vide.</li>
+<li>La release GitHub, depuis l'étiquette, avec la section de <code>CHANGELOG.md</code> comme notes.</li>
+</ol>
+<p>Avant tout, un clone sur une machine propre doit encore s'installer : <code>git clone</code>, <code>./install.sh</code>. Une migration appliquée n'est jamais modifiée ; une reformulation demande une entrée comme celle de <code>crates/dominet-store/src/lib.rs</code>.</p>
 
 
 
@@ -2074,10 +2111,10 @@ make docs-deploy                              # construit le site et pousse la b
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.sections", "navigation.top", "content.code.copy", "search.highlight"], "search": "../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copi\u00e9 dans le presse-papier", "clipboard.copy": "Copier dans le presse-papier", "search.result.more.one": "1 de plus sur cette page", "search.result.more.other": "# de plus sur cette page", "search.result.none": "Aucun document trouv\u00e9", "search.result.one": "1 document trouv\u00e9", "search.result.other": "# documents trouv\u00e9s", "search.result.placeholder": "Taper pour d\u00e9marrer la recherche", "search.result.term.missing": "Non trouv\u00e9", "select.version": "S\u00e9lectionner la version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.sections", "navigation.top", "content.code.copy", "search.highlight"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copi\u00e9 dans le presse-papier", "clipboard.copy": "Copier dans le presse-papier", "search.result.more.one": "1 de plus sur cette page", "search.result.more.other": "# de plus sur cette page", "search.result.none": "Aucun document trouv\u00e9", "search.result.one": "1 document trouv\u00e9", "search.result.other": "# documents trouv\u00e9s", "search.result.placeholder": "Taper pour d\u00e9marrer la recherche", "search.result.term.missing": "Non trouv\u00e9", "select.version": "S\u00e9lectionner la version"}, "version": null}</script>
     
     
-      <script src="../../assets/javascripts/bundle.a5f9d56c.min.js"></script>
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
       
     
   </body>

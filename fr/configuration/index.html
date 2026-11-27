@@ -10,6 +10,8 @@
       
       
       
+        <link rel="canonical" href="https://deunix-educ.github.io/domia-automation/fr/configuration/">
+      
       
         <link rel="prev" href="../installation/">
       
@@ -25,7 +27,7 @@
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.1">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
       
@@ -33,10 +35,10 @@
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.57a0d79d.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
       
         
-        <link rel="stylesheet" href="../../assets/stylesheets/palette.fb2fffe2.min.css">
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
       
       
 
@@ -1229,6 +1231,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../camera-access/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Accès aux caméras
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../mqtt/" class="md-nav__link">
         
   
@@ -1993,11 +2023,6 @@ Les secrets ne sont jamais affichés ni journalisés.</p>
 <td>écouteur <code>/metrics</code> pour Prometheus (<strong>jamais publié</strong> sur l'hôte) ; <code>off</code> pour le couper ; un port pris n'arrête pas le serveur</td>
 </tr>
 <tr>
-<td><code>SECRET_KEY</code></td>
-<td>—</td>
-<td><strong>réservée, non utilisée en R1</strong> (la protection CSRF repose sur l'en-tête <code>Origin</code>, les sessions sont en base) ; acceptée pour ne pas casser un <code>.env</code> existant, 32 caractères minimum si fournie</td>
-</tr>
-<tr>
 <td><code>DOMINET_MASTER_KEY</code></td>
 <td>—</td>
 <td>clé AES-256 (32 octets en base64) du chiffrement des secrets au repos (<code>dominet gen-master-key</code>) ; validée au démarrage ; voir <a href="../settings/">Réglages</a></td>
@@ -2133,6 +2158,11 @@ Les secrets ne sont jamais affichés ni journalisés.</p>
 <td>re-stream RTSP de MediaMTX (ex. <code>rtsp://mediamtx:8554</code>) que le rôle <code>video</code> décode (<code>&lt;url&gt;/&lt;uuid&gt;</code>, 2 images/s, <code>ffmpeg</code>) ; <strong>quand elle est renseignée, <code>dominet serve</code> lance aussi le rôle <code>video</code></strong>. Sans elle, ni dernière image, ni snapshots, ni repli pour les navigateurs sans H.264</td>
 </tr>
 <tr>
+<td><code>MEDIAMTX_READ_USER</code>, <code>MEDIAMTX_READ_PASSWORD</code></td>
+<td>—</td>
+<td>compte propre de DomiNet pour lire le re-stream de MediaMTX (rôle <code>video</code>) : MediaMTX demande à DomiNet d'autoriser chaque lecture, la sienne comprise (<a href="../camera-access/">Accès aux caméras</a>). <strong>Les deux ou aucun</strong> ; générés par <code>make prod-init</code> et ajoutés à un ancien <code>.env</code> par <code>make prod-up</code>. Sans eux un MediaMTX authentifié refuse le rôle <code>video</code> : aucune image n'est décodée</td>
+</tr>
+<tr>
 <td><code>SNAPSHOTS_DIR</code>, <code>SNAPSHOTS_MAX_PER_CAMERA</code>, <code>FFMPEG_HWACCEL</code></td>
 <td><code>data/snapshots</code> (<code>/data/snapshots</code> dans l'image), <code>500</code>, <code>auto</code></td>
 <td>dossier des snapshots (galerie) et de la dernière image de chaque caméra (<code>latest/</code>) — <strong>partagé entre les rôles <code>video</code> et <code>web</code></strong> s'ils sont deux processus ; au-delà du plafond, les plus anciens snapshots d'une caméra sont supprimés ; décodage VAAPI si disponible (<code>auto</code>) ou logiciel (<code>off</code>)</td>
@@ -2230,10 +2260,10 @@ dominet healthcheck [--addr h:p]      sonde GET /healthz (code 0 si 200) : healt
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.sections", "navigation.top", "content.code.copy", "search.highlight"], "search": "../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copi\u00e9 dans le presse-papier", "clipboard.copy": "Copier dans le presse-papier", "search.result.more.one": "1 de plus sur cette page", "search.result.more.other": "# de plus sur cette page", "search.result.none": "Aucun document trouv\u00e9", "search.result.one": "1 document trouv\u00e9", "search.result.other": "# documents trouv\u00e9s", "search.result.placeholder": "Taper pour d\u00e9marrer la recherche", "search.result.term.missing": "Non trouv\u00e9", "select.version": "S\u00e9lectionner la version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.sections", "navigation.top", "content.code.copy", "search.highlight"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copi\u00e9 dans le presse-papier", "clipboard.copy": "Copier dans le presse-papier", "search.result.more.one": "1 de plus sur cette page", "search.result.more.other": "# de plus sur cette page", "search.result.none": "Aucun document trouv\u00e9", "search.result.one": "1 document trouv\u00e9", "search.result.other": "# documents trouv\u00e9s", "search.result.placeholder": "Taper pour d\u00e9marrer la recherche", "search.result.term.missing": "Non trouv\u00e9", "select.version": "S\u00e9lectionner la version"}, "version": null}</script>
     
     
-      <script src="../../assets/javascripts/bundle.a5f9d56c.min.js"></script>
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
       
     
   </body>

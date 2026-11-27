@@ -10,6 +10,8 @@
       
       
       
+        <link rel="canonical" href="https://deunix-educ.github.io/domia-automation/fr/licenses/">
+      
       
         <link rel="prev" href="../migration/">
       
@@ -25,7 +27,7 @@
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.1">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
       
@@ -33,10 +35,10 @@
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.57a0d79d.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
       
         
-        <link rel="stylesheet" href="../../assets/stylesheets/palette.fb2fffe2.min.css">
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
       
       
 
@@ -1262,6 +1264,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../camera-access/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Accès aux caméras
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../mqtt/" class="md-nav__link">
         
   
@@ -2126,13 +2156,13 @@
 <td>connu</td>
 </tr>
 <tr>
-<td><code>ghcr.io/wg-easy/wg-easy:14</code> (VPN facultatif)</td>
-<td><strong>CC BY-NC-SA 4.0 (non commercial)</strong> jusqu'à la version 14, AGPL-3.0 à partir de la version 15</td>
-<td><strong>rapporté</strong>, pas lu à la source (les pages du dépôt n'ont pas pu être récupérées)</td>
+<td><code>ghcr.io/wg-easy/wg-easy:15</code> (VPN facultatif)</td>
+<td>AGPL-3.0 (la version 14 et les précédentes étaient <strong>CC BY-NC-SA 4.0, non commerciales</strong>)</td>
+<td><strong>vérifié</strong> à la source le 2026-11-23 : le fichier <code>LICENSE</code> du tag v14.0.0 est CC BY-NC-SA 4.0, celui du tag v15.0.0 et de <code>master</code> est le texte AGPL-3.0</td>
 </tr>
 </tbody>
 </table>
-<p><strong>Point à trancher avant de recommander le profil VPN</strong> : la version 14 de wg-easy, que <code>docker-compose.prod.yml</code> épingle, serait réservée à un usage non commercial. Pour une installation domestique c'est acceptable, mais le projet ne doit pas la présenter comme librement utilisable par des entreprises. Passer à la version 15 (AGPL-3.0) demande un changement de configuration et un essai ; c'est listé dans <a href="../to-improve/">À améliorer</a>.</p>
+<p><strong>Profil VPN.</strong> Il utilise wg-easy 15 (AGPL-3.0, comme DomiNet) depuis l'<a href="../adr/0065-wg-easy-15/">ADR 0065</a> ; la version 14, réservée à un usage non commercial, n'est plus utilisée ni recommandée.</p>
 <h2 id="services-externes">Services externes<a class="headerlink" href="#services-externes" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -2146,7 +2176,7 @@
 <tr>
 <td><strong>Open-Meteo</strong> (météo ; <code>OPEN_METEO_URL</code>)</td>
 <td>L'API gratuite est réservée à un <strong>usage non commercial</strong> (limites : 10 000 appels par jour, 5 000 par heure, 600 par minute) ; les données sont sous <strong>CC BY 4.0, qui exige une attribution</strong></td>
-<td><strong>rapporté</strong> (page des conditions vue par une recherche). Une installation domestique reste très en dessous des limites. Conservez l'attribution <strong>« Weather data by Open-Meteo.com »</strong> partout où vous republiez les données. Un usage commercial demande une offre payante, ou un autre fournisseur réglé dans <code>OPEN_METEO_URL</code></td>
+<td><strong>rapporté</strong> (page des conditions vue par une recherche). Une installation domestique reste très en dessous des limites. Le widget météo affiche l'attribution <strong>« Données météo par Open-Meteo.com »</strong> (avec un lien vers open-meteo.com) ; conservez-la partout où vous republiez les données. Un usage commercial demande une offre payante, ou un autre fournisseur réglé dans <code>OPEN_METEO_URL</code></td>
 </tr>
 <tr>
 <td>API SMS de Free Mobile</td>
@@ -2221,10 +2251,10 @@
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.sections", "navigation.top", "content.code.copy", "search.highlight"], "search": "../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copi\u00e9 dans le presse-papier", "clipboard.copy": "Copier dans le presse-papier", "search.result.more.one": "1 de plus sur cette page", "search.result.more.other": "# de plus sur cette page", "search.result.none": "Aucun document trouv\u00e9", "search.result.one": "1 document trouv\u00e9", "search.result.other": "# documents trouv\u00e9s", "search.result.placeholder": "Taper pour d\u00e9marrer la recherche", "search.result.term.missing": "Non trouv\u00e9", "select.version": "S\u00e9lectionner la version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.sections", "navigation.top", "content.code.copy", "search.highlight"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copi\u00e9 dans le presse-papier", "clipboard.copy": "Copier dans le presse-papier", "search.result.more.one": "1 de plus sur cette page", "search.result.more.other": "# de plus sur cette page", "search.result.none": "Aucun document trouv\u00e9", "search.result.one": "1 document trouv\u00e9", "search.result.other": "# documents trouv\u00e9s", "search.result.placeholder": "Taper pour d\u00e9marrer la recherche", "search.result.term.missing": "Non trouv\u00e9", "select.version": "S\u00e9lectionner la version"}, "version": null}</script>
     
     
-      <script src="../../assets/javascripts/bundle.a5f9d56c.min.js"></script>
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
       
     
   </body>

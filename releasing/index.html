@@ -10,6 +10,8 @@
       
       
       
+        <link rel="canonical" href="https://deunix-educ.github.io/domia-automation/releasing/">
+      
       
         <link rel="prev" href="../security/">
       
@@ -25,7 +27,7 @@
       
       
       <link rel="icon" href="../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.1">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
       
@@ -33,10 +35,10 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.57a0d79d.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
       
         
-        <link rel="stylesheet" href="../assets/stylesheets/palette.fb2fffe2.min.css">
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
       
       
 
@@ -1262,6 +1264,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../camera-access/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Camera access
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../mqtt/" class="md-nav__link">
         
   
@@ -2018,7 +2048,14 @@ make docs-deploy                              # builds the site and pushes the g
 <p>Only after an explicit "go" from the owner: Settings, General, Danger Zone, <strong>Change visibility</strong>. Then enable GitHub Pages from the <code>gh-pages</code> branch, make the package public on GHCR, and re-run the clean-machine installation from the public URLs.</p>
 <p>Going back is not a real option: assume everything pushed is copied within minutes. If a secret slips out, <strong>rotate it first</strong>, then rewrite the history.</p>
 <h2 id="5-later-releases">5. Later releases<a class="headerlink" href="#5-later-releases" title="Permanent link">&para;</a></h2>
-<p><code>make ci-full</code>, update <code>CHANGELOG.md</code>, bump the version, tag, <code>tools/publish-image.sh</code>, <code>make docs-deploy</code>. Migrations never edit an applied file; a rewording needs an entry like the one in <code>crates/dominet-store/src/lib.rs</code>.</p>
+<p><code>make ci-full</code>, update <code>CHANGELOG.md</code>, bump the version, commit, tag, then the artefacts:</p>
+<ol>
+<li><strong>Image for both architectures, built natively</strong> (emulation is far too slow). On the amd64 machine: <code>make image image-smoke</code>, then <code>docker tag dominet:dev &lt;image&gt;:X.Y.Z-amd64 &amp;&amp; docker push &lt;image&gt;:X.Y.Z-amd64</code>. On an arm64 machine (a Raspberry Pi 5 took about 67 minutes cold): check out the tag, <code>DOMINET_PULL=0 make prod-up</code>, then tag and push <code>:X.Y.Z-arm64</code>. Merge: <code>docker buildx imagetools create -t &lt;image&gt;:X.Y.Z -t &lt;image&gt;:latest &lt;image&gt;@sha256:&lt;amd64 digest&gt; &lt;image&gt;:X.Y.Z-arm64</code>, and check with <code>docker buildx imagetools inspect &lt;image&gt;:latest</code>. Do <strong>not</strong> delete the <code>-amd64</code> and <code>-arm64</code> tags: they are the manifests the index points to.</li>
+<li>If no compiled source changed since the previous release (documentation or scripts only), the existing images can stay: no new version is needed.</li>
+<li><code>make docs-deploy</code> (or build the site and push <code>gh-pages</code> yourself). Check the commit author of <code>gh-pages</code>: <code>mkdocs gh-deploy</code> uses the local git identity and may leave it empty.</li>
+<li>The GitHub release, from the tag, with the <code>CHANGELOG.md</code> section as notes.</li>
+</ol>
+<p>Before anything, a clone on a clean machine must still install: <code>git clone</code>, <code>./install.sh</code>. Migrations never edit an applied file; a rewording needs an entry like the one in <code>crates/dominet-store/src/lib.rs</code>.</p>
 
 
 
@@ -2074,10 +2111,10 @@ make docs-deploy                              # builds the site and pushes the g
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.sections", "navigation.top", "content.code.copy", "search.highlight"], "search": "../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.sections", "navigation.top", "content.code.copy", "search.highlight"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../assets/javascripts/bundle.a5f9d56c.min.js"></script>
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
       
     
   </body>

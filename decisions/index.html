@@ -10,6 +10,8 @@
       
       
       
+        <link rel="canonical" href="https://deunix-educ.github.io/domia-automation/decisions/">
+      
       
         <link rel="prev" href="../measures/">
       
@@ -25,7 +27,7 @@
       
       
       <link rel="icon" href="../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.1">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
       
@@ -33,10 +35,10 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.57a0d79d.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
       
         
-        <link rel="stylesheet" href="../assets/stylesheets/palette.fb2fffe2.min.css">
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
       
       
 
@@ -1158,6 +1160,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../camera-access/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Camera access
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../mqtt/" class="md-nav__link">
         
   
@@ -2183,8 +2213,8 @@
 <p>ReductStore for raw history, PostgreSQL for current state and aggregates; one replaced state plus a per-second history; images in the database; secrets encrypted at rest with AES-256-GCM; <code>pg_dump</code> and a ReductStore archive for backups.</p>
 <p>ADR: <a href="../adr/0002-iot-storage/">0002</a>, <a href="../adr/0018-dashboard-schema/">0018</a>, <a href="../adr/0025-device-schema/">0025</a>, <a href="../adr/0028-mqtt-sources-and-raw-archive/">0028</a>, <a href="../adr/0011-secrets-encryption/">0011</a>, <a href="../adr/0054-backups/">0054</a>.</p>
 <h3 id="security-and-access">Security and access<a class="headerlink" href="#security-and-access" title="Permanent link">&para;</a></h3>
-<p>Server-side sessions with argon2id; a nonce-based CSP; MQTT with one authenticated listener and per-client accounts; hashed, scoped, revocable MCP tokens with an audit trail.</p>
-<p>ADR: <a href="../adr/0004-auth-sessions/">0004</a>, <a href="../adr/0016-csp-and-websocket-hub/">0016</a>, <a href="../adr/0057-authenticated-mqtt/">0057</a>, <a href="../adr/0059-mcp-access-tokens/">0059</a>.</p>
+<p>Server-side sessions with argon2id; a nonce-based CSP; MQTT with one authenticated listener and per-client accounts; hashed, scoped, revocable MCP tokens with an audit trail; camera viewing authorised by DomiNet (viewing token in the browser, personal revocable password for external players). The optional VPN is wg-easy 15 (AGPL-3.0), set up once through its API.</p>
+<p>ADR: <a href="../adr/0004-auth-sessions/">0004</a>, <a href="../adr/0016-csp-and-websocket-hub/">0016</a>, <a href="../adr/0057-authenticated-mqtt/">0057</a>, <a href="../adr/0059-mcp-access-tokens/">0059</a>, <a href="../adr/0064-authenticated-camera-viewing/">0064</a>, <a href="../adr/0065-wg-easy-15/">0065</a>.</p>
 <h3 id="real-time-and-mqtt">Real time and MQTT<a class="headerlink" href="#real-time-and-mqtt" title="Permanent link">&para;</a></h3>
 <p><code>rumqttc</code>; typed WebSocket topics that keep the last state; a supervised client that publishes at once or refuses; Zigbee2MQTT ingestion; supervised weather and solar publishers.</p>
 <p>ADR: <a href="../adr/0005-mqtt-client-rumqttc/">0005</a>, <a href="../adr/0019-multiplexed-websocket-protocol/">0019</a>, <a href="../adr/0020-system-statistics/">0020</a>, <a href="../adr/0026-supervised-mqtt-client/">0026</a>, <a href="../adr/0027-zigbee2mqtt-ingestion/">0027</a>, <a href="../adr/0030-weather-and-solarmax-publishers/">0030</a>.</p>
@@ -2193,7 +2223,7 @@
 <p>ADR: <a href="../adr/0006-rhai-sandbox/">0006</a>, <a href="../adr/0031-automation-schema/">0031</a>, <a href="../adr/0032-automation-engine/">0032</a>, <a href="../adr/0033-scheduler/">0033</a>, <a href="../adr/0034-rhai-scripts/">0034</a>, <a href="../adr/0035-alerts/">0035</a>, <a href="../adr/0036-energy/">0036</a>, <a href="../adr/0042-alerts-on-real-channels/">0042</a>.</p>
 <h3 id="messaging-and-the-phone-relay">Messaging and the phone relay<a class="headerlink" href="#messaging-and-the-phone-relay" title="Permanent link">&para;</a></h3>
 <p>SMTP and SMS channels in a crate of their own; the Android relay keeps its WebSocket contract; hashed device tokens shown once; asynchronous sending with live status.</p>
-<p>ADR: <a href="../adr/0037-android-relay-and-messaging/">0037</a>, <a href="../adr/0038-delivery-channels/">0038</a>, <a href="../adr/0039-android-relay-server/">0039</a>, <a href="../adr/0040-android-pages/">0040</a>, <a href="../adr/0041-asynchronous-messaging/">0041</a>.</p>
+<p>ADR: <a href="../adr/0037-android-relay-and-messaging/">0037</a>, <a href="../adr/0038-delivery-channels/">0038</a>, <a href="../adr/0039-android-relay-server/">0039</a>, <a href="../adr/0040-android-pages/">0040</a>, <a href="../adr/0041-asynchronous-messaging/">0041</a>, <a href="../adr/0066-android-application/">0066</a>.</p>
 <h3 id="surveillance-and-video">Surveillance and video<a class="headerlink" href="#surveillance-and-video" title="Permanent link">&para;</a></h3>
 <p><code>ffmpeg</code> as a supervised subprocess behind a <code>FrameSource</code> trait; a minimal hand-written ONVIF client; YOLOv8n through ONNX Runtime; WHEP live view in WASM through MediaMTX; MediaMTX records and the application indexes; pure-Rust motion detection.</p>
 <p>ADR: <a href="../adr/0003-video-decoding/">0003</a>, <a href="../adr/0008-minimal-onvif-client/">0008</a>, <a href="../adr/0009-yolo-ort/">0009</a>, <a href="../adr/0010-whep-live-wasm/">0010</a>, <a href="../adr/0043-surveillance-schema/">0043</a>, <a href="../adr/0044-mediamtx-and-cameras/">0044</a>, <a href="../adr/0045-onvif-and-discovery/">0045</a>, <a href="../adr/0046-whep-live-view/">0046</a>, <a href="../adr/0047-ptz-and-night-mode/">0047</a>, <a href="../adr/0048-decoded-frames-and-snapshots/">0048</a>, <a href="../adr/0049-recording-and-replay/">0049</a>, <a href="../adr/0050-motion-and-detection/">0050</a>.</p>
@@ -2343,10 +2373,10 @@
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.sections", "navigation.top", "content.code.copy", "search.highlight"], "search": "../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.sections", "navigation.top", "content.code.copy", "search.highlight"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../assets/javascripts/bundle.a5f9d56c.min.js"></script>
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
       
     
   </body>

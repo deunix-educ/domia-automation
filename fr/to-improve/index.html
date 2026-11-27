@@ -10,6 +10,8 @@
       
       
       
+        <link rel="canonical" href="https://deunix-educ.github.io/domia-automation/fr/to-improve/">
+      
       
         <link rel="prev" href="../bench/agent-eval-2026-11-17/">
       
@@ -25,7 +27,7 @@
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.1">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
       
@@ -33,10 +35,10 @@
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.57a0d79d.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
       
         
-        <link rel="stylesheet" href="../../assets/stylesheets/palette.fb2fffe2.min.css">
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
       
       
 
@@ -1158,6 +1160,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../camera-access/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Accès aux caméras
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../mqtt/" class="md-nav__link">
         
   
@@ -1983,16 +2013,11 @@
 <li><strong>L'assistant local est en français seulement</strong> : son prompt système, les phrases qu'il détecte (« voulez-vous continuer ? »), les textes des cartes d'action et les marqueurs de résultats d'outils sont en français volontairement (l'assistant répond en français). Le généraliser demande de les traduire, de répondre dans la langue de l'utilisateur et de rejouer le jeu d'évaluation (<code>make agent-eval</code>).</li>
 <li><strong>Les identifiants de portée MCP sont en français</strong> (<code>lecture</code>, <code>pilotage</code> ; <code>configuration</code> et <code>administration</code> sont communs) : ils sont stockés dans les jetons. Les renommer en <code>read</code> / <code>control</code> demande une migration de données avec alias acceptés.</li>
 <li><strong>Les textes de notification</strong> (e-mails et SMS d'alerte, messages d'appareils) sont en anglais ; une langue par compte n'est pas implémentée.</li>
-<li><strong>Les commentaires du code</strong> sont en grande partie en français (plusieurs milliers de lignes) : ils se traduisent petit à petit ; le nouveau code est commenté en anglais.</li>
 <li><strong>Les données d'exemple des schémas de configuration</strong> (noms comme « Fermeture du soir ») et les alias français acceptés pour les types de configuration (<code>regle_d_alerte</code>…) restent, car ils aident un modèle francophone.</li>
 </ul>
 <h2 id="suites-sur-les-licences">Suites sur les licences<a class="headerlink" href="#suites-sur-les-licences" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>wg-easy</strong> : la version 14 (utilisée pour le VPN facultatif) serait non commerciale (CC BY-NC-SA 4.0) ; la version 15 est AGPL-3.0 mais réécrite. Vérifier à la source, puis passer à la 15 (configuration, commande <code>wgpw</code> de <code>DEPLOY.md</code>) et tester le profil VPN. Voir <a href="../licenses/">Licences</a>.</li>
-<li><strong>Attribution Open-Meteo</strong> : afficher « Weather data by Open-Meteo.com » près des données météo dans l'interface (CC BY 4.0) ; aujourd'hui elle n'est que dans la documentation.</li>
 <li><strong>Relire les étiquettes épinglées</strong> (<code>reduct/store:v1.21.5</code> et les autres images marquées « connu ») avant la première publication.</li>
-<li><strong>Visionnage des caméras sans mot de passe sur le LAN</strong> (RTSP 8554, WebRTC 8189) : ajouter des identifiants par spectateur dans MediaMTX et dans l'application. Voir <a href="../security/">Sécurité</a>.</li>
-<li><strong><code>SECRET_KEY</code></strong> est lue par la configuration mais aucun code ne s'en sert : la supprimer, ou l'utiliser.</li>
 </ul>
 
 
@@ -2049,10 +2074,10 @@
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.sections", "navigation.top", "content.code.copy", "search.highlight"], "search": "../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copi\u00e9 dans le presse-papier", "clipboard.copy": "Copier dans le presse-papier", "search.result.more.one": "1 de plus sur cette page", "search.result.more.other": "# de plus sur cette page", "search.result.none": "Aucun document trouv\u00e9", "search.result.one": "1 document trouv\u00e9", "search.result.other": "# documents trouv\u00e9s", "search.result.placeholder": "Taper pour d\u00e9marrer la recherche", "search.result.term.missing": "Non trouv\u00e9", "select.version": "S\u00e9lectionner la version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.sections", "navigation.top", "content.code.copy", "search.highlight"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copi\u00e9 dans le presse-papier", "clipboard.copy": "Copier dans le presse-papier", "search.result.more.one": "1 de plus sur cette page", "search.result.more.other": "# de plus sur cette page", "search.result.none": "Aucun document trouv\u00e9", "search.result.one": "1 document trouv\u00e9", "search.result.other": "# documents trouv\u00e9s", "search.result.placeholder": "Taper pour d\u00e9marrer la recherche", "search.result.term.missing": "Non trouv\u00e9", "select.version": "S\u00e9lectionner la version"}, "version": null}</script>
     
     
-      <script src="../../assets/javascripts/bundle.a5f9d56c.min.js"></script>
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
       
     
   </body>

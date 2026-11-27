@@ -10,6 +10,8 @@
       
       
       
+        <link rel="canonical" href="https://deunix-educ.github.io/domia-automation/to-improve/">
+      
       
         <link rel="prev" href="../bench/agent-eval-2026-11-17/">
       
@@ -25,7 +27,7 @@
       
       
       <link rel="icon" href="../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.1">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
       
@@ -33,10 +35,10 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.57a0d79d.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
       
         
-        <link rel="stylesheet" href="../assets/stylesheets/palette.fb2fffe2.min.css">
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
       
       
 
@@ -1158,6 +1160,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../camera-access/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Camera access
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../mqtt/" class="md-nav__link">
         
   
@@ -1983,16 +2013,11 @@
 <li><strong>Local assistant is French-only</strong>: its system prompt, the phrases it detects ("do you want me to continue?"), the action-card texts and the tool-result markers are in French on purpose (the assistant answers in French). Generalising it means translating them, answering in the user's language and replaying the evaluation set (<code>make agent-eval</code>).</li>
 <li><strong>MCP scope identifiers are French</strong> (<code>lecture</code>, <code>pilotage</code>; <code>configuration</code> and <code>administration</code> are shared): they are stored in token rows. Renaming them to <code>read</code> / <code>control</code> needs a data migration with accepted aliases.</li>
 <li><strong>Notification texts</strong> (alert e-mails and SMS, device messages) are English now; a per-account language is not implemented.</li>
-<li><strong>Code comments</strong> are mostly French (several thousand lines): they are translated gradually; new code is commented in English.</li>
 <li><strong>Example data in configuration schemas</strong> (names such as "Fermeture du soir") and the French aliases accepted for configuration kinds (<code>regle_d_alerte</code>…) stay as they help a French-speaking model.</li>
 </ul>
 <h2 id="licences-follow-ups">Licences follow-ups<a class="headerlink" href="#licences-follow-ups" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>wg-easy</strong>: version 14 (pinned for the optional VPN) is reported as non-commercial (CC BY-NC-SA 4.0); version 15 is AGPL-3.0 but a rewrite. Verify at the source, then move to 15 (configuration, <code>wgpw</code> command in <code>DEPLOY.md</code>) and test the VPN profile. See <a href="../licenses/">Licences</a>.</li>
-<li><strong>Open-Meteo attribution</strong>: show "Weather data by Open-Meteo.com" next to weather data in the interface (CC BY 4.0); today it is only in the documentation.</li>
 <li><strong>Re-read the pinned tags</strong> (<code>reduct/store:v1.21.5</code> and the other images marked "known") before the first public release.</li>
-<li><strong>Camera viewing without a password on the LAN</strong> (RTSP 8554, WebRTC 8189): add per-viewer credentials in MediaMTX and in the application. See <a href="../security/">Security</a>.</li>
-<li><strong><code>SECRET_KEY</code></strong> is read by the configuration but no code uses it: remove it, or use it.</li>
 </ul>
 
 
@@ -2049,10 +2074,10 @@
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.sections", "navigation.top", "content.code.copy", "search.highlight"], "search": "../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.sections", "navigation.top", "content.code.copy", "search.highlight"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../assets/javascripts/bundle.a5f9d56c.min.js"></script>
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
       
     
   </body>

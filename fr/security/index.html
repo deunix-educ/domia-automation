@@ -10,6 +10,8 @@
       
       
       
+        <link rel="canonical" href="https://deunix-educ.github.io/domia-automation/fr/security/">
+      
       
         <link rel="prev" href="../licenses/">
       
@@ -25,7 +27,7 @@
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.1">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
       
@@ -33,10 +35,10 @@
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.57a0d79d.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
       
         
-        <link rel="stylesheet" href="../../assets/stylesheets/palette.fb2fffe2.min.css">
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
       
       
 
@@ -556,10 +558,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#ce-qui-na-pas-de-mot-de-passe-volontairement" class="md-nav__link">
+  <a href="#regarder-les-cameras" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Ce qui n'a pas de mot de passe, volontairement
+        Regarder les caméras
       
     </span>
   </a>
@@ -1251,6 +1253,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../camera-access/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Accès aux caméras
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../mqtt/" class="md-nav__link">
         
   
@@ -1914,10 +1944,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#ce-qui-na-pas-de-mot-de-passe-volontairement" class="md-nav__link">
+  <a href="#regarder-les-cameras" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Ce qui n'a pas de mot de passe, volontairement
+        Regarder les caméras
       
     </span>
   </a>
@@ -1992,13 +2022,13 @@
 <td>8554</td>
 <td>RTSP (MediaMTX)</td>
 <td>le LAN</td>
-<td><strong>aucun mot de passe : toute personne du LAN peut regarder les flux des caméras</strong> (voir plus bas)</td>
+<td><strong>un compte est nécessaire</strong> : MediaMTX interroge DomiNet avant chaque lecture (<a href="../camera-access/">Accès aux caméras</a>)</td>
 </tr>
 <tr>
 <td>8189 (udp, tcp)</td>
-<td>WebRTC (MediaMTX)</td>
+<td>média WebRTC (MediaMTX)</td>
 <td>le LAN</td>
-<td>aucun mot de passe, même raison</td>
+<td>autorisé au démarrage de la vue par le navigateur (jeton), pas sur le média lui-même : ne le redirigez jamais</td>
 </tr>
 <tr>
 <td>8080</td>
@@ -2010,7 +2040,7 @@
 <td>51820 (udp) et l'interface wg-easy</td>
 <td>profil VPN facultatif</td>
 <td>Internet si vous le redirigez</td>
-<td>clés WireGuard ; l'interface web est protégée par <code>WG_ADMIN_HASH</code></td>
+<td>clés WireGuard ; l'interface web est protégée par <code>WG_ADMIN_PASSWORD</code> (HTTP simple : gardez le port 51821 sur le réseau domestique)</td>
 </tr>
 <tr>
 <td>5432</td>
@@ -2028,12 +2058,13 @@
 <td>9997, 9998, 9100, Prometheus, port propre de Grafana</td>
 <td>API internes et métriques</td>
 <td>le réseau Docker seulement</td>
-<td>non publiés</td>
+<td>non publiés (l'API et les métriques de MediaMTX échappent à son authentification pour cette raison)</td>
 </tr>
 </tbody>
 </table>
-<h2 id="ce-qui-na-pas-de-mot-de-passe-volontairement">Ce qui n'a pas de mot de passe, volontairement<a class="headerlink" href="#ce-qui-na-pas-de-mot-de-passe-volontairement" title="Permanent link">&para;</a></h2>
-<p>Regarder une caméra en RTSP ou en WebRTC n'exige aucun mot de passe : le navigateur, les applications du téléphone et VLC lisent les flux directement. La <strong>publication</strong> vers MediaMTX et son API sont réservées au réseau Docker et à cette machine. La conséquence est simple : <strong>toute personne connectée à votre réseau domestique peut regarder vos caméras</strong>. Mettez les invités sur un autre réseau ou un autre Wi-Fi, et <strong>ne redirigez jamais les ports 8554 ou 8189 sur votre box</strong>. Des identifiants par spectateur figurent dans la liste des améliorations (<a href="../to-improve/">À améliorer</a>).</p>
+<h2 id="regarder-les-cameras">Regarder les caméras<a class="headerlink" href="#regarder-les-cameras" title="Permanent link">&para;</a></h2>
+<p>Regarder une caméra en RTSP ou en WebRTC demande un <strong>compte</strong>. Dans le navigateur rien ne change pour vous (un jeton de courte durée, lié à votre session, est envoyé à votre place) ; VLC et les applications du téléphone demandent votre nom d'utilisateur et un mot de passe personnel par appareil, créé dans <strong>Mon compte → Accès aux caméras</strong> et révocable à tout moment. Chaque compte voit toutes les caméras. Détails et conduite à tenir quand un lecteur est refusé : <a href="../camera-access/">Accès aux caméras</a>.</p>
+<p>Ce que cela ne fait pas : la vidéo n'est pas chiffrée de bout en bout en RTSP, le média WebRTC est autorisé au démarrage d'une vue et non paquet par paquet, et une personne qui a un compte peut regarder toutes les caméras. Mettez quand même les invités sur un autre réseau ou un autre Wi-Fi, et <strong>ne redirigez jamais les ports 8554 ou 8189 sur votre box</strong>.</p>
 <h2 id="ce-qui-est-protege">Ce qui est protégé<a class="headerlink" href="#ce-qui-est-protege" title="Permanent link">&para;</a></h2>
 <ul>
 <li><strong>Comptes</strong> : empreintes argon2id, sessions côté serveur (cookie opaque, expiration par inactivité et absolue), protection CSRF, blocage après des échecs répétés (par compte et adresse, par compte, par adresse), un changement de mot de passe ferme toutes les sessions. Mots de passe : de 10 à 128 caractères, pas uniquement des chiffres, différents du nom d'utilisateur.</li>
@@ -2047,7 +2078,7 @@
 <h2 id="liste-de-controle-pour-une-installation-sure">Liste de contrôle pour une installation sûre<a class="headerlink" href="#liste-de-controle-pour-une-installation-sure" title="Permanent link">&para;</a></h2>
 <ol>
 <li>Installez sur une machine joignable seulement depuis votre LAN ; ne redirigez pas les ports 80, 443, 1883, 8554, 8189 ou 8080 sur la box.</li>
-<li>Pour l'accès à distance, utilisez le profil WireGuard (un seul port UDP) ou votre propre VPN, avec un <code>WG_ADMIN_HASH</code> robuste.</li>
+<li>Pour l'accès à distance, utilisez le profil WireGuard (un seul port UDP) ou votre propre VPN, avec un <code>WG_ADMIN_PASSWORD</code> robuste (et ne redirigez pas le port 51821).</li>
 <li>Gardez <code>.env</code> et les archives de migration privés (ils contiennent des clés) ; rangez <code>DOMINET_MASTER_KEY</code> dans un gestionnaire de mots de passe.</li>
 <li>Installez l'autorité de certification sur vos appareils (<code>/dominet-ca.crt</code>) plutôt que de passer outre les avertissements du navigateur.</li>
 <li>Mettez à jour régulièrement avec <code>make prod-update</code> ; lisez les notes de version (<code>CHANGELOG.md</code>).</li>
@@ -2108,10 +2139,10 @@
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.sections", "navigation.top", "content.code.copy", "search.highlight"], "search": "../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copi\u00e9 dans le presse-papier", "clipboard.copy": "Copier dans le presse-papier", "search.result.more.one": "1 de plus sur cette page", "search.result.more.other": "# de plus sur cette page", "search.result.none": "Aucun document trouv\u00e9", "search.result.one": "1 document trouv\u00e9", "search.result.other": "# documents trouv\u00e9s", "search.result.placeholder": "Taper pour d\u00e9marrer la recherche", "search.result.term.missing": "Non trouv\u00e9", "select.version": "S\u00e9lectionner la version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.sections", "navigation.top", "content.code.copy", "search.highlight"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copi\u00e9 dans le presse-papier", "clipboard.copy": "Copier dans le presse-papier", "search.result.more.one": "1 de plus sur cette page", "search.result.more.other": "# de plus sur cette page", "search.result.none": "Aucun document trouv\u00e9", "search.result.one": "1 document trouv\u00e9", "search.result.other": "# documents trouv\u00e9s", "search.result.placeholder": "Taper pour d\u00e9marrer la recherche", "search.result.term.missing": "Non trouv\u00e9", "select.version": "S\u00e9lectionner la version"}, "version": null}</script>
     
     
-      <script src="../../assets/javascripts/bundle.a5f9d56c.min.js"></script>
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
       
     
   </body>

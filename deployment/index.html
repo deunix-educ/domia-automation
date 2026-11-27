@@ -10,6 +10,8 @@
       
       
       
+        <link rel="canonical" href="https://deunix-educ.github.io/domia-automation/deployment/">
+      
       
         <link rel="prev" href="../releasing/">
       
@@ -25,7 +27,7 @@
       
       
       <link rel="icon" href="../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.1">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
       
@@ -33,10 +35,10 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.57a0d79d.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
       
         
-        <link rel="stylesheet" href="../assets/stylesheets/palette.fb2fffe2.min.css">
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
       
       
 
@@ -1345,6 +1347,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../camera-access/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Camera access
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../mqtt/" class="md-nav__link">
         
   
@@ -2185,7 +2215,7 @@ shifted ports (see "Trying it on a development machine"), nor on the old product
 <td>e-mail alerts (application <strong>and</strong> Grafana). Without <code>EMAIL_RECIPIENT</code>, Grafana alerts have no recipient</td>
 </tr>
 <tr>
-<td><code>DYNDNS_HOST</code>, <code>WG_ADMIN_HASH</code></td>
+<td><code>DYNDNS_HOST</code>, <code>WG_ADMIN_PASSWORD</code></td>
 <td>WireGuard VPN (<code>vpn</code> profile), see §5</td>
 </tr>
 <tr>
@@ -2216,7 +2246,14 @@ NOBACKUP=1 make prod-update   # no backup      NOPULL=1: no git pull
 </code></pre>
 <p>A failed backup cancels the update. Migrations are replayed by <code>migrate</code>.</p>
 <h2 id="5-remote-access-wireguard-vpn-optional">5. Remote access — WireGuard VPN (optional)<a class="headerlink" href="#5-remote-access-wireguard-vpn-optional" title="Permanent link">&para;</a></h2>
-<p>Set <code>DYNDNS_HOST</code> (public name of your router) and <code>WG_ADMIN_HASH</code> (wg-easy UI password: <code>docker run --rm ghcr.io/wg-easy/wg-easy:14 wgpw 'password'</code>, doubling the <code>$</code> in <code>.env</code>), forward UDP 51820 on the router, then <code>make prod-up</code>. The <code>vpn</code> profile is enabled only when <code>WG_ADMIN_HASH</code> is set. wg-easy uses the host network (<code>iptables-nft</code>); UI on port 51821. If needed add the tunnel addresses to <code>WEBRTC_ADDITIONAL_HOSTS</code> and <code>CERT_EXTRA_SANS</code> (then <code>make certs</code>).</p>
+<p>Set <code>DYNDNS_HOST</code> (public name of your router) and <code>WG_ADMIN_PASSWORD</code> (password of the wg-easy web interface, user <code>admin</code>), forward UDP 51820 on the router, then <code>make prod-up</code>. The <code>vpn</code> profile is enabled only when <code>WG_ADMIN_PASSWORD</code> is set. The VPN is wg-easy 15 (AGPL-3.0) on the host network; its interface is on port 51821, in plain HTTP: keep it on your home network and do not forward that port.</p>
+<ul>
+<li><strong>First configuration.</strong> <code>make prod-up</code> sets once, through the wg-easy API, the firewall rules (<code>iptables-nft</code>), the network interface used for the address translation (the machine's default one) and the keepalive (25 s). After that the settings are yours: change them in the wg-easy interface, <code>make prod-up</code> does not touch them again (<code>tools/prod.sh wg-configure</code> replays the check).</li>
+<li><strong>Read once.</strong> The administrator password, the tunnel addresses (<code>WG_SUBNET</code>, <code>WG_SUBNET6</code>), the DNS (<code>WG_DEFAULT_DNS</code>) and the routes sent to the devices (<code>WG_ALLOWED_IPS</code>) are read only at the first start of wg-easy. Change them afterwards in its interface.</li>
+<li><strong>Devices.</strong> Create one device per phone or computer in the interface, then scan its QR code or import its file in the WireGuard application.</li>
+<li><strong>Upgrading an installation made for wg-easy 14.</strong> <code>WG_ADMIN_HASH</code> is no longer used. The first <code>make prod-up</code> generates <code>WG_ADMIN_PASSWORD</code> in <code>.env</code> (<code>grep '^WG_ADMIN_PASSWORD' .env</code>) and starts wg-easy 15 on a new, empty volume (<code>wg-easy15-data</code>): the devices created with 14 must be created again. The old volume <code>wg-easy-data</code> is left in place and can be removed (<code>docker volume rm &lt;project&gt;_wg-easy-data</code>) once you do not need it.</li>
+</ul>
+<p>If needed add the tunnel addresses to <code>WEBRTC_ADDITIONAL_HOSTS</code> and <code>CERT_EXTRA_SANS</code> (then <code>make certs</code>).</p>
 <h2 id="6-backups-and-restore">6. Backups and restore<a class="headerlink" href="#6-backups-and-restore" title="Permanent link">&para;</a></h2>
 <p>An automatic backup runs daily at 03:00 (<code>BACKUP_HOUR</code>): PostgreSQL (<code>pg_dump</code>) and an archive of the ReductStore volume, SHA-256 sums, 7 days kept (<code>BACKUP_RETENTION_DAYS</code>), in the <code>backups-data</code> volume. <code>make prod-backup</code> runs one now. Full restore procedures: <a href="../backups/">docs/backups.md</a>. Regularly copy the <code>backups-data</code> volume <strong>and</strong> <code>DOMINET_MASTER_KEY</code> off the machine.</p>
 <h2 id="7-services-and-access">7. Services and access<a class="headerlink" href="#7-services-and-access" title="Permanent link">&para;</a></h2>
@@ -2242,7 +2279,7 @@ NOBACKUP=1 make prod-update   # no backup      NOPULL=1: no git pull
 </tr>
 <tr>
 <td>WebRTC video</td>
-<td><code>https://&lt;LAN_DOMAIN&gt;/webrtc/</code> (through nginx); RTSP <code>rtsp://&lt;host&gt;:8554/&lt;uuid&gt;</code></td>
+<td><code>https://&lt;LAN_DOMAIN&gt;/webrtc/</code> (through nginx); RTSP <code>rtsp://&lt;host&gt;:8554/&lt;uuid&gt;</code> (user name and personal password from My account → Camera access, see <a href="../camera-access/">Camera access</a>)</td>
 </tr>
 <tr>
 <td>Zigbee2MQTT (<code>zigbee</code> profile)</td>
@@ -2359,10 +2396,10 @@ make prod-down                   # stop (volumes kept)
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.sections", "navigation.top", "content.code.copy", "search.highlight"], "search": "../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.sections", "navigation.top", "content.code.copy", "search.highlight"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../assets/javascripts/bundle.a5f9d56c.min.js"></script>
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
       
     
   </body>

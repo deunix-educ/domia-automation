@@ -10,6 +10,8 @@
       
       
       
+        <link rel="canonical" href="https://deunix-educ.github.io/domia-automation/security/">
+      
       
         <link rel="prev" href="../licenses/">
       
@@ -25,7 +27,7 @@
       
       
       <link rel="icon" href="../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.1">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
       
@@ -33,10 +35,10 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.57a0d79d.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
       
         
-        <link rel="stylesheet" href="../assets/stylesheets/palette.fb2fffe2.min.css">
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
       
       
 
@@ -556,10 +558,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#what-has-no-password-on-purpose" class="md-nav__link">
+  <a href="#watching-the-cameras" class="md-nav__link">
     <span class="md-ellipsis">
       
-        What has no password, on purpose
+        Watching the cameras
       
     </span>
   </a>
@@ -1251,6 +1253,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../camera-access/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Camera access
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../mqtt/" class="md-nav__link">
         
   
@@ -1914,10 +1944,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#what-has-no-password-on-purpose" class="md-nav__link">
+  <a href="#watching-the-cameras" class="md-nav__link">
     <span class="md-ellipsis">
       
-        What has no password, on purpose
+        Watching the cameras
       
     </span>
   </a>
@@ -1992,13 +2022,13 @@
 <td>8554</td>
 <td>RTSP (MediaMTX)</td>
 <td>the LAN</td>
-<td><strong>no password: anyone on the LAN can watch the camera streams</strong> (see below)</td>
+<td><strong>an account is needed</strong>: MediaMTX asks DomiNet before every read (<a href="../camera-access/">Camera access</a>)</td>
 </tr>
 <tr>
 <td>8189 (udp, tcp)</td>
-<td>WebRTC (MediaMTX)</td>
+<td>WebRTC media (MediaMTX)</td>
 <td>the LAN</td>
-<td>no password, same reason</td>
+<td>authorised when the browser starts the view (token), not on the media itself: never forward it</td>
 </tr>
 <tr>
 <td>8080</td>
@@ -2010,7 +2040,7 @@
 <td>51820 (udp) and the wg-easy interface</td>
 <td>optional VPN profile</td>
 <td>the Internet if you forward it</td>
-<td>WireGuard keys; the web interface is protected by <code>WG_ADMIN_HASH</code></td>
+<td>WireGuard keys; the web interface is protected by <code>WG_ADMIN_PASSWORD</code> (plain HTTP: keep port 51821 on the home network)</td>
 </tr>
 <tr>
 <td>5432</td>
@@ -2028,12 +2058,13 @@
 <td>9997, 9998, 9100, Prometheus, Grafana's own port</td>
 <td>internal APIs and metrics</td>
 <td>the Docker network only</td>
-<td>not published</td>
+<td>not published (MediaMTX's API and metrics skip its authentication for that reason)</td>
 </tr>
 </tbody>
 </table>
-<h2 id="what-has-no-password-on-purpose">What has no password, on purpose<a class="headerlink" href="#what-has-no-password-on-purpose" title="Permanent link">&para;</a></h2>
-<p>Viewing a camera over RTSP or WebRTC needs no password: the browser, the phone applications and VLC read the streams directly. <strong>Publishing</strong> to MediaMTX and its API are restricted to the Docker network and this machine. The consequence is simple: <strong>anyone connected to your home network can watch your cameras</strong>. Keep guests on a separate network or Wi-Fi, and <strong>never forward ports 8554 or 8189 on your router</strong>. Per-viewer credentials are on the improvement list (<a href="../to-improve/">To improve</a>).</p>
+<h2 id="watching-the-cameras">Watching the cameras<a class="headerlink" href="#watching-the-cameras" title="Permanent link">&para;</a></h2>
+<p>Watching a camera over RTSP or WebRTC needs an <strong>account</strong>. In the browser nothing changes for you (a short-lived token tied to your session is sent for you); VLC and phone applications need your user name and a personal password per device, created on <strong>My account → Camera access</strong> and revocable at any time. Every account sees every camera. Details and what to do when a player is refused: <a href="../camera-access/">Camera access</a>.</p>
+<p>What this does not do: the video itself is not encrypted end to end over RTSP, WebRTC media is authorised when a view starts rather than packet by packet, and a person who has an account can watch every camera. Keep guests on a separate network or Wi-Fi anyway, and <strong>never forward ports 8554 or 8189 on your router</strong>.</p>
 <h2 id="what-is-protected">What is protected<a class="headerlink" href="#what-is-protected" title="Permanent link">&para;</a></h2>
 <ul>
 <li><strong>Accounts</strong>: argon2id hashes, server-side sessions (opaque cookie, idle and absolute expiry), CSRF protection, lock-out after repeated failures (per account and address, per account, per address), password changes close every session. Passwords: 10 to 128 characters, not only digits, not the user name.</li>
@@ -2047,7 +2078,7 @@
 <h2 id="checklist-for-a-safe-installation">Checklist for a safe installation<a class="headerlink" href="#checklist-for-a-safe-installation" title="Permanent link">&para;</a></h2>
 <ol>
 <li>Install on a machine reachable only from your LAN; do not forward ports 80, 443, 1883, 8554, 8189 or 8080 on the router.</li>
-<li>For remote access use the WireGuard profile (one UDP port) or your own VPN, with a strong <code>WG_ADMIN_HASH</code>.</li>
+<li>For remote access use the WireGuard profile (one UDP port) or your own VPN, with a strong <code>WG_ADMIN_PASSWORD</code> (and do not forward port 51821).</li>
 <li>Keep <code>.env</code> and the migration archives private (they hold keys); keep <code>DOMINET_MASTER_KEY</code> in a password manager.</li>
 <li>Install the certificate authority on your devices (<code>/dominet-ca.crt</code>) rather than clicking through browser warnings.</li>
 <li>Update with <code>make prod-update</code> regularly; read the release notes (<code>CHANGELOG.md</code>).</li>
@@ -2108,10 +2139,10 @@
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.sections", "navigation.top", "content.code.copy", "search.highlight"], "search": "../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.sections", "navigation.top", "content.code.copy", "search.highlight"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../assets/javascripts/bundle.a5f9d56c.min.js"></script>
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
       
     
   </body>

@@ -10,6 +10,8 @@
       
       
       
+        <link rel="canonical" href="https://deunix-educ.github.io/domia-automation/fr/deployment/">
+      
       
         <link rel="prev" href="../releasing/">
       
@@ -25,7 +27,7 @@
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.1">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
       
@@ -33,10 +35,10 @@
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.57a0d79d.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
       
         
-        <link rel="stylesheet" href="../../assets/stylesheets/palette.fb2fffe2.min.css">
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
       
       
 
@@ -1345,6 +1347,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../camera-access/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Accès aux caméras
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../mqtt/" class="md-nav__link">
         
   
@@ -2185,7 +2215,7 @@ projet ni ports décalés (voir « Essai sur une machine de développement »), 
 <td>alertes par courriel (application <strong>et</strong> Grafana). Sans <code>EMAIL_RECIPIENT</code>, les alertes Grafana n'ont pas de destinataire</td>
 </tr>
 <tr>
-<td><code>DYNDNS_HOST</code>, <code>WG_ADMIN_HASH</code></td>
+<td><code>DYNDNS_HOST</code>, <code>WG_ADMIN_PASSWORD</code></td>
 <td>VPN WireGuard (profil <code>vpn</code>), voir §5</td>
 </tr>
 <tr>
@@ -2216,7 +2246,14 @@ NOBACKUP=1 make prod-update   # sans sauvegarde      NOPULL=1 : sans git pull
 </code></pre>
 <p>La sauvegarde échouée annule la mise à jour. Les migrations sont rejouées par <code>migrate</code>.</p>
 <h2 id="5-acces-exterieur-vpn-wireguard-facultatif">5. Accès extérieur — VPN WireGuard (facultatif)<a class="headerlink" href="#5-acces-exterieur-vpn-wireguard-facultatif" title="Permanent link">&para;</a></h2>
-<p>Renseigner <code>DYNDNS_HOST</code> (nom public de la box) et <code>WG_ADMIN_HASH</code> (mot de passe de l'interface wg-easy : <code>docker run --rm ghcr.io/wg-easy/wg-easy:14 wgpw 'motdepasse'</code>, en doublant les <code>$</code> dans <code>.env</code>), rediriger UDP 51820 sur la box, puis <code>make prod-up</code>. Le profil <code>vpn</code> n'est activé que si <code>WG_ADMIN_HASH</code> est renseigné. wg-easy est en réseau hôte (<code>iptables-nft</code>) ; interface sur le port 51821. Ajoutez au besoin les adresses du tunnel à <code>WEBRTC_ADDITIONAL_HOSTS</code> et à <code>CERT_EXTRA_SANS</code> (puis <code>make certs</code>).</p>
+<p>Renseigner <code>DYNDNS_HOST</code> (nom public de la box) et <code>WG_ADMIN_PASSWORD</code> (mot de passe de l'interface web de wg-easy, utilisateur <code>admin</code>), rediriger UDP 51820 sur la box, puis <code>make prod-up</code>. Le profil <code>vpn</code> n'est activé que si <code>WG_ADMIN_PASSWORD</code> est renseigné. Le VPN est wg-easy 15 (AGPL-3.0) en réseau hôte ; son interface est sur le port 51821, en HTTP simple : gardez-la sur votre réseau domestique et ne redirigez pas ce port.</p>
+<ul>
+<li><strong>Première configuration.</strong> <code>make prod-up</code> règle une seule fois, par l'API de wg-easy, les règles du pare-feu (<code>iptables-nft</code>), l'interface réseau utilisée pour la traduction d'adresses (celle par défaut de la machine) et le keepalive (25 s). Ensuite les réglages vous appartiennent : modifiez-les dans l'interface de wg-easy, <code>make prod-up</code> n'y touche plus (<code>tools/prod.sh wg-configure</code> rejoue la vérification).</li>
+<li><strong>Lus une seule fois.</strong> Le mot de passe administrateur, les adresses du tunnel (<code>WG_SUBNET</code>, <code>WG_SUBNET6</code>), le DNS (<code>WG_DEFAULT_DNS</code>) et les routes envoyées aux appareils (<code>WG_ALLOWED_IPS</code>) ne sont lus qu'au premier démarrage de wg-easy. Changez-les ensuite dans son interface.</li>
+<li><strong>Appareils.</strong> Créez un appareil par téléphone ou ordinateur dans l'interface, puis scannez son code QR ou importez son fichier dans l'application WireGuard.</li>
+<li><strong>Mise à jour d'une installation faite pour wg-easy 14.</strong> <code>WG_ADMIN_HASH</code> n'est plus utilisé. Le premier <code>make prod-up</code> génère <code>WG_ADMIN_PASSWORD</code> dans <code>.env</code> (<code>grep '^WG_ADMIN_PASSWORD' .env</code>) et démarre wg-easy 15 sur un volume neuf et vide (<code>wg-easy15-data</code>) : les appareils créés avec la 14 sont à recréer. L'ancien volume <code>wg-easy-data</code> reste en place ; vous pouvez le supprimer (<code>docker volume rm &lt;projet&gt;_wg-easy-data</code>) quand vous n'en avez plus besoin.</li>
+</ul>
+<p>Ajoutez au besoin les adresses du tunnel à <code>WEBRTC_ADDITIONAL_HOSTS</code> et à <code>CERT_EXTRA_SANS</code> (puis <code>make certs</code>).</p>
 <h2 id="6-sauvegardes-et-restauration">6. Sauvegardes et restauration<a class="headerlink" href="#6-sauvegardes-et-restauration" title="Permanent link">&para;</a></h2>
 <p>Une sauvegarde automatique tourne chaque jour à 03:00 (<code>BACKUP_HOUR</code>) : base PostgreSQL (<code>pg_dump</code>) et archive du volume ReductStore, sommes SHA-256, 7 jours conservés (<code>BACKUP_RETENTION_DAYS</code>), dans le volume <code>backups-data</code>. <code>make prod-backup</code> en lance une immédiatement. Procédures de restauration complètes : <a href="../backups/">docs/backups.md</a>. Copiez régulièrement le volume <code>backups-data</code> <strong>et</strong> <code>DOMINET_MASTER_KEY</code> hors de la machine.</p>
 <h2 id="7-services-et-acces">7. Services et accès<a class="headerlink" href="#7-services-et-acces" title="Permanent link">&para;</a></h2>
@@ -2359,10 +2396,10 @@ make prod-down                   # arrêt (volumes conservés)
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.sections", "navigation.top", "content.code.copy", "search.highlight"], "search": "../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copi\u00e9 dans le presse-papier", "clipboard.copy": "Copier dans le presse-papier", "search.result.more.one": "1 de plus sur cette page", "search.result.more.other": "# de plus sur cette page", "search.result.none": "Aucun document trouv\u00e9", "search.result.one": "1 document trouv\u00e9", "search.result.other": "# documents trouv\u00e9s", "search.result.placeholder": "Taper pour d\u00e9marrer la recherche", "search.result.term.missing": "Non trouv\u00e9", "select.version": "S\u00e9lectionner la version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.sections", "navigation.top", "content.code.copy", "search.highlight"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copi\u00e9 dans le presse-papier", "clipboard.copy": "Copier dans le presse-papier", "search.result.more.one": "1 de plus sur cette page", "search.result.more.other": "# de plus sur cette page", "search.result.none": "Aucun document trouv\u00e9", "search.result.one": "1 document trouv\u00e9", "search.result.other": "# documents trouv\u00e9s", "search.result.placeholder": "Taper pour d\u00e9marrer la recherche", "search.result.term.missing": "Non trouv\u00e9", "select.version": "S\u00e9lectionner la version"}, "version": null}</script>
     
     
-      <script src="../../assets/javascripts/bundle.a5f9d56c.min.js"></script>
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
       
     
   </body>

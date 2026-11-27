@@ -10,6 +10,8 @@
       
       
       
+        <link rel="canonical" href="https://deunix-educ.github.io/domia-automation/licenses/">
+      
       
         <link rel="prev" href="../migration/">
       
@@ -25,7 +27,7 @@
       
       
       <link rel="icon" href="../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.1">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
       
@@ -33,10 +35,10 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.57a0d79d.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
       
         
-        <link rel="stylesheet" href="../assets/stylesheets/palette.fb2fffe2.min.css">
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
       
       
 
@@ -1262,6 +1264,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../camera-access/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Camera access
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../mqtt/" class="md-nav__link">
         
   
@@ -2126,13 +2156,13 @@
 <td>known</td>
 </tr>
 <tr>
-<td><code>ghcr.io/wg-easy/wg-easy:14</code> (optional VPN)</td>
-<td><strong>CC BY-NC-SA 4.0 (non-commercial)</strong> up to version 14, AGPL-3.0 from version 15</td>
-<td><strong>reported</strong>, not read at the source (the repository pages could not be fetched)</td>
+<td><code>ghcr.io/wg-easy/wg-easy:15</code> (optional VPN)</td>
+<td>AGPL-3.0 (version 14 and earlier were <strong>CC BY-NC-SA 4.0, non-commercial</strong>)</td>
+<td><strong>verified</strong> at the source on 2026-11-23: the <code>LICENSE</code> file at tag v14.0.0 is CC BY-NC-SA 4.0, at tag v15.0.0 and on <code>master</code> it is the AGPL-3.0 text</td>
 </tr>
 </tbody>
 </table>
-<p><strong>Point to settle before recommending the VPN profile</strong>: version 14 of wg-easy, which <code>docker-compose.prod.yml</code> pins, is reported to be non-commercial only. For a home installation that is acceptable, but the project should not present it as freely usable by businesses. Moving to version 15 (AGPL-3.0) needs a configuration change and a test; it is listed in <a href="../to-improve/">To improve</a>.</p>
+<p><strong>VPN profile.</strong> It uses wg-easy 15 (AGPL-3.0, like DomiNet) since <a href="../adr/0065-wg-easy-15/">ADR 0065</a>; version 14, which was non-commercial only, is no longer used or recommended.</p>
 <h2 id="external-services">External services<a class="headerlink" href="#external-services" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -2146,7 +2176,7 @@
 <tr>
 <td><strong>Open-Meteo</strong> (weather; <code>OPEN_METEO_URL</code>)</td>
 <td>The free API is for <strong>non-commercial use</strong> (limits: 10 000 calls a day, 5 000 an hour, 600 a minute); the data is under <strong>CC BY 4.0, which requires attribution</strong></td>
-<td><strong>reported</strong> (terms page seen through a search). A home installation stays far below the limits. Keep the attribution <strong>"Weather data by Open-Meteo.com"</strong> wherever you republish the data. A commercial use needs a paid plan, or another provider set in <code>OPEN_METEO_URL</code></td>
+<td><strong>reported</strong> (terms page seen through a search). A home installation stays far below the limits. The weather widget shows the attribution <strong>"Weather data by Open-Meteo.com"</strong> (linked to open-meteo.com); keep it wherever you republish the data. A commercial use needs a paid plan, or another provider set in <code>OPEN_METEO_URL</code></td>
 </tr>
 <tr>
 <td>Free Mobile SMS API</td>
@@ -2221,10 +2251,10 @@
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.sections", "navigation.top", "content.code.copy", "search.highlight"], "search": "../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.sections", "navigation.top", "content.code.copy", "search.highlight"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../assets/javascripts/bundle.a5f9d56c.min.js"></script>
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
       
     
   </body>
