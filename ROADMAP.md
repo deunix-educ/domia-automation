@@ -2,9 +2,9 @@
 
 Where the project stands and what is open. Decisions are in `docs/adr/`; known limits are in `docs/to-improve.md`; history is in `CHANGELOG.md`.
 
-## State (release 1.0.2, 2026-11-23)
+## State (release 1.1.0, 2026-11-27)
 
-- Public repository, releases 1.0.0 to 1.0.2, multi-architecture image (amd64 and arm64) on GHCR, documentation site on GitHub Pages.
+- Public repository, releases 1.0.0 to 1.1.0, multi-architecture image (amd64 and arm64) on GHCR, documentation site on GitHub Pages.
 - Installation for non-experts: `install.sh`, `make prod-doctor`, migration of an existing installation (`tools/migrate-pack.sh`).
 - Machines: the reference mini PC (12 cameras in 1080p with hardware decoding) and a Raspberry Pi 5 8 GB with NVMe (installs and runs; 6 cameras in 1080p at 40 % of the machine, software decoding). See `docs/machines.md` and `docs/measures.md`.
 - No more than 6 cameras were measured on the Raspberry Pi 5, on purpose: the figure above that is an extrapolation and is documented as such.

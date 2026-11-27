@@ -3,7 +3,7 @@
 Statut : **implémenté** (2026-11-26, lots 1 et 2 ; l'APK est publié au lot 3).
 
 ## Contexte
-Le serveur relaie les SMS et les appels par une application Android ([ADR 0037](0037-android-relay-and-messaging.fr.md), [ADR 0039](0039-android-relay-server.fr.md)). Cette application vivait dans un autre projet privé (`VideoComm`, pour un ancien système), n'était pas dans ce dépôt, n'avait pas de licence déclarée, embarquait l'autorité mkcert personnelle de l'auteur et avait deux défauts : la pastille d'un serveur configuré ne devenait jamais verte (le service ne signalait jamais une connexion à l'écran), et le service refusait de démarrer si les huit permissions n'étaient pas toutes accordées.
+Le serveur relaie les SMS et les appels par une application Android ([ADR 0037](0037-android-relay-and-messaging.fr.md), [ADR 0039](0039-android-relay-server.fr.md)). Cette application vivait dans un autre projet privé (`VideoComm`, d'un projet antérieur), n'était pas dans ce dépôt, n'avait pas de licence déclarée, embarquait l'autorité mkcert personnelle de l'auteur et avait deux défauts : la pastille d'un serveur configuré ne devenait jamais verte (le service ne signalait jamais une connexion à l'écran), et le service refusait de démarrer si les huit permissions n'étaient pas toutes accordées.
 
 Qui veut le relais SMS a besoin de l'application. Sans elle dans le dépôt, la fonction documentée de DomiNet n'est pas reproductible.
 

@@ -4,6 +4,8 @@ All notable changes are listed here. Format based on [Keep a Changelog](https://
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-11-27
+
 ### Added
 - **Watching a camera needs an account** (ADR 0064). MediaMTX asks DomiNet before every RTSP and WebRTC read. The browser needs nothing: the live view sends a short-lived token tied to the session. VLC and phone applications use the account's user name and a personal password per device, created on **My account → Camera access** (shown once, revocable, with its last use; revoking closes the account's open sessions). Every account sees every camera. See [Camera access](docs/camera-access.md).
 - `make prod-init` generates `MEDIAMTX_READ_USER` and `MEDIAMTX_READ_PASSWORD` (DomiNet's own account for decoding the video); `make prod-up` adds them to an existing `.env`, and `make prod-doctor` blocks if they are missing.
