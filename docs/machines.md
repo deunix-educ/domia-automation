@@ -11,7 +11,7 @@ What was tested, what was not, and how to add your own measurements. Nothing her
 
 ## Raspberry Pi 5: what to expect, what is unknown
 
-What was verified on a Raspberry Pi 5 (8 GB, NVMe SSD, Debian 13 arm64, Docker 29): the image builds natively in about 67 minutes (no swap problem with 2 GB of swap), the whole stack starts, the database schema is applied, an administrator account is created, and the interface answers in about 10 ms (median) with the stack idle, at 55 °C and never throttled. The ten services at rest hold about 310 MiB, the whole machine 1.1 GB of its 8 GB, and a start from cold takes about 22 s. Cameras: 6 in 1080p occupy 40 % of the four cores in full mode ([Measurements](measures.md), section 2); nothing above 6 was measured.
+What was verified on a Raspberry Pi 5 (8 GB, NVMe SSD, Debian 13 arm64, Docker 29): the image builds natively in about 67 minutes (no swap problem with 2 GB of swap), the whole stack starts, the database schema is applied, an administrator account is created, and the interface answers in about 10 ms (median) with the stack idle, at 55 °C and never throttled. The ten services at rest hold about 310 MiB, the whole machine 1.1 GB of its 8 GB, and a start from cold takes about 22 s. Cameras: 6 in 1080p occupy 40 % of the four cores in full mode ([Measurements](measures.md), section 2); nothing above 6 was measured. On 2026-11-27 the 1.1.0 image was built natively again on the same machine and passed the image smoke test (version, `/healthz`, non-root user, clean shutdown); the whole stack was not restarted on it.
 
 Known from the design (not from measurements):
 

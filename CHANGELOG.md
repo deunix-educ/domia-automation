@@ -12,6 +12,7 @@ All notable changes are listed here. Format based on [Keep a Changelog](https://
 - `tools/e2e.sh live_auth` replays the live view against the shipped MediaMTX configuration.
 - The weather widget shows the Open-Meteo attribution ("Weather data by Open-Meteo.com", CC BY 4.0), linked to open-meteo.com.
 - Video load measured on a Raspberry Pi 5 (8 GB, NVMe, software decoding): about 0.25 core per camera, 6 cameras in 1080p at 40 % of the machine in full mode (`docs/measures.md`, section 2). Nothing above 6 cameras was measured.
+- The 1.1.0 image is multi-architecture (amd64 and arm64). The arm64 one was built natively on a Raspberry Pi 5 and passed the image smoke test; it was published a few hours after the amd64 one, so `:latest` was amd64 only for that time.
 
 ### Changed
 - **Breaking, viewers**: a player that opened `rtsp://<host>:8554/<uuid>` without a password is now refused until its owner creates a password on the Camera access page (see above). The production MediaMTX no longer allows anonymous reads; the API and metrics ports stay unpublished, and nginx answers 404 on `/internal/`.

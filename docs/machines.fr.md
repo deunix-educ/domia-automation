@@ -11,7 +11,7 @@ Ce qui a été testé, ce qui ne l'a pas été, et comment ajouter vos propres m
 
 ## Raspberry Pi 5 : ce qu'on peut attendre, ce qu'on ignore
 
-Ce qui a été vérifié sur un Raspberry Pi 5 (8 Go, SSD NVMe, Debian 13 arm64, Docker 29) : l'image se construit en natif en environ 67 minutes (sans problème de mémoire avec 2 Go d'échange), toute la pile démarre, le schéma de base est appliqué, un compte administrateur est créé, et l'interface répond en 10 ms environ (médiane) au repos, à 55 °C et sans jamais avoir été bridée. Les dix services au repos tiennent environ 310 Mio, la machine entière 1,1 Go de ses 8 Go, et un démarrage à froid prend environ 22 s. Caméras : 6 en 1080p occupent 40 % des quatre cœurs en mode complet ([Mesures](measures.md), section 2) ; rien au-delà de 6 n'a été mesuré.
+Ce qui a été vérifié sur un Raspberry Pi 5 (8 Go, SSD NVMe, Debian 13 arm64, Docker 29) : l'image se construit en natif en environ 67 minutes (sans problème de mémoire avec 2 Go d'échange), toute la pile démarre, le schéma de base est appliqué, un compte administrateur est créé, et l'interface répond en 10 ms environ (médiane) au repos, à 55 °C et sans jamais avoir été bridée. Les dix services au repos tiennent environ 310 Mio, la machine entière 1,1 Go de ses 8 Go, et un démarrage à froid prend environ 22 s. Caméras : 6 en 1080p occupent 40 % des quatre cœurs en mode complet ([Mesures](measures.md), section 2) ; rien au-delà de 6 n'a été mesuré. Le 2026-11-27, l'image 1.1.0 a été reconstruite en natif sur la même machine et a passé le test de fumée de l'image (version, `/healthz`, utilisateur non root, arrêt propre) ; toute la pile n'y a pas été redémarrée.
 
 Connu par la conception (pas par des mesures) :
 
